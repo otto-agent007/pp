@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Pest Patrol OS",
+    "slug": "pest-patrol-os",
+    "scheme": "pestpatrol",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true
+  }
+}

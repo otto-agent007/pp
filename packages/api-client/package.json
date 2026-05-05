@@ -1,0 +1,20 @@
+{
+  "name": "@pest-patrol/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint \"**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
