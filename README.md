@@ -37,20 +37,34 @@ pnpm build
 
 ## Environment
 
-Copy `.env.example` to the app-specific env file you need, then provide Supabase credentials.
+Copy `.env.example` to the app-specific env file you need, then provide Supabase and provider credentials.
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NOTIFICATION_DELIVERY_WEBHOOK_URL=
+NOTIFICATION_DELIVERY_WEBHOOK_SECRET=
+CRON_SECRET=
+AUTOMATION_CRON_SECRET=
 ```
+
+Mobile builds also need Expo public Supabase values:
+
+```bash
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel settings, Supabase admin bootstrap, smoke tests, and security boundaries.
 
 ## Current Focus
 
-Phase 2 starts with Customer CRUD:
+Current priority is Notification Delivery Retry Policy V1:
 
-- Supabase query functions
-- API client methods
-- React Query hooks
-- Customer list UI
-- Create/edit form
-- Optimistic updates
+- classify retryable versus manual-review delivery failures
+- show retry state on automation notification cards
+- keep provider calls and scheduler behavior unchanged
+- keep provider secrets behind server routes

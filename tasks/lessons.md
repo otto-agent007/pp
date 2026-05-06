@@ -4,3 +4,112 @@
 - Never fetch directly inside components
 - Keep mobile offline-safe
 - Avoid large files (>500 lines)
+- Customer UI should call domain hooks only; Supabase remains behind `packages/api-client`
+- Customer archiving is soft-delete behavior and also archives active locations
+- Validate customer name before location details so form errors follow the v1 requirements
+- Job canceling is soft-delete behavior using `status = canceled`
+- Job forms should derive available locations from the selected active customer
+- Technician assignment stays optional until dispatch and mobile assignment workflows mature
+- Dispatch calendar should reuse job records and domain helpers rather than adding calendar-only storage
+- Quick dispatch edits should mutate full validated job inputs behind the hook layer
+- Chemical stock deduction belongs in a database trigger so web and future mobile logs cannot drift
+- Inventory usage logging should optimistically decrement visible stock and rollback on failure
+- Mobile auth requires a native storage adapter; use Expo SecureStore for persisted Supabase sessions
+- Mobile access should gate by `profiles.role = technician`, not just by a valid Supabase Auth session
+- Mobile job lists should query assigned jobs with the authenticated Supabase client, not the admin web client
+- Keep mobile read slices separate from offline write sync so route display can ship before mutation queues
+- Offline queue groundwork should stay local-only until each technician write path has a real sync worker
+- Forms should keep their schema in JSONB templates while mobile stores drafts locally until sync is introduced
+- Mobile sync workers should process one queue action type at a time and leave unrelated queued writes untouched
+- Mobile optimistic writes should carry previous state in the queue payload so failed syncs remain inspectable
+- Chemical log sync should reuse the same validated inventory domain rules that web usage logging relies on
+- Photo queue payloads should include their storage path at enqueue time so retries stay idempotent
+- Signature captures can reuse job media storage when `media_type` carries the distinction
+- Mobile package tests need an explicit `test` script or Turbo will skip mobile-only coverage
+- Admin closeout review can aggregate existing forms, logs, and media without adding approval schema
+- Private job media needs signed URLs at the API boundary before web review surfaces can render previews
+- Customer portal payloads should use narrower shared types instead of reusing admin job records
+- Customer-facing closeouts should omit service notes, technician data, chemical logs, and inventory internals until explicit customer visibility rules exist
+- Geofence queue payloads should normalize optional measurements to explicit `null` values so mobile UI and sync code can render consistent states
+- Arrival/departure capture should queue even when service coordinates are missing; record `within_radius = null` rather than blocking the technician
+- On Windows, Expo plus pnpm may need a repo-local virtual store and explicit Metro symlink configuration to avoid install locks and bundle resolution failures
+- Payment provider secrets belong in server routes; UI and shared packages should only exchange invoice ids and returned payment-link metadata
+- Payment Links V1 can use inline Stripe `price_data` for one-off service invoices instead of introducing a product catalog too early
+- Invoice creation should de-duplicate completed jobs so admins do not accidentally issue multiple v1 invoices for the same job
+- Automation V1 should separate reusable rules from concrete notification events so admins can act on reminders without a scheduler running yet
+- Notification events should allow either a customer or a job target; forcing both would block useful customer-only recurring prompts
+- Provider delivery belongs after the notification event model is stable, not inside the first rule/reminder slice
+- Readiness docs should include exact setup order; migrations, admin bootstrap, env vars, and smoke tests are easy to do in the wrong order
+- Admin navigation should be part of the shared shell but hidden from customer portal routes
+- Provider-secret boundaries should be documented before adding delivery/webhook integrations
+- Web admin auth can share Supabase Auth with mobile as long as domain helpers enforce separate role gates
+- Server routes that perform provider actions should validate the Supabase bearer token before touching provider secrets
+- Customer portal routes need their own customer-safe access boundary instead of inheriting admin auth
+- Customer portal access tokens should be stored as hashes; raw tokens only belong in generated links
+- Portal closeout reads need a server route with service-role access so RLS does not need public customer-data policies
+- Portal link management belongs on the admin customer surface after the token boundary exists
+- Admin portal token lists should expose summaries only; never return `token_hash` to the browser
+- Generated portal links are one-time copy values, so persisted UI should rely on token metadata instead of trying to recover raw tokens
+- Portal token revocation should be optimistic in the admin UI because old links are invalidated by token status, not data deletion
+- Notification delivery status should stay separate from notification lifecycle status so send failures do not erase pending admin work
+- Notification provider secrets belong only in server routes; shared packages should exchange event ids and sanitized delivery results
+- Delivery failures should persist attempts and last error on the notification event so retry decisions are visible to admins
+- A manual delivery provider fallback lets the workflow ship before a real email/SMS/webhook provider is configured
+- Stripe webhook verification must use the raw request body; parsing JSON before signature verification breaks the trust boundary
+- Stripe Payment Link metadata should also be copied to PaymentIntent metadata so later webhook event types can still find the invoice
+- Stripe webhook handlers should return 202 for intentionally ignored events so Stripe does not keep retrying non-actionable payloads
+- Payment idempotency should key off the provider payment id because Stripe may deliver the same event more than once
+- Customer portal billing should use separate customer-safe invoice contracts rather than exposing admin invoice/payment records directly
+- Portal invoice reads should stay behind the same token boundary as closeouts; customer ids alone are not authorization
+- Paid portal invoices should hide payment links and report a zero balance even when the payment was marked manually
+- Search shared across portal sections can create repeated labels, so UI tests should expect duplicated location names when billing and closeouts both reference a visit
+- Generated automation events need a stable idempotency key on the notification record itself so scheduler retries and duplicate cron calls are safe
+- Automation scheduling should only create pending notification events; delivery/provider behavior stays in the delivery slice
+- Recurring-service prompts should be based on each customer's latest completed job so old jobs do not create stale repeated prompts
+- Cron routes need their own secret boundary and should not rely on admin browser sessions
+- Vercel Cron invokes configured paths with GET, so scheduler routes need a GET handler in addition to manual POST support
+- Vercel's `CRON_SECRET` convention should be supported directly while retaining project-specific cron secrets for non-Vercel calls
+- Cron schedules in `vercel.json` use UTC, so docs and smoke tests should state the timezone explicitly
+- Scheduler run history needs its own table when the UI must show created counts, duplicate counts, and failures; generated notifications alone cannot reconstruct that reliably
+- Failed scheduler runs should be recorded from the route boundary so production failures are visible in the admin workflow
+- Generated notification previews should stay compact because the full notification list remains the source of truth
+- Hook consumers should use stable empty arrays when fallback data is passed into memo dependencies
+- Manual scheduler runs need an admin-authenticated route separate from the cron-secret route so browser workflows never receive scheduler secrets
+- Manual scheduler mutations should invalidate both scheduler run history and notification events because one action changes both views
+- Keep cron cadence and manual run controls separate; one is deployment configuration, the other is an admin workflow
+- Keep cron and manual scheduler executions in one run table, but add provenance fields so observability stays unified without losing audit context
+- Auth helpers that gate server routes may need a richer variant that returns the validated user id while preserving the old response-only helper for existing routes
+- Notification templates should be archived rather than deleted so existing reminders and future rule bindings do not lose historical copy context
+- Template-assisted manual reminders should copy title/message/type into the notification form, not create a hidden dependency on the template record
+- Large admin surfaces need scoped UI tests once repeated labels and repeated action names appear in multiple panels
+- Rule-bound templates should be active and type-matched before scheduler generation uses their copy
+- Automation rules still need rule/default fallback copy so archived or mismatched templates do not block scheduler output
+- Repeated admin actions like Edit and Archive need section-aware UI tests once rules and templates live on the same screen
+- Template variables should be an allowlist, not arbitrary expression evaluation
+- Stored notification template copy should remain raw; interpolation belongs at preview/generation time
+- Manual reminder saves should use the same interpolation helper as scheduler generation so admins do not preview one message and persist another
+- Scheduler previews should call the same planner as real generation so admins see the exact title, message, due date, and generated key that cron would create
+- Duplicate preview detection can stay best-effort in the UI as long as the database unique key remains the real idempotency boundary
+- Preview refresh should never share the manual run mutation; preview is no-write observability, not generation
+- Bulk delivery should reuse the same server route as individual delivery so provider-secret boundaries stay in one place
+- Bulk sends should run sequentially and report partial failure instead of failing the whole batch at the first bad notification
+- Bulk delivery controls should operate on the visible filtered list so admins can narrow a batch before sending it
+- Delivery triage should layer on lifecycle filtering instead of replacing pending, handled, and dismissed states
+- Retryable filters should use the same eligibility rules as bulk delivery so admin actions stay consistent
+- Failed notifications should remain visible after bulk sends so retry decisions stay explicit
+- Webhook notification payloads should be built in the domain layer so route code stays focused on auth, secrets, provider calls, and persistence
+- Provider payloads should include only routing context and customer contact data; internal service notes should stay out of outbound delivery bodies
+- Optional customer, job, and location context should normalize to explicit `null` fields so provider integrations do not need to guess at missing joins
+- Provider message ids should be persisted separately from delivery status so admins can trace a sent reminder without storing raw provider responses
+- Failed delivery retries should clear stale provider message ids because the latest attempt no longer maps to that old provider acknowledgement
+- Automation UI should show provider metadata only when present so manual fallback and early delivery records remain readable
+- The delivery route should transition to `sending` before provider calls so duplicate clicks cannot become duplicate provider requests
+- Already `sending` and already `sent` reminders should return conflict responses instead of silently re-running delivery
+- Provider payloads sent during delivery should reflect the in-flight `sending` state once the route has claimed the send
+- Recipient readiness should be provider-neutral until explicit email/SMS routing exists
+- Notification recipient helpers should prefer direct customer context, then fall back to job customer context
+- Missing recipient context should render as a visible admin readiness state instead of silently hiding contact gaps
+- Provider configuration status should expose booleans and mode only; never echo webhook URLs or secret values to the browser
+- Recipient readiness filtering should compose after lifecycle, delivery, and search filtering so admins can narrow a deliberate working set
+- Delivery attempt timestamps should be recorded at the route boundary when the server claims the send, not after the provider returns
+- Attempt summaries should stay separate from provider message ids because retries and provider acknowledgements answer different admin questions
