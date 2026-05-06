@@ -6,11 +6,13 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "dependencies": {
+    "@pest-patrol/api-client": "workspace:*",
     "@pest-patrol/types": "workspace:*"
   },
   "scripts": {
     "build": "tsc --noEmit",
     "lint": "eslint \"**/*.ts\"",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
