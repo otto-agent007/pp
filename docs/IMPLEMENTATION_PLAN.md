@@ -1,14 +1,14 @@
 # Implementation Plan
 
-## Current Priority: Customer CRUD
+## Current Priority: Notification Delivery Retry Policy V1
 
-1. Define customer and location contracts in `packages/types`.
-2. Add customer data functions in `packages/api-client`.
-3. Add customer domain validation and normalization in `packages/domain/customers`.
-4. Add React Query hooks for list, create, update, and delete/archive.
-5. Build the admin customer list screen in `apps/web`.
-6. Build create and edit forms with optimistic mutations.
-7. Add focused tests once the test runner is introduced.
+1. Add a domain helper that classifies notification retry state.
+2. Treat `not_sent` and low-attempt `failed` reminders as retryable.
+3. Treat over-attempt failed reminders as manual review.
+4. Show retry state on `/automation` notification cards.
+5. Keep provider calls and scheduler behavior unchanged.
+6. Add focused domain and UI tests.
+7. Keep campaigns, background delivery workers, and provider-specific SDKs out of this slice.
 8. Update `tasks/in-progress.md` after each completed slice.
 
 ## Guardrails

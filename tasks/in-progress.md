@@ -1,14 +1,17 @@
 # In Progress
 
-## Task: Customer CRUD (Phase 2)
+## Task: Notification Delivery Retry Policy V1
 
 Goal:
-Build full customer management system
+Define a clear retry policy for failed notification deliveries so admins can see which reminders are still safe to retry and which need manual review.
 
 Steps:
-- [ ] Create Supabase query functions
-- [ ] Create API client methods
-- [ ] Create React Query hooks
-- [ ] Build customer list UI
-- [ ] Build create/edit form
-- [ ] Add optimistic updates
+- [ ] Add a domain helper that classifies notification retry state
+- [ ] Treat `not_sent` and low-attempt `failed` reminders as retryable
+- [ ] Treat over-attempt failed reminders as manual review
+- [ ] Show retry state on `/automation` notification cards
+- [ ] Keep provider calls and scheduler behavior unchanged
+- [ ] Add focused domain and UI tests
+
+Status:
+Planned after Notification Delivery Attempt Summary V1.

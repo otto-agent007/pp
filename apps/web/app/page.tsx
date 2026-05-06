@@ -1,17 +1,21 @@
 import { translations } from "@pest-patrol/i18n";
+import Link from "next/link";
 
 const roadmapItems = [
-  "Customer CRUD",
-  "Job scheduling",
-  "Inventory dashboard",
-  "Offline technician workflows",
+  { href: "/customers", label: "Customers" },
+  { href: "/jobs", label: "Jobs" },
+  { href: "/dispatch", label: "Dispatch" },
+  { href: "/inventory", label: "Inventory" },
+  { href: "/closeouts", label: "Closeouts" },
+  { href: "/payments", label: "Payments" },
+  { href: "/automation", label: "Automation" },
 ];
 
 export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-10">
       <section className="flex flex-col gap-4">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+        <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
           Operations platform
         </p>
         <h1 className="max-w-3xl text-4xl font-bold text-neutralDark">
@@ -23,14 +27,15 @@ export default function HomePage() {
         </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {roadmapItems.map((item) => (
-          <div
-            className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-            key={item}
+          <Link
+            className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-primary hover:shadow-md"
+            href={item.href}
+            key={item.href}
           >
-            <p className="text-sm font-semibold text-primary">{item}</p>
-          </div>
+            <p className="text-sm font-semibold text-primary">{item.label}</p>
+          </Link>
         ))}
       </section>
     </main>
