@@ -1,6 +1,9 @@
 import "./globals.css";
 import { Providers } from "./providers";
 import { fontSans } from "./fonts";
+import { AdminNav } from "./admin-nav";
+import { AdminAuthGate } from "./admin-auth-gate";
+import { AdminAuthProvider } from "./admin-auth-context";
 
 export const metadata = {
   title: "Pest Patrol OS",
@@ -16,7 +19,12 @@ export default function RootLayout({
     <html lang="en" className={fontSans.variable}>
       <body className="font-sans antialiased min-h-screen">
         <Providers>
-          {children}
+          <AdminAuthProvider>
+            <AdminAuthGate>
+              <AdminNav />
+              {children}
+            </AdminAuthGate>
+          </AdminAuthProvider>
         </Providers>
       </body>
     </html>
