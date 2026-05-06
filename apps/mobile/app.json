@@ -6,6 +6,21 @@
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Pest Patrol OS to take job photos.",
+          "photosPermission": "Allow Pest Patrol OS to attach job photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Pest Patrol OS to capture arrival and departure context for assigned jobs."
+        }
+      ]
+    ],
     "newArchEnabled": true
   }
 }
