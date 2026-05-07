@@ -115,3 +115,4 @@
 - Attempt summaries should stay separate from provider message ids because retries and provider acknowledgements answer different admin questions
 - Retry policy should be a domain helper reused by filters and bulk delivery so visual triage cannot drift from send eligibility
 - Manual-review thresholds should not change provider routes; they are admin workflow guidance until a dedicated retry scheduler exists
+- Demo readiness should guide operators through real live-data paths instead of seeding fake production records by default

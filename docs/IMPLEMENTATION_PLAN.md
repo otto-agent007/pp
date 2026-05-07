@@ -1,12 +1,12 @@
 # Implementation Plan
 
-## Current Priority: Customer/Ops Demo Readiness V1
+## Current Priority: Demo Data Entry Helpers V1
 
-1. Define the smallest customer-to-closeout demo workflow.
-2. Identify missing UI affordances that would slow an ops demo.
-3. Keep fake production seed data out unless explicitly requested.
-4. Leave Stripe and notification provider integration optional until needed.
-5. Run production smoke testing when admin login credentials are ready.
+1. Add concise customer setup guidance.
+2. Add concise job scheduling guidance.
+3. Link helpers to the next workflow surface.
+4. Keep helpers informational only; do not auto-create records.
+5. Add focused customer and job UI tests.
 6. Update `tasks/in-progress.md` after each completed slice.
 
 ## Guardrails
