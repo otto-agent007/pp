@@ -1,12 +1,12 @@
 # Implementation Plan
 
-## Current Priority: Production Smoke Checklist V1
+## Current Priority: Notification Webhook Provider Setup V1
 
-1. Add a shared smoke checklist contract.
-2. Cover auth, customer/location, job, portal, scheduler, and billing checks.
-3. Keep the checklist documentation-only; do not run live smoke tests automatically.
-4. Surface the checklist in readiness tracking.
-5. Add focused domain/docs tests.
+1. Show webhook/manual fallback setup guidance in `/automation`.
+2. Keep webhook URL and secret values hidden.
+3. Explain which env vars unlock webhook delivery.
+4. Preserve current provider delivery behavior.
+5. Add focused automation UI tests.
 6. Update `tasks/in-progress.md` after each completed slice.
 
 ## Guardrails

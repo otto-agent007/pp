@@ -66,6 +66,19 @@ set role = 'admin', updated_at = now();
 
 ## Smoke Tests
 
+Use this manual checklist when admin login credentials are ready. Do not run
+these against production until the operator is comfortable keeping the records
+created during the check.
+
+| Step | Route | Success criteria |
+| --- | --- | --- |
+| Admin sign-in | `/` | Admin can sign in and load the protected admin shell. |
+| Create customer and location | `/customers` | Active customer saves with at least one active location. |
+| Create job | `/jobs` | Scheduled job saves against the new customer and location. |
+| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data. |
+| Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
+| Check billing path | `/payments` | Invoice or payment setup state is visible without secret exposure. |
+
 Admin web:
 
 1. Sign in as an admin or dispatcher.
