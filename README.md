@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Stripe Test Mode Readiness V1:
+Current priority is Live Admin Smoke Test V1:
 
-- clarify payment test-mode setup on `/payments`
-- name server-only Stripe env vars without exposing values
-- keep Stripe optional for non-payment demos
-- preserve current invoice and payment-link behavior
+- reset or confirm the first admin password privately
+- sign in to the production admin shell
+- create a real customer, service location, and job
+- confirm portal, scheduler, and payment setup paths behave as expected

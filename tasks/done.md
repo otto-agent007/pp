@@ -501,3 +501,12 @@
 - Preserved existing notification provider delivery behavior
 - Added focused automation UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Stripe Test Mode Readiness V1
+
+- Added `/payments` setup guidance for Stripe test-mode readiness
+- Named server-only `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` without exposing values
+- Clarified that Stripe can remain unset for customer, job, closeout, and portal demos
+- Preserved existing invoice and payment-link behavior
+- Added focused payments UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`

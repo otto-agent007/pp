@@ -169,6 +169,22 @@ export function PaymentsClient() {
         </div>
       </header>
 
+      <section className="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+          Setup
+        </p>
+        <h2 className="mt-1 text-xl font-semibold text-neutralDark">
+          Stripe test-mode readiness
+        </h2>
+        <p className="mt-2 text-sm text-gray-700">
+          Payment links need server-only STRIPE_SECRET_KEY. Stripe webhooks need
+          STRIPE_WEBHOOK_SECRET.
+        </p>
+        <p className="mt-2 text-sm text-gray-700">
+          Stripe can stay unset for customer, job, closeout, and portal demos.
+        </p>
+      </section>
+
       <section className="grid gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
