@@ -5,7 +5,12 @@ import { AdminSignIn } from "./admin-sign-in";
 import { useAdminAuth } from "./admin-auth-context";
 
 function isPublicRoute(pathname: string) {
-  return pathname.startsWith("/portal");
+  return (
+    pathname === "/portal" ||
+    pathname.startsWith("/portal/") ||
+    pathname === "/forgot-password" ||
+    pathname === "/auth/update-password"
+  );
 }
 
 export function AdminAuthGate({ children }: { children: React.ReactNode }) {

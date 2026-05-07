@@ -44,6 +44,16 @@ set role = 'admin', updated_at = now();
 7. Set matching `profiles.role` values for each user.
 8. Confirm RLS is enabled on all migrated tables before production traffic.
 
+## Supabase Auth Redirects
+
+Password recovery links must return to the deployed app, not localhost.
+
+1. Set Supabase Auth Site URL to the production Pest Patrol OS domain.
+2. Add `https://<production-domain>/auth/update-password` to the allowed redirect URLs.
+3. Keep `http://localhost:3000/auth/update-password` allowed for local development only.
+4. Request password resets from `/forgot-password` so Supabase sends a recovery link with the app's `/auth/update-password` redirect.
+5. Treat any pasted recovery or magic-link URL as exposed and request a fresh reset link.
+
 ## Vercel Setup
 
 1. Import the GitHub repository into Vercel.

@@ -24,8 +24,11 @@ export {
 export {
   getCurrentAuthRecord,
   getProfileRecord,
+  resetPasswordForEmailRecord,
+  setPasswordRecoverySessionRecord,
   signInWithPasswordRecord,
   signOutRecord,
+  updatePasswordRecord,
 } from "./auth";
 export type { AuthRecord, AuthSupabaseClient, TechnicianAuthRecord } from "./auth";
 export {

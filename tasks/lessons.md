@@ -120,3 +120,5 @@
 - Production smoke checks should stay manual until admin credentials are ready and should warn operators that records may persist
 - Provider setup UI should name required server-only env vars while continuing to hide actual webhook URLs and secret values
 - Stripe readiness UI should separate optional payment demos from core ops demos so missing Stripe secrets do not block customer, job, closeout, or portal walkthroughs
+- Password recovery routes must be public auth routes, and Supabase reset links should be generated from the app so `redirectTo` always targets `/auth/update-password`
+- Supabase recovery links and magic-link URLs contain bearer tokens and should be treated as exposed once pasted into chat or docs
