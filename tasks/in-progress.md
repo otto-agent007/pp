@@ -1,16 +1,16 @@
 # In Progress
 
-## Task: Notification Webhook Provider Setup V1
+## Task: Stripe Test Mode Readiness V1
 
 Goal:
-Make notification webhook setup state clearer in `/automation` while keeping provider secrets server-only.
+Improve payment test-mode readiness messaging so billing demos are safer and clearer without exposing Stripe secrets.
 
 Steps:
-- [ ] Show webhook/manual fallback setup guidance in `/automation`
-- [ ] Keep webhook URL and secret values hidden
-- [ ] Explain which env vars unlock webhook delivery
-- [ ] Preserve current provider delivery behavior
-- [ ] Add focused automation UI tests
+- [ ] Show payment setup guidance on `/payments`
+- [ ] Name the server-only Stripe env vars without exposing values
+- [ ] Clarify that Stripe can remain optional for non-payment demos
+- [ ] Preserve current invoice/payment behavior
+- [ ] Add focused payments UI tests
 
 Status:
-Planned after Production Smoke Checklist V1.
+Planned after Notification Webhook Provider Setup V1.

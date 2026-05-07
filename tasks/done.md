@@ -492,3 +492,12 @@
 - Kept production seed data out of scope
 - Added focused domain coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Notification Webhook Provider Setup V1
+
+- Added `/automation` setup guidance for webhook delivery and manual fallback mode
+- Named the server-only notification webhook env vars needed for webhook delivery
+- Kept webhook URL and secret values hidden from browser UI
+- Preserved existing notification provider delivery behavior
+- Added focused automation UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`

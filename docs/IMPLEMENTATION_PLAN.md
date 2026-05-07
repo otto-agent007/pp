@@ -1,12 +1,12 @@
 # Implementation Plan
 
-## Current Priority: Notification Webhook Provider Setup V1
+## Current Priority: Stripe Test Mode Readiness V1
 
-1. Show webhook/manual fallback setup guidance in `/automation`.
-2. Keep webhook URL and secret values hidden.
-3. Explain which env vars unlock webhook delivery.
-4. Preserve current provider delivery behavior.
-5. Add focused automation UI tests.
+1. Show payment setup guidance on `/payments`.
+2. Name the server-only Stripe env vars without exposing values.
+3. Clarify that Stripe can remain optional for non-payment demos.
+4. Preserve current invoice/payment behavior.
+5. Add focused payments UI tests.
 6. Update `tasks/in-progress.md` after each completed slice.
 
 ## Guardrails
