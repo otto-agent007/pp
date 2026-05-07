@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
   try {
     const input = validateTechnicianInviteInput(await request.json());
-    const redirectTo = new URL("/auth/update-password", request.url).toString();
+    const redirectTo = new URL("/technician-login", request.url).toString();
     const client = createServiceRoleSupabaseClient();
     const result = await inviteTechnicianWithAdminClientRecord(client, {
       ...input,

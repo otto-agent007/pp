@@ -73,7 +73,7 @@ describe("technicians route", () => {
     expect(body.technicians).toHaveLength(1);
   });
 
-  it("invites a technician with the app password setup redirect", async () => {
+  it("invites a technician with the technician password setup redirect", async () => {
     vi.mocked(inviteTechnicianWithAdminClientRecord).mockResolvedValue({
       technician,
     } as never);
@@ -96,7 +96,7 @@ describe("technicians route", () => {
       {
         email: "testnician@example.com",
         display_name: "Testnician",
-        redirect_to: "https://app.example.com/auth/update-password",
+        redirect_to: "https://app.example.com/technician-login",
       },
     );
   });

@@ -99,6 +99,32 @@ describe("AdminAuthGate", () => {
     expect(screen.getByText("Password reset content")).toBeInTheDocument();
   });
 
+  it("leaves technician login outside admin auth", () => {
+    usePathname.mockReturnValue("/technician-login");
+
+    render(
+      <AdminAuthGate>
+        <div>Technician login content</div>
+      </AdminAuthGate>,
+    );
+
+    expect(screen.getByText("Technician login content")).toBeInTheDocument();
+  });
+
+  it("does not treat similarly-prefixed technician login routes as public", () => {
+    usePathname.mockReturnValue("/technician-login-extra");
+
+    render(
+      <AdminAuthGate>
+        <div>Protected technician admin content</div>
+      </AdminAuthGate>,
+    );
+
+    expect(screen.getByText("Admin operations sign-in")).toBeInTheDocument();
+    expect(screen.queryByText("Protected technician admin content"))
+      .not.toBeInTheDocument();
+  });
+
   it("does not treat similarly-prefixed update-password routes as public", () => {
     usePathname.mockReturnValue("/auth/update-password-extra");
 
