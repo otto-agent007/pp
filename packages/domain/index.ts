@@ -8,6 +8,8 @@ export function requireNonEmpty(value: string, fieldName: string) {
 
 export { getDemoWorkflowSteps } from "./demoReadiness";
 export type { DemoWorkflowStep } from "./demoReadiness";
+export { getProductionSmokeChecklist } from "./productionReadiness";
+export type { ProductionSmokeChecklistItem } from "./productionReadiness";
 
 export {
   createAutomationRule,

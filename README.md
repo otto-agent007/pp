@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Production Smoke Checklist V1:
+Current priority is Notification Webhook Provider Setup V1:
 
-- document the exact live app smoke path
-- cover auth, customer/location, job, portal, scheduler, and billing checks
-- keep smoke tests manual until admin credentials are ready
-- avoid seeding fake production data by default
+- clarify webhook versus manual fallback delivery state
+- name the server-only env vars needed for webhook delivery
+- keep webhook URL and secret values hidden from the browser
+- preserve current notification delivery behavior

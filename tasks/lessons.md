@@ -117,3 +117,4 @@
 - Manual-review thresholds should not change provider routes; they are admin workflow guidance until a dedicated retry scheduler exists
 - Demo readiness should guide operators through real live-data paths instead of seeding fake production records by default
 - Data-entry helpers should be plain guidance and links so demos stay fast without hidden writes or sample-data side effects
+- Production smoke checks should stay manual until admin credentials are ready and should warn operators that records may persist

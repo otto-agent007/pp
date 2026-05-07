@@ -483,3 +483,12 @@
 - Kept helper panels informational only with no automatic record creation
 - Added focused customer and job UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Production Smoke Checklist V1
+
+- Added a shared production smoke checklist contract for manual live-app validation
+- Covered admin sign-in, customer/location creation, job creation, portal access, scheduler run history, and billing visibility
+- Documented the checklist in production readiness guidance without adding live smoke automation
+- Kept production seed data out of scope
+- Added focused domain coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
