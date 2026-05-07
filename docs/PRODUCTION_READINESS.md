@@ -56,6 +56,13 @@ Password recovery links must return to the deployed app, not localhost.
 6. Invite technicians from `/technicians` so Supabase sends an invite link with the app's `/technician-login` redirect.
 7. Treat any pasted recovery, invite, or magic-link URL as exposed and request a fresh link.
 
+## Supabase Dashboard Security
+
+1. Enable leaked password protection in Supabase Auth settings.
+2. Keep service-role keys private and rotate them if they are ever pasted into chat, logs, or docs.
+3. Rerun Supabase security and performance advisors after every production migration.
+4. Treat unused-index recommendations as advisory until the production database has enough real traffic to judge query patterns.
+
 ## Vercel Setup
 
 1. Import the GitHub repository into Vercel.
@@ -147,3 +154,4 @@ Mobile:
 - Mobile write paths must remain queue-first and retry-safe.
 - The Supabase anon key is acceptable in web/mobile only because RLS owns authorization.
 - Refunds, customer billing history, SMS, and email delivery are not part of this readiness slice.
+- Temporary diagnostics endpoints must be removed before routine production use.
