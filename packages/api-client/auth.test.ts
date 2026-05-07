@@ -3,8 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getCurrentAuthRecord,
   getProfileRecord,
+  resetPasswordForEmailRecord,
+  setPasswordRecoverySessionRecord,
   signInWithPasswordRecord,
   signOutRecord,
+  updatePasswordRecord,
 } from "./auth";
 
 class MockQuery<T> {
@@ -46,13 +49,19 @@ const session = {
 describe("auth api client", () => {
   const from = vi.fn();
   const signInWithPassword = vi.fn();
+  const resetPasswordForEmail = vi.fn();
+  const setSession = vi.fn();
+  const updateUser = vi.fn();
   const getSession = vi.fn();
   const signOut = vi.fn();
   const client = {
     auth: {
       getSession,
+      resetPasswordForEmail,
+      setSession,
       signInWithPassword,
       signOut,
+      updateUser,
     },
     from,
   } as never;
@@ -60,6 +69,9 @@ describe("auth api client", () => {
   beforeEach(() => {
     from.mockReset();
     signInWithPassword.mockReset();
+    resetPasswordForEmail.mockReset();
+    setSession.mockReset();
+    updateUser.mockReset();
     getSession.mockReset();
     signOut.mockReset();
   });
@@ -107,5 +119,44 @@ describe("auth api client", () => {
     await signOutRecord(client);
 
     expect(signOut).toHaveBeenCalled();
+  });
+
+  it("sends password reset email with the supplied recovery redirect", async () => {
+    resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+
+    await resetPasswordForEmailRecord(
+      client,
+      "admin@example.com",
+      "https://app.example.com/auth/update-password",
+    );
+
+    expect(resetPasswordForEmail).toHaveBeenCalledWith("admin@example.com", {
+      redirectTo: "https://app.example.com/auth/update-password",
+    });
+  });
+
+  it("sets the recovery session from reset link tokens", async () => {
+    setSession.mockResolvedValue({
+      data: { session },
+      error: null,
+    });
+
+    await setPasswordRecoverySessionRecord(client, "token", "refresh");
+
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: "token",
+      refresh_token: "refresh",
+    });
+  });
+
+  it("updates the current authenticated user's password", async () => {
+    updateUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+      error: null,
+    });
+
+    await updatePasswordRecord(client, "new-password");
+
+    expect(updateUser).toHaveBeenCalledWith({ password: "new-password" });
   });
 });

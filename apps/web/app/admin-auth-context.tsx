@@ -6,9 +6,12 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@pest-patrol/api-client";
 import type { UserProfile } from "@pest-patrol/types";
 import {
+  establishPasswordRecoverySession,
   getCurrentAdminAuth,
+  requestPasswordReset as requestPasswordResetDomain,
   signInAdmin,
   signOutAdmin,
+  updateCurrentUserPassword,
 } from "@pest-patrol/domain";
 
 type AdminAuthStatus = "loading" | "signed_in" | "signed_out";
@@ -21,9 +24,18 @@ interface AdminAuthState {
 }
 
 interface AdminAuthSnapshot extends AdminAuthState {
+  establishPasswordRecoverySession: (
+    accessToken: string,
+    refreshToken: string,
+  ) => Promise<void>;
   initialize: () => Promise<void>;
+  requestPasswordReset: (email: string, redirectTo: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updatePassword: (
+    password: string,
+    confirmPassword: string,
+  ) => Promise<void>;
 }
 
 const signedOutState: AdminAuthState = {
@@ -39,9 +51,12 @@ let authState: AdminAuthState = {
 };
 let authSnapshot: AdminAuthSnapshot = {
   ...authState,
+  establishPasswordRecoverySession: startPasswordRecoverySession,
   initialize: initializeAdminAuth,
+  requestPasswordReset,
   signIn,
   signOut,
+  updatePassword,
 };
 let subscriptionStarted = false;
 const listeners = new Set<() => void>();
@@ -54,9 +69,12 @@ function setAuthState(nextState: AdminAuthState) {
   authState = nextState;
   authSnapshot = {
     ...authState,
+    establishPasswordRecoverySession: startPasswordRecoverySession,
     initialize: initializeAdminAuth,
+    requestPasswordReset,
     signIn,
     signOut,
+    updatePassword,
   };
   listeners.forEach((listener) => listener());
 }
@@ -133,6 +151,30 @@ async function signOut() {
     await signOutAdmin(supabase);
   } finally {
     setAuthState(signedOutState);
+  }
+}
+
+async function requestPasswordReset(email: string, redirectTo: string) {
+  await requestPasswordResetDomain(supabase, { email, redirectTo });
+}
+
+async function startPasswordRecoverySession(
+  accessToken: string,
+  refreshToken: string,
+) {
+  await establishPasswordRecoverySession(supabase, {
+    accessToken,
+    refreshToken,
+  });
+}
+
+async function updatePassword(password: string, confirmPassword: string) {
+  try {
+    await updateCurrentUserPassword(supabase, { password, confirmPassword });
+    await initializeAdminAuth();
+  } catch (error) {
+    patchAuthState({ error: errorMessage(error) });
+    throw error;
   }
 }
 

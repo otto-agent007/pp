@@ -48,6 +48,13 @@ describe("AdminSignIn", () => {
     expect(signIn).toHaveBeenCalledWith("admin@example.com", "secret-password");
   });
 
+  it("links to password reset", () => {
+    render(<AdminSignIn />);
+
+    expect(screen.getByRole("link", { name: "Forgot password?" }))
+      .toHaveAttribute("href", "/forgot-password");
+  });
+
   it("shows auth errors", () => {
     authError = "Admin or dispatcher access is required";
 

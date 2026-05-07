@@ -83,17 +83,29 @@ export type {
 export {
   getCurrentAdminAuth,
   getCurrentTechnicianAuth,
+  establishPasswordRecoverySession,
+  requestPasswordReset,
   signInAdmin,
   signInTechnician,
   signOutAdmin,
   signOutTechnician,
+  updateCurrentUserPassword,
   validateAdminAccess,
   validateAdminLoginInput,
   validateLoginInput,
+  validatePasswordRecoverySessionInput,
+  validatePasswordResetRequestInput,
+  validatePasswordUpdateInput,
   validateTechnicianAccess,
   validateTechnicianLoginInput,
 } from "./auth";
-export type { LoginInput, TechnicianLoginInput } from "./auth";
+export type {
+  LoginInput,
+  PasswordRecoverySessionInput,
+  PasswordResetRequestInput,
+  PasswordUpdateInput,
+  TechnicianLoginInput,
+} from "./auth";
 export {
   buildJobCloseoutReview,
   buildCustomerPortalCloseouts,

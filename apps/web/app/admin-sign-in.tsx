@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useAdminAuth } from "./admin-auth-context";
 
 export function AdminSignIn() {
@@ -91,6 +92,13 @@ export function AdminSignIn() {
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
+
+            <Link
+              className="block text-center text-sm font-semibold text-primary transition hover:text-primary/80"
+              href="/forgot-password"
+            >
+              Forgot password?
+            </Link>
           </div>
         </form>
       </section>

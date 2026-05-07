@@ -510,3 +510,13 @@
 - Preserved existing invoice and payment-link behavior
 - Added focused payments UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Password Reset Flow Fix V1
+
+- Added `/forgot-password` as a public admin recovery request route
+- Added `/auth/update-password` as a public recovery-session password update route
+- Routed Supabase password reset emails through API-client and domain helpers with `/auth/update-password` redirects
+- Added invalid, missing, and non-recovery link handling so magic-link URLs are rejected on the reset page
+- Linked the admin sign-in screen to password recovery and documented Supabase Auth redirect setup
+- Added focused API-client, domain, auth gate, sign-in, forgot-password, and update-password coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`

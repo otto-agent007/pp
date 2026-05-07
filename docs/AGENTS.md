@@ -49,11 +49,12 @@ Pest Patrol OS — pest control operations platform replacing PestPac.
 
 ## Task Workflow
 1. Read /docs and current task
-2. Propose plan BEFORE coding
-3. List files to modify
-4. Implement step-by-step
-5. Run lint + typecheck
-6. Update task file
+2. For multi-slice or agentic work, follow `docs/CODEX_OPERATING_PLAN.md`
+3. Propose plan BEFORE coding
+4. List files to modify
+5. Implement step-by-step
+6. Run lint + typecheck
+7. Update task file
 
 ## Output Rules
 - Keep changes minimal

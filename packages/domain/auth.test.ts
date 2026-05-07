@@ -1,8 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  establishPasswordRecoverySession,
+  requestPasswordReset,
+  updateCurrentUserPassword,
   validateAdminAccess,
   validateLoginInput,
+  validatePasswordRecoverySessionInput,
+  validatePasswordResetRequestInput,
+  validatePasswordUpdateInput,
   validateTechnicianAccess,
   validateTechnicianLoginInput,
 } from "./auth";
@@ -36,6 +42,72 @@ describe("auth domain", () => {
     expect(() =>
       validateTechnicianLoginInput({ email: "tech@example.com", password: "" }),
     ).toThrow("Password is required");
+  });
+
+  it("validates password reset requests", () => {
+    expect(
+      validatePasswordResetRequestInput({
+        email: " ADMIN@example.COM ",
+        redirectTo: "https://app.example.com/auth/update-password",
+      }),
+    ).toEqual({
+      email: "admin@example.com",
+      redirectTo: "https://app.example.com/auth/update-password",
+    });
+
+    expect(() =>
+      validatePasswordResetRequestInput({
+        email: "",
+        redirectTo: "https://app.example.com/auth/update-password",
+      }),
+    ).toThrow("Email is required");
+  });
+
+  it("validates password recovery session tokens", () => {
+    expect(
+      validatePasswordRecoverySessionInput({
+        accessToken: " token ",
+        refreshToken: " refresh ",
+      }),
+    ).toEqual({
+      accessToken: "token",
+      refreshToken: "refresh",
+    });
+
+    expect(() =>
+      validatePasswordRecoverySessionInput({
+        accessToken: "",
+        refreshToken: "refresh",
+      }),
+    ).toThrow("Recovery access token is required");
+  });
+
+  it("validates new passwords before update", () => {
+    expect(
+      validatePasswordUpdateInput({
+        password: "new-password",
+        confirmPassword: "new-password",
+      }),
+    ).toEqual({ password: "new-password" });
+
+    expect(() =>
+      validatePasswordUpdateInput({
+        password: "",
+        confirmPassword: "",
+      }),
+    ).toThrow("Password is required");
+    expect(() =>
+      validatePasswordUpdateInput({
+        password: "short",
+        confirmPassword: "short",
+      }),
+    ).toThrow("Password must be at least 8 characters");
+    expect(() =>
+      validatePasswordUpdateInput({
+        password: "new-password",
+        confirmPassword: "different-password",
+      }),
+    ).toThrow("Passwords do not match");
   });
 
   it("accepts admin and dispatcher profiles for admin web access", () => {
@@ -102,5 +174,58 @@ describe("auth domain", () => {
         },
       }),
     ).toThrow("Technician access is required");
+  });
+
+  it("requests password reset through the api client", async () => {
+    const resetPasswordForEmail = vi.fn().mockResolvedValue({ error: null });
+    const client = {
+      auth: { resetPasswordForEmail },
+    } as never;
+
+    await requestPasswordReset(client, {
+      email: " ADMIN@example.COM ",
+      redirectTo: "https://app.example.com/auth/update-password",
+    });
+
+    expect(resetPasswordForEmail).toHaveBeenCalledWith("admin@example.com", {
+      redirectTo: "https://app.example.com/auth/update-password",
+    });
+  });
+
+  it("establishes password recovery sessions through the api client", async () => {
+    const setSession = vi.fn().mockResolvedValue({
+      data: { session },
+      error: null,
+    });
+    const client = {
+      auth: { setSession },
+    } as never;
+
+    await establishPasswordRecoverySession(client, {
+      accessToken: " token ",
+      refreshToken: " refresh ",
+    });
+
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: "token",
+      refresh_token: "refresh",
+    });
+  });
+
+  it("updates the current user password through the api client", async () => {
+    const updateUser = vi.fn().mockResolvedValue({
+      data: { user: { id: "user-1" } },
+      error: null,
+    });
+    const client = {
+      auth: { updateUser },
+    } as never;
+
+    await updateCurrentUserPassword(client, {
+      password: "new-password",
+      confirmPassword: "new-password",
+    });
+
+    expect(updateUser).toHaveBeenCalledWith({ password: "new-password" });
   });
 });

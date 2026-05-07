@@ -64,6 +64,54 @@ describe("AdminAuthGate", () => {
     expect(screen.getByText("Portal content")).toBeInTheDocument();
   });
 
+  it("does not treat similarly-prefixed portal routes as public", () => {
+    usePathname.mockReturnValue("/portal-admin");
+
+    render(
+      <AdminAuthGate>
+        <div>Protected portal admin content</div>
+      </AdminAuthGate>,
+    );
+
+    expect(screen.getByText("Admin operations sign-in")).toBeInTheDocument();
+    expect(screen.queryByText("Protected portal admin content"))
+      .not.toBeInTheDocument();
+  });
+
+  it("leaves password reset routes outside admin auth", () => {
+    usePathname.mockReturnValue("/forgot-password");
+
+    const { rerender } = render(
+      <AdminAuthGate>
+        <div>Password reset content</div>
+      </AdminAuthGate>,
+    );
+
+    expect(screen.getByText("Password reset content")).toBeInTheDocument();
+
+    usePathname.mockReturnValue("/auth/update-password");
+    rerender(
+      <AdminAuthGate>
+        <div>Password reset content</div>
+      </AdminAuthGate>,
+    );
+
+    expect(screen.getByText("Password reset content")).toBeInTheDocument();
+  });
+
+  it("does not treat similarly-prefixed update-password routes as public", () => {
+    usePathname.mockReturnValue("/auth/update-password-extra");
+
+    render(
+      <AdminAuthGate>
+        <div>Protected content</div>
+      </AdminAuthGate>,
+    );
+
+    expect(screen.getByText("Admin operations sign-in")).toBeInTheDocument();
+    expect(screen.queryByText("Protected content")).not.toBeInTheDocument();
+  });
+
   it("shows a loading state while auth initializes", () => {
     authStatus = "loading";
 

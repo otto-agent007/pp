@@ -1,7 +1,10 @@
 import {
   getCurrentAuthRecord,
+  resetPasswordForEmailRecord,
+  setPasswordRecoverySessionRecord,
   signInWithPasswordRecord,
   signOutRecord,
+  updatePasswordRecord,
 } from "@pest-patrol/api-client";
 import type {
   AuthRecord,
@@ -15,6 +18,21 @@ export interface LoginInput {
 }
 
 export type TechnicianLoginInput = LoginInput;
+
+export interface PasswordResetRequestInput {
+  email: string;
+  redirectTo: string;
+}
+
+export interface PasswordRecoverySessionInput {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface PasswordUpdateInput {
+  password: string;
+  confirmPassword: string;
+}
 
 function requireNonEmpty(value: string, fieldName: string) {
   if (!value.trim()) {
@@ -34,6 +52,42 @@ export function validateLoginInput(input: LoginInput) {
 export const validateTechnicianLoginInput = validateLoginInput;
 
 export const validateAdminLoginInput = validateLoginInput;
+
+export function validatePasswordResetRequestInput(
+  input: PasswordResetRequestInput,
+) {
+  return {
+    email: requireNonEmpty(input.email, "Email").toLowerCase(),
+    redirectTo: requireNonEmpty(input.redirectTo, "Password reset redirect"),
+  };
+}
+
+export function validatePasswordRecoverySessionInput(
+  input: PasswordRecoverySessionInput,
+) {
+  return {
+    accessToken: requireNonEmpty(input.accessToken, "Recovery access token"),
+    refreshToken: requireNonEmpty(input.refreshToken, "Recovery refresh token"),
+  };
+}
+
+export function validatePasswordUpdateInput(input: PasswordUpdateInput) {
+  const password = requireNonEmpty(input.password, "Password");
+  const confirmPassword = requireNonEmpty(
+    input.confirmPassword,
+    "Password confirmation",
+  );
+
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
+
+  if (password !== confirmPassword) {
+    throw new Error("Passwords do not match");
+  }
+
+  return { password };
+}
 
 export function validateTechnicianAccess(record: TechnicianAuthRecord | null) {
   if (!record) {
@@ -95,4 +149,39 @@ export async function signOutTechnician(client: AuthSupabaseClient) {
 
 export async function signOutAdmin(client: AuthSupabaseClient) {
   await signOutRecord(client);
+}
+
+export async function requestPasswordReset(
+  client: AuthSupabaseClient,
+  input: PasswordResetRequestInput,
+) {
+  const normalized = validatePasswordResetRequestInput(input);
+
+  await resetPasswordForEmailRecord(
+    client,
+    normalized.email,
+    normalized.redirectTo,
+  );
+}
+
+export async function establishPasswordRecoverySession(
+  client: AuthSupabaseClient,
+  input: PasswordRecoverySessionInput,
+) {
+  const normalized = validatePasswordRecoverySessionInput(input);
+
+  await setPasswordRecoverySessionRecord(
+    client,
+    normalized.accessToken,
+    normalized.refreshToken,
+  );
+}
+
+export async function updateCurrentUserPassword(
+  client: AuthSupabaseClient,
+  input: PasswordUpdateInput,
+) {
+  const normalized = validatePasswordUpdateInput(input);
+
+  await updatePasswordRecord(client, normalized.password);
 }

@@ -75,3 +75,51 @@ export async function signOutRecord(client: AuthSupabaseClient) {
     throw error;
   }
 }
+
+export async function resetPasswordForEmailRecord(
+  client: AuthSupabaseClient,
+  email: string,
+  redirectTo: string,
+) {
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function setPasswordRecoverySessionRecord(
+  client: AuthSupabaseClient,
+  accessToken: string,
+  refreshToken: string,
+) {
+  const { data, error } = await client.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data.session) {
+    throw new Error("Unable to start password recovery session");
+  }
+
+  return data.session;
+}
+
+export async function updatePasswordRecord(
+  client: AuthSupabaseClient,
+  password: string,
+) {
+  const { data, error } = await client.auth.updateUser({ password });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.user;
+}
