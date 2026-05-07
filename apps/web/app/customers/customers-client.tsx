@@ -8,6 +8,7 @@ import type {
   CustomerStatus,
   PropertyType,
 } from "@pest-patrol/types";
+import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
 import {
@@ -241,6 +242,22 @@ export function CustomersClient() {
                 New
               </button>
             ) : null}
+          </div>
+
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+            <p className="text-sm font-semibold text-amber-800">
+              Customer setup demo tip
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Save the customer with one active service location, then schedule
+              the first job.
+            </p>
+            <Link
+              className="mt-3 inline-flex min-h-10 items-center rounded-md border border-amber-300 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+              href="/jobs"
+            >
+              Schedule job
+            </Link>
           </div>
 
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">

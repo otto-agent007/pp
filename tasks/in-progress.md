@@ -1,16 +1,16 @@
 # In Progress
 
-## Task: Demo Data Entry Helpers V1
+## Task: Production Smoke Checklist V1
 
 Goal:
-Add small admin UI affordances that make demo data entry faster without seeding fake production data.
+Add a concise production smoke checklist so the live Supabase/Vercel app can be validated when admin login credentials are ready.
 
 Steps:
-- [ ] Add concise next-action guidance on customer data entry
-- [ ] Add concise next-action guidance on job scheduling
-- [ ] Link helpers to the next workflow surface
-- [ ] Keep helpers informational only; do not auto-create records
-- [ ] Add focused customer and job UI tests
+- [ ] Add a shared smoke checklist contract
+- [ ] Cover auth, customer/location, job, portal, scheduler, and billing checks
+- [ ] Keep the checklist documentation-only; do not run live smoke tests automatically
+- [ ] Surface the checklist in docs/readiness tracking
+- [ ] Add focused domain/docs tests
 
 Status:
-Planned after Customer/Ops Demo Readiness V1.
+Planned after Demo Data Entry Helpers V1.

@@ -475,3 +475,11 @@
 - Kept the demo path explicit about adding only records admins want to keep
 - Added focused domain and home page coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Demo Data Entry Helpers V1
+
+- Added customer setup guidance that points admins from customer/location entry to job scheduling
+- Added job scheduling guidance that links back to customer setup and forward to dispatch review
+- Kept helper panels informational only with no automatic record creation
+- Added focused customer and job UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`

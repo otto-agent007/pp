@@ -1,12 +1,12 @@
 # Implementation Plan
 
-## Current Priority: Demo Data Entry Helpers V1
+## Current Priority: Production Smoke Checklist V1
 
-1. Add concise customer setup guidance.
-2. Add concise job scheduling guidance.
-3. Link helpers to the next workflow surface.
-4. Keep helpers informational only; do not auto-create records.
-5. Add focused customer and job UI tests.
+1. Add a shared smoke checklist contract.
+2. Cover auth, customer/location, job, portal, scheduler, and billing checks.
+3. Keep the checklist documentation-only; do not run live smoke tests automatically.
+4. Surface the checklist in readiness tracking.
+5. Add focused domain/docs tests.
 6. Update `tasks/in-progress.md` after each completed slice.
 
 ## Guardrails
