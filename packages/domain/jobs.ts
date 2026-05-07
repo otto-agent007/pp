@@ -4,7 +4,7 @@ import {
   listAssignedTechnicianJobRecords,
   listCustomerPortalJobRecords,
   listJobRecords,
-  listTechnicianProfiles,
+  listTechnicianProfileRecords,
   updateJobRecord,
 } from "@pest-patrol/api-client";
 import type { AuthSupabaseClient } from "@pest-patrol/api-client";
@@ -258,5 +258,5 @@ export async function cancelJob(id: string) {
 }
 
 export async function listTechnicians() {
-  return listTechnicianProfiles();
+  return listTechnicianProfileRecords("active");
 }

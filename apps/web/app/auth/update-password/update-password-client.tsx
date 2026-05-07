@@ -4,19 +4,19 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAdminAuth } from "../../admin-auth-context";
 
-type RecoveryLinkResult =
-  | { accessToken: string; refreshToken: string }
+type PasswordSetupLinkResult =
+  | { accessToken: string; refreshToken: string; type: "invite" | "recovery" }
   | { error: string };
 
 function scrubAuthHash() {
   window.history.replaceState(null, "", window.location.pathname);
 }
 
-function parseRecoveryLink(hash: string): RecoveryLinkResult {
+function parsePasswordSetupLink(hash: string): PasswordSetupLinkResult {
   if (!hash) {
     return {
       error:
-        "This password reset link is missing or expired. Request a new password reset link.",
+        "This password setup link is missing or expired. Request a new password reset link.",
     };
   }
 
@@ -27,10 +27,12 @@ function parseRecoveryLink(hash: string): RecoveryLinkResult {
     return { error: authError };
   }
 
-  if (params.get("type") !== "recovery") {
+  const linkType = params.get("type");
+
+  if (linkType !== "recovery" && linkType !== "invite") {
     return {
       error:
-        "This password reset link is invalid. Request a new password reset link.",
+        "This password setup link is invalid. Request a new password reset link.",
     };
   }
 
@@ -40,11 +42,11 @@ function parseRecoveryLink(hash: string): RecoveryLinkResult {
   if (!accessToken || !refreshToken) {
     return {
       error:
-        "This password reset link is missing or expired. Request a new password reset link.",
+        "This password setup link is missing or expired. Request a new password reset link.",
     };
   }
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, type: linkType };
 }
 
 function validatePasswordForm(password: string, confirmPassword: string) {
@@ -72,14 +74,14 @@ export function UpdatePasswordClient() {
   const [submitting, setSubmitting] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [linkChecked, setLinkChecked] = useState(false);
-  const [recoverySessionReady, setRecoverySessionReady] = useState(false);
+  const [passwordSessionReady, setPasswordSessionReady] = useState(false);
 
   useEffect(() => {
     let active = true;
 
-    async function startRecoverySession() {
+    async function startPasswordSession() {
       const hash = window.location.hash;
-      const parsed = parseRecoveryLink(hash);
+      const parsed = parsePasswordSetupLink(hash);
 
       if (hash) {
         scrubAuthHash();
@@ -101,7 +103,7 @@ export function UpdatePasswordClient() {
           return;
         }
 
-        setRecoverySessionReady(true);
+        setPasswordSessionReady(true);
         setLinkError(null);
       } catch (sessionError) {
         if (!active) {
@@ -120,7 +122,7 @@ export function UpdatePasswordClient() {
       }
     }
 
-    void startRecoverySession();
+    void startPasswordSession();
 
     return () => {
       active = false;
@@ -173,11 +175,11 @@ export function UpdatePasswordClient() {
               Checking password reset link...
             </p>
           </div>
-        ) : linkError || !recoverySessionReady ? (
+        ) : linkError || !passwordSessionReady ? (
           <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-red-700">
               {linkError ??
-                "This password reset link is missing or expired. Request a new password reset link."}
+                "This password setup link is missing or expired. Request a new password reset link."}
             </p>
             <Link
               className="mt-5 block text-sm font-semibold text-primary transition hover:text-primary/80"

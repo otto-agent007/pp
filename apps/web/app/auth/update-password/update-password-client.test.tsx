@@ -30,7 +30,7 @@ describe("UpdatePasswordClient", () => {
 
     expect(
       screen.getByText(
-        "This password reset link is invalid. Request a new password reset link.",
+        "This password setup link is invalid. Request a new password reset link.",
       ),
     ).toBeInTheDocument();
     expect(establishPasswordRecoverySession).not.toHaveBeenCalled();
@@ -42,7 +42,7 @@ describe("UpdatePasswordClient", () => {
 
     expect(
       screen.getByText(
-        "This password reset link is missing or expired. Request a new password reset link.",
+        "This password setup link is missing or expired. Request a new password reset link.",
       ),
     ).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe("UpdatePasswordClient", () => {
 
     expect(
       screen.getByText(
-        "This password reset link is missing or expired. Request a new password reset link.",
+        "This password setup link is missing or expired. Request a new password reset link.",
       ),
     ).toBeInTheDocument();
     expect(establishPasswordRecoverySession).not.toHaveBeenCalled();
@@ -83,6 +83,21 @@ describe("UpdatePasswordClient", () => {
 
     expect(await screen.findByLabelText("New password")).toBeInTheDocument();
     expect(screen.getByLabelText("Confirm password")).toBeInTheDocument();
+    expect(establishPasswordRecoverySession).toHaveBeenCalledWith(
+      "token",
+      "refresh",
+    );
+    expect(window.location.hash).toBe("");
+  });
+
+  it("accepts technician invite links before showing the update form", async () => {
+    window.location.hash =
+      "#type=invite&access_token=token&refresh_token=refresh";
+    establishPasswordRecoverySession.mockResolvedValue(undefined);
+
+    render(<UpdatePasswordClient />);
+
+    expect(await screen.findByLabelText("New password")).toBeInTheDocument();
     expect(establishPasswordRecoverySession).toHaveBeenCalledWith(
       "token",
       "refresh",

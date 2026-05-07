@@ -27,6 +27,9 @@ const now = "2026-05-05T00:00:00Z";
 const technician = {
   id: "technician-1",
   role: "technician",
+  email: "testnician@example.com",
+  display_name: "Testnician",
+  status: "active",
   created_at: now,
   updated_at: now,
 } as const;
@@ -121,6 +124,12 @@ describe("DispatchClient", () => {
 
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
+  });
+
+  it("labels technician filters by display name", () => {
+    render(<DispatchClient />);
+
+    expect(screen.getAllByRole("option", { name: "Testnician" }).length).toBeGreaterThan(0);
   });
 
   it("navigates weeks", async () => {

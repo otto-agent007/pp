@@ -122,3 +122,5 @@
 - Stripe readiness UI should separate optional payment demos from core ops demos so missing Stripe secrets do not block customer, job, closeout, or portal walkthroughs
 - Password recovery routes must be public auth routes, and Supabase reset links should be generated from the app so `redirectTo` always targets `/auth/update-password`
 - Supabase recovery links and magic-link URLs contain bearer tokens and should be treated as exposed once pasted into chat or docs
+- Technician invite links use the same password setup surface as recovery links, but should accept only `invite` and `recovery` token types so magic links still cannot start sessions accidentally
+- Technician creation belongs behind a server route with the Supabase service-role key; browser code should request invites, not call Auth admin APIs directly

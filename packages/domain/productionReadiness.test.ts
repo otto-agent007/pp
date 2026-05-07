@@ -18,6 +18,13 @@ describe("production readiness domain", () => {
         success_criteria: "Active customer saves with at least one active location.",
       },
       {
+        id: "technician",
+        label: "Invite technician",
+        route: "/technicians",
+        success_criteria:
+          "Technician invite sends and the technician appears by display name.",
+      },
+      {
         id: "job",
         label: "Create job",
         route: "/jobs",

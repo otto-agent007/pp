@@ -2,6 +2,7 @@
 
 import {
   buildDispatchWeek,
+  getTechnicianLabel,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
 } from "@pest-patrol/domain";
@@ -48,10 +49,6 @@ function formatTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
-}
-
-function technicianLabel(id: string) {
-  return `Technician ${id.slice(0, 8)}`;
 }
 
 export function DispatchClient() {
@@ -153,7 +150,7 @@ export function DispatchClient() {
               <option value="unassigned">Unassigned</option>
               {(techniciansQuery.data ?? []).map((item) => (
                 <option key={item.id} value={item.id}>
-                  {technicianLabel(item.id)}
+                  {getTechnicianLabel(item)}
                 </option>
               ))}
             </select>
@@ -238,7 +235,7 @@ export function DispatchClient() {
                         <option value="">Unassigned</option>
                         {(techniciansQuery.data ?? []).map((item) => (
                           <option key={item.id} value={item.id}>
-                            {technicianLabel(item.id)}
+                            {getTechnicianLabel(item)}
                           </option>
                         ))}
                       </select>

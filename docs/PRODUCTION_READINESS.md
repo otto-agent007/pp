@@ -40,8 +40,8 @@ on conflict (id) do update
 set role = 'admin', updated_at = now();
 ```
 
-6. Create dispatcher and technician users in Supabase Auth as needed.
-7. Set matching `profiles.role` values for each user.
+6. Create dispatcher users in Supabase Auth as needed and set matching `profiles.role` values.
+7. Invite technician users from `/technicians` so Supabase sends the password setup email and the app stores technician profile metadata.
 8. Confirm RLS is enabled on all migrated tables before production traffic.
 
 ## Supabase Auth Redirects
@@ -84,6 +84,7 @@ created during the check.
 | --- | --- | --- |
 | Admin sign-in | `/` | Admin can sign in and load the protected admin shell. |
 | Create customer and location | `/customers` | Active customer saves with at least one active location. |
+| Invite technician | `/technicians` | Technician invite sends and the technician appears by display name. |
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
 | Generate portal access | `/customers` | Portal link opens token-protected customer closeout data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |

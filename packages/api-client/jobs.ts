@@ -3,11 +3,11 @@ import type {
   Job,
   JobInput,
   JobStatus,
-  UserProfile,
 } from "@pest-patrol/types";
 import type { AuthSupabaseClient } from "./auth";
 
 import { supabase } from "./supabase";
+import { listTechnicianProfileRecords } from "./technicians";
 
 type JobsClient = typeof supabase | AuthSupabaseClient;
 type JobRow = Job;
@@ -148,15 +148,5 @@ export async function cancelJobRecord(id: string) {
 }
 
 export async function listTechnicianProfiles() {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "technician")
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []) as UserProfile[];
+  return listTechnicianProfileRecords("active");
 }

@@ -6,14 +6,13 @@ import {
   changeJobStatus,
   createJob,
   listJobs,
-  listTechnicians,
   updateJob,
 } from "@pest-patrol/domain";
 import type { Job, JobInput, JobStatus } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+export { techniciansQueryKey, useTechnicians } from "./useTechnicians";
 
 export const jobsQueryKey = ["jobs"] as const;
-export const techniciansQueryKey = ["technicians"] as const;
 
 function makeOptimisticJob(input: JobInput): Job {
   const now = new Date().toISOString();
@@ -36,13 +35,6 @@ export function useJobs() {
   return useQuery({
     queryKey: jobsQueryKey,
     queryFn: listJobs,
-  });
-}
-
-export function useTechnicians() {
-  return useQuery({
-    queryKey: techniciansQueryKey,
-    queryFn: listTechnicians,
   });
 }
 

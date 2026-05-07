@@ -9,6 +9,7 @@ const adminRoutes = [
   { href: "/customers", label: "Customers" },
   { href: "/jobs", label: "Jobs" },
   { href: "/dispatch", label: "Dispatch" },
+  { href: "/technicians", label: "Technicians" },
   { href: "/inventory", label: "Inventory" },
   { href: "/closeouts", label: "Closeouts" },
   { href: "/payments", label: "Payments" },
