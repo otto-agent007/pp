@@ -349,6 +349,12 @@ describe("AutomationClient", () => {
     expect(screen.getByText("Notification generation")).toBeInTheDocument();
     expect(screen.getByText("Provider: Webhook configured")).toBeInTheDocument();
     expect(screen.getByText("Webhook secret configured")).toBeInTheDocument();
+    expect(screen.getByText("Webhook delivery is active")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Uses server-only NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Follow up with Apex Homes").length).toBeGreaterThan(
       0,
     );
@@ -362,6 +368,27 @@ describe("AutomationClient", () => {
     await user.type(screen.getByLabelText("Search notifications"), "missing");
 
     expect(screen.getByText("No notifications found")).toBeInTheDocument();
+  });
+
+  it("shows manual fallback setup guidance without exposing provider secrets", () => {
+    vi.mocked(useNotificationProviderStatus).mockReturnValue({
+      data: {
+        provider: "manual",
+        webhook_configured: false,
+        webhook_secret_configured: false,
+      },
+      isLoading: false,
+    } as never);
+    render(<AutomationClient />);
+
+    expect(screen.getByText("Provider: Manual fallback")).toBeInTheDocument();
+    expect(screen.getByText("Manual fallback is active")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/https:\/\/provider.example/i)).not.toBeInTheDocument();
   });
 
   it("filters notification delivery triage states", async () => {

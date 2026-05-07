@@ -876,6 +876,20 @@ export function AutomationClient() {
                       : "not configured"}
                   </p>
                 ) : null}
+                {providerStatusQuery.isLoading ? null : (
+                  <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-sm font-semibold text-neutralDark">
+                      {providerStatus?.provider === "webhook"
+                        ? "Webhook delivery is active"
+                        : "Manual fallback is active"}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600">
+                      {providerStatus?.provider === "webhook"
+                        ? "Uses server-only NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET."
+                        : "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery."}
+                    </p>
+                  </div>
+                )}
                 {sendBulkNotifications.data ? (
                   <p className="mt-2 text-sm font-semibold text-gray-700">
                     Bulk delivery sent {sendBulkNotifications.data.sent_count} and

@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Notification Webhook Provider Setup V1:
+Current priority is Stripe Test Mode Readiness V1:
 
-- clarify webhook versus manual fallback delivery state
-- name the server-only env vars needed for webhook delivery
-- keep webhook URL and secret values hidden from the browser
-- preserve current notification delivery behavior
+- clarify payment test-mode setup on `/payments`
+- name server-only Stripe env vars without exposing values
+- keep Stripe optional for non-payment demos
+- preserve current invoice and payment-link behavior
