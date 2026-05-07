@@ -1,18 +1,19 @@
 # In Progress
 
-## Task: Supabase Security Hardening V1
+## Task: Live Admin Smoke Test V1
 
 Goal:
-Clear high-impact Supabase security advisor warnings and remove temporary diagnostics before continuing production smoke testing.
+Confirm the live Vercel app works end-to-end against the production Supabase project after the technician and security hardening releases.
 
 Steps:
-- [x] Confirm current Supabase security and performance advisor warnings
-- [x] Add a hardening migration for internal helper functions, RLS policy auth calls, and missing FK indexes
-- [x] Remove the temporary `/api/diagnostics/auth` endpoint
-- [x] Run full repository verification
-- [ ] Open and merge a focused hardening PR
-- [ ] Apply the migration to production only after explicit approval
-- [ ] Rerun Supabase advisors and record remaining dashboard-only actions
+- [x] Merge Supabase Security Hardening V1
+- [x] Apply `20260507220000_supabase_security_hardening_v1.sql` to production after explicit approval
+- [x] Confirm local and remote Supabase migration history are aligned
+- [x] Confirm high-risk internal helper functions moved out of public RPC reach
+- [ ] Rerun Supabase security and performance advisors in the dashboard
+- [ ] Enable leaked password protection in Supabase Auth settings
+- [ ] Confirm latest Vercel `main` deployment is live
+- [ ] Run live smoke checklist for admin sign-in, technicians, jobs, portal, automation, and payments
 
 Status:
-Implementation complete locally. PR and production migration application remain pending. Leaked password protection remains a private Supabase dashboard setting.
+Security hardening is merged and applied to production. Continue with dashboard-only Supabase checks and live admin smoke testing.

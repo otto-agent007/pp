@@ -63,6 +63,12 @@ Password recovery links must return to the deployed app, not localhost.
 3. Rerun Supabase security and performance advisors after every production migration.
 4. Treat unused-index recommendations as advisory until the production database has enough real traffic to judge query patterns.
 
+Latest hardening status:
+
+- `20260507220000_supabase_security_hardening_v1.sql` was applied to production on May 7, 2026 after explicit approval.
+- Local and remote Supabase migration history were aligned after repairing a duplicate technicians migration timestamp.
+- Dashboard-only follow-up remains: rerun Supabase advisors and enable leaked password protection.
+
 ## Vercel Setup
 
 1. Import the GitHub repository into Vercel.
