@@ -116,3 +116,4 @@
 - Retry policy should be a domain helper reused by filters and bulk delivery so visual triage cannot drift from send eligibility
 - Manual-review thresholds should not change provider routes; they are admin workflow guidance until a dedicated retry scheduler exists
 - Demo readiness should guide operators through real live-data paths instead of seeding fake production records by default
+- Data-entry helpers should be plain guidance and links so demos stay fast without hidden writes or sample-data side effects

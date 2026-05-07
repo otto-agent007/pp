@@ -25,6 +25,21 @@ vi.mock("../../hooks/useJobs", () => ({
   useUpdateJob: vi.fn(),
 }));
 
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
 const now = "2026-05-05T00:00:00Z";
 const activeCustomer = {
   id: "customer-1",
@@ -128,6 +143,25 @@ describe("JobsClient", () => {
     await user.type(screen.getByLabelText("Search jobs"), "missing");
 
     expect(screen.getByText("No jobs found")).toBeInTheDocument();
+  });
+
+  it("shows demo scheduling helpers without creating records", () => {
+    render(<JobsClient />);
+
+    expect(screen.getByText("Job scheduling demo tip")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Pick the customer, confirm the active location, then review the dispatch board.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add customer" })).toHaveAttribute(
+      "href",
+      "/customers",
+    );
+    expect(screen.getByRole("link", { name: "Review dispatch" })).toHaveAttribute(
+      "href",
+      "/dispatch",
+    );
   });
 
   it("filters by status and date", async () => {

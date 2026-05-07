@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Demo Data Entry Helpers V1:
+Current priority is Production Smoke Checklist V1:
 
-- add small helper links for customer and job setup
-- keep helpers informational rather than auto-seeding records
-- move operators from customer setup into job scheduling faster
-- preserve live production data boundaries
+- document the exact live app smoke path
+- cover auth, customer/location, job, portal, scheduler, and billing checks
+- keep smoke tests manual until admin credentials are ready
+- avoid seeding fake production data by default

@@ -24,6 +24,21 @@ vi.mock("./customer-portal-links", () => ({
   ),
 }));
 
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
 const activeCustomer = {
   id: "customer-1",
   name: "Apex Homes",
@@ -99,6 +114,23 @@ describe("CustomersClient", () => {
     render(<CustomersClient />);
 
     expect(screen.getByText("Portal links for customer-1")).toBeInTheDocument();
+  });
+
+  it("shows demo data entry guidance for the next workflow step", () => {
+    render(<CustomersClient />);
+
+    expect(
+      screen.getByText("Customer setup demo tip"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Save the customer with one active service location, then schedule the first job.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Schedule job" })).toHaveAttribute(
+      "href",
+      "/jobs",
+    );
   });
 
   it("filters archived customers", async () => {
