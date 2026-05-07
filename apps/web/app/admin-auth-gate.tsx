@@ -9,7 +9,8 @@ function isPublicRoute(pathname: string) {
     pathname === "/portal" ||
     pathname.startsWith("/portal/") ||
     pathname === "/forgot-password" ||
-    pathname === "/auth/update-password"
+    pathname === "/auth/update-password" ||
+    pathname === "/technician-login"
   );
 }
 

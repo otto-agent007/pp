@@ -5,10 +5,11 @@
 1. Reset or confirm the first admin password privately.
 2. Sign in to the production admin shell.
 3. Create a real customer with one active service location.
-4. Create a scheduled job against that customer/location.
-5. Generate portal access and verify token-protected portal loading.
-6. Run the scheduler smoke path and confirm `/payments` setup guidance is visible.
-7. Record smoke-test results without storing credentials or secrets.
+4. Invite a technician from `/technicians` and confirm the invite uses `/technician-login`.
+5. Create a scheduled job against that customer/location and assigned technician.
+6. Generate portal access and verify token-protected portal loading.
+7. Run the scheduler smoke path and confirm `/payments` setup guidance is visible.
+8. Record smoke-test results without storing credentials or secrets.
 
 ## Guardrails
 

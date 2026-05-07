@@ -50,9 +50,11 @@ Password recovery links must return to the deployed app, not localhost.
 
 1. Set Supabase Auth Site URL to the production Pest Patrol OS domain.
 2. Add `https://<production-domain>/auth/update-password` to the allowed redirect URLs.
-3. Keep `http://localhost:3000/auth/update-password` allowed for local development only.
-4. Request password resets from `/forgot-password` so Supabase sends a recovery link with the app's `/auth/update-password` redirect.
-5. Treat any pasted recovery or magic-link URL as exposed and request a fresh reset link.
+3. Add `https://<production-domain>/technician-login` to the allowed redirect URLs so technician invites land on the technician setup page.
+4. Keep `http://localhost:3000/auth/update-password` and `http://localhost:3000/technician-login` allowed for local development only.
+5. Request password resets from `/forgot-password` so Supabase sends a recovery link with the app's `/auth/update-password` redirect.
+6. Invite technicians from `/technicians` so Supabase sends an invite link with the app's `/technician-login` redirect.
+7. Treat any pasted recovery, invite, or magic-link URL as exposed and request a fresh link.
 
 ## Vercel Setup
 
@@ -85,6 +87,7 @@ created during the check.
 | Admin sign-in | `/` | Admin can sign in and load the protected admin shell. |
 | Create customer and location | `/customers` | Active customer saves with at least one active location. |
 | Invite technician | `/technicians` | Technician invite sends and the technician appears by display name. |
+| Technician password setup | `/technician-login` | Invite link lets the technician set a password without entering the admin shell. |
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
 | Generate portal access | `/customers` | Portal link opens token-protected customer closeout data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
