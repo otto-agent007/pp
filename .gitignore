@@ -12,3 +12,5 @@ coverage
 *.tsbuildinfo
 .expo
 .DS_Store
+
+.vercel
