@@ -1,19 +1,18 @@
 # In Progress
 
-## Task: Live Admin Smoke Test V1
+## Task: Supabase Security Hardening V1
 
 Goal:
-Run the deferred production smoke checklist once admin credentials are ready.
+Clear high-impact Supabase security advisor warnings and remove temporary diagnostics before continuing production smoke testing.
 
 Steps:
-- [x] Reset or confirm the first admin password privately
-- [x] Sign in to the production admin shell
-- [x] Create a real customer with one active service location
-- [ ] Invite a technician from `/technicians` after the `/technician-login` invite redirect is deployed
-- [ ] Create a scheduled job against that customer/location and assigned technician
-- [ ] Generate portal access and verify token-protected portal loading
-- [ ] Run the scheduler smoke path and confirm `/payments` setup guidance is visible
-- [ ] Record smoke-test results without storing credentials or secrets
+- [x] Confirm current Supabase security and performance advisor warnings
+- [x] Add a hardening migration for internal helper functions, RLS policy auth calls, and missing FK indexes
+- [x] Remove the temporary `/api/diagnostics/auth` endpoint
+- [x] Run full repository verification
+- [ ] Open and merge a focused hardening PR
+- [ ] Apply the migration to production only after explicit approval
+- [ ] Rerun Supabase advisors and record remaining dashboard-only actions
 
 Status:
-Technicians Admin V1 is merged, migrated, and deployment-ready. Continue the smoke path after the technician invite redirect fix is deployed.
+Implementation complete locally. PR and production migration application remain pending. Leaked password protection remains a private Supabase dashboard setting.
