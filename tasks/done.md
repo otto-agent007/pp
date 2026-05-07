@@ -456,3 +456,13 @@
 - Kept attempt summary separate from delivery lifecycle and provider response metadata
 - Added focused domain and admin UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Notification Delivery Retry Policy V1
+
+- Added a domain helper that classifies retryable, manual-review, and non-applicable notification delivery states
+- Treated pending `not_sent` reminders and failed reminders below three attempts as retryable
+- Treated failed reminders at three or more attempts as manual review
+- Kept bulk delivery and retryable filtering aligned with the same domain policy
+- Displayed retry policy state and manual-review counts in `/automation`
+- Added focused domain and admin UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`

@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Notification Delivery Retry Policy V1:
+Current priority is Customer/Ops Demo Readiness V1:
 
-- classify retryable versus manual-review delivery failures
-- show retry state on automation notification cards
-- keep provider calls and scheduler behavior unchanged
-- keep provider secrets behind server routes
+- prepare a concise customer-to-closeout walkthrough
+- identify small UI gaps that would slow an ops demo
+- defer fake production seed data unless explicitly requested
+- keep Stripe and notification provider integrations optional for now

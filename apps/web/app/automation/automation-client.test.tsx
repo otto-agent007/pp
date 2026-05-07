@@ -170,6 +170,14 @@ const failedNotification = {
   delivery_status: "failed",
   last_delivery_error: "Provider timeout",
 } as const;
+const manualReviewNotification = {
+  ...notification,
+  id: "notification-manual-review",
+  title: "Manual review reminder",
+  delivery_attempts: 3,
+  delivery_status: "failed",
+  last_delivery_error: "Provider timeout",
+} as const;
 const sentNotification = {
   ...notification,
   id: "notification-sent",
@@ -359,18 +367,26 @@ describe("AutomationClient", () => {
   it("filters notification delivery triage states", async () => {
     const user = userEvent.setup();
     vi.mocked(useNotificationEvents).mockReturnValue({
-      data: [notification, failedNotification, sentNotification],
+      data: [
+        notification,
+        failedNotification,
+        manualReviewNotification,
+        sentNotification,
+      ],
       isLoading: false,
     } as never);
     render(<AutomationClient />);
 
-    expect(screen.getByText("Failed (1)")).toBeInTheDocument();
+    expect(screen.getByText("Failed (2)")).toBeInTheDocument();
     expect(screen.getByText("Retryable (2)")).toBeInTheDocument();
+    expect(screen.getByText("Manual review 1")).toBeInTheDocument();
     expect(screen.getByText("Not sent 1")).toBeInTheDocument();
     expect(screen.getByText("Sent 1")).toBeInTheDocument();
     expect(screen.getByText("Reachable 0")).toBeInTheDocument();
-    expect(screen.getByText("Missing contact 3")).toBeInTheDocument();
-    expect(screen.getByText("Attempts 1")).toBeInTheDocument();
+    expect(screen.getByText("Missing contact 4")).toBeInTheDocument();
+    expect(screen.getByText("Attempts 4")).toBeInTheDocument();
+    expect(screen.getByText("Manual review reminder")).toBeInTheDocument();
+    expect(screen.getByText("Manual review")).toBeInTheDocument();
     expect(
       screen.getByText("Provider message: provider-message-1"),
     ).toBeInTheDocument();
@@ -384,6 +400,7 @@ describe("AutomationClient", () => {
     );
 
     expect(screen.getByText("Failed reminder")).toBeInTheDocument();
+    expect(screen.getByText("Manual review reminder")).toBeInTheDocument();
     expect(screen.queryByText("Sent reminder")).not.toBeInTheDocument();
     expect(screen.queryByText("Call Apex")).not.toBeInTheDocument();
 
@@ -391,6 +408,9 @@ describe("AutomationClient", () => {
 
     expect(screen.getByText("Failed reminder")).toBeInTheDocument();
     expect(screen.getByText("Call Apex")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Manual review reminder"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Sent reminder")).not.toBeInTheDocument();
   });
 

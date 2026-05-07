@@ -1,15 +1,13 @@
 # Implementation Plan
 
-## Current Priority: Notification Delivery Retry Policy V1
+## Current Priority: Customer/Ops Demo Readiness V1
 
-1. Add a domain helper that classifies notification retry state.
-2. Treat `not_sent` and low-attempt `failed` reminders as retryable.
-3. Treat over-attempt failed reminders as manual review.
-4. Show retry state on `/automation` notification cards.
-5. Keep provider calls and scheduler behavior unchanged.
-6. Add focused domain and UI tests.
-7. Keep campaigns, background delivery workers, and provider-specific SDKs out of this slice.
-8. Update `tasks/in-progress.md` after each completed slice.
+1. Define the smallest customer-to-closeout demo workflow.
+2. Identify missing UI affordances that would slow an ops demo.
+3. Keep fake production seed data out unless explicitly requested.
+4. Leave Stripe and notification provider integration optional until needed.
+5. Run production smoke testing when admin login credentials are ready.
+6. Update `tasks/in-progress.md` after each completed slice.
 
 ## Guardrails
 
