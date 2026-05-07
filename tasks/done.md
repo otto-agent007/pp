@@ -466,3 +466,12 @@
 - Displayed retry policy state and manual-review counts in `/automation`
 - Added focused domain and admin UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Customer/Ops Demo Readiness V1
+
+- Added a shared demo workflow helper for the customer-to-closeout walkthrough
+- Rendered the live-data demo workflow on the admin home page
+- Linked the walkthrough through customers, jobs, dispatch, closeouts, and billing/portal follow-up
+- Kept the demo path explicit about adding only records admins want to keep
+- Added focused domain and home page coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`

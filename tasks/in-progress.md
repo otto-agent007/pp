@@ -1,16 +1,16 @@
 # In Progress
 
-## Task: Customer/Ops Demo Readiness V1
+## Task: Demo Data Entry Helpers V1
 
 Goal:
-Prepare a small, guided production demo workflow now that the core admin, mobile, portal, payments, and automation surfaces exist.
+Add small admin UI affordances that make demo data entry faster without seeding fake production data.
 
 Steps:
-- [ ] Define the demo scenario and sample workflow
-- [ ] Identify any missing UI affordances for a clean customer-to-closeout walkthrough
-- [ ] Keep fake production seed data out unless explicitly requested
-- [ ] Leave Stripe and notification provider integration optional
-- [ ] Run production smoke testing when admin login credentials are ready
+- [ ] Add concise next-action guidance on customer data entry
+- [ ] Add concise next-action guidance on job scheduling
+- [ ] Link helpers to the next workflow surface
+- [ ] Keep helpers informational only; do not auto-create records
+- [ ] Add focused customer and job UI tests
 
 Status:
-Planned after Notification Delivery Retry Policy V1.
+Planned after Customer/Ops Demo Readiness V1.

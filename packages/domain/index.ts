@@ -6,6 +6,9 @@ export function requireNonEmpty(value: string, fieldName: string) {
   return value.trim();
 }
 
+export { getDemoWorkflowSteps } from "./demoReadiness";
+export type { DemoWorkflowStep } from "./demoReadiness";
+
 export {
   createAutomationRule,
   createNotificationEvent,

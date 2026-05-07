@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Customer/Ops Demo Readiness V1:
+Current priority is Demo Data Entry Helpers V1:
 
-- prepare a concise customer-to-closeout walkthrough
-- identify small UI gaps that would slow an ops demo
-- defer fake production seed data unless explicitly requested
-- keep Stripe and notification provider integrations optional for now
+- add small helper links for customer and job setup
+- keep helpers informational rather than auto-seeding records
+- move operators from customer setup into job scheduling faster
+- preserve live production data boundaries
