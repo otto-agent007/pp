@@ -113,3 +113,5 @@
 - Recipient readiness filtering should compose after lifecycle, delivery, and search filtering so admins can narrow a deliberate working set
 - Delivery attempt timestamps should be recorded at the route boundary when the server claims the send, not after the provider returns
 - Attempt summaries should stay separate from provider message ids because retries and provider acknowledgements answer different admin questions
+- Retry policy should be a domain helper reused by filters and bulk delivery so visual triage cannot drift from send eligibility
+- Manual-review thresholds should not change provider routes; they are admin workflow guidance until a dedicated retry scheduler exists

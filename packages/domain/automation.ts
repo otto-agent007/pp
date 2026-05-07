@@ -71,10 +71,16 @@ export interface AutomationSummary {
 
 export interface NotificationDeliveryTriageSummary {
   failed: number;
+  manual_review: number;
   not_sent: number;
   retryable: number;
   sent: number;
 }
+
+export type NotificationRetryPolicyState =
+  | "manual_review"
+  | "not_applicable"
+  | "retryable";
 
 export interface NotificationDeliveryAttemptSummary {
   attempted: number;
@@ -375,7 +381,7 @@ export function filterNotificationEvents(
       }
 
       if (deliveryStatus === "retryable") {
-        return getPendingDeliverableNotifications([notification]).length === 1;
+        return getNotificationRetryPolicyState(notification) === "retryable";
       }
 
       return notification.delivery_status === deliveryStatus;
@@ -392,6 +398,10 @@ export function getNotificationDeliveryTriageSummary(
   return {
     failed: notifications.filter(
       (notification) => notification.delivery_status === "failed",
+    ).length,
+    manual_review: notifications.filter(
+      (notification) =>
+        getNotificationRetryPolicyState(notification) === "manual_review",
     ).length,
     not_sent: notifications.filter(
       (notification) => notification.delivery_status === "not_sent",
@@ -572,14 +582,46 @@ export function getNotificationDeliveryLabel(
   return "Failed";
 }
 
+export function getNotificationRetryPolicyState(
+  notification: NotificationEvent,
+): NotificationRetryPolicyState {
+  if (notification.status !== "pending") {
+    return "not_applicable";
+  }
+
+  if (notification.delivery_status === "not_sent") {
+    return "retryable";
+  }
+
+  if (notification.delivery_status === "failed") {
+    return notification.delivery_attempts >= 3
+      ? "manual_review"
+      : "retryable";
+  }
+
+  return "not_applicable";
+}
+
+export function getNotificationRetryPolicyLabel(
+  state: NotificationRetryPolicyState,
+) {
+  if (state === "retryable") {
+    return "Retryable";
+  }
+
+  if (state === "manual_review") {
+    return "Manual review";
+  }
+
+  return "Not applicable";
+}
+
 export function getPendingDeliverableNotifications(
   notifications: NotificationEvent[],
 ) {
   return notifications.filter(
     (notification) =>
-      notification.status === "pending" &&
-      notification.delivery_status !== "sent" &&
-      notification.delivery_status !== "sending",
+      getNotificationRetryPolicyState(notification) === "retryable",
   );
 }
 

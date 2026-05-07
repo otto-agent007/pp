@@ -13,6 +13,8 @@ import {
   getNotificationDeliveryTriageSummary,
   getNotificationRecipientReadiness,
   getNotificationRecipientReadinessSummary,
+  getNotificationRetryPolicyLabel,
+  getNotificationRetryPolicyState,
   getPendingDeliverableNotifications,
   previewNotificationTemplateCopy,
   validateAutomationRuleInput,
@@ -836,6 +838,9 @@ export function AutomationClient() {
               <span className="rounded-md bg-green-100 px-3 py-2 text-sm font-semibold text-green-800">
                 Sent {deliveryTriageSummary.sent}
               </span>
+              <span className="rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
+                Manual review {deliveryTriageSummary.manual_review}
+              </span>
               <span className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
                 Reachable {recipientReadinessSummary.reachable}
               </span>
@@ -908,110 +913,130 @@ export function AutomationClient() {
             ) : visibleNotifications.length === 0 ? (
               <EmptyState>No notifications found</EmptyState>
             ) : (
-              visibleNotifications.map((notification) => (
-                <article
-                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-                  key={notification.id}
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-semibold text-neutralDark">
-                          {notification.title}
-                        </h2>
-                        <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
-                          {notification.status}
-                        </span>
-                        <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold uppercase text-primary">
-                          {getNotificationDeliveryLabel(
-                            notification.delivery_status,
-                          )}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm font-medium text-primary">
-                        {formatType(notification.type)}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-700">
-                        Due {formatDateTime(notification.due_at)}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-600">
-                        {notification.customer?.name ??
-                          notification.job?.customer?.name ??
-                          "No customer"}
-                        {notification.job?.location?.address
-                          ? ` - ${notification.job.location.address}`
-                          : ""}
-                      </p>
-                      {notification.message ? (
-                        <p className="mt-2 text-sm text-gray-600">
-                          {notification.message}
+              visibleNotifications.map((notification) => {
+                const retryPolicyState =
+                  getNotificationRetryPolicyState(notification);
+
+                return (
+                  <article
+                    className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                    key={notification.id}
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg font-semibold text-neutralDark">
+                            {notification.title}
+                          </h2>
+                          <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
+                            {notification.status}
+                          </span>
+                          <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold uppercase text-primary">
+                            {getNotificationDeliveryLabel(
+                              notification.delivery_status,
+                            )}
+                          </span>
+                          {retryPolicyState !== "not_applicable" ? (
+                            <span
+                              className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
+                                retryPolicyState === "manual_review"
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-emerald-50 text-emerald-700"
+                              }`}
+                            >
+                              {getNotificationRetryPolicyLabel(
+                                retryPolicyState,
+                              )}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-2 text-sm font-medium text-primary">
+                          {formatType(notification.type)}
                         </p>
-                      ) : null}
-                      <p className="mt-2 text-xs font-semibold text-gray-500">
-                        {recipientLabel(notification)}
-                      </p>
-                      {notification.delivery_attempts > 0 ? (
+                        <p className="mt-1 text-sm text-gray-700">
+                          Due {formatDateTime(notification.due_at)}
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {notification.customer?.name ??
+                            notification.job?.customer?.name ??
+                            "No customer"}
+                          {notification.job?.location?.address
+                            ? ` - ${notification.job.location.address}`
+                            : ""}
+                        </p>
+                        {notification.message ? (
+                          <p className="mt-2 text-sm text-gray-600">
+                            {notification.message}
+                          </p>
+                        ) : null}
                         <p className="mt-2 text-xs font-semibold text-gray-500">
-                          Delivery attempts: {notification.delivery_attempts}
-                          {notification.last_delivery_attempted_at
-                            ? ` | Last attempt ${formatDateTime(notification.last_delivery_attempted_at)}`
-                            : ""}
-                          {notification.delivered_at
-                            ? ` | Sent ${formatDateTime(notification.delivered_at)}`
-                            : ""}
+                          {recipientLabel(notification)}
                         </p>
-                      ) : null}
-                      {notification.provider_message_id ? (
-                        <p className="mt-1 text-xs font-semibold text-gray-500">
-                          Provider message: {notification.provider_message_id}
-                        </p>
-                      ) : null}
-                      {notification.last_delivery_error ? (
-                        <p className="mt-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-semibold text-red-700">
-                          {notification.last_delivery_error}
-                        </p>
-                      ) : null}
-                    </div>
-                    {notification.status === "pending" ? (
-                      <div className="flex flex-wrap gap-2">
-                        {notification.delivery_status !== "sent" ? (
+                        {notification.delivery_attempts > 0 ? (
+                          <p className="mt-2 text-xs font-semibold text-gray-500">
+                            Delivery attempts: {notification.delivery_attempts}
+                            {notification.last_delivery_attempted_at
+                              ? ` | Last attempt ${formatDateTime(notification.last_delivery_attempted_at)}`
+                              : ""}
+                            {notification.delivered_at
+                              ? ` | Sent ${formatDateTime(notification.delivered_at)}`
+                              : ""}
+                          </p>
+                        ) : null}
+                        {notification.provider_message_id ? (
+                          <p className="mt-1 text-xs font-semibold text-gray-500">
+                            Provider message: {notification.provider_message_id}
+                          </p>
+                        ) : null}
+                        {notification.last_delivery_error ? (
+                          <p className="mt-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-semibold text-red-700">
+                            {notification.last_delivery_error}
+                          </p>
+                        ) : null}
+                      </div>
+                      {notification.status === "pending" ? (
+                        <div className="flex flex-wrap gap-2">
+                          {notification.delivery_status !== "sent" ? (
+                            <button
+                              className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-blue-50"
+                              disabled={
+                                sendNotification.isPending ||
+                                notification.delivery_status === "sending"
+                              }
+                              onClick={() =>
+                                sendNotification.mutate(notification.id)
+                              }
+                              type="button"
+                            >
+                              {notification.delivery_status === "sending"
+                                ? "Sending"
+                                : "Send"}
+                            </button>
+                          ) : null}
                           <button
-                            className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-blue-50"
-                            disabled={
-                              sendNotification.isPending ||
-                              notification.delivery_status === "sending"
-                            }
+                            className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                            disabled={markHandled.isPending}
+                            onClick={() => markHandled.mutate(notification.id)}
+                            type="button"
+                          >
+                            Mark handled
+                          </button>
+                          <button
+                            className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                            disabled={dismissNotification.isPending}
                             onClick={() =>
-                              sendNotification.mutate(notification.id)
+                              dismissNotification.mutate(notification.id)
                             }
                             type="button"
                           >
-                            {notification.delivery_status === "sending"
-                              ? "Sending"
-                              : "Send"}
+                            Dismiss
                           </button>
-                        ) : null}
-                        <button
-                          className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
-                          disabled={markHandled.isPending}
-                          onClick={() => markHandled.mutate(notification.id)}
-                          type="button"
-                        >
-                          Mark handled
-                        </button>
-                        <button
-                          className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
-                          disabled={dismissNotification.isPending}
-                          onClick={() => dismissNotification.mutate(notification.id)}
-                          type="button"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                </article>
-              ))
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })
             )}
           </section>
 

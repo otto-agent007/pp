@@ -18,6 +18,8 @@ import {
   getNotificationDeliveryAttemptSummary,
   getNotificationDeliveryLabel,
   getNotificationDeliveryTriageSummary,
+  getNotificationRetryPolicyLabel,
+  getNotificationRetryPolicyState,
   getNotificationRecipientReadiness,
   getNotificationRecipientReadinessSummary,
   getPendingDeliverableNotifications,
@@ -296,6 +298,46 @@ describe("automation domain", () => {
     );
   });
 
+  it("classifies notification retry policy states", () => {
+    expect(getNotificationRetryPolicyState(notification)).toBe("retryable");
+    expect(getNotificationRetryPolicyLabel("retryable")).toBe("Retryable");
+    expect(
+      getNotificationRetryPolicyState({
+        ...notification,
+        delivery_status: "failed",
+        delivery_attempts: 2,
+      }),
+    ).toBe("retryable");
+    expect(
+      getNotificationRetryPolicyState({
+        ...notification,
+        delivery_status: "failed",
+        delivery_attempts: 3,
+      }),
+    ).toBe("manual_review");
+    expect(getNotificationRetryPolicyLabel("manual_review")).toBe(
+      "Manual review",
+    );
+    expect(
+      getNotificationRetryPolicyState({
+        ...notification,
+        delivery_status: "sent",
+      }),
+    ).toBe("not_applicable");
+    expect(
+      getNotificationRetryPolicyState({
+        ...notification,
+        delivery_status: "sending",
+      }),
+    ).toBe("not_applicable");
+    expect(
+      getNotificationRetryPolicyState({
+        ...notification,
+        status: "handled",
+      }),
+    ).toBe("not_applicable");
+  });
+
   it("selects pending deliverable notifications for bulk delivery", () => {
     expect(
       getPendingDeliverableNotifications([
@@ -313,6 +355,12 @@ describe("automation domain", () => {
         {
           ...notification,
           id: "notification-failed",
+          delivery_status: "failed",
+        },
+        {
+          ...notification,
+          id: "notification-manual-review",
+          delivery_attempts: 3,
           delivery_status: "failed",
         },
         {
@@ -345,9 +393,16 @@ describe("automation domain", () => {
           id: "notification-sent",
           delivery_status: "sent",
         },
+        {
+          ...notification,
+          id: "notification-manual-review",
+          delivery_attempts: 3,
+          delivery_status: "failed",
+        },
       ]),
     ).toEqual({
-      failed: 1,
+      failed: 2,
+      manual_review: 1,
       not_sent: 1,
       retryable: 2,
       sent: 1,
