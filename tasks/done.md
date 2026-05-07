@@ -520,3 +520,13 @@
 - Linked the admin sign-in screen to password recovery and documented Supabase Auth redirect setup
 - Added focused API-client, domain, auth gate, sign-in, forgot-password, and update-password coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Technicians Admin V1
+
+- Added a profile metadata migration for technician email, display name, and active/inactive status
+- Added technician invite/list contracts through shared types, API-client, and domain helpers
+- Added an admin-authenticated `/api/technicians` route that sends Supabase invite emails through the service-role boundary
+- Added `/technicians` with technician search and invite form
+- Updated job and dispatch technician selectors to show display names like `Testnician`
+- Extended `/auth/update-password` to accept Supabase invite links in addition to recovery links
+- Added focused API-client, domain, API route, admin nav, job, dispatch, password setup, and technicians UI coverage

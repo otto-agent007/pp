@@ -54,6 +54,10 @@ describe("AdminNav", () => {
       "href",
       "/customers",
     );
+    expect(screen.getByRole("link", { name: "Technicians" })).toHaveAttribute(
+      "href",
+      "/technicians",
+    );
     expect(screen.getByRole("link", { name: "Payments" })).toHaveAttribute(
       "aria-current",
       "page",

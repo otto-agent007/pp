@@ -114,7 +114,17 @@ describe("JobsClient", () => {
       isLoading: false,
     } as never);
     vi.mocked(useTechnicians).mockReturnValue({
-      data: [{ id: "technician-1", role: "technician", created_at: now, updated_at: now }],
+      data: [
+        {
+          id: "technician-1",
+          role: "technician",
+          email: "testnician@example.com",
+          display_name: "Testnician",
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      ],
       isLoading: false,
     } as never);
     vi.mocked(useCancelJob).mockReturnValue({
@@ -162,6 +172,12 @@ describe("JobsClient", () => {
       "href",
       "/dispatch",
     );
+  });
+
+  it("labels technician options by display name", () => {
+    render(<JobsClient />);
+
+    expect(screen.getByRole("option", { name: "Testnician" })).toBeInTheDocument();
   });
 
   it("filters by status and date", async () => {

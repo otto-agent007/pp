@@ -1,6 +1,10 @@
 "use client";
 
-import { filterJobs, validateJobInput } from "@pest-patrol/domain";
+import {
+  filterJobs,
+  getTechnicianLabel,
+  validateJobInput,
+} from "@pest-patrol/domain";
 import type { Customer, Job, JobInput, JobStatus } from "@pest-patrol/types";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
@@ -361,7 +365,7 @@ export function JobsClient() {
               <option value="">Unassigned</option>
               {(techniciansQuery.data ?? []).map((technician) => (
                 <option key={technician.id} value={technician.id}>
-                  Technician {technician.id.slice(0, 8)}
+                  {getTechnicianLabel(technician)}
                 </option>
               ))}
             </select>

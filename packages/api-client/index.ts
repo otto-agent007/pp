@@ -85,3 +85,8 @@ export {
   listCustomerPortalCloseoutRecords,
   revokeCustomerPortalAccessTokenRecord,
 } from "./portal";
+export {
+  inviteTechnicianRecord,
+  inviteTechnicianWithAdminClientRecord,
+  listTechnicianProfileRecords,
+} from "./technicians";

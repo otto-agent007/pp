@@ -5,7 +5,8 @@ export interface ProductionSmokeChecklistItem {
     | "customer-location"
     | "job"
     | "portal"
-    | "scheduler";
+    | "scheduler"
+    | "technician";
   label: string;
   route: string;
   success_criteria: string;
@@ -23,6 +24,13 @@ const productionSmokeChecklist: ProductionSmokeChecklistItem[] = [
     label: "Create customer and location",
     route: "/customers",
     success_criteria: "Active customer saves with at least one active location.",
+  },
+  {
+    id: "technician",
+    label: "Invite technician",
+    route: "/technicians",
+    success_criteria:
+      "Technician invite sends and the technician appears by display name.",
   },
   {
     id: "job",

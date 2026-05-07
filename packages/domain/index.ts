@@ -155,6 +155,13 @@ export {
   validateJobInput,
 } from "./jobs";
 export {
+  getTechnicianLabel,
+  inviteTechnician,
+  listTechnicianDirectory,
+  normalizeTechnicianInviteInput,
+  validateTechnicianInviteInput,
+} from "./technicians";
+export {
   archiveChemicalInventory,
   createChemicalInventory,
   createChemicalLog,
