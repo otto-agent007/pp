@@ -1,13 +1,14 @@
 # Implementation Plan
 
-## Current Priority: Stripe Test Mode Readiness V1
+## Current Priority: Live Admin Smoke Test V1
 
-1. Show payment setup guidance on `/payments`.
-2. Name the server-only Stripe env vars without exposing values.
-3. Clarify that Stripe can remain optional for non-payment demos.
-4. Preserve current invoice/payment behavior.
-5. Add focused payments UI tests.
-6. Update `tasks/in-progress.md` after each completed slice.
+1. Reset or confirm the first admin password privately.
+2. Sign in to the production admin shell.
+3. Create a real customer with one active service location.
+4. Create a scheduled job against that customer/location.
+5. Generate portal access and verify token-protected portal loading.
+6. Run the scheduler smoke path and confirm `/payments` setup guidance is visible.
+7. Record smoke-test results without storing credentials or secrets.
 
 ## Guardrails
 

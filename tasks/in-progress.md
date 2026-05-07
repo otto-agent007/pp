@@ -1,16 +1,18 @@
 # In Progress
 
-## Task: Stripe Test Mode Readiness V1
+## Task: Live Admin Smoke Test V1
 
 Goal:
-Improve payment test-mode readiness messaging so billing demos are safer and clearer without exposing Stripe secrets.
+Run the deferred production smoke checklist once admin credentials are ready.
 
 Steps:
-- [ ] Show payment setup guidance on `/payments`
-- [ ] Name the server-only Stripe env vars without exposing values
-- [ ] Clarify that Stripe can remain optional for non-payment demos
-- [ ] Preserve current invoice/payment behavior
-- [ ] Add focused payments UI tests
+- [ ] Reset or confirm the first admin password privately
+- [ ] Sign in to the production admin shell
+- [ ] Create a real customer with one active service location
+- [ ] Create a scheduled job against that customer/location
+- [ ] Generate portal access and verify token-protected portal loading
+- [ ] Run the scheduler smoke path and confirm `/payments` setup guidance is visible
+- [ ] Record smoke-test results without storing credentials or secrets
 
 Status:
-Planned after Notification Webhook Provider Setup V1.
+Planned after Stripe Test Mode Readiness V1.

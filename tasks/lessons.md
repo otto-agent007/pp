@@ -119,3 +119,4 @@
 - Data-entry helpers should be plain guidance and links so demos stay fast without hidden writes or sample-data side effects
 - Production smoke checks should stay manual until admin credentials are ready and should warn operators that records may persist
 - Provider setup UI should name required server-only env vars while continuing to hide actual webhook URLs and secret values
+- Stripe readiness UI should separate optional payment demos from core ops demos so missing Stripe secrets do not block customer, job, closeout, or portal walkthroughs

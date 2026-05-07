@@ -142,6 +142,23 @@ describe("PaymentsClient", () => {
     expect(screen.getByText("No invoices found")).toBeInTheDocument();
   });
 
+  it("shows Stripe test-mode setup guidance without exposing secrets", () => {
+    render(<PaymentsClient />);
+
+    expect(screen.getByText("Stripe test-mode readiness")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Payment links need server-only STRIPE_SECRET_KEY. Stripe webhooks need STRIPE_WEBHOOK_SECRET.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Stripe can stay unset for customer, job, closeout, and portal demos.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/sk_test_/i)).not.toBeInTheDocument();
+  });
+
   it("creates an invoice from a completed job", async () => {
     const user = userEvent.setup();
     vi.mocked(useInvoices).mockReturnValue({
