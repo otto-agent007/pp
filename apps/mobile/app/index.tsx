@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import {
+  buildMobileJobWorkPlan,
   buildMobileDailyJobs,
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
@@ -297,6 +298,7 @@ export default function MobileHomeScreen() {
             notes={job.service_notes}
             scheduledStart={job.scheduled_start}
             statusLabel={statusLabels[job.status]}
+            workPlan={buildMobileJobWorkPlan(job, queueItems)}
           >
             <JobStatusControls job={job} />
             <JobGeofenceControls job={job} />

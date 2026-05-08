@@ -7,11 +7,14 @@ export function requireNonEmpty(value: string, fieldName: string) {
 }
 
 export {
+  buildMobileJobWorkPlan,
   buildMobileTechnicianReadinessPanel,
   getDemoWorkflowSteps,
 } from "./demoReadiness";
 export type {
   DemoWorkflowStep,
+  MobileJobWorkPlanItem,
+  MobileJobWorkPlanState,
   MobileTechnicianReadinessInput,
   MobileTechnicianReadinessPanel,
 } from "./demoReadiness";
@@ -127,7 +130,9 @@ export {
   filterCustomerPortalCloseouts,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
+  getCustomerPortalServiceSummary,
   getCloseoutCounts,
+  getCloseoutReviewReadiness,
   listCustomerPortalAccessTokens,
   listCustomerPortalBilling,
   listCustomerPortalCloseouts,
@@ -137,7 +142,12 @@ export {
   validateCustomerPortalAccessTokenId,
   validateCustomerPortalCustomerId,
 } from "./closeouts";
-export type { CloseoutCounts, CloseoutStatusFilter } from "./closeouts";
+export type {
+  CloseoutCounts,
+  CloseoutReviewReadiness,
+  CloseoutStatusFilter,
+  CustomerPortalServiceSummary,
+} from "./closeouts";
 export {
   archiveCustomer,
   createCustomer,
@@ -196,6 +206,7 @@ export {
 export {
   clearSyncedQueueItems,
   createOfflineQueueItem,
+  getOfflineQueueItemLabel,
   getOfflineQueueSummary,
   markQueueItemFailed,
   markQueueItemRetrying,

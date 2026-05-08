@@ -3,6 +3,7 @@
 import {
   filterCloseoutJobs,
   getCloseoutCounts,
+  getCloseoutReviewReadiness,
   type CloseoutStatusFilter,
 } from "@pest-patrol/domain";
 import type { FormValue, Job, JobFormSubmission, JobMedia } from "@pest-patrol/types";
@@ -149,6 +150,9 @@ export function CloseoutsClient() {
     visibleJobs.find((job) => job.id === selectedJobId) ?? visibleJobs[0] ?? null;
   const closeout = useJobCloseoutReview(selectedJob);
   const counts = closeout.review ? getCloseoutCounts(closeout.review) : null;
+  const readiness = closeout.review
+    ? getCloseoutReviewReadiness(closeout.review)
+    : null;
   const noCloseoutsAction = search.trim()
     ? "Clear the search, show all jobs, or complete a dispatched job to start a closeout review."
     : "Complete a job in dispatch to move it into closeout review with its field captures.";
@@ -261,6 +265,22 @@ export function CloseoutsClient() {
                   <p className="mt-5 rounded-md bg-gray-50 p-4 text-sm text-gray-700">
                     {selectedJob.service_notes}
                   </p>
+                ) : null}
+                {readiness ? (
+                  <div
+                    className={`mt-5 rounded-md border p-4 ${
+                      readiness.billingReady
+                        ? "border-emerald-200 bg-emerald-50"
+                        : "border-amber-200 bg-amber-50"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-neutralDark">
+                      {readiness.label}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-700">
+                      {readiness.summary}
+                    </p>
+                  </div>
                 ) : null}
               </section>
 

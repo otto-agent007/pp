@@ -183,6 +183,12 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("Bait Gel")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
+    expect(screen.getByText("Ready for billing")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Treatment form, chemical log, photo, and signature are captured.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("filters to completed jobs by default and can show all jobs", async () => {
@@ -246,6 +252,12 @@ describe("CloseoutsClient", () => {
 
     render(<CloseoutsClient />);
 
+    expect(screen.getByText("Needs field captures")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Missing treatment form, chemical log, photo, and signature before billing.",
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("No treatment forms captured for this job."),
     ).toBeInTheDocument();

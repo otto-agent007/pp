@@ -1,5 +1,15 @@
 # Done
 
+## Field Workflow Batch V1
+
+- Added mobile job work-plan readiness for status, geofence, chemical log, photo, signature, and treatment form captures
+- Added capture-specific mobile sync labels without changing offline queue storage
+- Added office closeout readiness summaries for missing captures and billing handoff
+- Added customer-safe portal service summaries with capture counts, service date, location, and invoice state
+- Extended the production smoke checklist with mobile capture queueing and closeout review
+- Added focused domain and web UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Customer CRUD V1
 
 - Added `profiles`, `customers`, and `locations` SQL migration with RLS policies

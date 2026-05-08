@@ -105,6 +105,8 @@ created during the check.
 | Invite technician | `/technicians` | Technician invite sends and the technician appears by display name. |
 | Technician password setup | `/technician-login` | Invite link lets the technician set a password without entering the admin shell. |
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
+| Queue field captures | Expo mobile app | Technician queues status, geofence, form, chemical, photo, and signature captures offline-first. |
+| Review closeout | `/closeouts` | Office can review synced field captures and see whether billing is ready. |
 | Generate portal access | `/customers` | Portal link opens token-protected customer closeout data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
 | Check billing path | `/payments` | Invoice or payment setup state is visible without secret exposure. |
@@ -136,21 +138,23 @@ Mobile technician:
 1. Sign in through the Expo app as an invited technician.
 2. Confirm the mobile home screen shows the technician readiness panel, assigned-job count, sync status, and refresh action.
 3. Open an assigned job card and confirm customer, address, schedule, status, and service notes are readable.
-4. Queue a status update and confirm the sync panel shows pending work.
-5. Queue treatment form, chemical log, photo, signature, and location events where demo permissions/devices allow.
-6. Toggle or simulate offline state during queued work and confirm the app explains that captures remain local.
-7. Return online or tap Sync and confirm synced items can be cleared after review.
-8. Confirm no mobile screen asks for service-role keys, cron secrets, Stripe secrets, or webhook secrets.
+4. Confirm the assigned job card shows the field work plan for status, geofence, chemical log, photo, signature, and treatment form captures.
+5. Queue a status update and confirm the sync panel shows pending work with a capture-specific label.
+6. Queue treatment form, chemical log, photo, signature, and location events where demo permissions/devices allow.
+7. Toggle or simulate offline state during queued work and confirm the app explains that captures remain local.
+8. Return online or tap Sync and confirm synced items can be cleared after review.
+9. Confirm no mobile screen asks for service-role keys, cron secrets, Stripe secrets, or webhook secrets.
 
 Customer portal:
 
 1. Open `/customers` and generate a portal access token for a customer with completed jobs.
 2. Open `/portal/<customer-id>?access_token=<token>`.
-3. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
-4. Confirm private job media renders through signed URLs.
-5. Confirm open and paid invoices render without provider ids, raw payment records, or admin billing notes.
-6. Open `/portal/<customer-id>` without a token and confirm closeouts and billing do not load.
-7. Revoke the portal link in `/customers` and confirm the old link no longer loads closeouts or billing.
+3. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
+4. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
+5. Confirm private job media renders through signed URLs.
+6. Confirm open and paid invoices render without provider ids, raw payment records, or admin billing notes.
+7. Open `/portal/<customer-id>` without a token and confirm closeouts and billing do not load.
+8. Revoke the portal link in `/customers` and confirm the old link no longer loads closeouts or billing.
 
 Mobile:
 

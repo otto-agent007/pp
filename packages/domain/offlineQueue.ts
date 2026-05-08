@@ -1,4 +1,5 @@
 import type {
+  OfflineQueueAction,
   OfflineQueueInput,
   OfflineQueueItem,
   OfflineQueueStatus,
@@ -159,4 +160,43 @@ export function getOfflineQueueSummary<TPayload>(
   );
 
   return summary;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function payloadJobLabel(payload: unknown) {
+  if (!isRecord(payload) || typeof payload.job_id !== "string") {
+    return "unknown job";
+  }
+
+  return `job ${payload.job_id}`;
+}
+
+function geofenceEventLabel(payload: unknown) {
+  if (!isRecord(payload) || typeof payload.event_type !== "string") {
+    return "Geofence";
+  }
+
+  return payload.event_type === "departure" ? "Departure geofence" : "Arrival geofence";
+}
+
+const queueActionLabels: Record<Exclude<OfflineQueueAction, "geofence_event_create">, string> = {
+  chemical_log_create: "Chemical log",
+  form_submission_create: "Treatment form",
+  job_status_update: "Status update",
+  photo_upload: "Photo capture",
+  signature_capture: "Signature",
+};
+
+export function getOfflineQueueItemLabel<TPayload>(
+  item: OfflineQueueItem<TPayload>,
+) {
+  const actionLabel =
+    item.action === "geofence_event_create"
+      ? geofenceEventLabel(item.payload)
+      : queueActionLabels[item.action];
+
+  return `${actionLabel} for ${payloadJobLabel(item.payload)}`;
 }

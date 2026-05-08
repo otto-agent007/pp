@@ -62,7 +62,7 @@ describe("HomePage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Manual smoke checklist")).toBeInTheDocument();
     expect(
-      screen.getByText("7 operator-run checks ready for live-data demos."),
+      screen.getByText("9 operator-run checks ready for live-data demos."),
     ).toBeInTheDocument();
     expect(screen.getByText("Dashboard action")).toBeInTheDocument();
     expect(screen.getByText("Leaked password protection")).toBeInTheDocument();

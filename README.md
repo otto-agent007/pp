@@ -62,9 +62,10 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Mobile Technician Demo Readiness V1:
+Current priority is Field Workflow Batch V1:
 
-- make the technician app demo path easy to follow from login through assigned job review
-- clarify queued and synced states for status writes, forms, chemical logs, photos, signatures, and geofencing
-- keep mobile writes offline-first and retry-safe
+- show technicians a per-job field work plan for status, geofence, chemical, photo, signature, and form captures
+- clarify capture-specific queued sync work without changing offline queue storage
+- summarize closeout readiness for office billing handoff
+- show customer-safe portal service summaries without admin-only internals
 - track Supabase leaked password protection as a deferred Pro-plan hardening item

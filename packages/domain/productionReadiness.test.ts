@@ -31,6 +31,20 @@ describe("production readiness domain", () => {
         success_criteria: "Scheduled job saves against the new customer and location.",
       },
       {
+        id: "mobile-captures",
+        label: "Queue field captures",
+        route: "Expo mobile app",
+        success_criteria:
+          "Technician queues status, geofence, form, chemical, photo, and signature captures offline-first.",
+      },
+      {
+        id: "closeout-review",
+        label: "Review closeout",
+        route: "/closeouts",
+        success_criteria:
+          "Office can review synced field captures and see whether billing is ready.",
+      },
+      {
         id: "portal",
         label: "Generate portal access",
         route: "/customers",
