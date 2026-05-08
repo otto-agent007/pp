@@ -159,6 +159,7 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
   cancelJob,
@@ -176,6 +177,11 @@ export {
   normalizeJobInput,
   updateJob,
   validateJobInput,
+} from "./jobs";
+export type {
+  MobileDailyRouteTimeline,
+  MobileRouteTimelineJob,
+  MobileRouteTimelineSummary,
 } from "./jobs";
 export {
   getTechnicianLabel,

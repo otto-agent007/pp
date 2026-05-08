@@ -128,6 +128,16 @@ describe("DispatchClient", () => {
         "Completed jobs stay on dispatch for the handoff, then appear in closeouts for field-capture review.",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Technician mobile routes use the same assigned jobs, status priority, and scheduled order shown here.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Daily Route V1 stays provider-free: no map routing, optimization, or external navigation setup is required.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("guides users when no jobs are scheduled for a day", () => {

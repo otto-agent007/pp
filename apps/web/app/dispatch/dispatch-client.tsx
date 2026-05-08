@@ -168,6 +168,18 @@ export function DispatchClient() {
         </div>
 
         <p className="text-sm text-gray-600">Week starting {weekStart}</p>
+
+        <section className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
+          <p className="font-semibold">Technician daily route companion</p>
+          <p className="mt-1">
+            Technician mobile routes use the same assigned jobs, status priority,
+            and scheduled order shown here.
+          </p>
+          <p className="mt-1">
+            Daily Route V1 stays provider-free: no map routing, optimization, or
+            external navigation setup is required.
+          </p>
+        </section>
       </header>
 
       {jobsQuery.isLoading ? (

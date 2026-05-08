@@ -8,7 +8,10 @@ import {
   updateJobRecord,
 } from "@pest-patrol/api-client";
 import type { AuthSupabaseClient } from "@pest-patrol/api-client";
-import type { Job, JobInput, JobStatus } from "@pest-patrol/types";
+import type { Job, JobInput, JobStatus, OfflineQueueItem } from "@pest-patrol/types";
+
+import { buildMobileJobWorkPlan } from "./demoReadiness";
+import type { MobileJobWorkPlanItem } from "./demoReadiness";
 
 export type JobStatusFilter = JobStatus | "all";
 export type TechnicianFilter = "all" | "unassigned" | string;
@@ -22,6 +25,27 @@ export interface DispatchCalendarDay {
 export interface MobileDailyJobs {
   date: string;
   jobs: Job[];
+}
+
+export interface MobileRouteTimelineSummary {
+  label: string;
+  syncLabel: string;
+  title: string;
+}
+
+export interface MobileRouteTimelineJob {
+  job: Job;
+  readinessLabel: string;
+  sectionLabel: "Current job" | "Later today" | "Next job";
+  workPlan: MobileJobWorkPlanItem[];
+}
+
+export interface MobileDailyRouteTimeline {
+  current: MobileRouteTimelineJob | null;
+  date: string;
+  later: MobileRouteTimelineJob[];
+  next: MobileRouteTimelineJob | null;
+  summary: MobileRouteTimelineSummary;
 }
 
 function normalizeOptional(value?: string | null) {
@@ -202,6 +226,98 @@ export function buildMobileDailyJobs(jobs: Job[], date: string): MobileDailyJobs
     jobs: jobs
       .filter((job) => toDateKey(new Date(job.scheduled_start)) === date)
       .sort((left, right) => Date.parse(left.scheduled_start) - Date.parse(right.scheduled_start)),
+  };
+}
+
+function isCurrentCandidate(job: Job, status: JobStatus) {
+  return job.status === status;
+}
+
+function isNextCandidate(job: Job) {
+  return job.status === "scheduled";
+}
+
+function laterJobPriority(job: Job) {
+  if (job.status === "completed") {
+    return 1;
+  }
+
+  if (job.status === "canceled") {
+    return 2;
+  }
+
+  return 0;
+}
+
+function sortLaterTimelineJobs(left: Job, right: Job) {
+  const priorityDifference = laterJobPriority(left) - laterJobPriority(right);
+
+  if (priorityDifference !== 0) {
+    return priorityDifference;
+  }
+
+  return Date.parse(left.scheduled_start) - Date.parse(right.scheduled_start);
+}
+
+function getReadinessLabel(workPlan: MobileJobWorkPlanItem[]) {
+  const done = workPlan.filter((item) => item.state === "done").length;
+  const pending = workPlan.filter((item) => item.state === "pending").length;
+  const missing = workPlan.filter((item) => item.state === "missing").length;
+
+  return `${done} done, ${pending} pending, ${missing} missing`;
+}
+
+function toTimelineJob(
+  job: Job,
+  queueItems: OfflineQueueItem[],
+  sectionLabel: MobileRouteTimelineJob["sectionLabel"],
+): MobileRouteTimelineJob {
+  const workPlan = buildMobileJobWorkPlan(job, queueItems);
+
+  return {
+    job,
+    readinessLabel: getReadinessLabel(workPlan),
+    sectionLabel,
+    workPlan,
+  };
+}
+
+function assignedJobsLabel(count: number) {
+  return `${count} ${count === 1 ? "job" : "jobs"} assigned today`;
+}
+
+export function buildMobileDailyRouteTimeline(
+  jobs: Job[],
+  date: string,
+  queueItems: OfflineQueueItem[],
+): MobileDailyRouteTimeline {
+  const dailyJobs = buildMobileDailyJobs(jobs, date).jobs;
+  const currentJob =
+    dailyJobs.find((job) => isCurrentCandidate(job, "in_progress")) ??
+    dailyJobs.find((job) => isCurrentCandidate(job, "en_route")) ??
+    dailyJobs.find(isNextCandidate) ??
+    null;
+  const remainingJobs = dailyJobs.filter((job) => job.id !== currentJob?.id);
+  const nextJob = remainingJobs.find(isNextCandidate) ?? null;
+  const laterJobs = remainingJobs
+    .filter((job) => job.id !== nextJob?.id)
+    .sort(sortLaterTimelineJobs);
+
+  return {
+    current: currentJob
+      ? toTimelineJob(currentJob, queueItems, "Current job")
+      : null,
+    date,
+    later: laterJobs.map((job) => toTimelineJob(job, queueItems, "Later today")),
+    next: nextJob ? toTimelineJob(nextJob, queueItems, "Next job") : null,
+    summary: {
+      label: assignedJobsLabel(dailyJobs.length),
+      syncLabel:
+        queueItems.length > 0
+          ? `${queueItems.length} local ${queueItems.length === 1 ? "item" : "items"} in sync queue`
+          : "No local sync work queued",
+      title: "Today's route",
+    },
   };
 }
 

@@ -1,21 +1,19 @@
 # In Progress
 
-## Task: Field Workflow Batch V1
+## Task: Daily Route Timeline V1
 
 Goal:
-Connect the technician field workflow from assigned mobile jobs through queued captures, office closeout readiness, customer portal service summaries, and billing handoff.
+Turn the technician mobile home into a guided daily route timeline while keeping dispatch aligned with the technician-facing route order.
 
 Steps:
-- [x] Sync local `main` to the merged mobile demo-readiness PR
-- [x] Add mobile job work-plan readiness from status and queued captures
-- [x] Add office closeout billing-readiness summary
-- [x] Add customer-safe portal service summaries
-- [x] Add capture-specific mobile queue labels
-- [x] Extend production smoke checklist for field captures and closeout review
+- [x] Add shared route timeline domain helper from assigned jobs, status priority, schedule order, and offline queue readiness
+- [x] Replace the flat mobile daily job list with current, next, and compact later route sections
+- [x] Preserve full field capture controls for current and next mobile jobs
+- [x] Add a provider-free dispatch companion note for technician route ordering
 - [x] Run full repository verification
 
 Follow-up:
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Field workflow batch implementation is complete on `codex/field-workflow-batch-v1`; full test, typecheck, lint, and build verification passed.
+Daily route timeline implementation is complete on `codex/daily-route-timeline-v1`; full test, typecheck, lint, and build verification passed.

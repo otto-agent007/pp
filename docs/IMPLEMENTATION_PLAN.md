@@ -1,12 +1,20 @@
 # Implementation Plan
 
-## Current Priority: Field Workflow Batch V1
+## Current Priority: Daily Route Timeline V1
 
-1. Show each assigned mobile job's field work plan across status, geofence, chemical, photo, signature, and treatment form captures.
-2. Label queued mobile captures clearly while preserving the existing offline queue storage and sync worker.
-3. Summarize closeout review readiness for office billing handoff.
-4. Show customer-safe portal service summaries with capture counts, service date, location, and invoice state.
-5. Avoid migrations, production data changes, and provider configuration changes.
+1. Build a status-based mobile daily route timeline from assigned jobs, schedule order, and offline queue readiness.
+2. Show current, next, and compact later jobs on the technician mobile home.
+3. Preserve full field capture controls for current and next jobs.
+4. Add dispatch guidance that explains technician route ordering and provider-free scope.
+5. Avoid maps, route optimization, provider configuration, migrations, and production data changes.
+
+## Recently Completed: Field Workflow Batch V1
+
+1. Connected mobile job work-plan readiness across status, geofence, chemical, photo, signature, and treatment form captures.
+2. Added capture-specific mobile queue labels while preserving the existing offline queue storage and sync worker.
+3. Summarized closeout review readiness for office billing handoff.
+4. Showed customer-safe portal service summaries with capture counts, service date, location, and invoice state.
+5. Extended production smoke guidance for mobile captures and closeout review.
 
 ## Recently Completed: Mobile Technician Demo Readiness V1
 

@@ -8,16 +8,15 @@ import {
   View,
 } from "react-native";
 import {
-  buildMobileJobWorkPlan,
-  buildMobileDailyJobs,
+  buildMobileDailyRouteTimeline,
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
-import type { JobStatus } from "@pest-patrol/types";
+import type { Job, JobStatus } from "@pest-patrol/types";
 
-import { AssignedJobCard } from "../src/components/AssignedJobCard";
 import { JobChemicalLogForm } from "../src/components/JobChemicalLogForm";
 import { JobGeofenceControls } from "../src/components/JobGeofenceControls";
 import { JobPhotoUploadForm } from "../src/components/JobPhotoUploadForm";
+import { MobileRouteTimeline } from "../src/components/MobileRouteTimeline";
 import { JobSignatureCaptureForm } from "../src/components/JobSignatureCaptureForm";
 import { JobStatusControls } from "../src/components/JobStatusControls";
 import { JobTreatmentForm } from "../src/components/JobTreatmentForm";
@@ -47,6 +46,19 @@ function formatTime(value: string) {
   }).format(new Date(value));
 }
 
+function renderFieldControls(job: Job) {
+  return (
+    <>
+      <JobStatusControls job={job} />
+      <JobGeofenceControls job={job} />
+      <JobChemicalLogForm jobId={job.id} />
+      <JobPhotoUploadForm jobId={job.id} />
+      <JobSignatureCaptureForm jobId={job.id} />
+      <JobTreatmentForm jobId={job.id} />
+    </>
+  );
+}
+
 export default function MobileHomeScreen() {
   const { error, initialize, profile, signIn, signOut, status } = useAuth();
   const {
@@ -63,7 +75,14 @@ export default function MobileHomeScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const date = todayKey();
-  const dailyJobs = useMemo(() => buildMobileDailyJobs(jobs, date), [date, jobs]);
+  const routeTimeline = useMemo(
+    () => buildMobileDailyRouteTimeline(jobs, date, queueItems),
+    [date, jobs, queueItems],
+  );
+  const routeJobCount =
+    (routeTimeline.current ? 1 : 0) +
+    (routeTimeline.next ? 1 : 0) +
+    routeTimeline.later.length;
 
   useEffect(() => {
     void initialize();
@@ -191,7 +210,7 @@ export default function MobileHomeScreen() {
       }}
     >
       <MobileTechnicianHeader
-        assignedJobCount={dailyJobs.jobs.length}
+        assignedJobCount={routeJobCount}
         error={error}
         onRefreshJobs={() => void load()}
         onSignOut={() => void handleSignOut()}
@@ -210,10 +229,10 @@ export default function MobileHomeScreen() {
         >
           <View>
             <Text style={{ color: "#111827", fontSize: 22, fontWeight: "800" }}>
-              Today's jobs
+              Today's route
             </Text>
             <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 2 }}>
-              {dailyJobs.date}
+              {routeTimeline.date}
             </Text>
           </View>
           <Pressable
@@ -271,7 +290,7 @@ export default function MobileHomeScreen() {
           </View>
         ) : null}
 
-        {jobsStatus === "ready" && dailyJobs.jobs.length === 0 ? (
+        {jobsStatus === "ready" && routeJobCount === 0 ? (
           <View
             style={{
               backgroundColor: "#FFFFFF",
@@ -290,24 +309,13 @@ export default function MobileHomeScreen() {
           </View>
         ) : null}
 
-        {dailyJobs.jobs.map((job) => (
-          <AssignedJobCard
-            address={job.location?.address}
-            customerName={job.customer?.name}
-            key={job.id}
-            notes={job.service_notes}
-            scheduledStart={job.scheduled_start}
-            statusLabel={statusLabels[job.status]}
-            workPlan={buildMobileJobWorkPlan(job, queueItems)}
-          >
-            <JobStatusControls job={job} />
-            <JobGeofenceControls job={job} />
-            <JobChemicalLogForm jobId={job.id} />
-            <JobPhotoUploadForm jobId={job.id} />
-            <JobSignatureCaptureForm jobId={job.id} />
-            <JobTreatmentForm jobId={job.id} />
-          </AssignedJobCard>
-        ))}
+        {jobsStatus === "ready" && routeJobCount > 0 ? (
+          <MobileRouteTimeline
+            renderJobControls={renderFieldControls}
+            statusLabels={statusLabels}
+            timeline={routeTimeline}
+          />
+        ) : null}
 
         {lastLoadedAt ? (
           <Text style={{ color: "#9CA3AF", fontSize: 12 }}>

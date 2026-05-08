@@ -1,5 +1,16 @@
 # Done
 
+## Daily Route Timeline V1
+
+- Added a shared mobile daily route timeline helper for current, next, and later assigned jobs
+- Prioritized current jobs by `in_progress`, then `en_route`, then the next scheduled job
+- Reused existing mobile work-plan and offline queue state for per-job capture readiness labels
+- Replaced the flat mobile job list with a guided route timeline while preserving full field capture controls for current and next jobs
+- Added compact always-visible later job rows
+- Added dispatch companion guidance explaining technician route order and provider-free scope
+- Added focused domain, mobile component, and dispatch UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Field Workflow Batch V1
 
 - Added mobile job work-plan readiness for status, geofence, chemical log, photo, signature, and treatment form captures

@@ -62,10 +62,11 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Field Workflow Batch V1:
+Current priority is Daily Route Timeline V1:
 
-- show technicians a per-job field work plan for status, geofence, chemical, photo, signature, and form captures
-- clarify capture-specific queued sync work without changing offline queue storage
-- summarize closeout readiness for office billing handoff
-- show customer-safe portal service summaries without admin-only internals
+- guide technician mobile work through current, next, and later assigned jobs
+- prioritize route focus by job status, then scheduled order
+- reuse offline queue and field work-plan readiness for capture progress labels
+- keep dispatch aligned with technician route ordering
+- avoid maps, route optimization, and provider configuration in this slice
 - track Supabase leaked password protection as a deferred Pro-plan hardening item
