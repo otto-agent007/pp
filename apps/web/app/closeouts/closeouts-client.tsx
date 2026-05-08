@@ -53,11 +53,18 @@ function ReviewMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function EmptyState({ children }: { children: string }) {
+function EmptyState({
+  children,
+  description,
+}: {
+  children: string;
+  description?: string;
+}) {
   return (
-    <p className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
-      {children}
-    </p>
+    <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+      <p>{children}</p>
+      {description ? <p className="mt-2">{description}</p> : null}
+    </div>
   );
 }
 
@@ -142,6 +149,9 @@ export function CloseoutsClient() {
     visibleJobs.find((job) => job.id === selectedJobId) ?? visibleJobs[0] ?? null;
   const closeout = useJobCloseoutReview(selectedJob);
   const counts = closeout.review ? getCloseoutCounts(closeout.review) : null;
+  const noCloseoutsAction = search.trim()
+    ? "Clear the search, show all jobs, or complete a dispatched job to start a closeout review."
+    : "Complete a job in dispatch to move it into closeout review with its field captures.";
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
@@ -151,6 +161,16 @@ export function CloseoutsClient() {
             Admin
           </p>
           <h1 className="text-3xl font-bold text-neutralDark">Job closeouts</h1>
+          <div className="mt-3 max-w-3xl space-y-1 text-sm text-gray-600">
+            <p>
+              Completed jobs from dispatch appear here so office staff can review field
+              captures before billing or customer follow-up.
+            </p>
+            <p>
+              Field captures include forms, chemical logs, photos, and signatures
+              submitted by the technician.
+            </p>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <input
@@ -179,7 +199,7 @@ export function CloseoutsClient() {
           {jobsQuery.isLoading ? (
             <EmptyState>Loading closeouts</EmptyState>
           ) : visibleJobs.length === 0 ? (
-            <EmptyState>No closeouts found</EmptyState>
+            <EmptyState description={noCloseoutsAction}>No closeouts found</EmptyState>
           ) : (
             visibleJobs.map((job) => (
               <button

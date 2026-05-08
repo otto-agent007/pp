@@ -85,6 +85,16 @@ export function DispatchClient() {
               Admin
             </p>
             <h1 className="text-3xl font-bold text-neutralDark">Dispatch Calendar</h1>
+            <div className="mt-3 max-w-3xl space-y-1 text-sm text-gray-600">
+              <p>
+                Scheduled jobs stay visible for the week so the demo can show routing,
+                assignment, and status changes.
+              </p>
+              <p>
+                Completed jobs stay on dispatch for the handoff, then appear in
+                closeouts for field-capture review.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -177,7 +187,13 @@ export function DispatchClient() {
               </header>
 
               {day.jobs.length === 0 ? (
-                <p className="text-sm text-gray-500">No jobs scheduled</p>
+                <div className="space-y-1 text-sm text-gray-500">
+                  <p>No jobs scheduled</p>
+                  <p>
+                    Create or schedule jobs, then use dispatch to assign a technician
+                    and move work through completion.
+                  </p>
+                </div>
               ) : (
                 day.jobs.map((job) => (
                   <article

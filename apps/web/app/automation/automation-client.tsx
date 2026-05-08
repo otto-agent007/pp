@@ -888,6 +888,13 @@ export function AutomationClient() {
                         ? "Uses server-only NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET."
                         : "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery."}
                     </p>
+                    {providerStatus?.provider === "webhook" ? null : (
+                      <p className="mt-1 text-xs text-gray-600">
+                        Manual scheduler runs and manual notification follow-up
+                        stay available without browser-side cron or webhook
+                        secrets.
+                      </p>
+                    )}
                   </div>
                 )}
                 {sendBulkNotifications.data ? (

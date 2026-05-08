@@ -183,6 +183,10 @@ export function PaymentsClient() {
         <p className="mt-2 text-sm text-gray-700">
           Stripe can stay unset for customer, job, closeout, and portal demos.
         </p>
+        <p className="mt-2 text-sm text-gray-700">
+          Invoices and manual paid status still work for non-payment demos
+          without Stripe.
+        </p>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">

@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Ops Demo Readiness V1:
+Current priority is Demo/Ops Polish Batch V1:
 
-- keep the signed-in home dashboard useful for live product walkthroughs
-- guide customer, job, dispatch, closeout, billing, and portal follow-up steps
-- avoid seed scripts or fake production data
+- show a compact readiness snapshot on the signed-in home dashboard
+- guide customer, job, dispatch, closeout, payments, and automation demo handoffs
+- keep demo polish static and live-data safe, with no seed scripts or production mutations
 - keep leaked password protection as the remaining Supabase dashboard action

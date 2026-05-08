@@ -115,6 +115,37 @@ describe("DispatchClient", () => {
     expect(screen.getAllByText("10 Pine Street")).toHaveLength(2);
   });
 
+  it("explains scheduled job visibility and completed handoff", () => {
+    render(<DispatchClient />);
+
+    expect(
+      screen.getByText(
+        "Scheduled jobs stay visible for the week so the demo can show routing, assignment, and status changes.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Completed jobs stay on dispatch for the handoff, then appear in closeouts for field-capture review.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("guides users when no jobs are scheduled for a day", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    expect(screen.getAllByText("No jobs scheduled").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(
+        "Create or schedule jobs, then use dispatch to assign a technician and move work through completion.",
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+
   it("filters by status and technician", async () => {
     const user = userEvent.setup();
     render(<DispatchClient />);

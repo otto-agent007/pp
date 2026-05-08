@@ -35,6 +35,11 @@ const emptyForm: CustomerInput = {
   locations: [{ ...emptyLocation }],
 };
 
+const createSuccessMessage =
+  "Customer saved. Schedule the first job next; share portal links when closeout and billing are ready.";
+const updateSuccessMessage =
+  "Customer updated. Schedule the first job next; share portal links when closeout and billing are ready.";
+
 function customerToInput(customer: Customer): CustomerInput {
   return {
     name: customer.name,
@@ -63,6 +68,7 @@ export function CustomersClient() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [form, setForm] = useState<CustomerInput>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const visibleCustomers = useMemo(
     () => filterCustomers(customersQuery.data ?? [], search, status),
@@ -75,12 +81,14 @@ export function CustomersClient() {
     setEditingCustomer(null);
     setForm({ ...emptyForm, locations: [{ ...emptyLocation }] });
     setFormError(null);
+    setSaveMessage(null);
   }
 
   function editCustomer(customer: Customer) {
     setEditingCustomer(customer);
     setForm(customerToInput(customer));
     setFormError(null);
+    setSaveMessage(null);
   }
 
   function updateLocation(index: number, update: Partial<CustomerLocationInput>) {
@@ -115,9 +123,11 @@ export function CustomersClient() {
   async function submitCustomer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+    setSaveMessage(null);
 
     try {
       const input = validateCustomerInput(form);
+      const isEditing = Boolean(editingCustomer);
 
       if (editingCustomer) {
         await updateCustomer.mutateAsync({ id: editingCustomer.id, input });
@@ -126,6 +136,7 @@ export function CustomersClient() {
       }
 
       resetForm();
+      setSaveMessage(isEditing ? updateSuccessMessage : createSuccessMessage);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Unable to save customer");
     }
@@ -251,6 +262,9 @@ export function CustomersClient() {
             <p className="mt-1 text-sm text-amber-800">
               Save the customer with one active service location, then schedule
               the first job.
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Use portal links after closeout and billing are ready.
             </p>
             <Link
               className="mt-3 inline-flex min-h-10 items-center rounded-md border border-amber-300 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
@@ -394,6 +408,14 @@ export function CustomersClient() {
           </div>
 
           {formError ? <p className="text-sm text-red-700">{formError}</p> : null}
+          {saveMessage ? (
+            <p
+              className="rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800"
+              role="status"
+            >
+              {saveMessage}
+            </p>
+          ) : null}
 
           <button
             className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-400"

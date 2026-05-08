@@ -1,5 +1,9 @@
 import { translations } from "@pest-patrol/i18n";
-import { getDemoWorkflowSteps } from "@pest-patrol/domain";
+import {
+  getDemoWorkflowSteps,
+  getProductionSmokeChecklist,
+  getRemainingProductionReadinessActions,
+} from "@pest-patrol/domain";
 import Link from "next/link";
 
 const roadmapItems = [
@@ -14,6 +18,8 @@ const roadmapItems = [
 
 export default function HomePage() {
   const demoWorkflowSteps = getDemoWorkflowSteps();
+  const productionSmokeChecklist = getProductionSmokeChecklist();
+  const remainingReadinessActions = getRemainingProductionReadinessActions();
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-10">
@@ -55,6 +61,34 @@ export default function HomePage() {
             demo focused on records you are comfortable keeping or archiving
             later.
           </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Manual smoke checklist
+            </p>
+            <h3 className="mt-2 text-base font-semibold text-neutralDark">
+              Readiness snapshot
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              {productionSmokeChecklist.length} operator-run checks ready for
+              live-data demos.
+            </p>
+          </div>
+          {remainingReadinessActions.map((action) => (
+            <div
+              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              key={action.id}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Dashboard action
+              </p>
+              <h3 className="mt-2 text-base font-semibold text-neutralDark">
+                {action.label}
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">{action.action}</p>
+            </div>
+          ))}
         </div>
         <div className="grid gap-3 lg:grid-cols-5">
           {demoWorkflowSteps.map((step, index) => (

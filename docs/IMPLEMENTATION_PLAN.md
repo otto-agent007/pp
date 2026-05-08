@@ -1,18 +1,25 @@
 # Implementation Plan
 
-## Current Priority: Ops Demo Readiness V1
+## Current Priority: Demo/Ops Polish Batch V1
 
-1. Keep the signed-in home dashboard as the demo command center.
-2. Show ordered live-data demo steps from customer setup through billing and portal follow-up.
-3. For each step, show route, operator action, and success signal.
-4. Avoid seed scripts, local checklist persistence, or direct Supabase calls from the dashboard.
-5. Keep leaked password protection as the remaining Supabase dashboard-only hardening action.
+1. Add a compact readiness snapshot to the signed-in home dashboard.
+2. Polish customer and job demo guidance so operators know the next action after saves.
+3. Clarify dispatch and closeout handoffs for scheduled and completed jobs.
+4. Tighten payments and automation finish-line copy for optional provider setup.
+5. Avoid migrations, seed data, production mutations, and direct Supabase calls from UI components.
 
 ## Current Follow-Up: Supabase Auth Dashboard Hardening
 
 1. Enable leaked password protection in Supabase Auth settings.
 2. Rerun Supabase security advisors and confirm `auth_leaked_password_protection` clears.
 3. Keep performance advisors as a routine post-migration check.
+
+## Recently Completed: Ops Demo Readiness V1
+
+1. Merged PR #17 into `main`.
+2. Added the signed-in home dashboard demo workflow as the command center.
+3. Kept the workflow static, live-data safe, and free of seed behavior.
+4. Left leaked password protection as the remaining Supabase dashboard-only hardening action.
 
 ## Recently Completed: Live Admin Smoke Test V1
 

@@ -127,6 +127,9 @@ describe("CustomersClient", () => {
         "Save the customer with one active service location, then schedule the first job.",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Use portal links after closeout and billing are ready."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Schedule job" })).toHaveAttribute(
       "href",
       "/jobs",
@@ -186,6 +189,39 @@ describe("CustomersClient", () => {
         ]),
       }),
     );
+  });
+
+  it("shows next-action guidance after creating a customer", async () => {
+    const user = userEvent.setup();
+    render(<CustomersClient />);
+
+    await user.type(screen.getByLabelText("Name"), "New Customer");
+    await user.type(screen.getAllByLabelText("Address")[0], "10 Pine Street");
+    await user.click(screen.getByRole("button", { name: "Save customer" }));
+
+    expect(
+      await screen.findByText(
+        "Customer saved. Schedule the first job next; share portal links when closeout and billing are ready.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows next-action guidance after updating a customer", async () => {
+    const user = userEvent.setup();
+    render(<CustomersClient />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Save customer" }));
+
+    expect(updateMutateAsync).toHaveBeenCalledWith({
+      id: "customer-1",
+      input: expect.objectContaining({ name: "Apex Homes" }),
+    });
+    expect(
+      await screen.findByText(
+        "Customer updated. Schedule the first job next; share portal links when closeout and billing are ready.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("archives an active customer", async () => {
