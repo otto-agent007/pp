@@ -9,10 +9,12 @@ export function requireNonEmpty(value: string, fieldName: string) {
 export {
   buildMobileJobWorkPlan,
   buildMobileTechnicianReadinessPanel,
+  getMobileCompletionReadinessGuard,
   getDemoWorkflowSteps,
 } from "./demoReadiness";
 export type {
   DemoWorkflowStep,
+  MobileCompletionReadinessGuard,
   MobileJobWorkPlanItem,
   MobileJobWorkPlanState,
   MobileTechnicianReadinessInput,
