@@ -67,7 +67,10 @@ Latest hardening status:
 
 - `20260507220000_supabase_security_hardening_v1.sql` was applied to production on May 7, 2026 after explicit approval.
 - Local and remote Supabase migration history were aligned after repairing a duplicate technicians migration timestamp.
-- Dashboard-only follow-up remains: rerun Supabase advisors and enable leaked password protection.
+- Supabase CLI advisors were rerun after the hardening migration.
+- Performance advisors reported no issues.
+- Security advisors reported one remaining warning: leaked password protection is disabled.
+- Dashboard-only follow-up remains: enable leaked password protection.
 
 ## Vercel Setup
 
