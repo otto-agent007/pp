@@ -12,6 +12,8 @@ import type { Job, JobInput, JobStatus, OfflineQueueItem } from "@pest-patrol/ty
 
 import { buildMobileJobWorkPlan } from "./demoReadiness";
 import type { MobileJobWorkPlanItem } from "./demoReadiness";
+import { getOfflineQueueJobTriage } from "./offlineQueue";
+import type { OfflineQueueJobTriage } from "./offlineQueue";
 
 export type JobStatusFilter = JobStatus | "all";
 export type TechnicianFilter = "all" | "unassigned" | string;
@@ -37,6 +39,7 @@ export interface MobileRouteTimelineJob {
   job: Job;
   readinessLabel: string;
   sectionLabel: "Current job" | "Later today" | "Next job";
+  syncTriage: OfflineQueueJobTriage;
   workPlan: MobileJobWorkPlanItem[];
 }
 
@@ -278,6 +281,7 @@ function toTimelineJob(
     job,
     readinessLabel: getReadinessLabel(workPlan),
     sectionLabel,
+    syncTriage: getOfflineQueueJobTriage(queueItems, job.id),
     workPlan,
   };
 }

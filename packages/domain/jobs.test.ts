@@ -361,6 +361,10 @@ describe("job domain", () => {
     );
 
     expect(timeline.current?.readinessLabel).toBe("1 done, 1 pending, 4 missing");
+    expect(timeline.current?.syncTriage).toMatchObject({
+      label: "1 queued sync item",
+      state: "queued",
+    });
     expect(timeline.current?.workPlan.find((item) => item.id === "form")).toMatchObject({
       state: "pending",
       summary: "Treatment form is queued for sync.",

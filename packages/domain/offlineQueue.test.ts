@@ -4,6 +4,7 @@ import {
   clearSyncedQueueItems,
   createOfflineQueueItem,
   getOfflineQueueItemLabel,
+  getOfflineQueueJobTriage,
   getOfflineQueueSummary,
   markQueueItemRetrying,
   markQueueItemSynced,
@@ -138,5 +139,71 @@ describe("offline queue domain", () => {
         ),
       ),
     ).toBe("Arrival geofence for job job-2");
+  });
+
+  it("summarizes queued work by job for route stop triage", () => {
+    const queued = createOfflineQueueItem(
+      { action: "photo_upload", payload: { job_id: "job-1" } },
+      { id: "queue-1", now },
+    );
+    const retrying = markQueueItemRetrying(
+      createOfflineQueueItem(
+        { action: "signature_capture", payload: { job_id: "job-1" } },
+        { id: "queue-2", now },
+      ),
+      "Offline",
+      { now },
+    );
+    const synced = markQueueItemSynced(
+      createOfflineQueueItem(
+        { action: "form_submission_create", payload: { job_id: "job-1" } },
+        { id: "queue-3", now },
+      ),
+      { now },
+    );
+
+    expect(getOfflineQueueJobTriage([queued, retrying, synced], "job-1")).toEqual({
+      failed: 0,
+      jobId: "job-1",
+      label: "2 pending sync, 1 synced",
+      pending: 2,
+      queued: 1,
+      retrying: 1,
+      state: "retrying",
+      synced: 1,
+      total: 3,
+    });
+  });
+
+  it("prioritizes failed route stop sync state", () => {
+    const failed = createOfflineQueueItem(
+      { action: "chemical_log_create", payload: { job_id: "job-1" } },
+      { id: "queue-1", now },
+    );
+
+    expect(
+      getOfflineQueueJobTriage(
+        [{ ...failed, status: "failed", last_error: "Rejected" }],
+        "job-1",
+      ),
+    ).toMatchObject({
+      failed: 1,
+      label: "1 failed sync item",
+      state: "failed",
+    });
+  });
+
+  it("returns a quiet route stop sync state when a job has no queue work", () => {
+    expect(getOfflineQueueJobTriage([], "job-1")).toEqual({
+      failed: 0,
+      jobId: "job-1",
+      label: "No local sync work",
+      pending: 0,
+      queued: 0,
+      retrying: 0,
+      state: "idle",
+      synced: 0,
+      total: 0,
+    });
   });
 });

@@ -214,6 +214,7 @@ export {
 export {
   clearSyncedQueueItems,
   createOfflineQueueItem,
+  getOfflineQueueJobTriage,
   getOfflineQueueItemLabel,
   getOfflineQueueSummary,
   markQueueItemFailed,
@@ -221,7 +222,11 @@ export {
   markQueueItemSynced,
   validateOfflineQueueInput,
 } from "./offlineQueue";
-export type { OfflineQueueSummary } from "./offlineQueue";
+export type {
+  OfflineQueueJobTriage,
+  OfflineQueueJobTriageState,
+  OfflineQueueSummary,
+} from "./offlineQueue";
 export {
   createFormDraft,
   createJobFormSubmission,

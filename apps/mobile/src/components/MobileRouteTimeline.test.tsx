@@ -29,6 +29,20 @@ vi.mock("react-native", async () => {
 
 const now = "2026-05-07T17:15:00.000Z";
 
+function syncTriage(label: string) {
+  return {
+    failed: 0,
+    jobId: "job-1",
+    label,
+    pending: label.includes("pending") || label.includes("queued") ? 1 : 0,
+    queued: label.includes("queued") ? 1 : 0,
+    retrying: label.includes("pending") ? 1 : 0,
+    state: label.includes("queued") ? "queued" : "idle",
+    synced: 0,
+    total: label === "No local sync work" ? 0 : 1,
+  } as const;
+}
+
 function collectText(node: ReactNode): string[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
@@ -130,6 +144,7 @@ const timeline = {
     },
     readinessLabel: "2 done, 1 pending, 3 missing",
     sectionLabel: "Current job",
+    syncTriage: syncTriage("1 queued sync item"),
     workPlan: [],
   },
   date: "2026-05-07",
@@ -171,6 +186,7 @@ const timeline = {
       },
       readinessLabel: "1 done, 0 pending, 5 missing",
       sectionLabel: "Later today",
+      syncTriage: syncTriage("No local sync work"),
       workPlan: [],
     },
   ],
@@ -211,6 +227,7 @@ const timeline = {
     },
     readinessLabel: "1 done, 1 pending, 4 missing",
     sectionLabel: "Next job",
+    syncTriage: syncTriage("1 pending sync, 0 synced"),
     workPlan: [],
   },
   summary: {
@@ -242,13 +259,16 @@ describe("MobileRouteTimeline", () => {
     expect(text).toContain("3 jobs assigned today");
     expect(text).toContain("Current job");
     expect(text).toContain("Apex Homes");
+    expect(text).toContain("1 queued sync item");
     expect(text).toContain("Controls for job-current");
     expect(text).toContain("Next job");
     expect(text).toContain("Lopez Residence");
+    expect(text).toContain("1 pending sync, 0 synced");
     expect(text).toContain("Controls for job-next");
     expect(text).toContain("Later today");
     expect(text).toContain("Green Market");
     expect(text).toContain("1 done, 0 pending, 5 missing");
+    expect(text).toContain("No local sync work");
     expect(text).not.toContain("Controls for job-later");
   });
 

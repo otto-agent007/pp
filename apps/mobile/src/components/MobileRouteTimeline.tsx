@@ -33,7 +33,10 @@ function RouteSection({
     <View style={styles.routeSection}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionLabel}>{item.sectionLabel}</Text>
-        <Text style={styles.readinessLabel}>{item.readinessLabel}</Text>
+        <View style={styles.sectionMeta}>
+          <Text style={styles.readinessLabel}>{item.readinessLabel}</Text>
+          <Text style={styles.stopSyncLabel}>{item.syncTriage.label}</Text>
+        </View>
       </View>
       <AssignedJobCard
         address={item.job.location?.address}
@@ -74,6 +77,7 @@ function LaterRouteRow({
           {item.job.location?.address ?? "No location saved"}
         </Text>
         <Text style={styles.laterReadiness}>{item.readinessLabel}</Text>
+        <Text style={styles.laterSync}>{item.syncTriage.label}</Text>
       </View>
       <View style={styles.laterStatus}>
         <Text style={styles.laterStatusText}>{statusLabels[item.job.status]}</Text>
@@ -163,6 +167,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 2,
   },
+  laterSync: {
+    color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "700",
+  },
   laterRow: {
     alignItems: "flex-start",
     backgroundColor: "#FFFFFF",
@@ -216,6 +225,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     textTransform: "uppercase",
+  },
+  sectionMeta: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  stopSyncLabel: {
+    color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "700",
   },
   summary: {
     backgroundColor: "#EEF2FF",
