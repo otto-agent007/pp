@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -19,6 +20,10 @@ const searchParams = vi.hoisted(() => ({
 
 vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
+}));
+
+vi.mock("../../hooks/useCloseouts", () => ({
+  useCloseoutCaptureSummaries: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -127,6 +132,10 @@ describe("PaymentsClient", () => {
       data: [invoice],
       isLoading: false,
     } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-1")],
+      isLoading: false,
+    } as never);
     vi.mocked(useCreateInvoice).mockReturnValue({
       mutateAsync: createInvoice,
       isPending: false,
@@ -182,6 +191,36 @@ describe("PaymentsClient", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/sk_test_/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a closeouts handoff strip with billing queue counts", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        completedJob,
+        {
+          ...secondCompletedJob,
+          id: "job-3",
+        },
+      ],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-1"), { ...fullSummary("job-3"), photos: 0 }],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(screen.getByText("From closeouts")).toBeInTheDocument();
+    expect(screen.getByText("1 ready to bill · 1 need captures")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View queue" })).toHaveAttribute(
+      "href",
+      "/closeouts",
+    );
   });
 
   it("creates an invoice from a completed job", async () => {
@@ -249,3 +288,13 @@ describe("PaymentsClient", () => {
     expect(voidInvoice).toHaveBeenCalledWith("invoice-1");
   });
 });
+
+function fullSummary(jobId: string) {
+  return {
+    chemicalLogs: 1,
+    forms: 1,
+    jobId,
+    photos: 1,
+    signatures: 1,
+  };
+}

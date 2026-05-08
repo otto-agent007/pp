@@ -125,16 +125,19 @@ export type {
   TechnicianLoginInput,
 } from "./auth";
 export {
+  buildBillingQueue,
   buildJobCloseoutReview,
   buildCustomerPortalCloseouts,
   createCustomerPortalAccessToken,
   filterCloseoutJobs,
   filterCustomerPortalCloseouts,
+  getBillingQueueCounts,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
+  listCloseoutCaptureSummaries,
   listCustomerPortalAccessTokens,
   listCustomerPortalBilling,
   listCustomerPortalCloseouts,
@@ -145,6 +148,10 @@ export {
   validateCustomerPortalCustomerId,
 } from "./closeouts";
 export type {
+  BillingQueueCounts,
+  BillingQueueGroup,
+  BillingQueueItem,
+  BillingQueueState,
   CloseoutCounts,
   CloseoutReviewReadiness,
   CloseoutStatusFilter,

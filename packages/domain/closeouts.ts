@@ -11,9 +11,12 @@ import type {
   JobCloseoutReview,
   JobFormSubmission,
   JobMedia,
+  CloseoutCaptureSummary,
+  Invoice,
 } from "@pest-patrol/types";
 import {
   createCustomerPortalAccessTokenRecord,
+  listCloseoutCaptureSummaryRecords,
   listCustomerPortalAccessTokenRecords,
   listCustomerPortalCloseoutRecords,
   revokeCustomerPortalAccessTokenRecord,
@@ -27,6 +30,29 @@ export interface CloseoutCounts {
   forms: number;
   photos: number;
   signatures: number;
+}
+
+export type BillingQueueState = "invoiced" | "needsCaptures" | "ready";
+
+export interface BillingQueueItem {
+  invoice: Invoice | null;
+  job: Job;
+  readiness: CloseoutReviewReadiness;
+  state: BillingQueueState;
+  summary: CloseoutCaptureSummary;
+}
+
+export interface BillingQueueGroup {
+  invoiced: BillingQueueItem[];
+  needsCaptures: BillingQueueItem[];
+  ready: BillingQueueItem[];
+}
+
+export interface BillingQueueCounts {
+  invoiced: number;
+  needsCaptures: number;
+  ready: number;
+  totalCompleted: number;
 }
 
 export interface CloseoutReviewReadiness {
@@ -155,6 +181,95 @@ export function getCloseoutReviewReadiness(
   };
 }
 
+function readinessFromSummary(summary: CloseoutCaptureSummary): CloseoutReviewReadiness {
+  return getCloseoutReviewReadiness({
+    chemical_logs: Array.from({ length: summary.chemicalLogs }) as never,
+    form_submissions: Array.from({ length: summary.forms }) as never,
+    job: { id: summary.jobId } as Job,
+    media: [],
+    photos: Array.from({ length: summary.photos }) as never,
+    signatures: Array.from({ length: summary.signatures }) as never,
+  });
+}
+
+function latestInvoiceForJob(invoices: Invoice[], jobId: string) {
+  return invoices
+    .filter((invoice) => invoice.job_id === jobId)
+    .sort(
+      (left, right) =>
+        Date.parse(right.created_at) - Date.parse(left.created_at),
+    )[0] ?? null;
+}
+
+function sortOldestFirst(left: BillingQueueItem, right: BillingQueueItem) {
+  return Date.parse(left.job.scheduled_start) - Date.parse(right.job.scheduled_start);
+}
+
+function sortNewestFirst(left: BillingQueueItem, right: BillingQueueItem) {
+  return Date.parse(right.job.scheduled_start) - Date.parse(left.job.scheduled_start);
+}
+
+export function buildBillingQueue(
+  jobs: Job[],
+  invoices: Invoice[],
+  summaries: CloseoutCaptureSummary[],
+): BillingQueueGroup {
+  const summariesByJobId = new Map(
+    summaries.map((summary) => [summary.jobId, summary]),
+  );
+  const queue: BillingQueueGroup = {
+    invoiced: [],
+    needsCaptures: [],
+    ready: [],
+  };
+
+  jobs
+    .filter((job) => job.status === "completed")
+    .forEach((job) => {
+      const summary = summariesByJobId.get(job.id) ?? {
+        chemicalLogs: 0,
+        forms: 0,
+        jobId: job.id,
+        photos: 0,
+        signatures: 0,
+      };
+      const readiness = readinessFromSummary(summary);
+      const invoice = latestInvoiceForJob(invoices, job.id);
+      const state: BillingQueueState = invoice
+        ? "invoiced"
+        : readiness.billingReady
+          ? "ready"
+          : "needsCaptures";
+      const item: BillingQueueItem = {
+        invoice,
+        job,
+        readiness,
+        state,
+        summary,
+      };
+
+      queue[state].push(item);
+    });
+
+  return {
+    invoiced: queue.invoiced.sort(sortNewestFirst),
+    needsCaptures: queue.needsCaptures.sort(sortNewestFirst),
+    ready: queue.ready.sort(sortOldestFirst),
+  };
+}
+
+export function getBillingQueueCounts(
+  queue: BillingQueueGroup,
+): BillingQueueCounts {
+  return {
+    invoiced: queue.invoiced.length,
+    needsCaptures: queue.needsCaptures.length,
+    ready: queue.ready.length,
+    totalCompleted:
+      queue.ready.length + queue.needsCaptures.length + queue.invoiced.length,
+  };
+}
+
 function requireNonEmpty(value: string, fieldName: string) {
   if (!value.trim()) {
     throw new Error(`${fieldName} is required`);
@@ -203,6 +318,10 @@ export async function listCustomerPortalCloseouts(
     validateCustomerPortalCustomerId(customerId),
     validateCustomerPortalAccessToken(accessToken),
   );
+}
+
+export async function listCloseoutCaptureSummaries(jobIds: string[]) {
+  return listCloseoutCaptureSummaryRecords(jobIds);
 }
 
 export async function listCustomerPortalBilling(

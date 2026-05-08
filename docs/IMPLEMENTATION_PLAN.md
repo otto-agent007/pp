@@ -2,11 +2,27 @@
 
 ## Current Priority: Pick Next Follow-Up Slice
 
-1. Field Ops + Billing Handoff Batch V1 is implemented and verified.
-2. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
-3. Treat Claude as external UI design input for future UI polish, while Codex owns architecture, data flow, offline safety, tests, integration, and verification.
-4. Favor one of the next follow-up candidates: bilingual field copy, billing work queue, payment reconciliation polish, portal readiness polish, or customer ledger.
-5. Continue avoiding production migrations, provider config, Supabase dashboard changes, or production mutations without explicit approval.
+1. Billing Work Queue V1 is implemented and verified.
+2. Keep future billing follow-ups aligned with `/closeouts` as the readiness queue and `/payments` as the invoice workspace.
+3. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
+4. Treat Claude as external UI design input for future UI-heavy polish, while Codex owns architecture, data flow, tests, integration, and verification.
+5. Favor one of the next follow-up candidates: bilingual field copy, payment reconciliation polish, portal readiness polish, or customer ledger.
+
+## Recently Completed: Billing Work Queue V1
+
+1. Added aggregate closeout capture summaries through `packages/api-client` for completed-job forms, chemical logs, photos, and signatures.
+2. Added shared billing queue grouping, counts, invoice selection, and sorting in `packages/domain`.
+3. Retitled `/closeouts` to Billing work queue with counter filters, grouped sections, and next-action states.
+4. Added the `/payments` From closeouts handoff strip while preserving `?job_id=` invoice preselection.
+5. Verified with repository test, typecheck, lint, and build commands.
+
+## Recently Completed: Field Ops + Billing Handoff Batch V1
+
+1. Persisted mobile offline queue and draft stores across app restarts without changing queue contracts.
+2. Added route-stop focus and completion readiness guard behavior to the mobile route flow.
+3. Added per-job sync triage labels so queued/retrying/synced/failed work is visible by route stop.
+4. Added closeout-to-invoice query-param handoff while preserving the existing invoice model and provider boundaries.
+5. Verified the full batch with repository test, typecheck, lint, and build commands.
 
 ## Recently Completed: Daily Route Timeline + Field Ops Handoff V1
 

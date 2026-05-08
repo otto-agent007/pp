@@ -62,9 +62,11 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is choosing the next follow-up slice after the verified Field Ops + Billing Handoff batch:
+Current priority is choosing the next follow-up slice after the verified Billing Work Queue V1 slice:
 
-- next candidates: bilingual field copy, billing work queue, payment reconciliation, portal readiness, and customer ledger
+- `/closeouts` is the Billing work queue for completed-job readiness
+- `/payments` remains the invoice workspace with the closeouts handoff strip
+- next candidates: bilingual field copy, payment reconciliation, portal readiness, and customer ledger
 - use Claude as external UI design input for UI-heavy polish while Codex owns implementation and verification
 - keep mobile writes offline-safe and shared logic in packages
 - avoid provider config, migrations, Supabase dashboard changes, or production mutations without explicit approval

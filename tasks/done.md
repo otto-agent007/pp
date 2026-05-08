@@ -1,5 +1,14 @@
 # Done
 
+## Billing Work Queue V1
+
+- Added aggregate closeout capture summaries for completed jobs across forms, chemical logs, photos, and signatures without schema changes
+- Added shared billing queue grouping, counts, invoice selection, and sorting in the domain layer
+- Retitled `/closeouts` to Billing work queue with counter filters, grouped queue sections, and state-driven next actions
+- Added the `/payments` From closeouts handoff strip while preserving existing `?job_id=` preselection behavior
+- Added focused API-client, domain, closeouts UI, and payments UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Field Ops + Billing Handoff Batch V1
 
 - Persisted queued mobile writes and field drafts across app restarts with existing queue action contracts
