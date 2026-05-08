@@ -168,6 +168,16 @@ describe("CloseoutsClient", () => {
     render(<CloseoutsClient />);
 
     expect(screen.getByRole("heading", { name: "Job closeouts" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Completed jobs from dispatch appear here so office staff can review field captures before billing or customer follow-up.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Field captures include forms, chemical logs, photos, and signatures submitted by the technician.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
     expect(screen.getByText("Bait Gel")).toBeInTheDocument();
@@ -193,6 +203,32 @@ describe("CloseoutsClient", () => {
     await user.type(screen.getByLabelText("Search closeouts"), "missing");
 
     expect(screen.getByText("No closeouts found")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Clear the search, show all jobs, or complete a dispatched job to start a closeout review.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("guides users when no completed jobs are ready for closeout", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [scheduledJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: null,
+    } as never);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getByText("No closeouts found")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Complete a job in dispatch to move it into closeout review with its field captures.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("renders empty capture states", () => {

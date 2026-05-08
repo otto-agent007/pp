@@ -53,4 +53,23 @@ describe("HomePage", () => {
     );
     expect(screen.queryByText(/seed fake production data/i)).not.toBeInTheDocument();
   });
+
+  it("renders a compact readiness snapshot for the manual checklist and remaining dashboard action", () => {
+    render(<HomePage />);
+
+    expect(
+      screen.getByRole("heading", { name: "Readiness snapshot" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Manual smoke checklist")).toBeInTheDocument();
+    expect(
+      screen.getByText("7 operator-run checks ready for live-data demos."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Dashboard action")).toBeInTheDocument();
+    expect(screen.getByText("Leaked password protection")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Enable leaked password protection in Supabase Auth settings.",
+      ),
+    ).toBeInTheDocument();
+  });
 });

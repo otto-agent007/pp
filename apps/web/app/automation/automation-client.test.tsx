@@ -339,8 +339,7 @@ describe("AutomationClient", () => {
     updateTemplate.mockResolvedValue(template);
   });
 
-  it("renders summaries and filters notifications", async () => {
-    const user = userEvent.setup();
+  it("renders summaries and filters notifications", () => {
     render(<AutomationClient />);
 
     expect(screen.getByText("Call Apex")).toBeInTheDocument();
@@ -365,7 +364,9 @@ describe("AutomationClient", () => {
       screen.getByRole("heading", { name: "Post-service follow-up" }),
     ).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Search notifications"), "missing");
+    fireEvent.change(screen.getByLabelText("Search notifications"), {
+      target: { value: "missing" },
+    });
 
     expect(screen.getByText("No notifications found")).toBeInTheDocument();
   });
@@ -386,6 +387,11 @@ describe("AutomationClient", () => {
     expect(
       screen.getByText(
         "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Manual scheduler runs and manual notification follow-up stay available without browser-side cron or webhook secrets.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/https:\/\/provider.example/i)).not.toBeInTheDocument();
@@ -517,14 +523,20 @@ describe("AutomationClient", () => {
   });
 
   it("creates automation rules", async () => {
-    const user = userEvent.setup();
     render(<AutomationClient />);
 
-    await user.type(screen.getByLabelText("Rule name"), "Quarterly prompt");
-    await user.selectOptions(screen.getByLabelText("Rule type"), "recurring_service_prompt");
-    await user.clear(screen.getByLabelText("Offset days"));
-    await user.type(screen.getByLabelText("Offset days"), "90");
-    await user.click(screen.getByRole("button", { name: "Save rule" }));
+    fireEvent.change(screen.getByLabelText("Rule name"), {
+      target: { value: "Quarterly prompt" },
+    });
+    fireEvent.change(screen.getByLabelText("Rule type"), {
+      target: { value: "recurring_service_prompt" },
+    });
+    fireEvent.change(screen.getByLabelText("Offset days"), {
+      target: { value: "90" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save rule" }));
+    });
 
     expect(createRule).toHaveBeenCalledWith(
       expect.objectContaining({

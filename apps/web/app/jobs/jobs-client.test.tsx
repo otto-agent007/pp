@@ -161,7 +161,12 @@ describe("JobsClient", () => {
     expect(screen.getByText("Job scheduling demo tip")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Pick the customer, confirm the active location, then review the dispatch board.",
+        "Select a customer first so the location list only shows that customer active service addresses.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Technician assignment is optional; unassigned jobs can still move to dispatch review.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Add customer" })).toHaveAttribute(
@@ -220,6 +225,15 @@ describe("JobsClient", () => {
         service_notes: "Exterior",
       }),
     );
+    expect(
+      await screen.findByText(
+        "Job created. Review dispatch to confirm assignment and route handoff.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open dispatch review" })).toHaveAttribute(
+      "href",
+      "/dispatch",
+    );
   });
 
   it("edits an existing job", async () => {
@@ -236,6 +250,11 @@ describe("JobsClient", () => {
         input: expect.objectContaining({ status: "en_route" }),
       }),
     );
+    expect(
+      await screen.findByText(
+        "Job updated. Review dispatch to confirm assignment and route handoff.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("cancels a scheduled job", async () => {

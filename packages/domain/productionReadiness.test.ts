@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getProductionSmokeChecklist } from "./productionReadiness";
+import * as productionReadiness from "./productionReadiness";
 
 describe("production readiness domain", () => {
   it("returns the manual production smoke checklist in workflow order", () => {
-    expect(getProductionSmokeChecklist()).toEqual([
+    expect(productionReadiness.getProductionSmokeChecklist()).toEqual([
       {
         id: "auth",
         label: "Admin sign-in",
@@ -47,6 +47,24 @@ describe("production readiness domain", () => {
         label: "Check billing path",
         route: "/payments",
         success_criteria: "Invoice or payment setup state is visible without secret exposure.",
+      },
+    ]);
+  });
+
+  it("returns the remaining dashboard-only readiness action", () => {
+    const getRemainingProductionReadinessActions = (
+      productionReadiness as typeof productionReadiness & {
+        getRemainingProductionReadinessActions?: () => unknown;
+      }
+    ).getRemainingProductionReadinessActions;
+
+    expect(getRemainingProductionReadinessActions).toBeTypeOf("function");
+    expect(getRemainingProductionReadinessActions?.()).toEqual([
+      {
+        id: "leaked-password-protection",
+        label: "Leaked password protection",
+        location: "Supabase Auth dashboard",
+        action: "Enable leaked password protection in Supabase Auth settings.",
       },
     ]);
   });

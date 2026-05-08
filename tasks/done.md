@@ -511,6 +511,49 @@
 - Added focused payments UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
 
+## Home Readiness Snapshot V1
+
+- Added a compact readiness snapshot to the signed-in home dashboard
+- Reused the manual production smoke checklist count from shared domain logic
+- Added a shared remaining-readiness action for Supabase leaked password protection
+- Kept the snapshot static, with no live Supabase reads or production data mutations
+- Added focused domain and home page coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Customer Demo Flow Polish V1
+
+- Added customer setup guidance for portal-link timing after closeout and billing are ready
+- Added post-create and post-update success messages with the next scheduling action
+- Preserved existing customer CRUD, portal-token controls, and optimistic archive behavior
+- Added focused customer UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Job Scheduling Demo Polish V1
+
+- Clarified the customer-first and dependent-location scheduling flow
+- Clarified that technician assignment remains optional for v1 demos
+- Added post-create and post-update success messages with a dispatch review handoff
+- Preserved existing job CRUD, filters, and cancel behavior
+- Added focused job UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Dispatch And Closeout Demo Bridge V1
+
+- Added dispatch guidance for scheduled-job visibility, assignment, status changes, and closeout handoff
+- Added dispatch empty-day next-action copy
+- Added closeout guidance for completed jobs and field-capture review
+- Added closeout empty-state next actions for search misses and no completed jobs
+- Added focused dispatch and closeout UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Finish-Line Demo Polish V1
+
+- Added payments guidance that invoices and manual paid status work without Stripe for non-payment demos
+- Added automation guidance that manual scheduler runs and manual follow-up stay available without browser-side secrets
+- Preserved existing provider behavior, server-only secret boundaries, and payment-link behavior
+- Added focused payments and automation UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Password Reset Flow Fix V1
 
 - Added `/forgot-password` as a public admin recovery request route

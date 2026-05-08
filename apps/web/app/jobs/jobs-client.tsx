@@ -97,6 +97,7 @@ export function JobsClient() {
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [form, setForm] = useState<JobInput>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const activeCustomers = useMemo(
     () => (customersQuery.data ?? []).filter((customer) => customer.status === "active"),
@@ -144,14 +145,19 @@ export function JobsClient() {
     setEditingJob(job);
     setForm(jobToInput(job));
     setFormError(null);
+    setSaveMessage(null);
   }
 
   async function submitJob(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+    setSaveMessage(null);
 
     try {
       const input = validateJobInput(form);
+      const nextMessage = editingJob
+        ? "Job updated. Review dispatch to confirm assignment and route handoff."
+        : "Job created. Review dispatch to confirm assignment and route handoff.";
 
       if (editingJob) {
         await updateJob.mutateAsync({ id: editingJob.id, input });
@@ -160,6 +166,7 @@ export function JobsClient() {
       }
 
       resetForm();
+      setSaveMessage(nextMessage);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Unable to save job");
     }
@@ -297,8 +304,12 @@ export function JobsClient() {
               Job scheduling demo tip
             </p>
             <p className="mt-1 text-sm text-amber-800">
-              Pick the customer, confirm the active location, then review the
-              dispatch board.
+              Select a customer first so the location list only shows that
+              customer active service addresses.
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Technician assignment is optional; unassigned jobs can still move
+              to dispatch review.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
@@ -315,6 +326,21 @@ export function JobsClient() {
               </Link>
             </div>
           </div>
+
+          {saveMessage ? (
+            <div
+              className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+              role="status"
+            >
+              <p>{saveMessage}</p>
+              <Link
+                className="mt-3 inline-flex min-h-10 items-center rounded-md border border-green-300 px-3 text-sm font-semibold text-green-900 hover:bg-green-100"
+                href="/dispatch"
+              >
+                Open dispatch review
+              </Link>
+            </div>
+          ) : null}
 
           {formError ? (
             <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">

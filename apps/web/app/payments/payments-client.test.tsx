@@ -156,6 +156,11 @@ describe("PaymentsClient", () => {
         "Stripe can stay unset for customer, job, closeout, and portal demos.",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Invoices and manual paid status still work for non-payment demos without Stripe.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/sk_test_/i)).not.toBeInTheDocument();
   });
 

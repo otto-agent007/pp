@@ -12,6 +12,13 @@ export interface ProductionSmokeChecklistItem {
   success_criteria: string;
 }
 
+export interface RemainingProductionReadinessAction {
+  id: "leaked-password-protection";
+  label: string;
+  location: string;
+  action: string;
+}
+
 const productionSmokeChecklist: ProductionSmokeChecklistItem[] = [
   {
     id: "auth",
@@ -58,6 +65,19 @@ const productionSmokeChecklist: ProductionSmokeChecklistItem[] = [
   },
 ];
 
+const remainingProductionReadinessActions: RemainingProductionReadinessAction[] = [
+  {
+    id: "leaked-password-protection",
+    label: "Leaked password protection",
+    location: "Supabase Auth dashboard",
+    action: "Enable leaked password protection in Supabase Auth settings.",
+  },
+];
+
 export function getProductionSmokeChecklist() {
   return productionSmokeChecklist;
+}
+
+export function getRemainingProductionReadinessActions() {
+  return remainingProductionReadinessActions;
 }
