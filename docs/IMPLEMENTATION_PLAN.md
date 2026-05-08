@@ -1,14 +1,19 @@
 # Implementation Plan
 
-## Current Priority: Live Admin Smoke Test V1
+## Current Priority: Supabase Auth Dashboard Hardening
 
-1. Confirm the latest `main` deployment is live on Vercel.
-2. Rerun Supabase security and performance advisors after the production hardening migration.
-3. Enable leaked password protection in Supabase Auth settings.
-4. Sign in as an admin and confirm protected admin routes load.
-5. Invite or verify a technician through `/technicians` and the `/technician-login` setup flow.
-6. Create a smoke-test customer, location, and scheduled job assigned to the technician.
-7. Verify `/dispatch`, `/closeouts`, `/portal`, `/automation`, and `/payments` remain usable without exposing secrets.
+1. Enable leaked password protection in Supabase Auth settings.
+2. Rerun Supabase security advisors and confirm `auth_leaked_password_protection` clears.
+3. Keep performance advisors as a routine post-migration check.
+4. Then continue with the next product slice.
+
+## Recently Completed: Live Admin Smoke Test V1
+
+1. Confirmed the latest `main` deployment is live on Vercel.
+2. Reran Supabase advisors after the production hardening migration.
+3. Confirmed performance advisors report no issues.
+4. Verified admin sign-in, technicians, customer/location/job creation, dispatch, closeouts, automation, and payments manually with operator assistance.
+5. Verified customer portal token behavior: tokened closeout and billing APIs returned `200`, while missing-token calls returned `401`.
 
 ## Recently Completed: Supabase Security Hardening V1
 
