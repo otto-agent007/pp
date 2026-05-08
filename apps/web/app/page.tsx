@@ -43,32 +43,57 @@ export default function HomePage() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
             Demo readiness
           </p>
-          <h2 className="mt-1 text-2xl font-bold text-neutralDark">
-            Demo workflow
+          <h2 className="text-2xl font-bold text-neutralDark">
+            Ops demo command center
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600">
-            Use this live-data path for a concise customer-to-closeout
-            walkthrough. Add only the records you want to keep.
+          <p className="max-w-3xl text-sm text-gray-600">
+            Use live production data intentionally. This walkthrough keeps the
+            demo focused on records you are comfortable keeping or archiving
+            later.
           </p>
         </div>
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 lg:grid-cols-5">
           {demoWorkflowSteps.map((step, index) => (
             <Link
-              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-primary hover:shadow-md"
+              className="flex min-h-64 flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-primary hover:shadow-md"
               href={step.href}
               key={step.id}
             >
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Step {index + 1}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-primary">
-                {step.label}
-              </p>
-              <p className="mt-2 text-sm text-gray-600">{step.summary}</p>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Step {index + 1}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-primary">
+                  {step.label}
+                </p>
+                <p className="mt-2 text-sm text-gray-600">{step.summary}</p>
+              </div>
+              <div className="flex flex-1 flex-col justify-end gap-3 text-sm">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Route
+                  </p>
+                  <p className="mt-1 font-semibold text-neutralDark">
+                    {step.routeLabel}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Action
+                  </p>
+                  <p className="mt-1 text-gray-600">{step.action}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Success signal
+                  </p>
+                  <p className="mt-1 text-gray-600">{step.successSignal}</p>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
