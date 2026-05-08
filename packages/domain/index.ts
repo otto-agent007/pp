@@ -6,8 +6,15 @@ export function requireNonEmpty(value: string, fieldName: string) {
   return value.trim();
 }
 
-export { getDemoWorkflowSteps } from "./demoReadiness";
-export type { DemoWorkflowStep } from "./demoReadiness";
+export {
+  buildMobileTechnicianReadinessPanel,
+  getDemoWorkflowSteps,
+} from "./demoReadiness";
+export type {
+  DemoWorkflowStep,
+  MobileTechnicianReadinessInput,
+  MobileTechnicianReadinessPanel,
+} from "./demoReadiness";
 export {
   getProductionSmokeChecklist,
   getRemainingProductionReadinessActions,

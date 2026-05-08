@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getDemoWorkflowSteps } from "./demoReadiness";
+import {
+  buildMobileTechnicianReadinessPanel,
+  getDemoWorkflowSteps,
+} from "./demoReadiness";
 
 describe("demo readiness domain", () => {
   it("returns the ordered customer-to-closeout demo workflow", () => {
@@ -51,5 +54,20 @@ describe("demo readiness domain", () => {
         summary: "Generate billing or share the customer portal when ready.",
       },
     ]);
+  });
+
+  it("builds compact mobile technician readiness copy for assigned jobs", () => {
+    expect(
+      buildMobileTechnicianReadinessPanel({
+        assignedJobCount: 3,
+        profileId: "technician-demo-123456",
+      }),
+    ).toEqual({
+      assignedJobsLabel: "3 jobs assigned today",
+      demoNextLabel: "Demo next",
+      demoNextSummary: "Open the first assigned job, capture treatment notes, then explain queued sync.",
+      identityLabel: "Signed in as technician-demo",
+      title: "Technician ready",
+    });
   });
 });

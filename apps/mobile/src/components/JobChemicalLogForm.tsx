@@ -63,6 +63,10 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
         Chemical log
       </Text>
+      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        Choose the product and amount used. Chemical logs are queued locally and
+        sync later with the job.
+      </Text>
 
       {status === "loading" ? (
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -162,7 +166,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       ) : null}
       {draft.queuedAt ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Queued for sync
+          Queued locally for sync
         </Text>
       ) : null}
 

@@ -554,6 +554,43 @@
 - Added focused payments and automation UI coverage
 - Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
 
+## Mobile Technician Home Readiness V1
+
+- Added shared mobile technician readiness copy for assigned-job count, identity, and next demo action
+- Added a compact mobile technician header with refresh, sign-out, readiness, and sync status
+- Kept the panel static and free of direct Supabase reads
+- Added focused domain coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Mobile Assigned Job Card Polish V1
+
+- Extracted the assigned-job card into a reusable mobile component
+- Improved hierarchy for schedule, status, customer, address, service notes, and field controls
+- Preserved existing assigned-job data flow and offline capture controls
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Mobile Field Capture Guidance V1
+
+- Added field-friendly guidance to treatment forms, chemical logs, photos, signatures, and geofence controls
+- Clarified that captures queue locally and sync later
+- Preserved existing offline queue behavior and validation
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Mobile Sync Confidence V1
+
+- Expanded mobile sync status copy for offline, pending, failed, syncing, synced, and no-local-change states
+- Added synced counts, retry timing, disabled manual-sync states, and a Clear synced action
+- Reused the existing offline queue clear-synced store behavior
+- Added focused mobile store coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Mobile Demo Verification And Docs V1
+
+- Added a manual mobile technician smoke checklist to production readiness docs
+- Updated task tracking for the mobile demo-readiness batch
+- Kept Supabase leaked password protection documented as a deferred Pro-plan item
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Password Reset Flow Fix V1
 
 - Added `/forgot-password` as a public admin recovery request route

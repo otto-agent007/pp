@@ -85,6 +85,10 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
         Photos
       </Text>
+      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        Capture clear before, during, or after photos. Each photo queues on this
+        device and syncs when service is available.
+      </Text>
 
       {lastPhoto ? (
         <Image
@@ -121,7 +125,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       ) : null}
       {draft.queuedAt ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Queued for sync
+          Queued locally for sync
         </Text>
       ) : null}
 

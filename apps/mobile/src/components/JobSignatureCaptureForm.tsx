@@ -77,6 +77,10 @@ export function JobSignatureCaptureForm({
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
         Signature
       </Text>
+      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        Enter the signer name, then tap Queue in the signature box. Signatures
+        stay local until sync can send them.
+      </Text>
 
       <TextInput
         onChangeText={(value) => {
@@ -123,7 +127,7 @@ export function JobSignatureCaptureForm({
       ) : null}
       {draft.queuedAt ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Signature queued for sync
+          Signature queued locally for sync
         </Text>
       ) : null}
     </View>
