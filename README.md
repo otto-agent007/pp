@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Live Admin Smoke Test V1:
+Current priority is Ops Demo Readiness V1:
 
-- reset or confirm the first admin password privately
-- sign in to the production admin shell
-- create a real customer, service location, and job
-- confirm portal, scheduler, and payment setup paths behave as expected
+- keep the signed-in home dashboard useful for live product walkthroughs
+- guide customer, job, dispatch, closeout, billing, and portal follow-up steps
+- avoid seed scripts or fake production data
+- keep leaked password protection as the remaining Supabase dashboard action

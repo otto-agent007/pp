@@ -1,11 +1,18 @@
 # Implementation Plan
 
-## Current Priority: Supabase Auth Dashboard Hardening
+## Current Priority: Ops Demo Readiness V1
+
+1. Keep the signed-in home dashboard as the demo command center.
+2. Show ordered live-data demo steps from customer setup through billing and portal follow-up.
+3. For each step, show route, operator action, and success signal.
+4. Avoid seed scripts, local checklist persistence, or direct Supabase calls from the dashboard.
+5. Keep leaked password protection as the remaining Supabase dashboard-only hardening action.
+
+## Current Follow-Up: Supabase Auth Dashboard Hardening
 
 1. Enable leaked password protection in Supabase Auth settings.
 2. Rerun Supabase security advisors and confirm `auth_leaked_password_protection` clears.
 3. Keep performance advisors as a routine post-migration check.
-4. Then continue with the next product slice.
 
 ## Recently Completed: Live Admin Smoke Test V1
 

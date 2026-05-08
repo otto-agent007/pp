@@ -1,19 +1,20 @@
 # In Progress
 
-## Task: Live Admin Smoke Test V1
+## Task: Ops Demo Readiness V1
 
 Goal:
-Confirm the live Vercel app works end-to-end against the production Supabase project after the technician and security hardening releases.
+Make the signed-in home dashboard a practical command center for live-data product demos.
 
 Steps:
-- [x] Merge Supabase Security Hardening V1
-- [x] Apply `20260507220000_supabase_security_hardening_v1.sql` to production after explicit approval
-- [x] Confirm local and remote Supabase migration history are aligned
-- [x] Confirm high-risk internal helper functions moved out of public RPC reach
-- [x] Rerun Supabase security and performance advisors with Supabase CLI
+- [x] Write the Ops Demo Readiness V1 design and implementation plan
+- [x] Enrich the shared demo workflow contract with route, action, and success-signal copy
+- [x] Render the richer workflow on the signed-in home dashboard
+- [x] Keep the dashboard static and live-data safe, with no seed scripts or direct Supabase calls
+- [x] Run full repository verification
+- [ ] Open and merge a focused PR
+
+Follow-up:
 - [ ] Enable leaked password protection in Supabase Auth settings
-- [x] Confirm latest Vercel `main` deployment is live
-- [x] Run live smoke checklist for admin sign-in, technicians, jobs, portal, automation, and payments
 
 Status:
-Live admin smoke testing passed for the current production scope. Supabase advisors show one remaining security warning: leaked password protection is disabled. Performance advisors report no issues.
+Implementation is ready for PR. Live admin smoke testing passed before this slice; Supabase advisors show one remaining security warning: leaked password protection is disabled.
