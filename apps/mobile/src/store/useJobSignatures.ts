@@ -2,7 +2,10 @@ import { createJobSignatureCaptureQueuePayload } from "@pest-patrol/domain";
 import type { JobSignatureCaptureQueuePayload } from "@pest-patrol/types";
 import { create } from "zustand";
 
+import { readMobileJson, writeMobileJson } from "./mobilePersistence";
 import { useOfflineQueue } from "./useOfflineQueue";
+
+const JOB_SIGNATURE_DRAFTS_STORAGE_KEY = "pest-patrol:job-signature-drafts:v1";
 
 interface JobSignatureDraft {
   queuedAt: string | null;
@@ -18,6 +21,7 @@ interface QueueSignatureInput {
 interface JobSignaturesState {
   drafts: Record<string, JobSignatureDraft>;
   getDraft: (jobId: string) => JobSignatureDraft;
+  hydrate: () => Promise<void>;
   queueSignature: (
     input: QueueSignatureInput,
   ) => JobSignatureCaptureQueuePayload;
@@ -35,6 +39,14 @@ function emptyDraft(): JobSignatureDraft {
 export const useJobSignatures = create<JobSignaturesState>((set, get) => ({
   drafts: {},
   getDraft: (jobId) => get().drafts[jobId] ?? emptyDraft(),
+  hydrate: async () => {
+    const drafts = await readMobileJson<Record<string, JobSignatureDraft>>(
+      JOB_SIGNATURE_DRAFTS_STORAGE_KEY,
+      {},
+    );
+
+    set({ drafts });
+  },
   queueSignature: (input) => {
     const draft = get().getDraft(input.jobId);
     const payload = createJobSignatureCaptureQueuePayload({
@@ -48,22 +60,25 @@ export const useJobSignatures = create<JobSignaturesState>((set, get) => ({
       payload,
     });
 
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [input.jobId]: {
           queuedAt: new Date().toISOString(),
           queuedSignatures: [...draft.queuedSignatures, payload],
           signerName: "",
         },
-      },
-    }));
+      };
+      writeMobileJson(JOB_SIGNATURE_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
 
     return payload;
   },
   setSignerName: (jobId, signerName) => {
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [jobId]: {
           ...emptyDraft(),
@@ -71,7 +86,10 @@ export const useJobSignatures = create<JobSignaturesState>((set, get) => ({
           queuedAt: null,
           signerName,
         },
-      },
-    }));
+      };
+      writeMobileJson(JOB_SIGNATURE_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
   },
 }));

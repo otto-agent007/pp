@@ -2,7 +2,10 @@ import { createJobPhotoUploadQueuePayload } from "@pest-patrol/domain";
 import type { JobPhotoUploadQueuePayload } from "@pest-patrol/types";
 import { create } from "zustand";
 
+import { readMobileJson, writeMobileJson } from "./mobilePersistence";
 import { useOfflineQueue } from "./useOfflineQueue";
+
+const JOB_PHOTO_DRAFTS_STORAGE_KEY = "pest-patrol:job-photo-drafts:v1";
 
 interface JobPhotoDraft {
   description: string;
@@ -20,6 +23,7 @@ interface QueuePhotoInput {
 interface JobPhotosState {
   drafts: Record<string, JobPhotoDraft>;
   getDraft: (jobId: string) => JobPhotoDraft;
+  hydrate: () => Promise<void>;
   queuePhoto: (input: QueuePhotoInput) => JobPhotoUploadQueuePayload;
   setDescription: (jobId: string, description: string) => void;
 }
@@ -35,6 +39,14 @@ function emptyDraft(): JobPhotoDraft {
 export const useJobPhotos = create<JobPhotosState>((set, get) => ({
   drafts: {},
   getDraft: (jobId) => get().drafts[jobId] ?? emptyDraft(),
+  hydrate: async () => {
+    const drafts = await readMobileJson<Record<string, JobPhotoDraft>>(
+      JOB_PHOTO_DRAFTS_STORAGE_KEY,
+      {},
+    );
+
+    set({ drafts });
+  },
   queuePhoto: (input) => {
     const draft = get().getDraft(input.jobId);
     const payload = createJobPhotoUploadQueuePayload({
@@ -50,22 +62,25 @@ export const useJobPhotos = create<JobPhotosState>((set, get) => ({
       payload,
     });
 
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [input.jobId]: {
           description: "",
           queuedAt: new Date().toISOString(),
           queuedPhotos: [...draft.queuedPhotos, payload],
         },
-      },
-    }));
+      };
+      writeMobileJson(JOB_PHOTO_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
 
     return payload;
   },
   setDescription: (jobId, description) => {
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [jobId]: {
           ...emptyDraft(),
@@ -73,7 +88,10 @@ export const useJobPhotos = create<JobPhotosState>((set, get) => ({
           description,
           queuedAt: null,
         },
-      },
-    }));
+      };
+      writeMobileJson(JOB_PHOTO_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
   },
 }));

@@ -3,6 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useJobGeofencing } from "./useJobGeofencing";
 import { useOfflineQueue } from "./useOfflineQueue";
 
+const secureStore = vi.hoisted(() => ({
+  deleteItemAsync: vi.fn(),
+  getItemAsync: vi.fn(),
+  setItemAsync: vi.fn(),
+}));
+
+vi.mock("expo-secure-store", () => secureStore);
+
 const now = "2026-05-05T22:30:00.000Z";
 
 describe("useJobGeofencing", () => {
@@ -11,6 +19,9 @@ describe("useJobGeofencing", () => {
     vi.setSystemTime(new Date(now));
     useJobGeofencing.setState({ drafts: {} });
     useOfflineQueue.setState({ items: [] });
+    secureStore.deleteItemAsync.mockReset();
+    secureStore.getItemAsync.mockReset();
+    secureStore.setItemAsync.mockReset();
   });
 
   afterEach(() => {
@@ -59,5 +70,27 @@ describe("useJobGeofencing", () => {
       event_type: "departure",
       within_radius: null,
     });
+  });
+
+  it("persists geofence drafts and hydrates them after restart", async () => {
+    useJobGeofencing.getState().queueGeofenceEvent({
+      jobId: "job-1",
+      eventType: "arrival",
+      latitude: 33.8121,
+      longitude: -117.919,
+    });
+    const storedDrafts = useJobGeofencing.getState().drafts;
+
+    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+      "pest-patrol:job-geofence-drafts:v1",
+      JSON.stringify(storedDrafts),
+    );
+
+    useJobGeofencing.setState({ drafts: {} });
+    secureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify(storedDrafts));
+
+    await useJobGeofencing.getState().hydrate();
+
+    expect(useJobGeofencing.getState().drafts).toEqual(storedDrafts);
   });
 });

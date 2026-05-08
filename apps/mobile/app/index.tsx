@@ -23,6 +23,11 @@ import { JobTreatmentForm } from "../src/components/JobTreatmentForm";
 import { MobileTechnicianHeader } from "../src/components/MobileTechnicianHeader";
 import { useAssignedJobs } from "../src/store/useAssignedJobs";
 import { useAuth } from "../src/store/useAuth";
+import { useChemicalLogs } from "../src/store/useChemicalLogs";
+import { useFormDrafts } from "../src/store/useFormDrafts";
+import { useJobGeofencing } from "../src/store/useJobGeofencing";
+import { useJobPhotos } from "../src/store/useJobPhotos";
+import { useJobSignatures } from "../src/store/useJobSignatures";
 import { useOfflineQueue } from "../src/store/useOfflineQueue";
 import { useQueueSync } from "../src/store/useQueueSync";
 import { useSyncStatus } from "../src/store/useSyncStatus";
@@ -93,6 +98,17 @@ export default function MobileHomeScreen() {
       void load();
     }
   }, [jobsStatus, load, status]);
+
+  useEffect(() => {
+    if (status === "signed_in") {
+      void useOfflineQueue.getState().hydrate();
+      void useFormDrafts.getState().hydrate();
+      void useChemicalLogs.getState().hydrate();
+      void useJobPhotos.getState().hydrate();
+      void useJobSignatures.getState().hydrate();
+      void useJobGeofencing.getState().hydrate();
+    }
+  }, [status]);
 
   useEffect(() => {
     if (
