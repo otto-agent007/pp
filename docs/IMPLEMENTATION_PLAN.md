@@ -1,18 +1,25 @@
 # Implementation Plan
 
-## Current Priority: Demo/Ops Polish Batch V1
+## Current Priority: Mobile Technician Demo Readiness V1
 
-1. Add a compact readiness snapshot to the signed-in home dashboard.
-2. Polish customer and job demo guidance so operators know the next action after saves.
-3. Clarify dispatch and closeout handoffs for scheduled and completed jobs.
-4. Tighten payments and automation finish-line copy for optional provider setup.
-5. Avoid migrations, seed data, production mutations, and direct Supabase calls from UI components.
+1. Make the mobile technician demo path easy to follow from login through assigned job review.
+2. Clarify queued and synced states for status writes, forms, chemical logs, photos, signatures, and geofencing.
+3. Keep all mobile write paths offline-first and retry-safe.
+4. Avoid new migrations unless the slice uncovers a concrete schema gap.
 
-## Current Follow-Up: Supabase Auth Dashboard Hardening
+## Deferred Platform Hardening: Supabase Pro Feature
 
-1. Enable leaked password protection in Supabase Auth settings.
-2. Rerun Supabase security advisors and confirm `auth_leaked_password_protection` clears.
-3. Keep performance advisors as a routine post-migration check.
+1. Supabase leaked password protection is a Pro-plan feature.
+2. Keep `auth_leaked_password_protection` advisor findings documented as deferred unless the project moves to Supabase Pro.
+3. Continue treating security and performance advisors as routine post-migration checks.
+
+## Recently Completed: Demo/Ops Polish Batch V1
+
+1. Merged PR #18 into `main`.
+2. Added the home readiness snapshot for the manual smoke checklist and remaining dashboard action.
+3. Polished customer and job save-success handoffs.
+4. Clarified dispatch, closeout, payments, and automation demo finish states.
+5. Kept the batch free of migrations, seed data, env changes, and production mutations.
 
 ## Recently Completed: Ops Demo Readiness V1
 

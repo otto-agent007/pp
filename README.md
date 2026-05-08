@@ -62,9 +62,9 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Demo/Ops Polish Batch V1:
+Current priority is Mobile Technician Demo Readiness V1:
 
-- show a compact readiness snapshot on the signed-in home dashboard
-- guide customer, job, dispatch, closeout, payments, and automation demo handoffs
-- keep demo polish static and live-data safe, with no seed scripts or production mutations
-- keep leaked password protection as the remaining Supabase dashboard action
+- make the technician app demo path easy to follow from login through assigned job review
+- clarify queued and synced states for status writes, forms, chemical logs, photos, signatures, and geofencing
+- keep mobile writes offline-first and retry-safe
+- track Supabase leaked password protection as a deferred Pro-plan hardening item
