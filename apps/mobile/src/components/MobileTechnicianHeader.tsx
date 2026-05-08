@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
+import { brand, semantic } from "@pest-patrol/ui-tokens";
 import { buildMobileTechnicianReadinessPanel } from "@pest-patrol/domain";
 
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
@@ -39,13 +40,13 @@ export function MobileTechnicianHeader({
         }}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ color: "#1E3A8A", fontSize: 13, fontWeight: "700" }}>
+          <Text style={{ color: brand.primary, fontSize: 13, fontWeight: "700" }}>
             Technician
           </Text>
-          <Text style={{ color: "#111827", fontSize: 26, fontWeight: "800" }}>
+          <Text style={{ color: semantic.text.primary, fontSize: 26, fontWeight: "800" }}>
             {readiness.title}
           </Text>
-          <Text style={{ color: "#6B7280", fontSize: 14, marginTop: 6 }}>
+          <Text style={{ color: semantic.text.muted, fontSize: 14, marginTop: 6 }}>
             {readiness.identityLabel}
           </Text>
         </View>
@@ -55,7 +56,7 @@ export function MobileTechnicianHeader({
             onPress={onSignOut}
             style={{
               alignItems: "center",
-              borderColor: "#D1D5DB",
+              borderColor: semantic.border.default,
               borderRadius: 8,
               borderWidth: 1,
               justifyContent: "center",
@@ -63,7 +64,7 @@ export function MobileTechnicianHeader({
               paddingHorizontal: 12,
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 13, fontWeight: "800" }}>
+            <Text style={{ color: semantic.text.primary, fontSize: 13, fontWeight: "800" }}>
               Sign out
             </Text>
           </Pressable>
@@ -71,15 +72,15 @@ export function MobileTechnicianHeader({
       </View>
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 14, marginTop: 12 }}>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 14, marginTop: 12 }}>
           {error}
         </Text>
       ) : null}
 
       <View
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#E5E7EB",
+          backgroundColor: semantic.background.surface,
+          borderColor: semantic.border.subtle,
           borderRadius: 8,
           borderWidth: 1,
           marginTop: 16,
@@ -94,7 +95,7 @@ export function MobileTechnicianHeader({
             justifyContent: "space-between",
           }}
         >
-          <Text style={{ color: "#111827", fontSize: 16, fontWeight: "800" }}>
+          <Text style={{ color: semantic.text.primary, fontSize: 16, fontWeight: "800" }}>
             {readiness.assignedJobsLabel}
           </Text>
           {onRefreshJobs ? (
@@ -102,24 +103,24 @@ export function MobileTechnicianHeader({
               onPress={onRefreshJobs}
               style={{
                 alignItems: "center",
-                backgroundColor: "#111827",
+                backgroundColor: semantic.background.inverse,
                 borderRadius: 8,
                 justifyContent: "center",
                 minHeight: 36,
                 paddingHorizontal: 12,
               }}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+              <Text style={{ color: semantic.text.inverse, fontSize: 13, fontWeight: "800" }}>
                 Refresh
               </Text>
             </Pressable>
           ) : null}
         </View>
 
-        <Text style={{ color: "#1E3A8A", fontSize: 13, fontWeight: "800", marginTop: 12 }}>
+        <Text style={{ color: brand.primary, fontSize: 13, fontWeight: "800", marginTop: 12 }}>
           {readiness.demoNextLabel}
         </Text>
-        <Text style={{ color: "#4B5563", fontSize: 14, lineHeight: 20, marginTop: 4 }}>
+        <Text style={{ color: semantic.text.secondary, fontSize: 14, lineHeight: 20, marginTop: 4 }}>
           {readiness.demoNextSummary}
         </Text>
       </View>

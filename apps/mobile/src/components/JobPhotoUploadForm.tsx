@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Image, Pressable, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { semantic } from "@pest-patrol/ui-tokens";
 
 import { useJobPhotos } from "../store/useJobPhotos";
 
@@ -75,17 +76,17 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
+        borderColor: semantic.border.subtle,
         borderTopWidth: 1,
         gap: 10,
         marginTop: 14,
         paddingTop: 14,
       }}
     >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+      <Text style={{ color: semantic.text.primary, fontSize: 15, fontWeight: "800" }}>
         Photos
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
         Capture clear before, during, or after photos. Each photo queues on this
         device and syncs when service is available.
       </Text>
@@ -94,7 +95,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
         <Image
           source={{ uri: lastPhoto.local_uri }}
           style={{
-            backgroundColor: "#F3F4F6",
+            backgroundColor: semantic.background.subtle,
             borderRadius: 8,
             height: 140,
             width: "100%",
@@ -109,11 +110,11 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
         }}
         placeholder="Description"
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
+          backgroundColor: semantic.background.surface,
+          borderColor: semantic.border.default,
           borderRadius: 8,
           borderWidth: 1,
-          color: "#111827",
+          color: semantic.text.primary,
           minHeight: 44,
           paddingHorizontal: 12,
         }}
@@ -121,10 +122,10 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       />
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13 }}>{error}</Text>
       ) : null}
       {draft.queuedAt ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={{ color: semantic.status.success.solid, fontSize: 13, fontWeight: "700" }}>
           Queued locally for sync
         </Text>
       ) : null}
@@ -134,14 +135,14 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
           onPress={() => void handleCamera()}
           style={{
             alignItems: "center",
-            backgroundColor: "#111827",
+            backgroundColor: semantic.background.inverse,
             borderRadius: 8,
             flex: 1,
             justifyContent: "center",
             minHeight: 44,
           }}
         >
-          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+          <Text style={{ color: semantic.text.inverse, fontSize: 14, fontWeight: "800" }}>
             Camera
           </Text>
         </Pressable>
@@ -149,7 +150,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
           onPress={() => void handleLibrary()}
           style={{
             alignItems: "center",
-            borderColor: "#D1D5DB",
+            borderColor: semantic.border.default,
             borderRadius: 8,
             borderWidth: 1,
             flex: 1,
@@ -157,7 +158,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
             minHeight: 44,
           }}
         >
-          <Text style={{ color: "#111827", fontSize: 14, fontWeight: "800" }}>
+          <Text style={{ color: semantic.text.primary, fontSize: 14, fontWeight: "800" }}>
             Library
           </Text>
         </Pressable>

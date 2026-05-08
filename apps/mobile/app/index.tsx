@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { brand, palette, semantic } from "@pest-patrol/ui-tokens";
 import {
   buildMobileDailyJobs,
   hasReadyOfflineQueueItems,
@@ -95,14 +96,14 @@ export default function MobileHomeScreen() {
       <View
         style={{
           alignItems: "center",
-          backgroundColor: "#F9FAFB",
+          backgroundColor: semantic.background.canvas,
           flex: 1,
           justifyContent: "center",
           padding: 24,
         }}
       >
-        <ActivityIndicator color="#1E3A8A" size="large" />
-        <Text style={{ color: "#4B5563", fontSize: 16, marginTop: 12 }}>
+        <ActivityIndicator color={brand.primary} size="large" />
+        <Text style={{ color: palette.gray[600], fontSize: 16, marginTop: 12 }}>
           Loading
         </Text>
       </View>
@@ -113,16 +114,16 @@ export default function MobileHomeScreen() {
     return (
       <View
         style={{
-          backgroundColor: "#F9FAFB",
+          backgroundColor: semantic.background.canvas,
           flex: 1,
           justifyContent: "center",
           padding: 24,
         }}
       >
-        <Text style={{ color: "#111827", fontSize: 30, fontWeight: "800" }}>
+        <Text style={{ color: semantic.text.primary, fontSize: 30, fontWeight: "800" }}>
           Pest Patrol OS
         </Text>
-        <Text style={{ color: "#4B5563", fontSize: 16, marginTop: 8 }}>
+        <Text style={{ color: palette.gray[600], fontSize: 16, marginTop: 8 }}>
           Technician login
         </Text>
 
@@ -133,11 +134,11 @@ export default function MobileHomeScreen() {
             onChangeText={setEmail}
             placeholder="Email"
             style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#D1D5DB",
+              backgroundColor: semantic.background.surface,
+              borderColor: semantic.border.default,
               borderRadius: 8,
               borderWidth: 1,
-              color: "#111827",
+              color: semantic.text.primary,
               minHeight: 48,
               paddingHorizontal: 14,
             }}
@@ -148,30 +149,30 @@ export default function MobileHomeScreen() {
             placeholder="Password"
             secureTextEntry
             style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#D1D5DB",
+              backgroundColor: semantic.background.surface,
+              borderColor: semantic.border.default,
               borderRadius: 8,
               borderWidth: 1,
-              color: "#111827",
+              color: semantic.text.primary,
               minHeight: 48,
               paddingHorizontal: 14,
             }}
             value={password}
           />
           {error ? (
-            <Text style={{ color: "#B91C1C", fontSize: 14 }}>{error}</Text>
+            <Text style={{ color: semantic.status.danger.fg, fontSize: 14 }}>{error}</Text>
           ) : null}
           <Pressable
             onPress={() => void signIn(email, password)}
             style={{
               alignItems: "center",
-              backgroundColor: "#1E3A8A",
+              backgroundColor: brand.primary,
               borderRadius: 8,
               minHeight: 48,
               justifyContent: "center",
             }}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>
+            <Text style={{ color: semantic.text.inverse, fontSize: 16, fontWeight: "700" }}>
               Sign in
             </Text>
           </Pressable>
@@ -183,7 +184,7 @@ export default function MobileHomeScreen() {
   return (
     <View
       style={{
-        backgroundColor: "#F9FAFB",
+        backgroundColor: semantic.background.canvas,
         flex: 1,
         padding: 24,
         paddingTop: 56,
@@ -208,10 +209,10 @@ export default function MobileHomeScreen() {
           }}
         >
           <View>
-            <Text style={{ color: "#111827", fontSize: 22, fontWeight: "800" }}>
+            <Text style={{ color: semantic.text.primary, fontSize: 22, fontWeight: "800" }}>
               Today's jobs
             </Text>
-            <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 2 }}>
+            <Text style={{ color: semantic.text.muted, fontSize: 13, marginTop: 2 }}>
               {dailyJobs.date}
             </Text>
           </View>
@@ -219,7 +220,7 @@ export default function MobileHomeScreen() {
             onPress={() => void load()}
             style={{
               alignItems: "center",
-              borderColor: "#D1D5DB",
+              borderColor: semantic.border.default,
               borderRadius: 8,
               borderWidth: 1,
               justifyContent: "center",
@@ -227,7 +228,7 @@ export default function MobileHomeScreen() {
               paddingHorizontal: 14,
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 14, fontWeight: "700" }}>
+            <Text style={{ color: semantic.text.primary, fontSize: 14, fontWeight: "700" }}>
               Refresh
             </Text>
           </Pressable>
@@ -237,15 +238,15 @@ export default function MobileHomeScreen() {
           <View
             style={{
               alignItems: "center",
-              backgroundColor: "#FFFFFF",
-              borderColor: "#E5E7EB",
+              backgroundColor: semantic.background.surface,
+              borderColor: semantic.border.subtle,
               borderRadius: 10,
               borderWidth: 1,
               padding: 20,
             }}
           >
-            <ActivityIndicator color="#1E3A8A" />
-            <Text style={{ color: "#4B5563", fontSize: 14, marginTop: 10 }}>
+            <ActivityIndicator color={brand.primary} />
+            <Text style={{ color: palette.gray[600], fontSize: 14, marginTop: 10 }}>
               Loading assigned jobs
             </Text>
           </View>
@@ -254,17 +255,17 @@ export default function MobileHomeScreen() {
         {jobsStatus === "error" ? (
           <View
             style={{
-              backgroundColor: "#FEF2F2",
-              borderColor: "#FECACA",
+              backgroundColor: semantic.status.danger.bg,
+              borderColor: semantic.status.danger.border,
               borderRadius: 10,
               borderWidth: 1,
               padding: 16,
             }}
           >
-            <Text style={{ color: "#991B1B", fontSize: 14, fontWeight: "700" }}>
+            <Text style={{ color: semantic.status.danger.fgStrong, fontSize: 14, fontWeight: "700" }}>
               Unable to load assigned jobs
             </Text>
-            <Text style={{ color: "#B91C1C", fontSize: 14, marginTop: 6 }}>
+            <Text style={{ color: semantic.status.danger.fg, fontSize: 14, marginTop: 6 }}>
               {jobsError}
             </Text>
           </View>
@@ -273,17 +274,17 @@ export default function MobileHomeScreen() {
         {jobsStatus === "ready" && dailyJobs.jobs.length === 0 ? (
           <View
             style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#E5E7EB",
+              backgroundColor: semantic.background.surface,
+              borderColor: semantic.border.subtle,
               borderRadius: 10,
               borderWidth: 1,
               padding: 18,
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 16, fontWeight: "700" }}>
+            <Text style={{ color: semantic.text.primary, fontSize: 16, fontWeight: "700" }}>
               No jobs assigned today
             </Text>
-            <Text style={{ color: "#6B7280", fontSize: 14, marginTop: 6 }}>
+            <Text style={{ color: semantic.text.muted, fontSize: 14, marginTop: 6 }}>
               Pull to refresh later or check with dispatch if your route is missing.
             </Text>
           </View>
@@ -308,7 +309,7 @@ export default function MobileHomeScreen() {
         ))}
 
         {lastLoadedAt ? (
-          <Text style={{ color: "#9CA3AF", fontSize: 12 }}>
+          <Text style={{ color: semantic.text.subtle, fontSize: 12 }}>
             Last refreshed {formatTime(lastLoadedAt)}
           </Text>
         ) : null}

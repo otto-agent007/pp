@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { brand, radius, semantic } from "@pest-patrol/ui-tokens";
 
 export interface AssignedJobCardProps {
   address?: string | null;
@@ -55,7 +56,7 @@ export function AssignedJobCard({
 
 const styles = StyleSheet.create({
   address: {
-    color: "#4B5563",
+    color: semantic.text.secondary,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -63,8 +64,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: semantic.background.surface,
+    borderColor: semantic.border.subtle,
     borderRadius: 10,
     borderWidth: 1,
     padding: 16,
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   customer: {
-    color: "#111827",
+    color: semantic.text.primary,
     fontSize: 19,
     fontWeight: "800",
     lineHeight: 24,
@@ -87,46 +88,46 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   notes: {
-    color: "#374151",
+    color: semantic.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 3,
   },
   notesBox: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
+    backgroundColor: semantic.background.canvas,
+    borderColor: semantic.border.subtle,
+    borderRadius: radius.md,
     borderWidth: 1,
     marginTop: 12,
     padding: 12,
   },
   notesLabel: {
-    color: "#1E3A8A",
+    color: brand.primary,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
   },
   statusPill: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#BFDBFE",
-    borderRadius: 999,
+    backgroundColor: semantic.status.info.bg,
+    borderColor: semantic.status.info.border,
+    borderRadius: radius.pill,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   statusText: {
-    color: "#1E3A8A",
+    color: brand.primary,
     fontSize: 12,
     fontWeight: "800",
   },
   time: {
-    color: "#1E3A8A",
+    color: brand.primary,
     fontSize: 17,
     fontWeight: "800",
     lineHeight: 22,
   },
   timeLabel: {
-    color: "#6B7280",
+    color: semantic.text.muted,
     fontSize: 12,
     fontWeight: "700",
     marginBottom: 2,

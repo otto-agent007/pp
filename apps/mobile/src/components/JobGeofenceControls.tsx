@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import * as Location from "expo-location";
+import { brand, semantic } from "@pest-patrol/ui-tokens";
 import type { Job, JobGeofenceEventType } from "@pest-patrol/types";
 
 import { useJobGeofencing } from "../store/useJobGeofencing";
@@ -78,17 +79,17 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
+        borderColor: semantic.border.subtle,
         borderTopWidth: 1,
         gap: 10,
         marginTop: 14,
         paddingTop: 14,
       }}
     >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+      <Text style={{ color: semantic.text.primary, fontSize: 15, fontWeight: "800" }}>
         Location
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
         Capture arrival and departure at the service location. Location events
         queue locally and sync later.
       </Text>
@@ -96,16 +97,16 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
       serviceLatitude === undefined ||
       serviceLongitude === null ||
       serviceLongitude === undefined ? (
-        <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
           Service coordinates are not saved yet
         </Text>
       ) : null}
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13 }}>{error}</Text>
       ) : null}
       {draft.lastEvent ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={{ color: semantic.status.success.solid, fontSize: 13, fontWeight: "700" }}>
           {resultMessage(draft.lastEvent.event_type, draft.lastEvent)}
         </Text>
       ) : null}
@@ -118,8 +119,10 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
             onPress={() => void captureEvent(eventType)}
             style={{
               alignItems: "center",
-              backgroundColor: eventType === "arrival" ? "#1E3A8A" : "#FFFFFF",
-              borderColor: eventType === "arrival" ? "#1E3A8A" : "#D1D5DB",
+              backgroundColor:
+                eventType === "arrival" ? brand.primary : semantic.background.surface,
+              borderColor:
+                eventType === "arrival" ? brand.primary : semantic.border.default,
               borderRadius: 8,
               borderWidth: 1,
               flex: 1,
@@ -130,12 +133,12 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
           >
             {activeEvent === eventType ? (
               <ActivityIndicator
-                color={eventType === "arrival" ? "#FFFFFF" : "#1E3A8A"}
+                color={eventType === "arrival" ? semantic.text.inverse : brand.primary}
               />
             ) : (
               <Text
                 style={{
-                  color: eventType === "arrival" ? "#FFFFFF" : "#111827",
+                  color: eventType === "arrival" ? semantic.text.inverse : semantic.text.primary,
                   fontSize: 14,
                   fontWeight: "800",
                 }}

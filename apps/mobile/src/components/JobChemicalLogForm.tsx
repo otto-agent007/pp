@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { brand, palette, semantic } from "@pest-patrol/ui-tokens";
 import type { ChemicalInventoryItem } from "@pest-patrol/types";
 
 import { useChemicalInventory } from "../store/useChemicalInventory";
@@ -53,34 +54,34 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
+        borderColor: semantic.border.subtle,
         borderTopWidth: 1,
         gap: 10,
         marginTop: 14,
         paddingTop: 14,
       }}
     >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+      <Text style={{ color: semantic.text.primary, fontSize: 15, fontWeight: "800" }}>
         Chemical log
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
         Choose the product and amount used. Chemical logs are queued locally and
         sync later with the job.
       </Text>
 
       {status === "loading" ? (
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <ActivityIndicator color="#1E3A8A" />
-          <Text style={{ color: "#6B7280", fontSize: 13 }}>Loading chemicals</Text>
+          <ActivityIndicator color={brand.primary} />
+          <Text style={{ color: semantic.text.muted, fontSize: 13 }}>Loading chemicals</Text>
         </View>
       ) : null}
 
       {status === "error" ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{inventoryError}</Text>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13 }}>{inventoryError}</Text>
       ) : null}
 
       {status === "ready" && items.length === 0 ? (
-        <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
           No active chemicals available
         </Text>
       ) : null}
@@ -98,8 +99,8 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
                   setError(null);
                 }}
                 style={{
-                  backgroundColor: isActive ? "#1E3A8A" : "#FFFFFF",
-                  borderColor: isActive ? "#1E3A8A" : "#D1D5DB",
+                  backgroundColor: isActive ? brand.primary : semantic.background.surface,
+                  borderColor: isActive ? brand.primary : semantic.border.default,
                   borderRadius: 8,
                   borderWidth: 1,
                   justifyContent: "center",
@@ -109,7 +110,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
               >
                 <Text
                   style={{
-                    color: isActive ? "#FFFFFF" : "#111827",
+                    color: isActive ? semantic.text.inverse : semantic.text.primary,
                     fontSize: 12,
                     fontWeight: "800",
                   }}
@@ -130,11 +131,11 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         }}
         placeholder="Amount used"
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
+          backgroundColor: semantic.background.surface,
+          borderColor: semantic.border.default,
           borderRadius: 8,
           borderWidth: 1,
-          color: "#111827",
+          color: semantic.text.primary,
           minHeight: 44,
           paddingHorizontal: 12,
         }}
@@ -148,11 +149,11 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         }}
         placeholder="Notes"
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
+          backgroundColor: semantic.background.surface,
+          borderColor: semantic.border.default,
           borderRadius: 8,
           borderWidth: 1,
-          color: "#111827",
+          color: semantic.text.primary,
           minHeight: 64,
           paddingHorizontal: 12,
           paddingVertical: 10,
@@ -162,10 +163,10 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       />
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13 }}>{error}</Text>
       ) : null}
       {draft.queuedAt ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={{ color: semantic.status.success.solid, fontSize: 13, fontWeight: "700" }}>
           Queued locally for sync
         </Text>
       ) : null}
@@ -175,13 +176,13 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         onPress={handleQueue}
         style={{
           alignItems: "center",
-          backgroundColor: items.length === 0 ? "#9CA3AF" : "#111827",
+          backgroundColor: items.length === 0 ? palette.gray[400] : semantic.background.inverse,
           borderRadius: 8,
           justifyContent: "center",
           minHeight: 44,
         }}
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+        <Text style={{ color: semantic.text.inverse, fontSize: 14, fontWeight: "800" }}>
           Queue chemical
         </Text>
       </Pressable>

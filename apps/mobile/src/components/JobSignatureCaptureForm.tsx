@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import SignatureCanvas from "react-native-signature-canvas";
+import { semantic } from "@pest-patrol/ui-tokens";
 
 import { useJobSignatures } from "../store/useJobSignatures";
 
@@ -15,7 +16,7 @@ interface JobSignatureCaptureFormProps {
 
 const signatureWebStyle = `
   .m-signature-pad {
-    border: 1px solid #D1D5DB;
+    border: 1px solid ${semantic.border.default};
     box-shadow: none;
   }
   .m-signature-pad--body {
@@ -27,9 +28,9 @@ const signatureWebStyle = `
     justify-content: space-between;
   }
   .button {
-    background-color: #111827;
+    background-color: ${semantic.background.inverse};
     border-radius: 8px;
-    color: #FFFFFF;
+    color: ${semantic.text.inverse};
     font-family: Arial, sans-serif;
     font-size: 14px;
     font-weight: 700;
@@ -67,17 +68,17 @@ export function JobSignatureCaptureForm({
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
+        borderColor: semantic.border.subtle,
         borderTopWidth: 1,
         gap: 10,
         marginTop: 14,
         paddingTop: 14,
       }}
     >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+      <Text style={{ color: semantic.text.primary, fontSize: 15, fontWeight: "800" }}>
         Signature
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
         Enter the signer name, then tap Queue in the signature box. Signatures
         stay local until sync can send them.
       </Text>
@@ -89,11 +90,11 @@ export function JobSignatureCaptureForm({
         }}
         placeholder="Signer name"
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
+          backgroundColor: semantic.background.surface,
+          borderColor: semantic.border.default,
           borderRadius: 8,
           borderWidth: 1,
-          color: "#111827",
+          color: semantic.text.primary,
           minHeight: 44,
           paddingHorizontal: 12,
         }}
@@ -102,7 +103,7 @@ export function JobSignatureCaptureForm({
 
       <View
         style={{
-          backgroundColor: "#FFFFFF",
+          backgroundColor: semantic.background.surface,
           height: 220,
           overflow: "hidden",
         }}
@@ -116,17 +117,17 @@ export function JobSignatureCaptureForm({
             setError("Signature is required");
           }}
           onOK={handleSignature}
-          penColor="#111827"
+          penColor={semantic.text.primary}
           ref={signatureRef as never}
           webStyle={signatureWebStyle}
         />
       </View>
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13 }}>{error}</Text>
       ) : null}
       {draft.queuedAt ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={{ color: semantic.status.success.solid, fontSize: 13, fontWeight: "700" }}>
           Signature queued locally for sync
         </Text>
       ) : null}

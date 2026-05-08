@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { brand, palette, semantic } from "@pest-patrol/ui-tokens";
 import { defaultTreatmentFormTemplate } from "@pest-patrol/domain";
 import type { FormField, FormValue } from "@pest-patrol/types";
 
@@ -30,7 +31,7 @@ function FieldInput({
         onPress={() => onChange(!checked)}
         style={{
           alignItems: "center",
-          borderColor: checked ? "#1E3A8A" : "#D1D5DB",
+          borderColor: checked ? brand.primary : semantic.border.default,
           borderRadius: 8,
           borderWidth: 1,
           flexDirection: "row",
@@ -42,8 +43,8 @@ function FieldInput({
         <View
           style={{
             alignItems: "center",
-            backgroundColor: checked ? "#1E3A8A" : "#FFFFFF",
-            borderColor: checked ? "#1E3A8A" : "#9CA3AF",
+            backgroundColor: checked ? brand.primary : semantic.background.surface,
+            borderColor: checked ? brand.primary : palette.gray[400],
             borderRadius: 4,
             borderWidth: 1,
             height: 20,
@@ -54,7 +55,7 @@ function FieldInput({
           {checked ? (
             <View
               style={{
-                backgroundColor: "#FFFFFF",
+                backgroundColor: semantic.background.surface,
                 borderRadius: 3,
                 height: 10,
                 width: 10,
@@ -62,7 +63,7 @@ function FieldInput({
             />
           ) : null}
         </View>
-        <Text style={{ color: "#111827", fontSize: 14, fontWeight: "700" }}>
+        <Text style={{ color: semantic.text.primary, fontSize: 14, fontWeight: "700" }}>
           {field.label}
         </Text>
       </Pressable>
@@ -76,11 +77,11 @@ function FieldInput({
       onChangeText={(nextValue) => onChange(nextValue)}
       placeholder={field.placeholder ?? field.label}
       style={{
-        backgroundColor: "#FFFFFF",
-        borderColor: "#D1D5DB",
+        backgroundColor: semantic.background.surface,
+        borderColor: semantic.border.default,
         borderRadius: 8,
         borderWidth: 1,
-        color: "#111827",
+        color: semantic.text.primary,
         minHeight: field.type === "textarea" ? 72 : 44,
         paddingHorizontal: 12,
         paddingVertical: 10,
@@ -117,7 +118,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
+        borderColor: semantic.border.subtle,
         borderTopWidth: 1,
         gap: 10,
         marginTop: 14,
@@ -125,10 +126,10 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       }}
     >
       <View>
-        <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+        <Text style={{ color: semantic.text.primary, fontSize: 15, fontWeight: "800" }}>
           Treatment form
         </Text>
-        <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 4 }}>
+        <Text style={{ color: semantic.text.muted, fontSize: 13, marginTop: 4 }}>
           Record the field notes before leaving the stop. Queued forms stay on
           this device and sync when the connection is ready.
         </Text>
@@ -137,7 +138,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       {template.schema.fields.map((field) => (
         <View key={field.id} style={{ gap: 6 }}>
           {field.type === "boolean" ? null : (
-            <Text style={{ color: "#374151", fontSize: 13, fontWeight: "700" }}>
+            <Text style={{ color: semantic.text.secondary, fontSize: 13, fontWeight: "700" }}>
               {field.label}
               {field.required ? " *" : ""}
             </Text>
@@ -154,10 +155,10 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       ))}
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13 }}>{error}</Text>
       ) : null}
       {draft.queued_at ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={{ color: semantic.status.success.solid, fontSize: 13, fontWeight: "700" }}>
           Queued locally for sync
         </Text>
       ) : null}
@@ -166,13 +167,13 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
         onPress={handleSubmit}
         style={{
           alignItems: "center",
-          backgroundColor: "#111827",
+          backgroundColor: semantic.background.inverse,
           borderRadius: 8,
           justifyContent: "center",
           minHeight: 44,
         }}
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+        <Text style={{ color: semantic.text.inverse, fontSize: 14, fontWeight: "800" }}>
           Queue form
         </Text>
       </Pressable>

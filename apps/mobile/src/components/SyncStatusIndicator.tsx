@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
+import { semantic } from "@pest-patrol/ui-tokens";
 import {
   getOfflineQueueSummary,
   hasReadyOfflineQueueItems,
@@ -47,13 +48,21 @@ export function SyncStatusIndicator() {
     hasReadyItems && networkStatus === "online" && activity !== "syncing";
   const syncDisabled = !canSync;
   const nextRetryLabel = formatNextRetry(summary.nextRetryAt);
-  const statusColor = isOffline ? "#B45309" : hasFailures ? "#B91C1C" : "#047857";
-  const statusBackground = isOffline
-    ? "#FFFBEB"
+  const statusColor = isOffline
+    ? semantic.status.warning.fg
     : hasFailures
-      ? "#FEF2F2"
-      : "#ECFDF5";
-  const statusBorder = isOffline ? "#FDE68A" : hasFailures ? "#FECACA" : "#A7F3D0";
+      ? semantic.status.danger.fg
+      : semantic.status.success.fg;
+  const statusBackground = isOffline
+    ? semantic.status.warning.bg
+    : hasFailures
+      ? semantic.status.danger.bg
+      : semantic.status.success.bg;
+  const statusBorder = isOffline
+    ? semantic.status.warning.border
+    : hasFailures
+      ? semantic.status.danger.border
+      : semantic.status.success.border;
   const statusLabel =
     activity === "syncing"
       ? "Syncing now"
@@ -104,33 +113,36 @@ export function SyncStatusIndicator() {
         <Text style={{ color: statusColor, fontSize: 13, fontWeight: "800" }}>
           {statusLabel}
         </Text>
-        <Text style={{ color: "#374151", fontSize: 13, lineHeight: 18 }}>
+        <Text style={{ color: semantic.text.secondary, fontSize: 13, lineHeight: 18 }}>
           {detailLabel}
         </Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <Text style={{ color: "#374151", fontSize: 13 }}>
+        <Text style={{ color: semantic.text.secondary, fontSize: 13 }}>
           {summary.pending} pending
         </Text>
         <Text
-          style={{ color: hasFailures ? "#B91C1C" : "#374151", fontSize: 13 }}
+          style={{
+            color: hasFailures ? semantic.status.danger.fg : semantic.text.secondary,
+            fontSize: 13,
+          }}
         >
           {summary.failed} failed
         </Text>
-        <Text style={{ color: "#374151", fontSize: 13 }}>
+        <Text style={{ color: semantic.text.secondary, fontSize: 13 }}>
           {summary.synced} synced
         </Text>
-        <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
           {formatLastSync(lastSyncAt)}
         </Text>
         {nextRetryLabel ? (
-          <Text style={{ color: "#6B7280", fontSize: 13 }}>
+          <Text style={{ color: semantic.text.muted, fontSize: 13 }}>
             {nextRetryLabel}
           </Text>
         ) : null}
       </View>
       {lastError ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13, fontWeight: "700" }}>
+        <Text style={{ color: semantic.status.danger.fg, fontSize: 13, fontWeight: "700" }}>
           {lastError}
         </Text>
       ) : null}
@@ -140,7 +152,9 @@ export function SyncStatusIndicator() {
           onPress={() => void syncNow()}
           style={{
             alignItems: "center",
-            backgroundColor: syncDisabled ? "#E5E7EB" : "#111827",
+            backgroundColor: syncDisabled
+              ? semantic.border.subtle
+              : semantic.background.inverse,
             borderRadius: 6,
             justifyContent: "center",
             minHeight: 36,
@@ -149,7 +163,7 @@ export function SyncStatusIndicator() {
         >
           <Text
             style={{
-              color: syncDisabled ? "#6B7280" : "#FFFFFF",
+              color: syncDisabled ? semantic.text.muted : semantic.text.inverse,
               fontSize: 12,
               fontWeight: "800",
             }}
@@ -163,8 +177,8 @@ export function SyncStatusIndicator() {
           onPress={clearSynced}
           style={{
             alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderColor: "#D1D5DB",
+            backgroundColor: semantic.background.surface,
+            borderColor: semantic.border.default,
             borderRadius: 6,
             borderWidth: 1,
             justifyContent: "center",
@@ -172,7 +186,7 @@ export function SyncStatusIndicator() {
             paddingHorizontal: 12,
           }}
         >
-          <Text style={{ color: "#111827", fontSize: 12, fontWeight: "800" }}>
+          <Text style={{ color: semantic.text.primary, fontSize: 12, fontWeight: "800" }}>
             Clear synced
           </Text>
         </Pressable>

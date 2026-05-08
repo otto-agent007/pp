@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { brand, semantic } from "@pest-patrol/ui-tokens";
 import type { Job, JobStatus } from "@pest-patrol/types";
 
 import { useAssignedJobs } from "../store/useAssignedJobs";
@@ -32,7 +33,7 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
+        borderColor: semantic.border.subtle,
         borderTopWidth: 1,
         flexDirection: "row",
         flexWrap: "wrap",
@@ -50,8 +51,8 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
             onPress={() => queueStatusUpdate(job.id, status)}
             style={{
               alignItems: "center",
-              backgroundColor: isActive ? "#1E3A8A" : "#FFFFFF",
-              borderColor: isActive ? "#1E3A8A" : "#D1D5DB",
+              backgroundColor: isActive ? brand.primary : semantic.background.surface,
+              borderColor: isActive ? brand.primary : semantic.border.default,
               borderRadius: 8,
               borderWidth: 1,
               justifyContent: "center",
@@ -61,7 +62,7 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
           >
             <Text
               style={{
-                color: isActive ? "#FFFFFF" : "#111827",
+                color: isActive ? semantic.text.inverse : semantic.text.primary,
                 fontSize: 12,
                 fontWeight: "800",
               }}
