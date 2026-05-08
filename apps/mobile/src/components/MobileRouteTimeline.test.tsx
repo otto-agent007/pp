@@ -15,6 +15,13 @@ vi.mock("react-native", async () => {
     },
     Text: ({ children }: { children?: ReactNode }) =>
       ReactModule.createElement("Text", null, children),
+    Pressable: ({
+      children,
+      onPress,
+    }: {
+      children?: ReactNode;
+      onPress?: () => void;
+    }) => ReactModule.createElement("Pressable", { onPress }, children),
     View: ({ children }: { children?: ReactNode }) =>
       ReactModule.createElement("View", null, children),
   };
@@ -45,6 +52,41 @@ function collectText(node: ReactNode): string[] {
     }
 
     return collectText(element.props.children);
+  }
+
+  return [];
+}
+
+function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return [];
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return [];
+  }
+
+  if (Array.isArray(node)) {
+    return node.flatMap((child) => collectElementsByType(child, type));
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement;
+    const rendered =
+      typeof element.type === "function"
+        ? collectElementsByType(
+            (element.type as (props: typeof element.props) => ReactNode)(
+              element.props,
+            ),
+            type,
+          )
+        : [];
+
+    return [
+      ...(element.type === type ? [element] : []),
+      ...collectElementsByType(element.props.children, type),
+      ...rendered,
+    ];
   }
 
   return [];
@@ -208,5 +250,70 @@ describe("MobileRouteTimeline", () => {
     expect(text).toContain("Green Market");
     expect(text).toContain("1 done, 0 pending, 5 missing");
     expect(text).not.toContain("Controls for job-later");
+  });
+
+  it("renders full controls for a focused later route stop", () => {
+    const element = (
+      <MobileRouteTimeline
+        focusedJobId="job-later"
+        onFocusJob={() => undefined}
+        renderJobControls={(job) => `Controls for ${job.id}`}
+        statusLabels={{
+          canceled: "Canceled",
+          completed: "Completed",
+          en_route: "En route",
+          in_progress: "In progress",
+          scheduled: "Scheduled",
+        }}
+        timeline={timeline}
+      />
+    );
+
+    const text = collectText(element);
+
+    expect(text).toContain("Green Market");
+    expect(text).toContain("Controls for job-later");
+  });
+
+  it("keeps later stops compact when focus points elsewhere", () => {
+    const element = (
+      <MobileRouteTimeline
+        focusedJobId="job-missing"
+        renderJobControls={(job) => `Controls for ${job.id}`}
+        statusLabels={{
+          canceled: "Canceled",
+          completed: "Completed",
+          en_route: "En route",
+          in_progress: "In progress",
+          scheduled: "Scheduled",
+        }}
+        timeline={timeline}
+      />
+    );
+
+    expect(collectText(element)).not.toContain("Controls for job-later");
+  });
+
+  it("focuses compact later stops when pressed", () => {
+    const onFocusJob = vi.fn();
+    const element = (
+      <MobileRouteTimeline
+        onFocusJob={onFocusJob}
+        renderJobControls={(job) => `Controls for ${job.id}`}
+        statusLabels={{
+          canceled: "Canceled",
+          completed: "Completed",
+          en_route: "En route",
+          in_progress: "In progress",
+          scheduled: "Scheduled",
+        }}
+        timeline={timeline}
+      />
+    );
+    const pressables = collectElementsByType(element, "Pressable");
+
+    pressables[0].props.onPress();
+
+    expect(onFocusJob).toHaveBeenCalledWith("job-later");
   });
 });

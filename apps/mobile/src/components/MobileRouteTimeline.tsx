@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MobileDailyRouteTimeline, MobileRouteTimelineJob } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
 
 import { AssignedJobCard } from "./AssignedJobCard";
 
 interface MobileRouteTimelineProps {
+  focusedJobId?: string | null;
+  onFocusJob?: (jobId: string) => void;
   renderJobControls: (job: Job) => ReactNode;
   statusLabels: Record<JobStatus, string>;
   timeline: MobileDailyRouteTimeline;
@@ -49,13 +51,18 @@ function RouteSection({
 
 function LaterRouteRow({
   item,
+  onFocusJob,
   statusLabels,
 }: {
   item: MobileRouteTimelineJob;
+  onFocusJob?: (jobId: string) => void;
   statusLabels: Record<JobStatus, string>;
 }) {
   return (
-    <View style={styles.laterRow}>
+    <Pressable
+      onPress={() => onFocusJob?.(item.job.id)}
+      style={styles.laterRow}
+    >
       <View style={styles.laterTime}>
         <Text style={styles.laterTimeText}>{formatRouteTime(item.job.scheduled_start)}</Text>
       </View>
@@ -71,11 +78,13 @@ function LaterRouteRow({
       <View style={styles.laterStatus}>
         <Text style={styles.laterStatusText}>{statusLabels[item.job.status]}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 export function MobileRouteTimeline({
+  focusedJobId,
+  onFocusJob,
   renderJobControls,
   statusLabels,
   timeline,
@@ -108,11 +117,21 @@ export function MobileRouteTimeline({
         <View style={styles.laterSection}>
           <Text style={styles.sectionLabel}>Later today</Text>
           {timeline.later.map((item) => (
-            <LaterRouteRow
-              item={item}
-              key={item.job.id}
-              statusLabels={statusLabels}
-            />
+            item.job.id === focusedJobId ? (
+              <RouteSection
+                item={item}
+                key={item.job.id}
+                renderJobControls={renderJobControls}
+                statusLabels={statusLabels}
+              />
+            ) : (
+              <LaterRouteRow
+                item={item}
+                key={item.job.id}
+                onFocusJob={onFocusJob}
+                statusLabels={statusLabels}
+              />
+            )
           ))}
         </View>
       ) : null}

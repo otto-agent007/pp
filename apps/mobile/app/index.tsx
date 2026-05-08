@@ -78,6 +78,7 @@ export default function MobileHomeScreen() {
   const syncNow = useQueueSync((state) => state.syncNow);
   const { activity: syncActivity, networkStatus } = useSyncStatus();
   const [email, setEmail] = useState("");
+  const [focusedRouteJobId, setFocusedRouteJobId] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const date = todayKey();
   const routeTimeline = useMemo(
@@ -327,6 +328,8 @@ export default function MobileHomeScreen() {
 
         {jobsStatus === "ready" && routeJobCount > 0 ? (
           <MobileRouteTimeline
+            focusedJobId={focusedRouteJobId}
+            onFocusJob={setFocusedRouteJobId}
             renderJobControls={renderFieldControls}
             statusLabels={statusLabels}
             timeline={routeTimeline}
