@@ -9,6 +9,7 @@ import {
   type InvoiceStatusFilter,
 } from "@pest-patrol/domain";
 import type { Invoice, Job } from "@pest-patrol/types";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
@@ -79,6 +80,7 @@ function EmptyState({ children }: { children: string }) {
 }
 
 export function PaymentsClient() {
+  const searchParams = useSearchParams();
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
   const createInvoice = useCreateInvoice();
@@ -87,7 +89,10 @@ export function PaymentsClient() {
   const voidInvoice = useVoidInvoice();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<InvoiceStatusFilter>("all");
-  const [form, setForm] = useState<InvoiceFormState>(emptyForm);
+  const [form, setForm] = useState<InvoiceFormState>(() => ({
+    ...emptyForm,
+    job_id: searchParams.get("job_id") ?? "",
+  }));
   const [formError, setFormError] = useState<string | null>(null);
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const invoicedJobIds = useMemo(() => getInvoiceJobIds(invoices), [invoices]);

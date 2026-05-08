@@ -13,8 +13,16 @@ import {
 } from "../../hooks/usePayments";
 import { PaymentsClient } from "./payments-client";
 
+const searchParams = vi.hoisted(() => ({
+  value: new URLSearchParams(),
+}));
+
 vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => searchParams.value,
 }));
 
 vi.mock("../../hooks/usePayments", () => ({
@@ -62,6 +70,17 @@ const completedJob = {
   customer,
   location,
 } as const;
+const secondCompletedJob = {
+  ...completedJob,
+  id: "job-2",
+  location_id: "location-2",
+  service_notes: "Follow-up service",
+  location: {
+    ...location,
+    id: "location-2",
+    address: "20 Oak Avenue",
+  },
+} as const;
 const invoice = {
   id: "invoice-1",
   job_id: "job-1",
@@ -99,6 +118,7 @@ describe("PaymentsClient", () => {
   const voidInvoice = vi.fn();
 
   beforeEach(() => {
+    searchParams.value = new URLSearchParams();
     vi.mocked(useJobs).mockReturnValue({
       data: [completedJob],
       isLoading: false,
@@ -185,6 +205,33 @@ describe("PaymentsClient", () => {
             unit_amount_cents: 12500,
           }),
         ],
+      }),
+    );
+  });
+
+  it("preselects a completed job from the closeout handoff query param", async () => {
+    const user = userEvent.setup();
+    searchParams.value = new URLSearchParams("job_id=job-2");
+    vi.mocked(useJobs).mockReturnValue({
+      data: [completedJob, secondCompletedJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(screen.getByLabelText("Completed job")).toHaveValue("job-2");
+
+    await user.type(screen.getByLabelText("Invoice amount"), "225");
+    await user.click(screen.getByRole("button", { name: "Save invoice" }));
+
+    expect(createInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job_id: "job-2",
+        notes: "Follow-up service",
       }),
     );
   });

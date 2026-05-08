@@ -2,6 +2,7 @@ import type { Job } from "@pest-patrol/types";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
   filterAssignedTechnicianJobs,
@@ -10,6 +11,7 @@ import {
   getRelativeDispatchWeek,
   validateJobInput,
 } from "./jobs";
+import type { OfflineQueueItem } from "@pest-patrol/types";
 
 const validInput = {
   customer_id: " customer-1 ",
@@ -194,5 +196,178 @@ describe("job domain", () => {
 
     expect(assigned).toHaveLength(2);
     expect(dailyJobs.jobs.map((job) => job.id)).toEqual(["job-2", "job-1"]);
+  });
+
+  it("builds a status-based mobile route timeline with current, next, and later jobs", () => {
+    const jobs = [
+      {
+        id: "job-scheduled-late",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T14:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-current",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T11:00:00",
+        scheduled_end: null,
+        status: "in_progress",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-next",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-completed",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-canceled",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T07:00:00",
+        scheduled_end: null,
+        status: "canceled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+
+    const timeline = buildMobileDailyRouteTimeline(jobs, "2026-05-06", []);
+
+    expect(timeline.summary.title).toBe("Today's route");
+    expect(timeline.summary.label).toBe("5 jobs assigned today");
+    expect(timeline.current?.job.id).toBe("job-current");
+    expect(timeline.current?.sectionLabel).toBe("Current job");
+    expect(timeline.next?.job.id).toBe("job-next");
+    expect(timeline.next?.sectionLabel).toBe("Next job");
+    expect(timeline.later.map((item) => item.job.id)).toEqual([
+      "job-scheduled-late",
+      "job-completed",
+      "job-canceled",
+    ]);
+  });
+
+  it("falls back from en route to the next scheduled job and handles empty days", () => {
+    const jobs = [
+      {
+        id: "job-en-route",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T10:00:00",
+        scheduled_end: null,
+        status: "en_route",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-scheduled",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+
+    expect(
+      buildMobileDailyRouteTimeline(jobs, "2026-05-06", []).current?.job.id,
+    ).toBe("job-en-route");
+    expect(
+      buildMobileDailyRouteTimeline(
+        jobs.map((job) => ({ ...job, status: "scheduled" })),
+        "2026-05-06",
+        [],
+      ).current?.job.id,
+    ).toBe("job-scheduled");
+    expect(buildMobileDailyRouteTimeline([], "2026-05-06", [])).toMatchObject({
+      current: null,
+      next: null,
+      later: [],
+      summary: {
+        label: "0 jobs assigned today",
+      },
+    });
+  });
+
+  it("summarizes mobile route capture readiness from the work plan and queue", () => {
+    const jobs = [
+      {
+        id: "job-queued",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "en_route",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+    const queueItems = [
+      {
+        id: "queue-1",
+        action: "form_submission_create",
+        attempts: 0,
+        created_at: now,
+        last_error: null,
+        next_retry_at: null,
+        payload: { job_id: "job-queued", template_id: "template-1", form_data: {} },
+        status: "queued",
+        updated_at: now,
+      },
+    ] satisfies OfflineQueueItem[];
+
+    const timeline = buildMobileDailyRouteTimeline(
+      jobs,
+      "2026-05-06",
+      queueItems,
+    );
+
+    expect(timeline.current?.readinessLabel).toBe("1 done, 1 pending, 4 missing");
+    expect(timeline.current?.syncTriage).toMatchObject({
+      label: "1 queued sync item",
+      state: "queued",
+    });
+    expect(timeline.current?.workPlan.find((item) => item.id === "form")).toMatchObject({
+      state: "pending",
+      summary: "Treatment form is queued for sync.",
+    });
   });
 });

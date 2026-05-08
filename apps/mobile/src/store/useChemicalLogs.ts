@@ -2,7 +2,10 @@ import { normalizeChemicalLogInput } from "@pest-patrol/domain";
 import type { ChemicalLogQueuePayload } from "@pest-patrol/types";
 import { create } from "zustand";
 
+import { readMobileJson, writeMobileJson } from "./mobilePersistence";
 import { useOfflineQueue } from "./useOfflineQueue";
+
+const CHEMICAL_LOG_DRAFTS_STORAGE_KEY = "pest-patrol:chemical-log-drafts:v1";
 
 interface ChemicalLogDraft {
   amount: string;
@@ -14,6 +17,7 @@ interface ChemicalLogDraft {
 interface ChemicalLogsState {
   drafts: Record<string, ChemicalLogDraft>;
   getDraft: (jobId: string) => ChemicalLogDraft;
+  hydrate: () => Promise<void>;
   queueLog: (jobId: string) => void;
   setDraftField: (
     jobId: string,
@@ -34,6 +38,14 @@ function emptyDraft(): ChemicalLogDraft {
 export const useChemicalLogs = create<ChemicalLogsState>((set, get) => ({
   drafts: {},
   getDraft: (jobId) => get().drafts[jobId] ?? emptyDraft(),
+  hydrate: async () => {
+    const drafts = await readMobileJson<Record<string, ChemicalLogDraft>>(
+      CHEMICAL_LOG_DRAFTS_STORAGE_KEY,
+      {},
+    );
+
+    set({ drafts });
+  },
   queueLog: (jobId) => {
     const draft = get().getDraft(jobId);
     const normalized = normalizeChemicalLogInput({
@@ -54,8 +66,8 @@ export const useChemicalLogs = create<ChemicalLogsState>((set, get) => ({
       payload,
     });
 
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [jobId]: {
           amount: "",
@@ -63,12 +75,15 @@ export const useChemicalLogs = create<ChemicalLogsState>((set, get) => ({
           notes: "",
           queuedAt: new Date().toISOString(),
         },
-      },
-    }));
+      };
+      writeMobileJson(CHEMICAL_LOG_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
   },
   setDraftField: (jobId, field, value) => {
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [jobId]: {
           ...emptyDraft(),
@@ -76,7 +91,10 @@ export const useChemicalLogs = create<ChemicalLogsState>((set, get) => ({
           [field]: value,
           queuedAt: null,
         },
-      },
-    }));
+      };
+      writeMobileJson(CHEMICAL_LOG_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
   },
 }));

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMobileJobWorkPlan,
   buildMobileTechnicianReadinessPanel,
+  getMobileCompletionReadinessGuard,
   getDemoWorkflowSteps,
 } from "./demoReadiness";
 
@@ -150,5 +151,87 @@ describe("demo readiness domain", () => {
         summary: "No treatment form queued yet.",
       },
     ]);
+  });
+
+  it("warns before mobile completion when required captures are missing or pending", () => {
+    const plan = buildMobileJobWorkPlan(
+      { id: "job-1", status: "in_progress" },
+      [
+        {
+          id: "queue-1",
+          action: "form_submission_create",
+          payload: { job_id: "job-1" },
+          status: "queued",
+          attempts: 0,
+          created_at: "2026-05-05T12:00:00.000Z",
+          updated_at: "2026-05-05T12:00:00.000Z",
+          next_retry_at: null,
+          last_error: null,
+        },
+      ],
+    );
+
+    expect(getMobileCompletionReadinessGuard(plan)).toEqual({
+      label: "Review before completing",
+      missingLabels: [
+        "Capture arrival/departure",
+        "Log chemicals",
+        "Capture photos",
+        "Capture signature",
+      ],
+      pendingLabels: ["Submit treatment form"],
+      ready: false,
+      summary:
+        "Missing capture arrival/departure, log chemicals, capture photos, and capture signature. Pending sync for submit treatment form.",
+    });
+  });
+
+  it("allows mobile completion without warning when captures are done", () => {
+    expect(
+      getMobileCompletionReadinessGuard([
+        {
+          id: "status",
+          label: "Start or complete job",
+          state: "done",
+          summary: "Job is in progress.",
+        },
+        {
+          id: "geofence",
+          label: "Capture arrival/departure",
+          state: "done",
+          summary: "Geofence event has synced.",
+        },
+        {
+          id: "chemical",
+          label: "Log chemicals",
+          state: "done",
+          summary: "Chemical log has synced.",
+        },
+        {
+          id: "photo",
+          label: "Capture photos",
+          state: "done",
+          summary: "Photo capture has synced.",
+        },
+        {
+          id: "signature",
+          label: "Capture signature",
+          state: "done",
+          summary: "Signature has synced.",
+        },
+        {
+          id: "form",
+          label: "Submit treatment form",
+          state: "done",
+          summary: "Treatment form has synced.",
+        },
+      ]),
+    ).toEqual({
+      label: "Ready to complete",
+      missingLabels: [],
+      pendingLabels: [],
+      ready: true,
+      summary: "All required field captures are synced or complete.",
+    });
   });
 });

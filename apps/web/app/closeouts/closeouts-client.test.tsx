@@ -189,6 +189,10 @@ describe("CloseoutsClient", () => {
         "Treatment form, chemical log, photo, and signature are captured.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Create invoice" })).toHaveAttribute(
+      "href",
+      "/payments?job_id=job-1",
+    );
   });
 
   it("filters to completed jobs by default and can show all jobs", async () => {

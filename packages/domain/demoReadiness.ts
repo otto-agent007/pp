@@ -32,6 +32,14 @@ export interface MobileJobWorkPlanItem {
   summary: string;
 }
 
+export interface MobileCompletionReadinessGuard {
+  label: string;
+  missingLabels: string[];
+  pendingLabels: string[];
+  ready: boolean;
+  summary: string;
+}
+
 const demoWorkflowSteps: DemoWorkflowStep[] = [
   {
     action: "Add the customer, primary contact, and first service address.",
@@ -136,6 +144,24 @@ function captureSummary(
   return labels[state];
 }
 
+function joinLowerLabels(labels: string[]) {
+  const lowered = labels.map((label) => label.toLowerCase());
+
+  if (lowered.length === 0) {
+    return "";
+  }
+
+  if (lowered.length === 1) {
+    return lowered[0];
+  }
+
+  if (lowered.length === 2) {
+    return `${lowered[0]} and ${lowered[1]}`;
+  }
+
+  return `${lowered.slice(0, -1).join(", ")}, and ${lowered[lowered.length - 1]}`;
+}
+
 function statusSummary(status: JobStatus) {
   const labels: Record<JobStatus, string> = {
     scheduled: "Job is scheduled.",
@@ -222,4 +248,44 @@ export function buildMobileJobWorkPlan(
       }),
     },
   ];
+}
+
+export function getMobileCompletionReadinessGuard(
+  workPlan: MobileJobWorkPlanItem[],
+): MobileCompletionReadinessGuard {
+  const captureItems = workPlan.filter((item) => item.id !== "status");
+  const missingLabels = captureItems
+    .filter((item) => item.state === "missing")
+    .map((item) => item.label);
+  const pendingLabels = captureItems
+    .filter((item) => item.state === "pending")
+    .map((item) => item.label);
+  const ready = missingLabels.length === 0 && pendingLabels.length === 0;
+
+  if (ready) {
+    return {
+      label: "Ready to complete",
+      missingLabels,
+      pendingLabels,
+      ready,
+      summary: "All required field captures are synced or complete.",
+    };
+  }
+
+  return {
+    label: "Review before completing",
+    missingLabels,
+    pendingLabels,
+    ready,
+    summary: [
+      missingLabels.length > 0
+        ? `Missing ${joinLowerLabels(missingLabels)}.`
+        : null,
+      pendingLabels.length > 0
+        ? `Pending sync for ${joinLowerLabels(pendingLabels)}.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  };
 }

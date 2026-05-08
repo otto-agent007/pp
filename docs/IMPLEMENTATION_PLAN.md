@@ -1,12 +1,28 @@
 # Implementation Plan
 
-## Current Priority: Field Workflow Batch V1
+## Current Priority: Pick Next Follow-Up Slice
 
-1. Show each assigned mobile job's field work plan across status, geofence, chemical, photo, signature, and treatment form captures.
-2. Label queued mobile captures clearly while preserving the existing offline queue storage and sync worker.
-3. Summarize closeout review readiness for office billing handoff.
-4. Show customer-safe portal service summaries with capture counts, service date, location, and invoice state.
-5. Avoid migrations, production data changes, and provider configuration changes.
+1. Field Ops + Billing Handoff Batch V1 is implemented and verified.
+2. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
+3. Treat Claude as external UI design input for future UI polish, while Codex owns architecture, data flow, offline safety, tests, integration, and verification.
+4. Favor one of the next follow-up candidates: bilingual field copy, billing work queue, payment reconciliation polish, portal readiness polish, or customer ledger.
+5. Continue avoiding production migrations, provider config, Supabase dashboard changes, or production mutations without explicit approval.
+
+## Recently Completed: Daily Route Timeline + Field Ops Handoff V1
+
+1. Landed Daily Route Timeline V1 as the baseline for current, next, and later mobile route stops.
+2. Persisted mobile offline queue and draft stores across app restarts without changing queue contracts.
+3. Added route-stop focus and completion readiness guard behavior to the mobile route flow.
+4. Added per-job sync triage labels so queued/retrying/synced/failed work is visible by route stop.
+5. Added closeout-to-invoice query-param handoff while preserving the existing invoice model and provider boundaries.
+
+## Recently Completed: Field Workflow Batch V1
+
+1. Connected mobile job work-plan readiness across status, geofence, chemical, photo, signature, and treatment form captures.
+2. Added capture-specific mobile queue labels while preserving the existing offline queue storage and sync worker.
+3. Summarized closeout review readiness for office billing handoff.
+4. Showed customer-safe portal service summaries with capture counts, service date, location, and invoice state.
+5. Extended production smoke guidance for mobile captures and closeout review.
 
 ## Recently Completed: Mobile Technician Demo Readiness V1
 

@@ -1,21 +1,25 @@
 # In Progress
 
-## Task: Field Workflow Batch V1
+## Task: Field Ops + Billing Handoff Batch
 
 Goal:
-Connect the technician field workflow from assigned mobile jobs through queued captures, office closeout readiness, customer portal service summaries, and billing handoff.
+Land the five-slice batch that builds on Daily Route Timeline V1: persistent mobile offline state, route-stop focus, completion readiness, per-stop sync triage, and closeout-to-invoice handoff.
 
 Steps:
-- [x] Sync local `main` to the merged mobile demo-readiness PR
-- [x] Add mobile job work-plan readiness from status and queued captures
-- [x] Add office closeout billing-readiness summary
-- [x] Add customer-safe portal service summaries
-- [x] Add capture-specific mobile queue labels
-- [x] Extend production smoke checklist for field captures and closeout review
-- [x] Run full repository verification
+- [x] Persistent Mobile Offline Queue V1
+- [x] Route Stop Focus V1
+- [x] Mobile Completion Readiness Guard V1
+- [x] Per-Job Sync Triage V1
+- [x] Closeout To Invoice Handoff V1
+- [x] Run final full repository verification
 
-Follow-up:
+Follow-up candidates:
+- [ ] Bilingual field copy
+- [ ] Billing work queue
+- [ ] Payment reconciliation polish
+- [ ] Portal readiness polish
+- [ ] Customer ledger
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Field workflow batch implementation is complete on `codex/field-workflow-batch-v1`; full test, typecheck, lint, and build verification passed.
+Implementation and final full verification are complete on `codex/daily-route-timeline-v1`.

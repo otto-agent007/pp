@@ -8,6 +8,7 @@ import {
   filterInvoices,
   getCustomerPortalInvoiceStatusLabel,
   getInvoiceBalanceCents,
+  getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
   getInvoiceSummary,
@@ -125,6 +126,12 @@ describe("payments domain", () => {
       notes: "Quarterly service",
       line_items: [{ unit_amount_cents: 12500 }],
     });
+  });
+
+  it("builds a closeout to invoice handoff href", () => {
+    expect(getInvoiceHandoffHref("job-1")).toBe("/payments?job_id=job-1");
+    expect(getInvoiceHandoffHref("job 1")).toBe("/payments?job_id=job%201");
+    expect(() => getInvoiceHandoffHref(" ")).toThrow("Job is required");
   });
 
   it("filters invoices and summarizes payment state", () => {

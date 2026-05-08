@@ -62,10 +62,10 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Field Workflow Batch V1:
+Current priority is choosing the next follow-up slice after the verified Field Ops + Billing Handoff batch:
 
-- show technicians a per-job field work plan for status, geofence, chemical, photo, signature, and form captures
-- clarify capture-specific queued sync work without changing offline queue storage
-- summarize closeout readiness for office billing handoff
-- show customer-safe portal service summaries without admin-only internals
+- next candidates: bilingual field copy, billing work queue, payment reconciliation, portal readiness, and customer ledger
+- use Claude as external UI design input for UI-heavy polish while Codex owns implementation and verification
+- keep mobile writes offline-safe and shared logic in packages
+- avoid provider config, migrations, Supabase dashboard changes, or production mutations without explicit approval
 - track Supabase leaked password protection as a deferred Pro-plan hardening item

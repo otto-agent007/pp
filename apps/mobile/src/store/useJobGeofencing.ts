@@ -5,7 +5,10 @@ import type {
 } from "@pest-patrol/types";
 import { create } from "zustand";
 
+import { readMobileJson, writeMobileJson } from "./mobilePersistence";
 import { useOfflineQueue } from "./useOfflineQueue";
+
+const JOB_GEOFENCE_DRAFTS_STORAGE_KEY = "pest-patrol:job-geofence-drafts:v1";
 
 interface QueueGeofenceEventInput {
   accuracyM?: number | null;
@@ -25,6 +28,7 @@ interface JobGeofenceDraft {
 interface JobGeofencingState {
   drafts: Record<string, JobGeofenceDraft>;
   getDraft: (jobId: string) => JobGeofenceDraft;
+  hydrate: () => Promise<void>;
   queueGeofenceEvent: (
     input: QueueGeofenceEventInput,
   ) => JobGeofenceEventQueuePayload;
@@ -40,6 +44,14 @@ function emptyDraft(): JobGeofenceDraft {
 export const useJobGeofencing = create<JobGeofencingState>((set, get) => ({
   drafts: {},
   getDraft: (jobId) => get().drafts[jobId] ?? emptyDraft(),
+  hydrate: async () => {
+    const drafts = await readMobileJson<Record<string, JobGeofenceDraft>>(
+      JOB_GEOFENCE_DRAFTS_STORAGE_KEY,
+      {},
+    );
+
+    set({ drafts });
+  },
   queueGeofenceEvent: (input) => {
     const serviceLocation =
       input.serviceLatitude === null ||
@@ -67,15 +79,18 @@ export const useJobGeofencing = create<JobGeofencingState>((set, get) => ({
       payload,
     });
 
-    set((state) => ({
-      drafts: {
+    set((state) => {
+      const drafts = {
         ...state.drafts,
         [input.jobId]: {
           lastEvent: payload,
           queuedAt: new Date().toISOString(),
         },
-      },
-    }));
+      };
+      writeMobileJson(JOB_GEOFENCE_DRAFTS_STORAGE_KEY, drafts);
+
+      return { drafts };
+    });
 
     return payload;
   },

@@ -4,6 +4,7 @@ import {
   filterCloseoutJobs,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
+  getInvoiceHandoffHref,
   type CloseoutStatusFilter,
 } from "@pest-patrol/domain";
 import type { FormValue, Job, JobFormSubmission, JobMedia } from "@pest-patrol/types";
@@ -280,6 +281,14 @@ export function CloseoutsClient() {
                     <p className="mt-1 text-sm text-gray-700">
                       {readiness.summary}
                     </p>
+                    {readiness.billingReady ? (
+                      <a
+                        className="mt-4 inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90"
+                        href={getInvoiceHandoffHref(selectedJob.id)}
+                      >
+                        Create invoice
+                      </a>
+                    ) : null}
                   </div>
                 ) : null}
               </section>

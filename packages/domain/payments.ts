@@ -133,6 +133,10 @@ export function buildInvoiceInputFromJob(
   });
 }
 
+export function getInvoiceHandoffHref(jobId: string) {
+  return `/payments?job_id=${encodeURIComponent(requireNonEmpty(jobId, "Job"))}`;
+}
+
 function searchableInvoiceText(invoice: Invoice) {
   return [
     invoice.customer?.name,

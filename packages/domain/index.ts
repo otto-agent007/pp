@@ -9,10 +9,12 @@ export function requireNonEmpty(value: string, fieldName: string) {
 export {
   buildMobileJobWorkPlan,
   buildMobileTechnicianReadinessPanel,
+  getMobileCompletionReadinessGuard,
   getDemoWorkflowSteps,
 } from "./demoReadiness";
 export type {
   DemoWorkflowStep,
+  MobileCompletionReadinessGuard,
   MobileJobWorkPlanItem,
   MobileJobWorkPlanState,
   MobileTechnicianReadinessInput,
@@ -159,6 +161,7 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
   cancelJob,
@@ -176,6 +179,11 @@ export {
   normalizeJobInput,
   updateJob,
   validateJobInput,
+} from "./jobs";
+export type {
+  MobileDailyRouteTimeline,
+  MobileRouteTimelineJob,
+  MobileRouteTimelineSummary,
 } from "./jobs";
 export {
   getTechnicianLabel,
@@ -206,6 +214,7 @@ export {
 export {
   clearSyncedQueueItems,
   createOfflineQueueItem,
+  getOfflineQueueJobTriage,
   getOfflineQueueItemLabel,
   getOfflineQueueSummary,
   markQueueItemFailed,
@@ -213,7 +222,11 @@ export {
   markQueueItemSynced,
   validateOfflineQueueInput,
 } from "./offlineQueue";
-export type { OfflineQueueSummary } from "./offlineQueue";
+export type {
+  OfflineQueueJobTriage,
+  OfflineQueueJobTriageState,
+  OfflineQueueSummary,
+} from "./offlineQueue";
 export {
   createFormDraft,
   createJobFormSubmission,
@@ -256,6 +269,7 @@ export {
   filterInvoices,
   getCustomerPortalInvoiceStatusLabel,
   getInvoiceBalanceCents,
+  getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
   getInvoiceSummary,

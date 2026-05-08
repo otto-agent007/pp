@@ -25,6 +25,25 @@ export interface OfflineQueueSummary {
   total: number;
 }
 
+export type OfflineQueueJobTriageState =
+  | "failed"
+  | "idle"
+  | "queued"
+  | "retrying"
+  | "synced";
+
+export interface OfflineQueueJobTriage {
+  failed: number;
+  jobId: string;
+  label: string;
+  pending: number;
+  queued: number;
+  retrying: number;
+  state: OfflineQueueJobTriageState;
+  synced: number;
+  total: number;
+}
+
 const pendingStatuses = new Set<OfflineQueueStatus>(["queued", "retrying", "failed"]);
 
 function timestamp(value?: string) {
@@ -166,6 +185,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function queueItemJobId<TPayload>(item: OfflineQueueItem<TPayload>) {
+  return isRecord(item.payload) && typeof item.payload.job_id === "string"
+    ? item.payload.job_id
+    : null;
+}
+
+function itemNoun(count: number) {
+  return count === 1 ? "item" : "items";
+}
+
 function payloadJobLabel(payload: unknown) {
   if (!isRecord(payload) || typeof payload.job_id !== "string") {
     return "unknown job";
@@ -199,4 +228,80 @@ export function getOfflineQueueItemLabel<TPayload>(
       : queueActionLabels[item.action];
 
   return `${actionLabel} for ${payloadJobLabel(item.payload)}`;
+}
+
+export function getOfflineQueueJobTriage<TPayload>(
+  items: OfflineQueueItem<TPayload>[],
+  jobId: string,
+): OfflineQueueJobTriage {
+  const jobItems = items.filter((item) => queueItemJobId(item) === jobId);
+  const summary = getOfflineQueueSummary(jobItems);
+
+  if (summary.failed > 0) {
+    return {
+      failed: summary.failed,
+      jobId,
+      label: `${summary.failed} failed sync ${itemNoun(summary.failed)}`,
+      pending: summary.pending,
+      queued: summary.queued,
+      retrying: summary.retrying,
+      state: "failed",
+      synced: summary.synced,
+      total: summary.total,
+    };
+  }
+
+  if (summary.retrying > 0) {
+    return {
+      failed: summary.failed,
+      jobId,
+      label: `${summary.pending} pending sync, ${summary.synced} synced`,
+      pending: summary.pending,
+      queued: summary.queued,
+      retrying: summary.retrying,
+      state: "retrying",
+      synced: summary.synced,
+      total: summary.total,
+    };
+  }
+
+  if (summary.queued > 0) {
+    return {
+      failed: summary.failed,
+      jobId,
+      label: `${summary.queued} queued sync ${itemNoun(summary.queued)}`,
+      pending: summary.pending,
+      queued: summary.queued,
+      retrying: summary.retrying,
+      state: "queued",
+      synced: summary.synced,
+      total: summary.total,
+    };
+  }
+
+  if (summary.synced > 0) {
+    return {
+      failed: summary.failed,
+      jobId,
+      label: `${summary.synced} synced ${itemNoun(summary.synced)}`,
+      pending: summary.pending,
+      queued: summary.queued,
+      retrying: summary.retrying,
+      state: "synced",
+      synced: summary.synced,
+      total: summary.total,
+    };
+  }
+
+  return {
+    failed: 0,
+    jobId,
+    label: "No local sync work",
+    pending: 0,
+    queued: 0,
+    retrying: 0,
+    state: "idle",
+    synced: 0,
+    total: 0,
+  };
 }
