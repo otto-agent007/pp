@@ -13,16 +13,16 @@ import {
 } from "@pest-patrol/domain";
 import type { JobStatus } from "@pest-patrol/types";
 
+import { AssignedJobCard } from "../src/components/AssignedJobCard";
 import { JobChemicalLogForm } from "../src/components/JobChemicalLogForm";
 import { JobGeofenceControls } from "../src/components/JobGeofenceControls";
 import { JobPhotoUploadForm } from "../src/components/JobPhotoUploadForm";
 import { JobSignatureCaptureForm } from "../src/components/JobSignatureCaptureForm";
 import { JobStatusControls } from "../src/components/JobStatusControls";
 import { JobTreatmentForm } from "../src/components/JobTreatmentForm";
-import { SyncStatusIndicator } from "../src/components/SyncStatusIndicator";
+import { MobileTechnicianHeader } from "../src/components/MobileTechnicianHeader";
 import { useAssignedJobs } from "../src/store/useAssignedJobs";
 import { useAuth } from "../src/store/useAuth";
-import { useLanguage } from "../src/store/useLanguage";
 import { useOfflineQueue } from "../src/store/useOfflineQueue";
 import { useQueueSync } from "../src/store/useQueueSync";
 import { useSyncStatus } from "../src/store/useSyncStatus";
@@ -47,7 +47,6 @@ function formatTime(value: string) {
 }
 
 export default function MobileHomeScreen() {
-  const { t } = useLanguage();
   const { error, initialize, profile, signIn, signOut, status } = useAuth();
   const {
     error: jobsError,
@@ -190,38 +189,13 @@ export default function MobileHomeScreen() {
         paddingTop: 56,
       }}
     >
-      <Text style={{ color: "#1E3A8A", fontSize: 13, fontWeight: "700" }}>
-        Technician
-      </Text>
-      <Text style={{ color: "#111827", fontSize: 28, fontWeight: "700" }}>
-        {t.dashboard.title}
-      </Text>
-      <Text style={{ color: "#4B5563", fontSize: 16, marginTop: 8 }}>
-        {t.dashboard.welcome}
-      </Text>
-      <Text style={{ color: "#6B7280", fontSize: 14, marginTop: 16 }}>
-        Signed in as {profile?.id.slice(0, 8) ?? "technician"}
-      </Text>
-      {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 14, marginTop: 12 }}>{error}</Text>
-      ) : null}
-      <SyncStatusIndicator />
-      <Pressable
-        onPress={() => void handleSignOut()}
-        style={{
-          alignItems: "center",
-          borderColor: "#D1D5DB",
-          borderRadius: 8,
-          borderWidth: 1,
-          justifyContent: "center",
-          marginTop: 24,
-          minHeight: 48,
-        }}
-      >
-        <Text style={{ color: "#111827", fontSize: 16, fontWeight: "700" }}>
-          Sign out
-        </Text>
-      </Pressable>
+      <MobileTechnicianHeader
+        assignedJobCount={dailyJobs.jobs.length}
+        error={error}
+        onRefreshJobs={() => void load()}
+        onSignOut={() => void handleSignOut()}
+        profileId={profile?.id}
+      />
       <ScrollView
         style={{ marginTop: 28 }}
         contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
@@ -316,55 +290,21 @@ export default function MobileHomeScreen() {
         ) : null}
 
         {dailyJobs.jobs.map((job) => (
-          <View
+          <AssignedJobCard
+            address={job.location?.address}
+            customerName={job.customer?.name}
             key={job.id}
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#E5E7EB",
-              borderRadius: 10,
-              borderWidth: 1,
-              padding: 16,
-            }}
+            notes={job.service_notes}
+            scheduledStart={job.scheduled_start}
+            statusLabel={statusLabels[job.status]}
           >
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text style={{ color: "#1E3A8A", fontSize: 13, fontWeight: "800" }}>
-                {formatTime(job.scheduled_start)}
-              </Text>
-              <Text style={{ color: "#6B7280", fontSize: 12, fontWeight: "700" }}>
-                {statusLabels[job.status]}
-              </Text>
-            </View>
-            <Text
-              style={{
-                color: "#111827",
-                fontSize: 18,
-                fontWeight: "800",
-                marginTop: 8,
-              }}
-            >
-              {job.customer?.name ?? "Unknown customer"}
-            </Text>
-            <Text style={{ color: "#4B5563", fontSize: 14, marginTop: 4 }}>
-              {job.location?.address ?? "No location saved"}
-            </Text>
-            {job.service_notes ? (
-              <Text style={{ color: "#374151", fontSize: 14, marginTop: 10 }}>
-                {job.service_notes}
-              </Text>
-            ) : null}
             <JobStatusControls job={job} />
             <JobGeofenceControls job={job} />
             <JobChemicalLogForm jobId={job.id} />
             <JobPhotoUploadForm jobId={job.id} />
             <JobSignatureCaptureForm jobId={job.id} />
             <JobTreatmentForm jobId={job.id} />
-          </View>
+          </AssignedJobCard>
         ))}
 
         {lastLoadedAt ? (

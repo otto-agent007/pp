@@ -8,6 +8,19 @@ export interface DemoWorkflowStep {
   summary: string;
 }
 
+export interface MobileTechnicianReadinessInput {
+  assignedJobCount: number;
+  profileId?: string | null;
+}
+
+export interface MobileTechnicianReadinessPanel {
+  assignedJobsLabel: string;
+  demoNextLabel: string;
+  demoNextSummary: string;
+  identityLabel: string;
+  title: string;
+}
+
 const demoWorkflowSteps: DemoWorkflowStep[] = [
   {
     action: "Add the customer, primary contact, and first service address.",
@@ -62,4 +75,21 @@ const demoWorkflowSteps: DemoWorkflowStep[] = [
 
 export function getDemoWorkflowSteps() {
   return demoWorkflowSteps;
+}
+
+export function buildMobileTechnicianReadinessPanel(
+  input: MobileTechnicianReadinessInput,
+): MobileTechnicianReadinessPanel {
+  const assignedJobCount = Math.max(0, Math.floor(input.assignedJobCount));
+  const jobNoun = assignedJobCount === 1 ? "job" : "jobs";
+  const technicianLabel = input.profileId?.trim().slice(0, 15) || "technician";
+
+  return {
+    assignedJobsLabel: `${assignedJobCount} ${jobNoun} assigned today`,
+    demoNextLabel: "Demo next",
+    demoNextSummary:
+      "Open the first assigned job, capture treatment notes, then explain queued sync.",
+    identityLabel: `Signed in as ${technicianLabel}`,
+    title: "Technician ready",
+  };
 }

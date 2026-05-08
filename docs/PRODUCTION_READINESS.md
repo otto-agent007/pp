@@ -131,6 +131,17 @@ Admin web:
 18. Use recipient readiness filters to confirm reachable, missing-contact, email-ready, and phone-ready reminders can be isolated.
 19. Confirm sent or failed delivery attempts show last-attempt timing and the delivery controls show total attempts.
 
+Mobile technician:
+
+1. Sign in through the Expo app as an invited technician.
+2. Confirm the mobile home screen shows the technician readiness panel, assigned-job count, sync status, and refresh action.
+3. Open an assigned job card and confirm customer, address, schedule, status, and service notes are readable.
+4. Queue a status update and confirm the sync panel shows pending work.
+5. Queue treatment form, chemical log, photo, signature, and location events where demo permissions/devices allow.
+6. Toggle or simulate offline state during queued work and confirm the app explains that captures remain local.
+7. Return online or tap Sync and confirm synced items can be cleared after review.
+8. Confirm no mobile screen asks for service-role keys, cron secrets, Stripe secrets, or webhook secrets.
+
 Customer portal:
 
 1. Open `/customers` and generate a portal access token for a customer with completed jobs.

@@ -128,6 +128,10 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
         <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
           Treatment form
         </Text>
+        <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 4 }}>
+          Record the field notes before leaving the stop. Queued forms stay on
+          this device and sync when the connection is ready.
+        </Text>
       </View>
 
       {template.schema.fields.map((field) => (
@@ -154,7 +158,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       ) : null}
       {draft.queued_at ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Queued for sync
+          Queued locally for sync
         </Text>
       ) : null}
 

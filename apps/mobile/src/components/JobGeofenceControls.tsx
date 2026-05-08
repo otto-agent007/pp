@@ -88,6 +88,10 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
         Location
       </Text>
+      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        Capture arrival and departure at the service location. Location events
+        queue locally and sync later.
+      </Text>
       {serviceLatitude === null ||
       serviceLatitude === undefined ||
       serviceLongitude === null ||
