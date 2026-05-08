@@ -1,5 +1,15 @@
 # Done
 
+## Field Ops + Billing Handoff Batch V1
+
+- Persisted queued mobile writes and field drafts across app restarts with existing queue action contracts
+- Let technicians focus any current, next, or later route stop while preserving full field controls
+- Added a soft mobile completion readiness warning that reuses work-plan and offline queue state
+- Added per-job sync triage labels for queued, retrying, synced, and failed route-stop work
+- Added a closeout-to-invoice handoff using `/payments?job_id=...` without migrations or provider changes
+- Added focused domain, mobile, and web UI coverage for the five slices
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Daily Route Timeline V1
 
 - Added a shared mobile daily route timeline helper for current, next, and later assigned jobs

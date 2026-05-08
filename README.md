@@ -62,11 +62,10 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is Daily Route Timeline V1:
+Current priority is choosing the next follow-up slice after the verified Field Ops + Billing Handoff batch:
 
-- guide technician mobile work through current, next, and later assigned jobs
-- prioritize route focus by job status, then scheduled order
-- reuse offline queue and field work-plan readiness for capture progress labels
-- keep dispatch aligned with technician route ordering
-- avoid maps, route optimization, and provider configuration in this slice
+- next candidates: bilingual field copy, billing work queue, payment reconciliation, portal readiness, and customer ledger
+- use Claude as external UI design input for UI-heavy polish while Codex owns implementation and verification
+- keep mobile writes offline-safe and shared logic in packages
+- avoid provider config, migrations, Supabase dashboard changes, or production mutations without explicit approval
 - track Supabase leaked password protection as a deferred Pro-plan hardening item

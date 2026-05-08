@@ -1,19 +1,25 @@
 # In Progress
 
-## Task: Daily Route Timeline V1
+## Task: Field Ops + Billing Handoff Batch
 
 Goal:
-Turn the technician mobile home into a guided daily route timeline while keeping dispatch aligned with the technician-facing route order.
+Land the five-slice batch that builds on Daily Route Timeline V1: persistent mobile offline state, route-stop focus, completion readiness, per-stop sync triage, and closeout-to-invoice handoff.
 
 Steps:
-- [x] Add shared route timeline domain helper from assigned jobs, status priority, schedule order, and offline queue readiness
-- [x] Replace the flat mobile daily job list with current, next, and compact later route sections
-- [x] Preserve full field capture controls for current and next mobile jobs
-- [x] Add a provider-free dispatch companion note for technician route ordering
-- [x] Run full repository verification
+- [x] Persistent Mobile Offline Queue V1
+- [x] Route Stop Focus V1
+- [x] Mobile Completion Readiness Guard V1
+- [x] Per-Job Sync Triage V1
+- [x] Closeout To Invoice Handoff V1
+- [x] Run final full repository verification
 
-Follow-up:
+Follow-up candidates:
+- [ ] Bilingual field copy
+- [ ] Billing work queue
+- [ ] Payment reconciliation polish
+- [ ] Portal readiness polish
+- [ ] Customer ledger
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Daily route timeline implementation is complete on `codex/daily-route-timeline-v1`; full test, typecheck, lint, and build verification passed.
+Implementation and final full verification are complete on `codex/daily-route-timeline-v1`.
