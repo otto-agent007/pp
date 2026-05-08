@@ -269,6 +269,7 @@ export {
   filterInvoices,
   getCustomerPortalInvoiceStatusLabel,
   getInvoiceBalanceCents,
+  getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
   getInvoiceSummary,
