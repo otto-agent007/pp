@@ -58,10 +58,10 @@ Password recovery links must return to the deployed app, not localhost.
 
 ## Supabase Dashboard Security
 
-1. Enable leaked password protection in Supabase Auth settings.
-2. Keep service-role keys private and rotate them if they are ever pasted into chat, logs, or docs.
-3. Rerun Supabase security and performance advisors after every production migration.
-4. Treat unused-index recommendations as advisory until the production database has enough real traffic to judge query patterns.
+1. Keep service-role keys private and rotate them if they are ever pasted into chat, logs, or docs.
+2. Rerun Supabase security and performance advisors after every production migration.
+3. Treat unused-index recommendations as advisory until the production database has enough real traffic to judge query patterns.
+4. If the project upgrades to Supabase Pro, enable leaked password protection in Supabase Auth settings.
 
 Latest hardening status:
 
@@ -70,7 +70,7 @@ Latest hardening status:
 - Supabase CLI advisors were rerun after the hardening migration.
 - Performance advisors reported no issues.
 - Security advisors reported one remaining warning: leaked password protection is disabled.
-- Dashboard-only follow-up remains: enable leaked password protection.
+- This warning is deferred while the project is not on a Supabase Pro plan.
 
 ## Vercel Setup
 
