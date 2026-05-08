@@ -7,7 +7,9 @@ import {
   filterCloseoutJobs,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
+  getCustomerPortalServiceSummary,
   getCloseoutCounts,
+  getCloseoutReviewReadiness,
   validateCustomerPortalAccessInput,
   validateCustomerPortalAccessToken,
   validateCustomerPortalAccessTokenId,
@@ -130,6 +132,36 @@ describe("closeouts domain", () => {
     expect(review.signatures[0].storage_path).toBe("job-1/signature.png");
   });
 
+  it("summarizes closeout readiness for office review", () => {
+    const review = buildJobCloseoutReview({
+      job: completedJob,
+      formSubmissions: [],
+      chemicalLogs: [],
+      media: [
+        {
+          id: "media-1",
+          job_id: "job-1",
+          media_type: "photo",
+          storage_bucket: "job-media",
+          storage_path: "job-1/photo.jpg",
+          description: "Kitchen",
+          uploaded_by: "tech-1",
+          captured_at: now,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+    });
+
+    expect(getCloseoutReviewReadiness(review)).toEqual({
+      billingReady: false,
+      label: "Needs field captures",
+      missing: ["Treatment form", "Chemical log", "Signature"],
+      summary:
+        "Photo captured. Missing treatment form, chemical log, and signature before billing.",
+    });
+  });
+
   it("builds customer portal closeouts without admin-only data", () => {
     const closeouts = buildCustomerPortalCloseouts({
       jobs: [
@@ -218,6 +250,68 @@ describe("closeouts domain", () => {
     expect(() => validateCustomerPortalCustomerId(" ")).toThrow(
       "Customer is required",
     );
+  });
+
+  it("summarizes customer-safe portal service details with invoice state", () => {
+    const closeout = {
+      job: {
+        id: "job-1",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        status: "completed" as const,
+        scheduled_start: "2026-05-06T09:00:00Z",
+        scheduled_end: null,
+        customer: { id: "customer-1", name: "Apex Homes" },
+        location: {
+          id: "location-1",
+          address: "10 Pine Street",
+          nickname: "Main house",
+        },
+      },
+      form_submissions: [
+        {
+          id: "submission-1",
+          job_id: "job-1",
+          form_data: { target_pests: "Ants" },
+          submitted_at: now,
+        },
+      ],
+      photos: [
+        {
+          id: "media-1",
+          job_id: "job-1",
+          media_type: "photo" as const,
+          signed_url: "https://signed.example/photo.jpg",
+          description: "Kitchen",
+          captured_at: now,
+        },
+      ],
+      signatures: [],
+    };
+
+    expect(
+      getCustomerPortalServiceSummary(closeout, [
+        {
+          id: "invoice-1",
+          job_id: "job-1",
+          status: "open",
+          currency: "usd",
+          total_cents: 12500,
+          balance_cents: 12500,
+          due_date: "2026-05-15T00:00:00Z",
+          payment_url: null,
+          paid_at: null,
+          created_at: now,
+          job: closeout.job,
+          line_items: [],
+        },
+      ]),
+    ).toEqual({
+      capturesLabel: "1 form, 1 photo, 0 signatures",
+      invoiceLabel: "Invoice open",
+      locationLabel: "Main house",
+      serviceDateLabel: "May 6, 2026",
+    });
   });
 
   it("validates customer portal access inputs", () => {

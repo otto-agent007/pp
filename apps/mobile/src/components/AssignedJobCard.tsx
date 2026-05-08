@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
 
 export interface AssignedJobCardProps {
   address?: string | null;
@@ -8,6 +9,7 @@ export interface AssignedJobCardProps {
   notes?: string | null;
   scheduledStart: string;
   statusLabel: string;
+  workPlan?: MobileJobWorkPlanItem[];
 }
 
 function formatAssignedJobTime(value: string) {
@@ -24,6 +26,7 @@ export function AssignedJobCard({
   notes,
   scheduledStart,
   statusLabel,
+  workPlan = [],
 }: AssignedJobCardProps) {
   return (
     <View style={styles.card}>
@@ -47,6 +50,30 @@ export function AssignedJobCard({
           </View>
         ) : null}
       </View>
+
+      {workPlan.length > 0 ? (
+        <View style={styles.workPlan}>
+          <Text style={styles.workPlanTitle}>Field work plan</Text>
+          {workPlan.map((item) => (
+            <View key={item.id} style={styles.workPlanItem}>
+              <View
+                style={[
+                  styles.workPlanDot,
+                  item.state === "done"
+                    ? styles.workPlanDone
+                    : item.state === "pending"
+                      ? styles.workPlanPending
+                      : styles.workPlanMissing,
+                ]}
+              />
+              <View style={styles.workPlanCopy}>
+                <Text style={styles.workPlanLabel}>{item.label}</Text>
+                <Text style={styles.workPlanSummary}>{item.summary}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       {children ? <View style={styles.controls}>{children}</View> : null}
     </View>
@@ -130,6 +157,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     marginBottom: 2,
+    textTransform: "uppercase",
+  },
+  workPlan: {
+    backgroundColor: "#F9FAFB",
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 9,
+    marginTop: 14,
+    padding: 12,
+  },
+  workPlanCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  workPlanDone: {
+    backgroundColor: "#047857",
+  },
+  workPlanDot: {
+    borderRadius: 999,
+    height: 10,
+    marginTop: 4,
+    width: 10,
+  },
+  workPlanItem: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  workPlanLabel: {
+    color: "#111827",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  workPlanMissing: {
+    backgroundColor: "#9CA3AF",
+  },
+  workPlanPending: {
+    backgroundColor: "#B45309",
+  },
+  workPlanSummary: {
+    color: "#4B5563",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  workPlanTitle: {
+    color: "#1E3A8A",
+    fontSize: 12,
+    fontWeight: "800",
     textTransform: "uppercase",
   },
 });

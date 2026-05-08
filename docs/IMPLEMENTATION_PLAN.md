@@ -1,11 +1,19 @@
 # Implementation Plan
 
-## Current Priority: Mobile Technician Demo Readiness V1
+## Current Priority: Field Workflow Batch V1
 
-1. Make the mobile technician demo path easy to follow from login through assigned job review.
-2. Clarify queued and synced states for status writes, forms, chemical logs, photos, signatures, and geofencing.
-3. Keep all mobile write paths offline-first and retry-safe.
-4. Avoid new migrations unless the slice uncovers a concrete schema gap.
+1. Show each assigned mobile job's field work plan across status, geofence, chemical, photo, signature, and treatment form captures.
+2. Label queued mobile captures clearly while preserving the existing offline queue storage and sync worker.
+3. Summarize closeout review readiness for office billing handoff.
+4. Show customer-safe portal service summaries with capture counts, service date, location, and invoice state.
+5. Avoid migrations, production data changes, and provider configuration changes.
+
+## Recently Completed: Mobile Technician Demo Readiness V1
+
+1. Merged the mobile demo-readiness PR into `main`.
+2. Added the technician readiness panel and assigned-job card polish.
+3. Clarified queued and synced states for mobile field captures.
+4. Added manual mobile technician smoke guidance to production readiness docs.
 
 ## Deferred Platform Hardening: Supabase Pro Feature
 

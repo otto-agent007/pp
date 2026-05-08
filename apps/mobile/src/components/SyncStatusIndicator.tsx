@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
+  getOfflineQueueItemLabel,
   getOfflineQueueSummary,
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
@@ -37,6 +38,14 @@ export function SyncStatusIndicator() {
   const syncNow = useQueueSync((state) => state.syncNow);
   const { activity, lastError, lastSyncAt, networkStatus } = useSyncStatus();
   const summary = useMemo(() => getOfflineQueueSummary(items), [items]);
+  const pendingLabels = useMemo(
+    () =>
+      items
+        .filter((item) => item.status !== "synced")
+        .slice(0, 4)
+        .map((item) => getOfflineQueueItemLabel(item)),
+    [items],
+  );
   const hasReadyItems = useMemo(() => hasReadyOfflineQueueItems(items), [items]);
   const isOffline = networkStatus === "offline";
   const hasFailures = summary.failed > 0 || Boolean(lastError);
@@ -133,6 +142,15 @@ export function SyncStatusIndicator() {
         <Text style={{ color: "#B91C1C", fontSize: 13, fontWeight: "700" }}>
           {lastError}
         </Text>
+      ) : null}
+      {pendingLabels.length > 0 ? (
+        <View style={{ gap: 3 }}>
+          {pendingLabels.map((label) => (
+            <Text key={label} style={{ color: "#374151", fontSize: 12 }}>
+              {label}
+            </Text>
+          ))}
+        </View>
       ) : null}
       {hasPendingItems || activity === "syncing" ? (
         <Pressable

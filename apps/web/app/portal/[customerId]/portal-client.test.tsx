@@ -141,7 +141,10 @@ describe("CustomerPortalClient", () => {
       "href",
       "https://pay.stripe.com/test",
     );
-    expect(screen.getAllByText("Main house")).toHaveLength(2);
+    expect(screen.getAllByText("Main house")).toHaveLength(3);
+    expect(screen.getByText("May 6, 2026")).toBeInTheDocument();
+    expect(screen.getByText("1 form, 1 photo, 1 signature")).toBeInTheDocument();
+    expect(screen.getByText("Invoice open")).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();

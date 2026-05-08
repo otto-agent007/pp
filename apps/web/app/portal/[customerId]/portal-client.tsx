@@ -4,6 +4,7 @@ import {
   filterCustomerPortalInvoices,
   filterCustomerPortalCloseouts,
   getCustomerPortalInvoiceStatusLabel,
+  getCustomerPortalServiceSummary,
 } from "@pest-patrol/domain";
 import type {
   CustomerPortalCloseout,
@@ -234,7 +235,15 @@ function BillingSection({
   );
 }
 
-function CloseoutCard({ closeout }: { closeout: CustomerPortalCloseout }) {
+function CloseoutCard({
+  closeout,
+  invoices,
+}: {
+  closeout: CustomerPortalCloseout;
+  invoices: CustomerPortalInvoice[];
+}) {
+  const summary = getCustomerPortalServiceSummary(closeout, invoices);
+
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -249,8 +258,22 @@ function CloseoutCard({ closeout }: { closeout: CustomerPortalCloseout }) {
             {closeout.job.location?.address ?? "Service location unavailable"}
           </p>
           <p className="mt-1 text-sm text-gray-600">
-            {formatDateTime(closeout.job.scheduled_start)}
+            {summary.serviceDateLabel}
           </p>
+          <dl className="mt-4 grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+            <div>
+              <dt className="font-semibold text-gray-900">Location</dt>
+              <dd>{summary.locationLabel}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-gray-900">Captures</dt>
+              <dd>{summary.capturesLabel}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-gray-900">Billing</dt>
+              <dd>{summary.invoiceLabel}</dd>
+            </div>
+          </dl>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-md bg-gray-50 p-3">
@@ -376,7 +399,11 @@ export function CustomerPortalClient({
       ) : (
         <section className="flex flex-col gap-5">
           {visibleCloseouts.map((closeout) => (
-            <CloseoutCard key={closeout.job.id} closeout={closeout} />
+            <CloseoutCard
+              closeout={closeout}
+              invoices={billing.invoices}
+              key={closeout.job.id}
+            />
           ))}
         </section>
       )}

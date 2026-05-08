@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   clearSyncedQueueItems,
   createOfflineQueueItem,
+  getOfflineQueueItemLabel,
   getOfflineQueueSummary,
   markQueueItemRetrying,
   markQueueItemSynced,
@@ -111,5 +112,31 @@ describe("offline queue domain", () => {
       synced: 1,
       total: 3,
     });
+  });
+
+  it("labels queued field captures by action and job", () => {
+    expect(
+      getOfflineQueueItemLabel(
+        createOfflineQueueItem(
+          {
+            action: "form_submission_create",
+            payload: { job_id: "job-1", template_id: "template-1" },
+          },
+          { id: "queue-1", now },
+        ),
+      ),
+    ).toBe("Treatment form for job job-1");
+
+    expect(
+      getOfflineQueueItemLabel(
+        createOfflineQueueItem(
+          {
+            action: "geofence_event_create",
+            payload: { job_id: "job-2", event_type: "arrival" },
+          },
+          { id: "queue-2", now },
+        ),
+      ),
+    ).toBe("Arrival geofence for job job-2");
   });
 });
