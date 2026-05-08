@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import type { Invoice } from "@pest-patrol/types";
 
 import {
+  buildBillingQueue,
   buildCustomerPortalCloseouts,
   buildJobCloseoutReview,
   filterCustomerPortalCloseouts,
   filterCloseoutJobs,
+  getBillingQueueCounts,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
   getCustomerPortalServiceSummary,
@@ -58,6 +61,16 @@ const scheduledJob = {
   service_notes: "Upcoming",
 } as const;
 
+function fullCaptureSummary(jobId: string) {
+  return {
+    chemicalLogs: 1,
+    forms: 1,
+    jobId,
+    photos: 1,
+    signatures: 1,
+  };
+}
+
 describe("closeouts domain", () => {
   it("filters completed closeout jobs by customer and location", () => {
     expect(filterCloseoutJobs([scheduledJob, completedJob], "pine")).toEqual([
@@ -67,6 +80,88 @@ describe("closeouts domain", () => {
       scheduledJob,
       completedJob,
     ]);
+  });
+
+  it("groups completed jobs into billing queue sections with counts and sorting", () => {
+    const olderReadyJob = {
+      ...completedJob,
+      id: "job-ready-old",
+      scheduled_start: "2026-05-01T09:00:00Z",
+    };
+    const newerReadyJob = {
+      ...completedJob,
+      id: "job-ready-new",
+      scheduled_start: "2026-05-04T09:00:00Z",
+    };
+    const needsCapturesJob = {
+      ...completedJob,
+      id: "job-needs",
+      scheduled_start: "2026-05-03T09:00:00Z",
+    };
+    const invoicedJob = {
+      ...completedJob,
+      id: "job-invoiced",
+      scheduled_start: "2026-05-02T09:00:00Z",
+    };
+    const latestInvoice = {
+      id: "invoice-latest",
+      job_id: "job-invoiced",
+      customer_id: "customer-1",
+      status: "sent",
+      currency: "usd",
+      subtotal_cents: 12500,
+      total_cents: 12500,
+      due_date: null,
+      notes: null,
+      payment_url: "https://pay.example/invoice-latest",
+      stripe_payment_link_id: null,
+      created_at: "2026-05-06T00:00:00Z",
+      updated_at: "2026-05-06T00:00:00Z",
+      payments: [],
+    } satisfies Invoice;
+
+    const queue = buildBillingQueue(
+      [newerReadyJob, scheduledJob, needsCapturesJob, invoicedJob, olderReadyJob],
+      [
+        {
+          ...latestInvoice,
+          id: "invoice-old",
+          status: "draft",
+          created_at: "2026-05-04T00:00:00Z",
+        },
+        latestInvoice,
+      ],
+      [
+        fullCaptureSummary("job-ready-old"),
+        fullCaptureSummary("job-ready-new"),
+        { ...fullCaptureSummary("job-needs"), photos: 0, signatures: 0 },
+        fullCaptureSummary("job-invoiced"),
+      ],
+    );
+
+    expect(queue.ready.map((item) => item.job.id)).toEqual([
+      "job-ready-old",
+      "job-ready-new",
+    ]);
+    expect(queue.needsCaptures.map((item) => item.job.id)).toEqual([
+      "job-needs",
+    ]);
+    expect(queue.invoiced.map((item) => item.job.id)).toEqual(["job-invoiced"]);
+    expect(queue.needsCaptures[0].readiness).toMatchObject({
+      billingReady: false,
+      label: "Needs field captures",
+      missing: ["Photo", "Signature"],
+    });
+    expect(queue.invoiced[0].invoice).toMatchObject({
+      id: "invoice-latest",
+      status: "sent",
+    });
+    expect(getBillingQueueCounts(queue)).toEqual({
+      invoiced: 1,
+      needsCaptures: 1,
+      ready: 2,
+      totalCompleted: 4,
+    });
   });
 
   it("builds closeout reviews with separated photos and signatures", () => {

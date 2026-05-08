@@ -1,25 +1,24 @@
 # In Progress
 
-## Task: Field Ops + Billing Handoff Batch
+## Task: Billing Work Queue V1
 
 Goal:
-Land the five-slice batch that builds on Daily Route Timeline V1: persistent mobile offline state, route-stop focus, completion readiness, per-stop sync triage, and closeout-to-invoice handoff.
+Rework `/closeouts` into a compact billing work queue that groups completed jobs by readiness while keeping `/payments` as the invoice workspace.
 
 Steps:
-- [x] Persistent Mobile Offline Queue V1
-- [x] Route Stop Focus V1
-- [x] Mobile Completion Readiness Guard V1
-- [x] Per-Job Sync Triage V1
-- [x] Closeout To Invoice Handoff V1
+- [x] Add aggregate closeout capture summaries through `packages/api-client`
+- [x] Add shared billing queue grouping/count helpers in `packages/domain`
+- [x] Retitle `/closeouts` and render queue counters, grouped sections, and next-action states
+- [x] Add `/payments` "From closeouts" handoff strip while preserving invoice preselection
+- [x] Add focused API-client, domain, closeouts UI, and payments UI coverage
 - [x] Run final full repository verification
 
 Follow-up candidates:
 - [ ] Bilingual field copy
-- [ ] Billing work queue
 - [ ] Payment reconciliation polish
 - [ ] Portal readiness polish
 - [ ] Customer ledger
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Implementation and final full verification are complete on `codex/daily-route-timeline-v1`.
+Implementation and final full verification are complete on `codex/billing-work-queue-v1`.

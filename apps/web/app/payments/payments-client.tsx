@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  buildBillingQueue,
   buildInvoiceInputFromJob,
   filterInvoices,
+  getBillingQueueCounts,
   getInvoiceBalanceCents,
   getInvoiceJobIds,
   getInvoiceSummary,
@@ -12,6 +14,7 @@ import type { Invoice, Job } from "@pest-patrol/types";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
+import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -95,6 +98,27 @@ export function PaymentsClient() {
   }));
   const [formError, setFormError] = useState<string | null>(null);
   const invoices = invoicesQuery.data ?? emptyInvoices;
+  const completedJobIds = useMemo(
+    () =>
+      (jobsQuery.data ?? emptyJobs)
+        .filter((job) => job.status === "completed")
+        .map((job) => job.id),
+    [jobsQuery.data],
+  );
+  const summariesQuery = useCloseoutCaptureSummaries(completedJobIds);
+  const billingQueue = useMemo(
+    () =>
+      buildBillingQueue(
+        jobsQuery.data ?? emptyJobs,
+        invoices,
+        summariesQuery.data ?? [],
+      ),
+    [invoices, jobsQuery.data, summariesQuery.data],
+  );
+  const billingQueueCounts = useMemo(
+    () => getBillingQueueCounts(billingQueue),
+    [billingQueue],
+  );
   const invoicedJobIds = useMemo(() => getInvoiceJobIds(invoices), [invoices]);
   const completedJobs = useMemo(
     () =>
@@ -173,6 +197,19 @@ export function PaymentsClient() {
           </select>
         </div>
       </header>
+
+      <section className="flex flex-col gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold text-neutralDark">From closeouts</p>
+          <p className="mt-1 text-gray-600">
+            {billingQueueCounts.ready} ready to bill ·{" "}
+            {billingQueueCounts.needsCaptures} need captures
+          </p>
+        </div>
+        <a className="font-semibold text-primary hover:underline" href="/closeouts">
+          View queue
+        </a>
+      </section>
 
       <section className="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-secondary">

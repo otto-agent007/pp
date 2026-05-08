@@ -2,6 +2,7 @@
 
 import {
   buildJobCloseoutReview,
+  listCloseoutCaptureSummaries,
   listJobChemicalLogs,
   listJobFormSubmissions,
   listJobMedia,
@@ -15,6 +16,18 @@ export const closeoutLogsQueryKey = (jobId: string) =>
   ["closeout-chemical-logs", jobId] as const;
 export const closeoutMediaQueryKey = (jobId: string) =>
   ["closeout-media", jobId] as const;
+export const closeoutCaptureSummariesQueryKey = (jobIds: string[]) =>
+  ["closeout-capture-summaries", [...jobIds].sort().join("|")] as const;
+
+export function useCloseoutCaptureSummaries(jobIds: string[]) {
+  const uniqueJobIds = Array.from(new Set(jobIds.filter(Boolean)));
+
+  return useQuery({
+    enabled: uniqueJobIds.length > 0,
+    queryKey: closeoutCaptureSummariesQueryKey(uniqueJobIds),
+    queryFn: () => listCloseoutCaptureSummaries(uniqueJobIds),
+  });
+}
 
 export function useJobCloseoutReview(job: Job | null) {
   const jobId = job?.id ?? "";

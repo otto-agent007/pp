@@ -511,6 +511,14 @@ export interface JobCloseoutReview {
   signatures: JobMedia[];
 }
 
+export interface CloseoutCaptureSummary {
+  chemicalLogs: number;
+  forms: number;
+  jobId: string;
+  photos: number;
+  signatures: number;
+}
+
 export interface CustomerPortalCustomer {
   id: string;
   name: string;

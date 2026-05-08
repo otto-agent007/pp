@@ -32,6 +32,9 @@ export {
 } from "./auth";
 export type { AuthRecord, AuthSupabaseClient, TechnicianAuthRecord } from "./auth";
 export {
+  listCloseoutCaptureSummaryRecords,
+} from "./closeouts";
+export {
   archiveCustomerRecord,
   createCustomerRecord,
   listCustomerRecords,

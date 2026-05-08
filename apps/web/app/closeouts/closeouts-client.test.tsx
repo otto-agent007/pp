@@ -3,16 +3,25 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useJobCloseoutReview } from "../../hooks/useCloseouts";
+import {
+  useCloseoutCaptureSummaries,
+  useJobCloseoutReview,
+} from "../../hooks/useCloseouts";
 import { useJobs } from "../../hooks/useJobs";
+import { useInvoices } from "../../hooks/usePayments";
 import { CloseoutsClient } from "./closeouts-client";
 
 vi.mock("../../hooks/useCloseouts", () => ({
+  useCloseoutCaptureSummaries: vi.fn(),
   useJobCloseoutReview: vi.fn(),
 }));
 
 vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
+}));
+
+vi.mock("../../hooks/usePayments", () => ({
+  useInvoices: vi.fn(),
 }));
 
 const now = "2026-05-05T00:00:00Z";
@@ -57,6 +66,42 @@ const scheduledJob = {
   id: "job-2",
   status: "scheduled",
   service_notes: "Upcoming service",
+} as const;
+const needsCapturesJob = {
+  ...completedJob,
+  id: "job-needs",
+  scheduled_start: "2026-05-04T09:00:00Z",
+  service_notes: "Needs signature",
+  location: {
+    ...location,
+    address: "20 Oak Avenue",
+  },
+} as const;
+const invoicedJob = {
+  ...completedJob,
+  id: "job-invoiced",
+  scheduled_start: "2026-05-03T09:00:00Z",
+  service_notes: "Already billed",
+  location: {
+    ...location,
+    address: "30 Cedar Road",
+  },
+} as const;
+const invoice = {
+  id: "invoice-1",
+  job_id: "job-invoiced",
+  customer_id: "customer-1",
+  status: "sent",
+  currency: "usd",
+  subtotal_cents: 12500,
+  total_cents: 12500,
+  due_date: null,
+  notes: null,
+  payment_url: "https://pay.example/invoice-1",
+  stripe_payment_link_id: null,
+  created_at: "2026-05-06T00:00:00Z",
+  updated_at: "2026-05-06T00:00:00Z",
+  payments: [],
 } as const;
 const review = {
   job: completedJob,
@@ -154,8 +199,22 @@ const review = {
 describe("CloseoutsClient", () => {
   beforeEach(() => {
     vi.mocked(useJobs).mockReturnValue({
-      data: [completedJob, scheduledJob],
+      data: [completedJob, needsCapturesJob, invoicedJob, scheduledJob],
       isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [invoice],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [
+        fullSummary("job-1"),
+        { ...fullSummary("job-needs"), signatures: 0 },
+        fullSummary("job-invoiced"),
+      ],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
     } as never);
     vi.mocked(useJobCloseoutReview).mockReturnValue({
       error: null,
@@ -167,26 +226,27 @@ describe("CloseoutsClient", () => {
   it("renders closeout captures for the selected completed job", () => {
     render(<CloseoutsClient />);
 
-    expect(screen.getByRole("heading", { name: "Job closeouts" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Billing work queue" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Completed jobs from dispatch appear here so office staff can review field captures before billing or customer follow-up.",
+        "Completed jobs grouped by billing readiness. Open one to review captures or create an invoice.",
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Field captures include forms, chemical logs, photos, and signatures submitted by the technician.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
+    expect(screen.getByText("Total completed")).toBeInTheDocument();
+    expect(screen.getByText("Needs signature before billing.")).toBeInTheDocument();
+    expect(screen.getByText("Sent")).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
     expect(screen.getByText("Bait Gel")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
-    expect(screen.getByText("Ready for billing")).toBeInTheDocument();
+    expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
     expect(
       screen.getByText(
-        "Treatment form, chemical log, photo, and signature are captured.",
+        "Forms, chemicals, photos, and signatures captured.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create invoice" })).toHaveAttribute(
@@ -201,7 +261,7 @@ describe("CloseoutsClient", () => {
 
     expect(screen.queryByText("Upcoming service")).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("Closeout status"), "all");
+    await user.selectOptions(screen.getByLabelText("Queue status"), "all");
 
     expect(screen.getByText("Upcoming service")).toBeInTheDocument();
   });
@@ -212,10 +272,10 @@ describe("CloseoutsClient", () => {
 
     await user.type(screen.getByLabelText("Search closeouts"), "missing");
 
-    expect(screen.getByText("No closeouts found")).toBeInTheDocument();
+    expect(screen.getByText("No billing work found")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Clear the search, show all jobs, or complete a dispatched job to start a closeout review.",
+        "Clear the search, show all jobs, or wait for completed jobs to reach the queue.",
       ),
     ).toBeInTheDocument();
   });
@@ -233,15 +293,31 @@ describe("CloseoutsClient", () => {
 
     render(<CloseoutsClient />);
 
-    expect(screen.getByText("No closeouts found")).toBeInTheDocument();
+    expect(screen.getByText("No billing work found")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Complete a job in dispatch to move it into closeout review with its field captures.",
+        "No completed jobs yet. As technicians finish jobs in dispatch, they will appear here.",
       ),
     ).toBeInTheDocument();
   });
 
   it("renders empty capture states", () => {
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [
+        {
+          chemicalLogs: 0,
+          forms: 0,
+          jobId: "job-1",
+          photos: 0,
+          signatures: 0,
+        },
+        { ...fullSummary("job-needs"), signatures: 0 },
+        fullSummary("job-invoiced"),
+      ],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
     vi.mocked(useJobCloseoutReview).mockReturnValue({
       error: null,
       isLoading: false,
@@ -269,4 +345,24 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("No photos captured for this job.")).toBeInTheDocument();
     expect(screen.getByText("No signatures captured for this job.")).toBeInTheDocument();
   });
+
+  it("filters queue sections from counter tiles", async () => {
+    const user = userEvent.setup();
+    render(<CloseoutsClient />);
+
+    await user.click(screen.getByRole("button", { name: /Needs captures 1/i }));
+
+    expect(screen.getByText("Needs signature")).toBeInTheDocument();
+    expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();
+  });
 });
+
+function fullSummary(jobId: string) {
+  return {
+    chemicalLogs: 1,
+    forms: 1,
+    jobId,
+    photos: 1,
+    signatures: 1,
+  };
+}
