@@ -3,7 +3,9 @@
 import {
   buildBillingQueue,
   filterCloseoutJobs,
+  formatMissingCaptureList,
   getBillingQueueCounts,
+  getBillingQueueItemSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
   getInvoiceBalanceCents,
@@ -43,6 +45,16 @@ function formatDateTime(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+function formatDateMedium(value: string | null | undefined) {
+  if (!value) {
+    return "unknown date";
+  }
+
+  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
 function formatMoney(cents: number, currency = "usd") {
   return new Intl.NumberFormat("en", {
     currency: currency.toUpperCase(),
@@ -70,32 +82,18 @@ function jobTitle(job: Job) {
   return job.customer?.name ?? "Unknown customer";
 }
 
-function missingCaptureSentence(item: BillingQueueItem) {
-  return item.readiness.missing.length > 0
-    ? `Needs ${joinLowerLabels(item.readiness.missing)} before billing.`
-    : "Ready to bill.";
-}
-
-function joinLowerLabels(labels: string[]) {
-  const lowered = labels.map((label) => label.toLowerCase());
-
-  if (lowered.length === 0) {
-    return "";
-  }
-
-  if (lowered.length === 1) {
-    return lowered[0];
-  }
-
-  if (lowered.length === 2) {
-    return `${lowered[0]} and ${lowered[1]}`;
-  }
-
-  return `${lowered.slice(0, -1).join(", ")}, and ${lowered[lowered.length - 1]}`;
-}
-
 function invoiceStatusLabel(invoice: Invoice) {
   return invoice.status[0].toUpperCase() + invoice.status.slice(1);
+}
+
+function getPaidInvoiceDate(invoice: Invoice) {
+  const paidAt = invoice.payments
+    ?.filter((payment) => payment.status === "succeeded" && payment.paid_at)
+    .map((payment) => payment.paid_at as string)
+    .sort()
+    .at(-1);
+
+  return paidAt ?? invoice.updated_at;
 }
 
 function latestQueueItems(queue: BillingQueueGroup, filter: QueueFilter) {
@@ -205,9 +203,7 @@ function QueueRow({
       <StatusPill tone="success">Ready</StatusPill>
     ) : item.state === "needsCaptures" ? (
       <StatusPill tone="warning">
-        {item.readiness.missing.length === 1
-          ? `Needs ${item.readiness.missing[0]}`
-          : "Needs captures"}
+        {`Needs ${formatMissingCaptureList(item.readiness.missing)}`}
       </StatusPill>
     ) : item.invoice ? (
       <StatusPill tone={item.invoice.status === "paid" ? "success" : "info"}>
@@ -236,7 +232,7 @@ function QueueRow({
           </p>
           <p className="mt-2 line-clamp-2 text-xs text-gray-500">
             {item.state === "needsCaptures"
-              ? missingCaptureSentence(item)
+              ? getBillingQueueItemSummary(item)
               : item.job.service_notes}
           </p>
         </div>
@@ -400,7 +396,9 @@ function NextActionCard({
   };
   const bodyByStatus = {
     draft: "Review line items and create a payment link.",
-    paid: `${formatMoney(invoice.total_cents, invoice.currency)} received.`,
+    paid: `${formatMoney(invoice.total_cents, invoice.currency)} received ${formatDateMedium(
+      getPaidInvoiceDate(invoice),
+    )}.`,
     sent: `Awaiting payment. Balance ${formatMoney(balance, invoice.currency)}.`,
     void: "Invoice was voided. Reissue if needed.",
   };
@@ -496,6 +494,7 @@ export function CloseoutsClient() {
 
   function setFilter(filter: QueueFilter) {
     setQueueFilter(filter);
+    setSelectedJobId(null);
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);

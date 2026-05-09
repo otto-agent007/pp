@@ -96,24 +96,28 @@ export function PaymentsClient() {
     ...emptyForm,
     job_id: searchParams.get("job_id") ?? "",
   }));
+  const [closeoutHandoffJobId, setCloseoutHandoffJobId] = useState(
+    () => searchParams.get("job_id") ?? "",
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const invoices = invoicesQuery.data ?? emptyInvoices;
+  const jobs = jobsQuery.data ?? emptyJobs;
   const completedJobIds = useMemo(
     () =>
-      (jobsQuery.data ?? emptyJobs)
+      jobs
         .filter((job) => job.status === "completed")
         .map((job) => job.id),
-    [jobsQuery.data],
+    [jobs],
   );
   const summariesQuery = useCloseoutCaptureSummaries(completedJobIds);
   const billingQueue = useMemo(
     () =>
       buildBillingQueue(
-        jobsQuery.data ?? emptyJobs,
+        jobs,
         invoices,
         summariesQuery.data ?? [],
       ),
-    [invoices, jobsQuery.data, summariesQuery.data],
+    [invoices, jobs, summariesQuery.data],
   );
   const billingQueueCounts = useMemo(
     () => getBillingQueueCounts(billingQueue),
@@ -122,10 +126,10 @@ export function PaymentsClient() {
   const invoicedJobIds = useMemo(() => getInvoiceJobIds(invoices), [invoices]);
   const completedJobs = useMemo(
     () =>
-      (jobsQuery.data ?? emptyJobs).filter(
+      jobs.filter(
         (job) => job.status === "completed" && !invoicedJobIds.has(job.id),
       ),
-    [jobsQuery.data, invoicedJobIds],
+    [jobs, invoicedJobIds],
   );
   const visibleInvoices = useMemo(
     () => filterInvoices(invoices, search, status),
@@ -134,6 +138,10 @@ export function PaymentsClient() {
   const summary = useMemo(() => getInvoiceSummary(invoices), [invoices]);
   const selectedJob =
     completedJobs.find((job) => job.id === form.job_id) ?? completedJobs[0] ?? null;
+  const closeoutHandoffJob =
+    closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
+      ? jobs.find((job) => job.id === closeoutHandoffJobId) ?? null
+      : null;
 
   async function submitInvoice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,6 +165,7 @@ export function PaymentsClient() {
         notes: form.notes || selectedJob.service_notes,
       });
       setForm(emptyForm);
+      setCloseoutHandoffJobId("");
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to create invoice",
@@ -359,6 +368,12 @@ export function PaymentsClient() {
           onSubmit={submitInvoice}
         >
           <h2 className="text-xl font-semibold text-neutralDark">Create invoice</h2>
+          {closeoutHandoffJob ? (
+            <p className="rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+              From closeout: {closeoutHandoffJob.customer?.name ?? "Unknown customer"} @{" "}
+              {closeoutHandoffJob.location?.address ?? "No location"}
+            </p>
+          ) : null}
           {formError ? (
             <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {formError}
@@ -370,9 +385,10 @@ export function PaymentsClient() {
             <select
               aria-label="Completed job"
               className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
-              onChange={(event) =>
-                setForm((current) => ({ ...current, job_id: event.target.value }))
-              }
+              onChange={(event) => {
+                setCloseoutHandoffJobId("");
+                setForm((current) => ({ ...current, job_id: event.target.value }));
+              }}
               value={form.job_id || selectedJob?.id || ""}
             >
               <option value="">Select job</option>
