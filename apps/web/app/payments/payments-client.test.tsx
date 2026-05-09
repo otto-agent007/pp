@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -294,6 +294,27 @@ describe("PaymentsClient", () => {
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
     expect(screen.queryByText("Latest payment May 7, 2026")).not.toBeInTheDocument();
     expect(screen.queryByText("20 Oak Avenue")).not.toBeInTheDocument();
+  });
+
+  it("shows customer and portal handoff actions for sent invoices", () => {
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [invoice, { ...invoice, id: "invoice-sent", status: "sent" }],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    const invoiceCards = screen.getAllByText("Customer handoff");
+    expect(invoiceCards).toHaveLength(2);
+    expect(screen.getByRole("link", { name: "Share portal" })).toHaveAttribute(
+      "href",
+      "/customers?customer_id=customer-1",
+    );
+    expect(
+      within(invoiceCards[0].closest("div") as HTMLElement).getByRole("link", {
+        name: "Open customer ledger",
+      }),
+    ).toHaveAttribute("href", "/customers?customer_id=customer-1");
   });
 
   it("creates an invoice from a completed job", async () => {

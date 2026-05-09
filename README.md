@@ -62,12 +62,14 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is choosing the next follow-up slice after the verified Payment Reconciliation Polish V1 and Bilingual Field Copy V1 slices:
+Current priority is follow-up polish after the no-migration Next Five Portal + Ledger Batch V1:
 
 - `/closeouts` is the Billing work queue for completed-job readiness
-- `/payments` remains the invoice workspace with the closeouts handoff strip and reconciliation labels
-- next candidates: portal readiness and customer ledger
-- use Claude as external UI design input for UI-heavy polish while Codex owns implementation and verification
+- `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
+- `/customers` now includes compact account ledger summaries and portal-token readiness
+- tokened `/portal` routes now include a customer-safe service and billing timeline
+- next candidates: deeper customer ledger drill-down, portal share auditing/resend, and smoke coverage for the portal/ledger workflow
+- use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages
 - avoid provider config, migrations, Supabase dashboard changes, or production mutations without explicit approval

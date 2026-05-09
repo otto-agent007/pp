@@ -1,12 +1,21 @@
 # Implementation Plan
 
-## Current Priority: Pick Next Follow-Up Slice
+## Current Priority: Next Follow-Up After Portal + Ledger Batch
 
-1. Payment Reconciliation Polish V1 and Bilingual Field Copy V1 are implemented and verified.
-2. Keep future billing follow-ups aligned with `/closeouts` as the readiness queue and `/payments` as the invoice workspace.
+1. Next Five Portal + Ledger Batch V1 is implemented with no migrations, provider setup, production mutations, or direct UI data access.
+2. Keep future billing and portal follow-ups aligned with `/closeouts` as the readiness queue, `/payments` as the invoice workspace, `/customers` as the account ledger surface, and tokened `/portal` routes as customer-safe views.
 3. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
-4. Treat Claude as external UI design input for future UI-heavy polish, while Codex owns architecture, data flow, tests, integration, and verification.
-5. Favor one of the next follow-up candidates: portal readiness polish or customer ledger.
+4. Treat Claude as optional external UI design input for UI-heavy polish, while Codex owns architecture, data flow, tests, integration, and verification.
+5. Favor one of the next follow-up candidates: deeper customer ledger drill-down, portal share auditing/resend, or production smoke coverage for the new portal/ledger workflow.
+
+## Recently Completed: Next Five Portal + Ledger Batch V1
+
+1. Added shared portal-token readiness helpers and admin readiness summaries for generated customer portal links.
+2. Added domain-only customer ledger entries, summaries, and billing/portal next-action helpers from existing customers, jobs, invoices, and payments.
+3. Added active customer ledger summaries and recent account activity on `/customers` while preserving CRUD, archive, search, and portal-link generation behavior.
+4. Added a customer-safe tokened portal timeline from existing portal closeout and billing payloads.
+5. Added closeouts, payments, and customers handoff polish for create invoice, review payment, share portal, and open customer ledger paths.
+6. Preserved API-client/domain boundaries and avoided migrations, provider setup, provider IDs, service-role data, admin notes, and raw storage paths.
 
 ## Recently Completed: Bilingual Field Copy V1
 

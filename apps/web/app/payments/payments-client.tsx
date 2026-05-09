@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildBillingPortalNextActions,
   buildBillingQueue,
   buildInvoiceInputFromJob,
   filterInvoices,
@@ -95,6 +96,45 @@ function EmptyState({ children }: { children: string }) {
   );
 }
 
+function InvoiceHandoff({
+  invoice,
+  job,
+}: {
+  invoice: Invoice;
+  job: Job | null;
+}) {
+  if (!job) {
+    return null;
+  }
+
+  const actions = buildBillingPortalNextActions({
+    hasPortalLink: false,
+    invoice,
+    job,
+  }).filter((action) => action.id !== "review_payment");
+
+  if (actions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-3">
+      <p className="text-sm font-semibold text-neutralDark">Customer handoff</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {actions.map((action) => (
+          <a
+            className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary hover:bg-blue-100"
+            href={action.href}
+            key={action.id}
+          >
+            {action.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PaymentsClient() {
   const searchParams = useSearchParams();
   const jobsQuery = useJobs();
@@ -115,6 +155,7 @@ export function PaymentsClient() {
     () => searchParams.get("job_id") ?? "",
   );
   const [formError, setFormError] = useState<string | null>(null);
+  const highlightedInvoiceId = searchParams.get("invoice_id") ?? "";
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
   const completedJobIds = useMemo(
@@ -147,13 +188,30 @@ export function PaymentsClient() {
     [jobs, invoicedJobIds],
   );
   const visibleInvoices = useMemo(
-    () =>
-      filterInvoices(invoices, search, status).filter(
+    () => {
+      const filtered = filterInvoices(invoices, search, status).filter(
         (invoice) =>
           reconciliationStatus === "all" ||
           getInvoiceReconciliation(invoice).status === reconciliationStatus,
-      ),
-    [invoices, reconciliationStatus, search, status],
+      );
+
+      if (!highlightedInvoiceId) {
+        return filtered;
+      }
+
+      return [...filtered].sort((left, right) => {
+        if (left.id === highlightedInvoiceId) {
+          return -1;
+        }
+
+        if (right.id === highlightedInvoiceId) {
+          return 1;
+        }
+
+        return 0;
+      });
+    },
+    [highlightedInvoiceId, invoices, reconciliationStatus, search, status],
   );
   const summary = useMemo(() => getInvoiceSummary(invoices), [invoices]);
   const reconciliationSummary = useMemo(
@@ -339,6 +397,8 @@ export function PaymentsClient() {
             visibleInvoices.map((invoice) => {
               const reconciliation = getInvoiceReconciliation(invoice);
               const latestPaidAt = formatPaymentDate(reconciliation.latestPaidAt);
+              const invoiceJob =
+                invoice.job ?? jobs.find((job) => job.id === invoice.job_id) ?? null;
 
               return (
                 <article
@@ -387,6 +447,7 @@ export function PaymentsClient() {
                           Open payment link
                         </a>
                       ) : null}
+                      <InvoiceHandoff invoice={invoice} job={invoiceJob} />
                     </div>
                     <div className="flex min-w-52 flex-col gap-3">
                       <p className="text-right text-2xl font-bold text-neutralDark">

@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  buildCustomerPortalTimeline,
   filterCustomerPortalInvoices,
   filterCustomerPortalCloseouts,
   getCustomerPortalInvoiceStatusLabel,
   getCustomerPortalServiceSummary,
+  type CustomerPortalTimelineItem,
 } from "@pest-patrol/domain";
 import type {
   CustomerPortalCloseout,
@@ -60,6 +62,10 @@ function EmptyState({ children }: { children: string }) {
       {children}
     </p>
   );
+}
+
+function accessErrorMessage(error: Error | null, fallback: string) {
+  return error?.message ?? fallback;
 }
 
 function PortalMediaTile({ media }: { media: CustomerPortalMedia }) {
@@ -221,13 +227,94 @@ function BillingSection({
       {isLoading ? (
         <EmptyState>Loading invoices</EmptyState>
       ) : error ? (
-        <EmptyState>Unable to load invoices</EmptyState>
+        <EmptyState>{accessErrorMessage(error, "Unable to load invoices")}</EmptyState>
       ) : visibleInvoices.length === 0 ? (
         <EmptyState>No invoices found</EmptyState>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {visibleInvoices.map((invoice) => (
             <BillingCard key={invoice.id} invoice={invoice} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function timelineStatusLabel(item: CustomerPortalTimelineItem) {
+  if (item.invoice_status === "none") {
+    return "No invoice";
+  }
+
+  const status = getCustomerPortalInvoiceStatusLabel(item.invoice_status);
+  const balance =
+    item.balance_cents === null
+      ? null
+      : `Balance ${formatMoney(item.balance_cents, item.currency)}`;
+
+  return balance ? `Invoice ${item.invoice_status} | ${balance}` : `Invoice ${status}`;
+}
+
+function PortalTimeline({
+  items,
+  isLoading,
+}: {
+  isLoading: boolean;
+  items: CustomerPortalTimelineItem[];
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+          Account timeline
+        </p>
+        <h2 className="mt-1 text-2xl font-bold text-neutralDark">
+          Service and billing history
+        </h2>
+      </div>
+      {isLoading ? (
+        <EmptyState>Loading account timeline</EmptyState>
+      ) : items.length === 0 ? (
+        <EmptyState>No service or invoice activity found</EmptyState>
+      ) : (
+        <div className="grid gap-3">
+          {items.map((item) => (
+            <article
+              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              key={item.id}
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+                    {item.type === "service" ? "Service completed" : "Invoice activity"}
+                  </p>
+                  <h3 className="mt-1 text-lg font-semibold text-neutralDark">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {formatDateTime(item.date)}
+                  </p>
+                  <p className="mt-2 text-sm text-gray-700">
+                    {item.captures_label}
+                  </p>
+                </div>
+                <div className="text-left md:text-right">
+                  <p className="text-sm font-semibold text-neutralDark">
+                    {timelineStatusLabel(item)}
+                  </p>
+                  {item.payment_url ? (
+                    <a
+                      className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-blue-900"
+                      href={item.payment_url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Pay from timeline
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </article>
           ))}
         </div>
       )}
@@ -357,6 +444,10 @@ export function CustomerPortalClient({
     () => filterCustomerPortalCloseouts(portal.closeouts, search),
     [portal.closeouts, search],
   );
+  const timelineItems = useMemo(
+    () => buildCustomerPortalTimeline(visibleCloseouts, billing.invoices),
+    [billing.invoices, visibleCloseouts],
+  );
   const customerName =
     visibleCloseouts[0]?.job.customer?.name ??
     portal.closeouts[0]?.job.customer?.name ??
@@ -390,10 +481,17 @@ export function CustomerPortalClient({
         search={search}
       />
 
+      <PortalTimeline
+        isLoading={portal.isLoading || billing.isLoading}
+        items={timelineItems}
+      />
+
       {portal.isLoading ? (
         <EmptyState>Loading completed service visits</EmptyState>
       ) : portal.error ? (
-        <EmptyState>Unable to load service visits</EmptyState>
+        <EmptyState>
+          {accessErrorMessage(portal.error, "Unable to load service visits")}
+        </EmptyState>
       ) : visibleCloseouts.length === 0 ? (
         <EmptyState>No completed service visits found</EmptyState>
       ) : (

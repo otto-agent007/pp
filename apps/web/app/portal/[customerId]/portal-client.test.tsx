@@ -141,9 +141,12 @@ describe("CustomerPortalClient", () => {
       "href",
       "https://pay.stripe.com/test",
     );
-    expect(screen.getAllByText("Main house")).toHaveLength(3);
+    expect(screen.getByText("Account timeline")).toBeInTheDocument();
+    expect(screen.getByText("Service completed")).toBeInTheDocument();
+    expect(screen.getByText("Invoice open | Balance $125.00")).toBeInTheDocument();
+    expect(screen.getAllByText("Main house")).toHaveLength(4);
     expect(screen.getByText("May 6, 2026")).toBeInTheDocument();
-    expect(screen.getByText("1 form, 1 photo, 1 signature")).toBeInTheDocument();
+    expect(screen.getAllByText("1 form, 1 photo, 1 signature")).toHaveLength(2);
     expect(screen.getByText("Invoice open")).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
@@ -172,6 +175,26 @@ describe("CustomerPortalClient", () => {
     await user.type(screen.getByLabelText("Search service visits"), "missing");
 
     expect(screen.getByText("No completed service visits found")).toBeInTheDocument();
+  });
+
+  it("renders invoice-only portal timeline entries", () => {
+    vi.mocked(useCustomerPortalCloseouts).mockReturnValue({
+      closeouts: [],
+      error: null,
+      isLoading: false,
+    } as never);
+
+    render(
+      <CustomerPortalClient accessToken="portal-token" customerId="customer-1" />,
+    );
+
+    expect(screen.getByText("Account timeline")).toBeInTheDocument();
+    expect(screen.getByText("Invoice activity")).toBeInTheDocument();
+    expect(screen.getByText("Invoice open | Balance $125.00")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pay from timeline" })).toHaveAttribute(
+      "href",
+      "https://pay.stripe.com/test",
+    );
   });
 
   it("renders empty capture states", () => {
@@ -210,6 +233,6 @@ describe("CustomerPortalClient", () => {
 
     render(<CustomerPortalClient accessToken="" customerId="customer-1" />);
 
-    expect(screen.getByText("Unable to load service visits")).toBeInTheDocument();
+    expect(screen.getAllByText("Portal access token is required").length).toBeGreaterThan(0);
   });
 });

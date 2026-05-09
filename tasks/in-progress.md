@@ -1,21 +1,21 @@
 # In Progress
 
-## Task: Bilingual Field Copy V1
+## Task: Next Five Portal + Ledger Batch V1
 
 Goal:
-Add English/Spanish technician-facing field copy to the mobile capture workflow so field techs can switch language while preserving offline-first queue behavior.
+Connect portal readiness, customer ledger, customer-safe portal timeline, and billing handoff polish across existing customers, jobs, closeouts, invoices, payments, and portal tokens without migrations or provider changes.
 
 Steps:
-- [x] Expand shared `@pest-patrol/i18n` English/Spanish copy for field status, location, chemical, photo, signature, and treatment capture surfaces
-- [x] Wire mobile field capture components and route status labels through the existing language store
-- [x] Add a compact technician language toggle in the mobile header
-- [x] Add focused mobile coverage for Spanish field status copy
+- [x] Add portal access token readiness helpers, summaries, and customer portal link UI polish
+- [x] Add domain-only customer ledger helpers and admin customer ledger summaries on `/customers`
+- [x] Add a customer-safe portal timeline from existing portal closeout and billing payloads
+- [x] Add billing/portal next-action helpers and wire `/closeouts`, `/payments`, and `/customers` handoffs
 - [x] Run final full repository verification
 
 Follow-up candidates:
-- [ ] Portal readiness polish
-- [ ] Customer ledger
+- [ ] Deeper customer ledger drill-down page
+- [ ] Portal share auditing and resend workflow
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Implementation and final full verification are complete locally.
+Implementation and final full repository verification are complete locally.

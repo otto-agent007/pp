@@ -11,7 +11,10 @@ import {
   getBillingQueueCounts,
   getBillingQueueItemSummary,
   getCustomerPortalAccessTokenLabel,
+  getCustomerPortalAccessTokenReadiness,
+  getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
+  buildCustomerPortalTimeline,
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
@@ -483,5 +486,132 @@ describe("closeouts domain", () => {
     expect(getCustomerPortalAccessTokenLabel(revokedToken, currentDate)).toBe(
       "Revoked",
     );
+  });
+
+  it("summarizes portal access token readiness for admins", () => {
+    const activeToken = {
+      id: "token-active",
+      customer_id: "customer-1",
+      status: "active",
+      expires_at: "2026-05-10T00:00:00Z",
+      last_used_at: null,
+      created_at: now,
+      updated_at: now,
+    } as const;
+    const noExpirationToken = {
+      ...activeToken,
+      id: "token-no-expiration",
+      expires_at: null,
+      last_used_at: "2026-05-06T00:00:00Z",
+    };
+    const expiredToken = {
+      ...activeToken,
+      id: "token-expired",
+      expires_at: "2026-05-04T00:00:00Z",
+    };
+    const revokedToken = {
+      ...activeToken,
+      id: "token-revoked",
+      status: "revoked",
+    } as const;
+    const currentDate = new Date("2026-05-05T00:00:00Z");
+
+    expect(getCustomerPortalAccessTokenReadiness(activeToken, currentDate)).toMatchObject({
+      detail: "Generated but never opened",
+      label: "Active portal link",
+      state: "active",
+    });
+    expect(
+      getCustomerPortalAccessTokenReadiness(noExpirationToken, currentDate),
+    ).toMatchObject({
+      detail: "No expiration",
+      state: "no_expiration",
+    });
+    expect(
+      getCustomerPortalAccessTokenReadinessSummary(
+        [activeToken, noExpirationToken, expiredToken, revokedToken],
+        currentDate,
+      ),
+    ).toEqual({
+      active: 2,
+      expired: 1,
+      neverUsed: 3,
+      noExpiration: 1,
+      revoked: 1,
+      total: 4,
+    });
+  });
+
+  it("builds a customer-safe portal timeline from closeouts and invoices", () => {
+    const closeout = {
+      job: {
+        id: "job-1",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        status: "completed" as const,
+        scheduled_start: "2026-05-06T09:00:00Z",
+        scheduled_end: null,
+        customer: { id: "customer-1", name: "Apex Homes" },
+        location: {
+          id: "location-1",
+          address: "10 Pine Street",
+          nickname: "Main house",
+        },
+      },
+      form_submissions: [{ id: "form-1", job_id: "job-1", form_data: {}, submitted_at: now }],
+      photos: [
+        {
+          id: "photo-1",
+          job_id: "job-1",
+          media_type: "photo" as const,
+          signed_url: "https://signed.example/photo.jpg",
+          description: "Kitchen",
+          captured_at: now,
+        },
+      ],
+      signatures: [],
+    };
+    const openInvoice = {
+      id: "invoice-1",
+      job_id: "job-1",
+      status: "open" as const,
+      currency: "usd",
+      total_cents: 12500,
+      balance_cents: 12500,
+      due_date: "2026-05-15T00:00:00Z",
+      payment_url: "https://pay.stripe.com/test",
+      paid_at: null,
+      created_at: "2026-05-07T00:00:00Z",
+      job: closeout.job,
+      line_items: [],
+    };
+    const invoiceOnly = {
+      ...openInvoice,
+      id: "invoice-2",
+      job_id: "job-2",
+      created_at: "2026-05-08T00:00:00Z",
+      job: {
+        ...closeout.job,
+        id: "job-2",
+        scheduled_start: "2026-05-08T09:00:00Z",
+      },
+    };
+
+    const timeline = buildCustomerPortalTimeline([closeout], [openInvoice, invoiceOnly]);
+
+    expect(timeline.map((item) => item.id)).toEqual(["invoice-invoice-2", "job-job-1"]);
+    expect(timeline[0]).toMatchObject({
+      balance_cents: 12500,
+      invoice_status: "open",
+      payment_url: "https://pay.stripe.com/test",
+      type: "invoice",
+    });
+    expect(timeline[1]).toMatchObject({
+      captures_label: "1 form, 1 photo, 0 signatures",
+      invoice_status: "open",
+      type: "service",
+    });
+    expect(JSON.stringify(timeline)).not.toContain("provider_payment_id");
+    expect(JSON.stringify(timeline)).not.toContain("storage_path");
   });
 });

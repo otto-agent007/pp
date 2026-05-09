@@ -256,6 +256,22 @@ describe("CloseoutsClient", () => {
       "href",
       "/payments?job_id=job-1",
     );
+    expect(screen.getByRole("link", { name: "Open customer ledger" })).toHaveAttribute(
+      "href",
+      "/customers?customer_id=customer-1",
+    );
+  });
+
+  it("points invoiced closeouts toward portal sharing", async () => {
+    const user = userEvent.setup();
+    render(<CloseoutsClient />);
+
+    await user.click(screen.getByText("30 Cedar Road"));
+
+    expect(screen.getByRole("link", { name: "Share portal" })).toHaveAttribute(
+      "href",
+      "/customers?customer_id=customer-1",
+    );
   });
 
   it("filters to completed jobs by default and can show all jobs", async () => {
