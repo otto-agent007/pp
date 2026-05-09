@@ -6,6 +6,7 @@ import {
 import type { Job, JobStatus } from "@pest-patrol/types";
 
 import { useAssignedJobs } from "../store/useAssignedJobs";
+import { useLanguage } from "../store/useLanguage";
 import { useOfflineQueue } from "../store/useOfflineQueue";
 
 interface JobStatusControlsProps {
@@ -19,16 +20,9 @@ const mobileStatuses: JobStatus[] = [
   "completed",
 ];
 
-const statusLabels: Record<JobStatus, string> = {
-  scheduled: "Scheduled",
-  en_route: "En route",
-  in_progress: "In progress",
-  completed: "Completed",
-  canceled: "Canceled",
-};
-
 export function JobStatusControls({ job }: JobStatusControlsProps) {
   const queueStatusUpdate = useAssignedJobs((state) => state.queueStatusUpdate);
+  const copy = useLanguage((state) => state.t.jobs);
   const queueItems = useOfflineQueue((state) => state.items);
   const completionGuard = getMobileCompletionReadinessGuard(
     buildMobileJobWorkPlan(job, queueItems),
@@ -83,7 +77,9 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
                 fontWeight: "800",
               }}
             >
-              {isGuardedCompletion ? "Review completion" : statusLabels[status]}
+              {isGuardedCompletion
+                ? copy.fieldStatus.reviewCompletion
+                : copy.status[status]}
             </Text>
           </Pressable>
         );
@@ -102,7 +98,7 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
           }}
         >
           <Text style={{ color: "#92400E", fontSize: 13, fontWeight: "800" }}>
-            {completionGuard.label}
+            {copy.fieldStatus.reviewBeforeCompleting}
           </Text>
           <Text style={{ color: "#78350F", fontSize: 13, lineHeight: 18 }}>
             {completionGuard.summary}
@@ -120,7 +116,7 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
             }}
           >
             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
-              Complete anyway
+              {copy.fieldStatus.completeAnyway}
             </Text>
           </Pressable>
         </View>

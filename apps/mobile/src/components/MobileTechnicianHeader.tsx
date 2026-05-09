@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { buildMobileTechnicianReadinessPanel } from "@pest-patrol/domain";
 
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
+import { useLanguage } from "../store/useLanguage";
 
 interface MobileTechnicianHeaderProps {
   assignedJobCount: number;
@@ -19,6 +20,8 @@ export function MobileTechnicianHeader({
   onSignOut,
   profileId,
 }: MobileTechnicianHeaderProps) {
+  const lang = useLanguage((state) => state.lang);
+  const toggleLanguage = useLanguage((state) => state.toggleLanguage);
   const readiness = useMemo(
     () =>
       buildMobileTechnicianReadinessPanel({
@@ -50,9 +53,9 @@ export function MobileTechnicianHeader({
           </Text>
         </View>
 
-        {onSignOut ? (
+        <View style={{ gap: 8 }}>
           <Pressable
-            onPress={onSignOut}
+            onPress={toggleLanguage}
             style={{
               alignItems: "center",
               borderColor: "#D1D5DB",
@@ -64,10 +67,28 @@ export function MobileTechnicianHeader({
             }}
           >
             <Text style={{ color: "#111827", fontSize: 13, fontWeight: "800" }}>
-              Sign out
+              {lang === "en" ? "Español" : "English"}
             </Text>
           </Pressable>
-        ) : null}
+          {onSignOut ? (
+            <Pressable
+              onPress={onSignOut}
+              style={{
+                alignItems: "center",
+                borderColor: "#D1D5DB",
+                borderRadius: 8,
+                borderWidth: 1,
+                justifyContent: "center",
+                minHeight: 40,
+                paddingHorizontal: 12,
+              }}
+            >
+              <Text style={{ color: "#111827", fontSize: 13, fontWeight: "800" }}>
+                Sign out
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {error ? (

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Image, Pressable, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
+import { useLanguage } from "../store/useLanguage";
 import { useJobPhotos } from "../store/useJobPhotos";
 
 interface JobPhotoUploadFormProps {
@@ -13,6 +14,7 @@ function getAssetFileName(asset: ImagePicker.ImagePickerAsset) {
 }
 
 export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
   const { getDraft, queuePhoto, setDescription } = useJobPhotos();
   const drafts = useJobPhotos((state) => state.drafts);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       setError(null);
     } catch (photoError) {
       setError(
-        photoError instanceof Error ? photoError.message : "Unable to queue photo",
+        photoError instanceof Error ? photoError.message : copy.photos.fallbackError,
       );
     }
   }
@@ -39,7 +41,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
 
     if (!permission.granted) {
-      setError("Camera permission is required");
+      setError(copy.photos.cameraPermissionError);
       return;
     }
 
@@ -57,7 +59,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      setError("Photo library permission is required");
+      setError(copy.photos.libraryPermissionError);
       return;
     }
 
@@ -83,11 +85,10 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       }}
     >
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
-        Photos
+        {copy.photos.title}
       </Text>
       <Text style={{ color: "#6B7280", fontSize: 13 }}>
-        Capture clear before, during, or after photos. Each photo queues on this
-        device and syncs when service is available.
+        {copy.photos.description}
       </Text>
 
       {lastPhoto ? (
@@ -107,7 +108,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
           setDescription(jobId, value);
           setError(null);
         }}
-        placeholder="Description"
+        placeholder={copy.photos.descriptionPlaceholder}
         style={{
           backgroundColor: "#FFFFFF",
           borderColor: "#D1D5DB",
@@ -125,7 +126,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       ) : null}
       {draft.queuedAt ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Queued locally for sync
+          {copy.common.queuedForSync}
         </Text>
       ) : null}
 
@@ -142,7 +143,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
           }}
         >
           <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
-            Camera
+            {copy.photos.camera}
           </Text>
         </Pressable>
         <Pressable
@@ -158,7 +159,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
           }}
         >
           <Text style={{ color: "#111827", fontSize: 14, fontWeight: "800" }}>
-            Library
+            {copy.photos.library}
           </Text>
         </Pressable>
       </View>

@@ -4,6 +4,7 @@ import { defaultTreatmentFormTemplate } from "@pest-patrol/domain";
 import type { FormField, FormValue } from "@pest-patrol/types";
 
 import { useFormDrafts } from "../store/useFormDrafts";
+import { useLanguage } from "../store/useLanguage";
 
 interface JobTreatmentFormProps {
   jobId: string;
@@ -92,6 +93,7 @@ function FieldInput({
 }
 
 export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
   const { enqueueDraft, getDraft, setFieldValue } = useFormDrafts();
   const drafts = useFormDrafts((state) => state.drafts);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unable to queue treatment form",
+          : copy.treatment.fallbackError,
       );
     }
   }
@@ -126,11 +128,10 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
     >
       <View>
         <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
-          Treatment form
+          {copy.treatment.title}
         </Text>
         <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 4 }}>
-          Record the field notes before leaving the stop. Queued forms stay on
-          this device and sync when the connection is ready.
+          {copy.treatment.description}
         </Text>
       </View>
 
@@ -158,7 +159,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       ) : null}
       {draft.queued_at ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Queued locally for sync
+          {copy.common.queuedForSync}
         </Text>
       ) : null}
 
@@ -173,7 +174,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
         }}
       >
         <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
-          Queue form
+          {copy.treatment.queueButton}
         </Text>
       </Pressable>
     </View>

@@ -5,9 +5,11 @@ import {
   buildInvoiceInputFromJob,
   filterInvoices,
   getBillingQueueCounts,
-  getInvoiceBalanceCents,
   getInvoiceJobIds,
+  getInvoiceReconciliation,
+  getInvoiceReconciliationSummary,
   getInvoiceSummary,
+  type InvoiceReconciliationStatus,
   type InvoiceStatusFilter,
 } from "@pest-patrol/domain";
 import type { Invoice, Job } from "@pest-patrol/types";
@@ -41,6 +43,7 @@ const emptyForm: InvoiceFormState = {
 };
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
+type ReconciliationFilter = InvoiceReconciliationStatus | "all";
 
 function formatMoney(cents: number, currency = "usd") {
   return new Intl.NumberFormat("en", {
@@ -52,6 +55,16 @@ function formatMoney(cents: number, currency = "usd") {
 function formatDate(value: string | null | undefined) {
   if (!value) {
     return "No due date";
+  }
+
+  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
+function formatPaymentDate(value: string | null) {
+  if (!value) {
+    return null;
   }
 
   return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
@@ -92,6 +105,8 @@ export function PaymentsClient() {
   const voidInvoice = useVoidInvoice();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<InvoiceStatusFilter>("all");
+  const [reconciliationStatus, setReconciliationStatus] =
+    useState<ReconciliationFilter>("all");
   const [form, setForm] = useState<InvoiceFormState>(() => ({
     ...emptyForm,
     job_id: searchParams.get("job_id") ?? "",
@@ -132,10 +147,19 @@ export function PaymentsClient() {
     [jobs, invoicedJobIds],
   );
   const visibleInvoices = useMemo(
-    () => filterInvoices(invoices, search, status),
-    [invoices, search, status],
+    () =>
+      filterInvoices(invoices, search, status).filter(
+        (invoice) =>
+          reconciliationStatus === "all" ||
+          getInvoiceReconciliation(invoice).status === reconciliationStatus,
+      ),
+    [invoices, reconciliationStatus, search, status],
   );
   const summary = useMemo(() => getInvoiceSummary(invoices), [invoices]);
+  const reconciliationSummary = useMemo(
+    () => getInvoiceReconciliationSummary(invoices),
+    [invoices],
+  );
   const selectedJob =
     completedJobs.find((job) => job.id === form.job_id) ?? completedJobs[0] ?? null;
   const closeoutHandoffJob =
@@ -182,7 +206,7 @@ export function PaymentsClient() {
           </p>
           <h1 className="text-3xl font-bold text-neutralDark">Payments</h1>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <input
             aria-label="Search invoices"
             className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
@@ -202,6 +226,23 @@ export function PaymentsClient() {
             <option value="draft">Draft</option>
             <option value="sent">Sent</option>
             <option value="paid">Paid</option>
+            <option value="void">Void</option>
+          </select>
+          <select
+            aria-label="Reconciliation status"
+            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            onChange={(event) =>
+              setReconciliationStatus(event.target.value as ReconciliationFilter)
+            }
+            value={reconciliationStatus}
+          >
+            <option value="all">All reconciliation</option>
+            <option value="needs_review">Needs review</option>
+            <option value="partially_paid">Partially paid</option>
+            <option value="reconciled_paid">Reconciled paid</option>
+            <option value="manual_paid">Manually marked paid</option>
+            <option value="awaiting_payment">Awaiting payment</option>
+            <option value="draft">Draft</option>
             <option value="void">Void</option>
           </select>
         </div>
@@ -240,7 +281,7 @@ export function PaymentsClient() {
         </p>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-5">
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Draft
@@ -273,6 +314,19 @@ export function PaymentsClient() {
             {formatMoney(summary.paidCents)}
           </p>
         </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Needs review
+          </p>
+          <p className="mt-2 text-2xl font-bold text-red-700">
+            {reconciliationSummary.needsReviewCount}
+          </p>
+          <p className="mt-1 text-xs font-medium text-gray-500">
+            {reconciliationSummary.needsReviewCount === 1
+              ? "1 invoice"
+              : `${reconciliationSummary.needsReviewCount} invoices`}
+          </p>
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -282,84 +336,115 @@ export function PaymentsClient() {
           ) : visibleInvoices.length === 0 ? (
             <EmptyState>No invoices found</EmptyState>
           ) : (
-            visibleInvoices.map((invoice) => (
-              <article
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-                key={invoice.id}
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-lg font-semibold text-neutralDark">
-                        {invoiceTitle(invoice)}
-                      </h2>
-                      <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
-                        {invoice.status}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-gray-700">
-                      {invoice.job?.location?.address ?? "No location"}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Due {formatDate(invoice.due_date)}
-                    </p>
-                    {invoice.notes ? (
-                      <p className="mt-2 text-sm text-gray-600">{invoice.notes}</p>
-                    ) : null}
-                    {invoice.payment_url ? (
-                      <a
-                        className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
-                        href={invoice.payment_url}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        Open payment link
-                      </a>
-                    ) : null}
-                  </div>
-                  <div className="flex min-w-52 flex-col gap-3">
-                    <p className="text-right text-2xl font-bold text-neutralDark">
-                      {formatMoney(invoice.total_cents, invoice.currency)}
-                    </p>
-                    <p className="text-right text-xs font-medium text-gray-500">
-                      Balance {formatMoney(getInvoiceBalanceCents(invoice))}
-                    </p>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      {invoice.status === "draft" ? (
-                        <button
-                          className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
-                          disabled={createPaymentLink.isPending}
-                          onClick={() => createPaymentLink.mutate(invoice)}
-                          type="button"
-                        >
-                          Create link
-                        </button>
+            visibleInvoices.map((invoice) => {
+              const reconciliation = getInvoiceReconciliation(invoice);
+              const latestPaidAt = formatPaymentDate(reconciliation.latestPaidAt);
+
+              return (
+                <article
+                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                  key={invoice.id}
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg font-semibold text-neutralDark">
+                          {invoiceTitle(invoice)}
+                        </h2>
+                        <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
+                          {invoice.status}
+                        </span>
+                        <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold uppercase text-primary">
+                          {reconciliation.label}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-gray-700">
+                        {invoice.job?.location?.address ?? "No location"}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Due {formatDate(invoice.due_date)}
+                      </p>
+                      {reconciliation.reviewLabel ? (
+                        <p className="mt-2 text-sm font-semibold text-red-700">
+                          {reconciliation.reviewLabel}
+                        </p>
                       ) : null}
-                      {invoice.status !== "paid" && invoice.status !== "void" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
-                          disabled={markPaid.isPending}
-                          onClick={() => markPaid.mutate(invoice.id)}
-                          type="button"
-                        >
-                          Mark paid
-                        </button>
+                      {latestPaidAt ? (
+                        <p className="mt-2 text-sm text-gray-600">
+                          Latest payment {latestPaidAt}
+                        </p>
                       ) : null}
-                      {invoice.status !== "void" && invoice.status !== "paid" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
-                          disabled={voidInvoice.isPending}
-                          onClick={() => voidInvoice.mutate(invoice.id)}
-                          type="button"
+                      {invoice.notes ? (
+                        <p className="mt-2 text-sm text-gray-600">{invoice.notes}</p>
+                      ) : null}
+                      {invoice.payment_url ? (
+                        <a
+                          className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
+                          href={invoice.payment_url}
+                          rel="noreferrer"
+                          target="_blank"
                         >
-                          Void
-                        </button>
+                          Open payment link
+                        </a>
                       ) : null}
                     </div>
+                    <div className="flex min-w-52 flex-col gap-3">
+                      <p className="text-right text-2xl font-bold text-neutralDark">
+                        {formatMoney(invoice.total_cents, invoice.currency)}
+                      </p>
+                      <div className="text-right text-xs font-medium text-gray-500">
+                        <p>
+                          Paid{" "}
+                          {formatMoney(
+                            reconciliation.paidCents,
+                            invoice.currency,
+                          )}
+                        </p>
+                        <p>
+                          Balance{" "}
+                          {formatMoney(
+                            reconciliation.balanceCents,
+                            invoice.currency,
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {invoice.status === "draft" ? (
+                          <button
+                            className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
+                            disabled={createPaymentLink.isPending}
+                            onClick={() => createPaymentLink.mutate(invoice)}
+                            type="button"
+                          >
+                            Create link
+                          </button>
+                        ) : null}
+                        {invoice.status !== "paid" && invoice.status !== "void" ? (
+                          <button
+                            className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                            disabled={markPaid.isPending}
+                            onClick={() => markPaid.mutate(invoice.id)}
+                            type="button"
+                          >
+                            Mark paid
+                          </button>
+                        ) : null}
+                        {invoice.status !== "void" && invoice.status !== "paid" ? (
+                          <button
+                            className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+                            disabled={voidInvoice.isPending}
+                            onClick={() => voidInvoice.mutate(invoice.id)}
+                            type="button"
+                          >
+                            Void
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           )}
         </div>
 

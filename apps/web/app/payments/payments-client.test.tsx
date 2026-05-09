@@ -115,6 +115,53 @@ const invoice = {
   ],
   payments: [],
 } as const;
+const reconciledInvoice = {
+  ...invoice,
+  id: "invoice-reconciled",
+  job_id: "job-2",
+  status: "paid",
+  total_cents: 20000,
+  job: secondCompletedJob,
+  payments: [
+    {
+      id: "payment-reconciled",
+      invoice_id: "invoice-reconciled",
+      provider: "stripe",
+      provider_payment_id: "pi_reconciled",
+      status: "succeeded",
+      amount_cents: 20000,
+      currency: "usd",
+      paid_at: "2026-05-07T12:00:00.000Z",
+      created_at: now,
+      updated_at: now,
+    },
+  ],
+} as const;
+const manualPaidInvoice = {
+  ...invoice,
+  id: "invoice-manual",
+  status: "paid",
+  payments: [],
+} as const;
+const needsReviewInvoice = {
+  ...invoice,
+  id: "invoice-review",
+  status: "sent",
+  payments: [
+    {
+      id: "payment-failed",
+      invoice_id: "invoice-review",
+      provider: "stripe",
+      provider_payment_id: "pi_failed",
+      status: "failed",
+      amount_cents: 12500,
+      currency: "usd",
+      paid_at: null,
+      created_at: now,
+      updated_at: now,
+    },
+  ],
+} as const;
 
 describe("PaymentsClient", () => {
   const createInvoice = vi.fn();
@@ -221,6 +268,32 @@ describe("PaymentsClient", () => {
       "href",
       "/closeouts",
     );
+  });
+
+  it("renders reconciliation labels, totals, and review filtering", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [invoice, reconciledInvoice, manualPaidInvoice, needsReviewInvoice],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(screen.getAllByText("Needs review").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("1 invoice")).toBeInTheDocument();
+    expect(screen.getAllByText("Reconciled paid").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Manually marked paid").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
+    expect(screen.getByText("Paid $200.00")).toBeInTheDocument();
+    expect(screen.getAllByText("Balance $125.00")).toHaveLength(2);
+    expect(screen.getAllByText("Balance $0.00").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Latest payment May 7, 2026")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Reconciliation status"), "needs_review");
+
+    expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
+    expect(screen.queryByText("Latest payment May 7, 2026")).not.toBeInTheDocument();
+    expect(screen.queryByText("20 Oak Avenue")).not.toBeInTheDocument();
   });
 
   it("creates an invoice from a completed job", async () => {

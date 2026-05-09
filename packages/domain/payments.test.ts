@@ -11,6 +11,8 @@ import {
   getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
+  getInvoiceReconciliation,
+  getInvoiceReconciliationSummary,
   getInvoiceSummary,
   validateInvoiceInput,
 } from "./payments";
@@ -180,6 +182,127 @@ describe("payments domain", () => {
         ],
       }),
     ).toBe(7500);
+  });
+
+  it("classifies invoice reconciliation state from payment records", () => {
+    const partialInvoice: Invoice = {
+      ...invoice,
+      payments: [
+        {
+          id: "payment-partial",
+          invoice_id: "invoice-1",
+          provider: "stripe",
+          provider_payment_id: "pi_partial",
+          status: "succeeded",
+          amount_cents: 5000,
+          currency: "usd",
+          paid_at: now,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+    };
+    const reconciledInvoice: Invoice = {
+      ...invoice,
+      id: "invoice-reconciled",
+      status: "paid",
+      payments: [
+        {
+          id: "payment-paid",
+          invoice_id: "invoice-reconciled",
+          provider: "stripe",
+          provider_payment_id: "pi_paid",
+          status: "succeeded",
+          amount_cents: 12500,
+          currency: "usd",
+          paid_at: "2026-05-07T00:00:00.000Z",
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+    };
+    const manualPaidInvoice: Invoice = {
+      ...invoice,
+      id: "invoice-manual",
+      status: "paid",
+    };
+    const needsReviewInvoice: Invoice = {
+      ...invoice,
+      id: "invoice-review",
+      payments: [
+        {
+          id: "payment-failed",
+          invoice_id: "invoice-review",
+          provider: "stripe",
+          provider_payment_id: "pi_failed",
+          status: "failed",
+          amount_cents: 12500,
+          currency: "usd",
+          paid_at: null,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+    };
+    const voidInvoice: Invoice = {
+      ...needsReviewInvoice,
+      id: "invoice-void",
+      status: "void",
+    };
+
+    expect(getInvoiceReconciliation({ ...invoice, status: "draft" })).toMatchObject({
+      balanceCents: 12500,
+      label: "Draft",
+      latestPaidAt: null,
+      needsReview: false,
+      paidCents: 0,
+      status: "draft",
+    });
+    expect(getInvoiceReconciliation(invoice)).toMatchObject({
+      label: "Awaiting payment",
+      status: "awaiting_payment",
+    });
+    expect(getInvoiceReconciliation(partialInvoice)).toMatchObject({
+      balanceCents: 7500,
+      label: "Partially paid",
+      paidCents: 5000,
+      status: "partially_paid",
+    });
+    expect(getInvoiceReconciliation(reconciledInvoice)).toMatchObject({
+      balanceCents: 0,
+      label: "Reconciled paid",
+      latestPaidAt: "2026-05-07T00:00:00.000Z",
+      status: "reconciled_paid",
+    });
+    expect(getInvoiceReconciliation(manualPaidInvoice)).toMatchObject({
+      label: "Manually marked paid",
+      needsReview: false,
+      paidCents: 0,
+      status: "manual_paid",
+    });
+    expect(getInvoiceReconciliation(needsReviewInvoice)).toMatchObject({
+      label: "Needs review",
+      needsReview: true,
+      reviewLabel: "Failed payment activity",
+      status: "needs_review",
+    });
+    expect(getInvoiceReconciliation(voidInvoice)).toMatchObject({
+      label: "Void",
+      needsReview: false,
+      status: "void",
+    });
+    expect(
+      getInvoiceReconciliationSummary([
+        invoice,
+        partialInvoice,
+        needsReviewInvoice,
+        voidInvoice,
+      ]),
+    ).toEqual({
+      needsReviewCount: 1,
+      paidCents: 5000,
+      remainingCents: 32500,
+    });
   });
 
   it("builds customer-safe portal invoices and hides internal payment details", () => {

@@ -281,6 +281,9 @@ export {
   getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
+  getInvoicePaidCents,
+  getInvoiceReconciliation,
+  getInvoiceReconciliationSummary,
   getInvoiceSummary,
   listInvoices,
   markInvoicePaid,
@@ -291,6 +294,9 @@ export {
 } from "./payments";
 export type {
   CustomerPortalInvoiceStatusFilter,
+  InvoiceReconciliation,
+  InvoiceReconciliationStatus,
+  InvoiceReconciliationSummary,
   InvoiceStatusFilter,
   InvoiceSummary,
 } from "./payments";

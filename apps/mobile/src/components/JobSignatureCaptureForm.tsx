@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import SignatureCanvas from "react-native-signature-canvas";
 
+import { useLanguage } from "../store/useLanguage";
 import { useJobSignatures } from "../store/useJobSignatures";
 
 interface SignatureCanvasHandle {
@@ -41,6 +42,7 @@ const signatureWebStyle = `
 export function JobSignatureCaptureForm({
   jobId,
 }: JobSignatureCaptureFormProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
   const signatureRef = useRef<SignatureCanvasHandle | null>(null);
   const { getDraft, queueSignature, setSignerName } = useJobSignatures();
   const drafts = useJobSignatures((state) => state.drafts);
@@ -59,7 +61,7 @@ export function JobSignatureCaptureForm({
       setError(
         signatureError instanceof Error
           ? signatureError.message
-          : "Unable to queue signature",
+          : copy.signature.fallbackError,
       );
     }
   }
@@ -75,11 +77,10 @@ export function JobSignatureCaptureForm({
       }}
     >
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
-        Signature
+        {copy.signature.title}
       </Text>
       <Text style={{ color: "#6B7280", fontSize: 13 }}>
-        Enter the signer name, then tap Queue in the signature box. Signatures
-        stay local until sync can send them.
+        {copy.signature.description}
       </Text>
 
       <TextInput
@@ -87,7 +88,7 @@ export function JobSignatureCaptureForm({
           setSignerName(jobId, value);
           setError(null);
         }}
-        placeholder="Signer name"
+        placeholder={copy.signature.signerPlaceholder}
         style={{
           backgroundColor: "#FFFFFF",
           borderColor: "#D1D5DB",
@@ -109,11 +110,11 @@ export function JobSignatureCaptureForm({
       >
         <SignatureCanvas
           autoClear={false}
-          clearText="Clear"
-          confirmText="Queue"
+          clearText={copy.signature.clear}
+          confirmText={copy.signature.queue}
           descriptionText=""
           onEmpty={() => {
-            setError("Signature is required");
+            setError(copy.signature.requiredError);
           }}
           onOK={handleSignature}
           penColor="#111827"
@@ -127,7 +128,7 @@ export function JobSignatureCaptureForm({
       ) : null}
       {draft.queuedAt ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Signature queued locally for sync
+          {copy.signature.queuedForSync}
         </Text>
       ) : null}
     </View>

@@ -4,33 +4,61 @@ import * as Location from "expo-location";
 import type { Job, JobGeofenceEventType } from "@pest-patrol/types";
 
 import { useJobGeofencing } from "../store/useJobGeofencing";
+import { useLanguage } from "../store/useLanguage";
 
 interface JobGeofenceControlsProps {
   job: Job;
 }
 
-function eventLabel(eventType: JobGeofenceEventType) {
-  return eventType === "arrival" ? "Arrival" : "Departure";
+function eventLabel(
+  eventType: JobGeofenceEventType,
+  copy: { arrival: string; departure: string },
+) {
+  return eventType === "arrival" ? copy.arrival : copy.departure;
 }
 
-function resultMessage(eventType: JobGeofenceEventType, payload: {
-  distance_m: number | null;
-  within_radius: boolean | null;
-}) {
-  const label = eventLabel(eventType);
+function interpolate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replace(`{${key}}`, value),
+    template,
+  );
+}
+
+function resultMessage(
+  eventType: JobGeofenceEventType,
+  payload: {
+    distance_m: number | null;
+    within_radius: boolean | null;
+  },
+  copy: {
+    arrival: string;
+    departure: string;
+    outsideRadius: string;
+    withinRadius: string;
+    withoutCoordinates: string;
+  },
+) {
+  const label = eventLabel(eventType, copy);
 
   if (payload.within_radius === null) {
-    return `${label} queued without service coordinates`;
+    return interpolate(copy.withoutCoordinates, { event: label });
   }
 
   if (payload.within_radius) {
-    return `${label} queued within ${payload.distance_m}m`;
+    return interpolate(copy.withinRadius, {
+      distance: String(payload.distance_m),
+      event: label,
+    });
   }
 
-  return `${label} queued ${payload.distance_m}m from service location`;
+  return interpolate(copy.outsideRadius, {
+    distance: String(payload.distance_m),
+    event: label,
+  });
 }
 
 export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy.location);
   const { getDraft, queueGeofenceEvent } = useJobGeofencing();
   const drafts = useJobGeofencing((state) => state.drafts);
   const [activeEvent, setActiveEvent] = useState<JobGeofenceEventType | null>(null);
@@ -47,7 +75,7 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
       const permission = await Location.requestForegroundPermissionsAsync();
 
       if (!permission.granted) {
-        setError("Location permission is required");
+        setError(copy.permissionError);
         return;
       }
 
@@ -68,7 +96,7 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
       setError(
         locationError instanceof Error
           ? locationError.message
-          : "Unable to capture location",
+          : copy.fallbackError,
       );
     } finally {
       setActiveEvent(null);
@@ -86,18 +114,17 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
       }}
     >
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
-        Location
+        {copy.title}
       </Text>
       <Text style={{ color: "#6B7280", fontSize: 13 }}>
-        Capture arrival and departure at the service location. Location events
-        queue locally and sync later.
+        {copy.description}
       </Text>
       {serviceLatitude === null ||
       serviceLatitude === undefined ||
       serviceLongitude === null ||
       serviceLongitude === undefined ? (
         <Text style={{ color: "#6B7280", fontSize: 13 }}>
-          Service coordinates are not saved yet
+          {copy.missingCoordinates}
         </Text>
       ) : null}
 
@@ -106,7 +133,7 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
       ) : null}
       {draft.lastEvent ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          {resultMessage(draft.lastEvent.event_type, draft.lastEvent)}
+          {resultMessage(draft.lastEvent.event_type, draft.lastEvent, copy)}
         </Text>
       ) : null}
 
@@ -140,7 +167,7 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
                   fontWeight: "800",
                 }}
               >
-                {eventLabel(eventType)}
+                {eventLabel(eventType, copy)}
               </Text>
             )}
           </Pressable>

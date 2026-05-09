@@ -28,17 +28,10 @@ import { useFormDrafts } from "../src/store/useFormDrafts";
 import { useJobGeofencing } from "../src/store/useJobGeofencing";
 import { useJobPhotos } from "../src/store/useJobPhotos";
 import { useJobSignatures } from "../src/store/useJobSignatures";
+import { useLanguage } from "../src/store/useLanguage";
 import { useOfflineQueue } from "../src/store/useOfflineQueue";
 import { useQueueSync } from "../src/store/useQueueSync";
 import { useSyncStatus } from "../src/store/useSyncStatus";
-
-const statusLabels: Record<JobStatus, string> = {
-  scheduled: "Scheduled",
-  en_route: "En route",
-  in_progress: "In progress",
-  completed: "Completed",
-  canceled: "Canceled",
-};
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -77,6 +70,7 @@ export default function MobileHomeScreen() {
   const queueItems = useOfflineQueue((state) => state.items);
   const syncNow = useQueueSync((state) => state.syncNow);
   const { activity: syncActivity, networkStatus } = useSyncStatus();
+  const jobCopy = useLanguage((state) => state.t.jobs);
   const [email, setEmail] = useState("");
   const [focusedRouteJobId, setFocusedRouteJobId] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -89,6 +83,16 @@ export default function MobileHomeScreen() {
     (routeTimeline.current ? 1 : 0) +
     (routeTimeline.next ? 1 : 0) +
     routeTimeline.later.length;
+  const statusLabels = useMemo<Record<JobStatus, string>>(
+    () => ({
+      canceled: jobCopy.status.canceled,
+      completed: jobCopy.status.completed,
+      en_route: jobCopy.status.en_route,
+      in_progress: jobCopy.status.in_progress,
+      scheduled: jobCopy.status.scheduled,
+    }),
+    [jobCopy.status],
+  );
 
   useEffect(() => {
     void initialize();

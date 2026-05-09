@@ -4,6 +4,7 @@ import type { ChemicalInventoryItem } from "@pest-patrol/types";
 
 import { useChemicalInventory } from "../store/useChemicalInventory";
 import { useChemicalLogs } from "../store/useChemicalLogs";
+import { useLanguage } from "../store/useLanguage";
 
 interface JobChemicalLogFormProps {
   jobId: string;
@@ -14,6 +15,7 @@ function chemicalLabel(item: ChemicalInventoryItem) {
 }
 
 export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
   const {
     error: inventoryError,
     items,
@@ -45,7 +47,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       setError(
         queueError instanceof Error
           ? queueError.message
-          : "Unable to queue chemical log",
+          : copy.chemical.fallbackError,
       );
     }
   }
@@ -61,17 +63,18 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       }}
     >
       <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
-        Chemical log
+        {copy.chemical.title}
       </Text>
       <Text style={{ color: "#6B7280", fontSize: 13 }}>
-        Choose the product and amount used. Chemical logs are queued locally and
-        sync later with the job.
+        {copy.chemical.description}
       </Text>
 
       {status === "loading" ? (
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
           <ActivityIndicator color="#1E3A8A" />
-          <Text style={{ color: "#6B7280", fontSize: 13 }}>Loading chemicals</Text>
+          <Text style={{ color: "#6B7280", fontSize: 13 }}>
+            {copy.chemical.loading}
+          </Text>
         </View>
       ) : null}
 
@@ -81,7 +84,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
 
       {status === "ready" && items.length === 0 ? (
         <Text style={{ color: "#6B7280", fontSize: 13 }}>
-          No active chemicals available
+          {copy.chemical.empty}
         </Text>
       ) : null}
 
@@ -128,7 +131,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
           setDraftField(jobId, "amount", value);
           setError(null);
         }}
-        placeholder="Amount used"
+        placeholder={copy.chemical.amountPlaceholder}
         style={{
           backgroundColor: "#FFFFFF",
           borderColor: "#D1D5DB",
@@ -146,7 +149,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
           setDraftField(jobId, "notes", value);
           setError(null);
         }}
-        placeholder="Notes"
+        placeholder={copy.chemical.notesPlaceholder}
         style={{
           backgroundColor: "#FFFFFF",
           borderColor: "#D1D5DB",
@@ -166,7 +169,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       ) : null}
       {draft.queuedAt ? (
         <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
-          Queued locally for sync
+          {copy.common.queuedForSync}
         </Text>
       ) : null}
 
@@ -182,7 +185,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         }}
       >
         <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
-          Queue chemical
+          {copy.chemical.queueButton}
         </Text>
       </Pressable>
     </View>

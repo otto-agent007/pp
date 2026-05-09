@@ -1,6 +1,6 @@
 import React from "react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Job, OfflineQueueItem } from "@pest-patrol/types";
 
@@ -10,6 +10,9 @@ const queueStatusUpdate = vi.hoisted(() => vi.fn());
 const queueItems = vi.hoisted(() => ({
   value: [] as unknown[],
 }));
+const language = vi.hoisted(() => ({
+  value: "en" as "en" | "es",
+}));
 
 vi.mock("../store/useAssignedJobs", () => ({
   useAssignedJobs: () => queueStatusUpdate,
@@ -18,6 +21,26 @@ vi.mock("../store/useAssignedJobs", () => ({
 vi.mock("../store/useOfflineQueue", () => ({
   useOfflineQueue: () => queueItems.value,
 }));
+
+vi.mock("../store/useLanguage", async () => {
+  const { translations } = await import("@pest-patrol/i18n");
+  const useLanguage = (selector: (state: unknown) => unknown) =>
+    selector({
+      lang: language.value,
+      setLanguage: (lang: "en" | "es") => {
+        language.value = lang;
+      },
+      t: translations[language.value],
+    });
+
+  useLanguage.getState = () => ({
+    setLanguage: (lang: "en" | "es") => {
+      language.value = lang;
+    },
+  });
+
+  return { useLanguage };
+});
 
 vi.mock("react-native", async () => {
   const ReactModule = await import("react");
@@ -113,6 +136,10 @@ function collectPressables(node: ReactNode): React.ReactElement[] {
 }
 
 describe("JobStatusControls", () => {
+  afterEach(() => {
+    language.value = "en";
+  });
+
   it("shows a soft completion warning and allows completing anyway", () => {
     queueStatusUpdate.mockReset();
     queueItems.value = [];
@@ -158,6 +185,19 @@ describe("JobStatusControls", () => {
     completed?.props.onPress();
 
     expect(queueStatusUpdate).toHaveBeenCalledWith("job-1", "completed");
+  });
+
+  it("renders Spanish field status copy when the technician language is Spanish", () => {
+    queueStatusUpdate.mockReset();
+    queueItems.value = [];
+    language.value = "es";
+
+    const element = <JobStatusControls job={job} />;
+    const text = collectText(element);
+
+    expect(text).toContain("En camino");
+    expect(text).toContain("Revisar antes de completar");
+    expect(text).toContain("Completar de todos modos");
   });
 });
 

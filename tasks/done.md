@@ -1,5 +1,23 @@
 # Done
 
+## Bilingual Field Copy V1
+
+- Added shared English/Spanish mobile field copy for status controls, geofence capture, chemical logs, photos, signatures, and treatment forms
+- Wired technician field capture surfaces through the existing language store instead of duplicating copy in components
+- Added a compact mobile header language toggle so technicians can switch between English and Spanish
+- Preserved existing offline-first queue, draft, capture, and sync behavior without migrations or provider changes
+- Added focused mobile coverage for Spanish field status copy
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Payment Reconciliation Polish V1
+
+- Added shared invoice reconciliation helpers for paid totals, balances, latest payment dates, review labels, and status classification
+- Classified draft, awaiting payment, partially paid, reconciled paid, manually marked paid, needs-review, and void invoice states without schema changes
+- Added `/payments` reconciliation labels, paid/balance copy, latest payment dates, a needs-review counter, and a reconciliation status filter
+- Preserved invoice creation, payment-link creation, mark-paid, void, search, status filters, and the closeouts handoff strip
+- Added focused domain and payments UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
 ## Billing Work Queue V1
 
 - Added aggregate closeout capture summaries for completed jobs across forms, chemical logs, photos, and signatures without schema changes

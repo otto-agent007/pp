@@ -2,11 +2,27 @@
 
 ## Current Priority: Pick Next Follow-Up Slice
 
-1. Billing Work Queue V1 is implemented and verified.
+1. Payment Reconciliation Polish V1 and Bilingual Field Copy V1 are implemented and verified.
 2. Keep future billing follow-ups aligned with `/closeouts` as the readiness queue and `/payments` as the invoice workspace.
 3. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
 4. Treat Claude as external UI design input for future UI-heavy polish, while Codex owns architecture, data flow, tests, integration, and verification.
-5. Favor one of the next follow-up candidates: bilingual field copy, payment reconciliation polish, portal readiness polish, or customer ledger.
+5. Favor one of the next follow-up candidates: portal readiness polish or customer ledger.
+
+## Recently Completed: Bilingual Field Copy V1
+
+1. Added shared English/Spanish technician copy in `packages/i18n` for mobile field status, location, chemical, photo, signature, and treatment capture surfaces.
+2. Wired mobile field capture components and route status labels through the existing language store.
+3. Added a compact mobile header language toggle for technician switching.
+4. Preserved existing offline queue, draft, capture, and sync contracts without migrations, provider changes, or production mutations.
+5. Verified with repository test, typecheck, lint, and build commands.
+
+## Recently Completed: Payment Reconciliation Polish V1
+
+1. Added shared invoice reconciliation helpers for paid totals, balances, latest payment dates, review labels, and status classification.
+2. Classified draft, awaiting payment, partially paid, reconciled paid, manually marked paid, needs-review, and void invoice states without schema changes.
+3. Added `/payments` reconciliation labels, paid/balance copy, latest payment dates, a needs-review counter, and a reconciliation status filter.
+4. Preserved invoice creation, payment-link creation, mark-paid, void, search, status filters, and the closeouts handoff strip.
+5. Verified with repository test, typecheck, lint, and build commands.
 
 ## Recently Completed: Billing Work Queue V1
 

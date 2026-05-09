@@ -16,12 +16,36 @@ import type {
 
 export type InvoiceStatusFilter = InvoiceStatus | "all";
 export type CustomerPortalInvoiceStatusFilter = CustomerPortalInvoice["status"] | "all";
+export type InvoiceReconciliationStatus =
+  | "draft"
+  | "awaiting_payment"
+  | "partially_paid"
+  | "reconciled_paid"
+  | "manual_paid"
+  | "needs_review"
+  | "void";
 
 export interface InvoiceSummary {
   draftCount: number;
   openCents: number;
   paidCents: number;
   sentCount: number;
+}
+
+export interface InvoiceReconciliation {
+  balanceCents: number;
+  label: string;
+  latestPaidAt: string | null;
+  needsReview: boolean;
+  paidCents: number;
+  reviewLabel: string | null;
+  status: InvoiceReconciliationStatus;
+}
+
+export interface InvoiceReconciliationSummary {
+  needsReviewCount: number;
+  paidCents: number;
+  remainingCents: number;
 }
 
 function normalizeOptional(value?: string | null) {
@@ -204,12 +228,152 @@ export function getInvoiceBalanceCents(invoice: Invoice) {
   return Math.max(invoice.total_cents - paidCents, 0);
 }
 
+export function getInvoicePaidCents(invoice: Invoice) {
+  return (
+    invoice.payments
+      ?.filter((payment) => payment.status === "succeeded")
+      .reduce((total, payment) => total + payment.amount_cents, 0) ?? 0
+  );
+}
+
 function latestSuccessfulPaidAt(invoice: Invoice) {
   return (
     invoice.payments
       ?.filter((payment) => payment.status === "succeeded" && payment.paid_at)
       .map((payment) => payment.paid_at as string)
       .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? null
+  );
+}
+
+function getPaymentReviewLabel(invoice: Invoice) {
+  const payments = invoice.payments ?? [];
+
+  if (payments.some((payment) => payment.status === "failed")) {
+    return "Failed payment activity";
+  }
+
+  if (payments.some((payment) => payment.status === "pending")) {
+    return "Pending payment activity";
+  }
+
+  return null;
+}
+
+export function getInvoiceReconciliation(
+  invoice: Invoice,
+): InvoiceReconciliation {
+  const paidCents = getInvoicePaidCents(invoice);
+  const balanceCents = getInvoiceBalanceCents(invoice);
+  const latestPaidAt = latestSuccessfulPaidAt(invoice);
+
+  if (invoice.status === "void") {
+    return {
+      balanceCents: 0,
+      label: "Void",
+      latestPaidAt,
+      needsReview: false,
+      paidCents,
+      reviewLabel: null,
+      status: "void",
+    };
+  }
+
+  const reviewLabel = getPaymentReviewLabel(invoice);
+
+  if (reviewLabel) {
+    return {
+      balanceCents,
+      label: "Needs review",
+      latestPaidAt,
+      needsReview: true,
+      paidCents,
+      reviewLabel,
+      status: "needs_review",
+    };
+  }
+
+  if (invoice.status === "draft") {
+    return {
+      balanceCents,
+      label: "Draft",
+      latestPaidAt,
+      needsReview: false,
+      paidCents,
+      reviewLabel: null,
+      status: "draft",
+    };
+  }
+
+  if (paidCents > 0 && balanceCents > 0) {
+    return {
+      balanceCents,
+      label: "Partially paid",
+      latestPaidAt,
+      needsReview: false,
+      paidCents,
+      reviewLabel: null,
+      status: "partially_paid",
+    };
+  }
+
+  if (paidCents > 0 && balanceCents === 0) {
+    return {
+      balanceCents,
+      label: "Reconciled paid",
+      latestPaidAt,
+      needsReview: false,
+      paidCents,
+      reviewLabel: null,
+      status: "reconciled_paid",
+    };
+  }
+
+  if (invoice.status === "paid") {
+    return {
+      balanceCents: 0,
+      label: "Manually marked paid",
+      latestPaidAt,
+      needsReview: false,
+      paidCents,
+      reviewLabel: null,
+      status: "manual_paid",
+    };
+  }
+
+  return {
+    balanceCents,
+    label: "Awaiting payment",
+    latestPaidAt,
+    needsReview: false,
+    paidCents,
+    reviewLabel: null,
+    status: "awaiting_payment",
+  };
+}
+
+export function getInvoiceReconciliationSummary(
+  invoices: Invoice[],
+): InvoiceReconciliationSummary {
+  return invoices.reduce(
+    (summary, invoice) => {
+      const reconciliation = getInvoiceReconciliation(invoice);
+
+      if (reconciliation.needsReview) {
+        summary.needsReviewCount += 1;
+      }
+
+      if (reconciliation.status !== "void") {
+        summary.paidCents += reconciliation.paidCents;
+        summary.remainingCents += reconciliation.balanceCents;
+      }
+
+      return summary;
+    },
+    {
+      needsReviewCount: 0,
+      paidCents: 0,
+      remainingCents: 0,
+    },
   );
 }
 
