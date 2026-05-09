@@ -2,11 +2,14 @@
 
 This is the default operating model for Pest Patrol OS agent work. It optimizes for safe shipping, strong review, and useful parallelism without losing control of architecture boundaries.
 
+For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` as the project-level source of truth. Codex owns implementation, verification, GitHub stewardship, and architecture boundaries; Claude contributes design guidance through `.claude/design/*` relay files.
+
 ## Default Mode
 
 - Ship safely before optimizing for speed.
 - Use approved multi-slice batches only when each slice is small, testable, and has non-overlapping ownership.
 - Keep the main Codex session responsible for architecture, integration, final review, verification, task docs, commits, PRs, and production-facing work.
+- Use Claude as a design partner through the file relay in `.claude/design/*` for UI-heavy slices; treat Claude output as advisory until Codex reviews it against AGENTS rules.
 - Use subagents mostly as narrow scouts, test investigators, and reviewers. Use worker subagents only for isolated implementation scopes with explicit file or package ownership.
 - Treat active uncommitted work as protected. Do not overwrite, clean up, stash, revert, or merge it unless explicitly asked.
 - Treat the active branch as protected. Do not create, switch, delete, push, merge, or rebase branches unless the current task explicitly calls for that Git action or the user approves it.
@@ -54,6 +57,8 @@ This is the default operating model for Pest Patrol OS agent work. It optimizes 
 
 - Supabase connector: read-only project and migration inspection by default. Apply migrations, branch operations, and production mutations only with explicit approval.
 - Browser Use: local app verification, screenshots, DOM checks, and UI smoke tests. External dashboard automation is conditional because external navigation may depend on a Codex app-server bridge.
+- Claude relay: file-first through `.claude/design/*`; use browser/computer use only when file relay is unavailable or a visual/UI-only flow needs it.
+- GitHub: local git plus GitHub CLI or connector for branch, PR, CI, issue, and review-comment stewardship. Draft PRs are the default shipping container for verified slices.
 - Codex Security: security review for auth, portal, payment, webhook, RLS, scheduler, and provider-secret changes.
 - Expo: mobile, offline, native, and deployment workflow planning and verification.
 - Stripe: payment design, webhook, and test-mode readiness work.

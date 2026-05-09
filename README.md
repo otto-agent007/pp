@@ -68,6 +68,6 @@ Current priority is choosing the next follow-up slice after the verified Billing
 - `/payments` remains the invoice workspace with the closeouts handoff strip
 - next candidates: bilingual field copy, payment reconciliation, portal readiness, and customer ledger
 - use Claude as external UI design input for UI-heavy polish while Codex owns implementation and verification
+- use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages
 - avoid provider config, migrations, Supabase dashboard changes, or production mutations without explicit approval
-- track Supabase leaked password protection as a deferred Pro-plan hardening item
