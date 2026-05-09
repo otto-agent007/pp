@@ -263,14 +263,23 @@ describe("PaymentsClient", () => {
     render(<PaymentsClient />);
 
     expect(screen.getByLabelText("Completed job")).toHaveValue("job-2");
+    expect(
+      screen.getByText("From closeout: Apex Homes @ 20 Oak Avenue"),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Completed job"), "job-1");
+
+    expect(
+      screen.queryByText("From closeout: Apex Homes @ 20 Oak Avenue"),
+    ).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Invoice amount"), "225");
     await user.click(screen.getByRole("button", { name: "Save invoice" }));
 
     expect(createInvoice).toHaveBeenCalledWith(
       expect.objectContaining({
-        job_id: "job-2",
-        notes: "Follow-up service",
+        job_id: "job-1",
+        notes: "Quarterly service",
       }),
     );
   });

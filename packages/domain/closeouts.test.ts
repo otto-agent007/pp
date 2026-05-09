@@ -7,7 +7,9 @@ import {
   buildJobCloseoutReview,
   filterCustomerPortalCloseouts,
   filterCloseoutJobs,
+  formatMissingCaptureList,
   getBillingQueueCounts,
+  getBillingQueueItemSummary,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
   getCustomerPortalServiceSummary,
@@ -162,6 +164,20 @@ describe("closeouts domain", () => {
       ready: 2,
       totalCompleted: 4,
     });
+    expect(getBillingQueueItemSummary(queue.needsCaptures[0])).toBe(
+      "Needs photo and signature before billing.",
+    );
+    expect(getBillingQueueItemSummary(queue.ready[0])).toBe("Ready to bill.");
+  });
+
+  it("formats missing capture lists for billing queue copy", () => {
+    expect(formatMissingCaptureList(["Photo"])).toBe("photo");
+    expect(formatMissingCaptureList(["Photo", "Signature"])).toBe(
+      "photo and signature",
+    );
+    expect(formatMissingCaptureList(["Treatment form", "Photo", "Signature"])).toBe(
+      "treatment form, photo, and signature",
+    );
   });
 
   it("builds closeout reviews with separated photos and signatures", () => {

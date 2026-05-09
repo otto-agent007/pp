@@ -198,6 +198,7 @@ const review = {
 
 describe("CloseoutsClient", () => {
   beforeEach(() => {
+    window.history.pushState(null, "", "/closeouts");
     vi.mocked(useJobs).mockReturnValue({
       data: [completedJob, needsCapturesJob, invoicedJob, scheduledJob],
       isLoading: false,
@@ -209,7 +210,7 @@ describe("CloseoutsClient", () => {
     vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
       data: [
         fullSummary("job-1"),
-        { ...fullSummary("job-needs"), signatures: 0 },
+        { ...fullSummary("job-needs"), photos: 0, signatures: 0 },
         fullSummary("job-invoiced"),
       ],
       error: null,
@@ -236,7 +237,9 @@ describe("CloseoutsClient", () => {
     expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
     expect(screen.getByText("Total completed")).toBeInTheDocument();
-    expect(screen.getByText("Needs signature before billing.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Needs photo and signature before billing."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Sent")).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
@@ -352,8 +355,41 @@ describe("CloseoutsClient", () => {
 
     await user.click(screen.getByRole("button", { name: /Needs captures 1/i }));
 
-    expect(screen.getByText("Needs signature")).toBeInTheDocument();
+    expect(screen.getByText("Needs photo and signature")).toBeInTheDocument();
     expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();
+  });
+
+  it("shows the payment date for paid invoice next actions", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [
+        {
+          ...invoice,
+          status: "paid",
+          payments: [
+            {
+              id: "payment-1",
+              invoice_id: "invoice-1",
+              provider: "stripe",
+              provider_payment_id: "pi_1",
+              status: "succeeded",
+              amount_cents: 12500,
+              currency: "usd",
+              paid_at: "2026-05-07T15:00:00Z",
+              created_at: now,
+              updated_at: now,
+            },
+          ],
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    render(<CloseoutsClient />);
+
+    await user.click(screen.getByText("30 Cedar Road"));
+
+    expect(screen.getByText("$125.00 received May 7, 2026.")).toBeInTheDocument();
   });
 });
 

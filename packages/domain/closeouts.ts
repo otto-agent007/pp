@@ -126,7 +126,7 @@ export function getCloseoutCounts(review: JobCloseoutReview): CloseoutCounts {
   };
 }
 
-function joinMissing(items: string[]) {
+export function formatMissingCaptureList(items: string[]) {
   const lowered = items.map((item) => item.toLowerCase());
 
   if (lowered.length === 0) {
@@ -177,7 +177,7 @@ export function getCloseoutReviewReadiness(
     billingReady,
     label: "Needs field captures",
     missing,
-    summary: `${prefix}Missing ${joinMissing(missing)} before billing.`,
+    summary: `${prefix}Missing ${formatMissingCaptureList(missing)} before billing.`,
   };
 }
 
@@ -268,6 +268,18 @@ export function getBillingQueueCounts(
     totalCompleted:
       queue.ready.length + queue.needsCaptures.length + queue.invoiced.length,
   };
+}
+
+export function getBillingQueueItemSummary(item: BillingQueueItem) {
+  if (item.state === "needsCaptures" && item.readiness.missing.length > 0) {
+    return `Needs ${formatMissingCaptureList(item.readiness.missing)} before billing.`;
+  }
+
+  if (item.state === "ready") {
+    return "Ready to bill.";
+  }
+
+  return item.job.service_notes ?? "";
 }
 
 function requireNonEmpty(value: string, fieldName: string) {
