@@ -26,6 +26,16 @@ const token = {
   created_at: now,
   updated_at: now,
 } as const;
+const expiredToken = {
+  ...token,
+  id: "token-expired",
+  expires_at: "2026-05-01T00:00:00.000Z",
+};
+const revokedToken = {
+  ...token,
+  id: "token-revoked",
+  status: "revoked",
+} as const;
 
 describe("CustomerPortalLinks", () => {
   const createMutateAsync = vi.fn();
@@ -65,10 +75,22 @@ describe("CustomerPortalLinks", () => {
   });
 
   it("lists portal token states", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [token, expiredToken, revokedToken],
+      isLoading: false,
+    } as never);
+
     render(<CustomerPortalLinks customerId="customer-1" />);
 
-    expect(screen.getByText("Active")).toBeInTheDocument();
-    expect(screen.getByText("Last used Never")).toBeInTheDocument();
+    expect(screen.getByText("Portal readiness")).toBeInTheDocument();
+    expect(screen.getByText("1 active")).toBeInTheDocument();
+    expect(screen.getByText("1 expired")).toBeInTheDocument();
+    expect(screen.getByText("1 revoked")).toBeInTheDocument();
+    expect(screen.getByText("3 never opened")).toBeInTheDocument();
+    expect(screen.getByText("Active portal link")).toBeInTheDocument();
+    expect(screen.getByText("Expired portal link")).toBeInTheDocument();
+    expect(screen.getByText("Revoked portal link")).toBeInTheDocument();
+    expect(screen.getAllByText("Last used Never")).toHaveLength(3);
   });
 
   it("generates and copies portal links", async () => {
@@ -96,5 +118,21 @@ describe("CustomerPortalLinks", () => {
     await user.click(screen.getByRole("button", { name: "Revoke" }));
 
     expect(revokeMutate).toHaveBeenCalledWith("token-1");
+  });
+
+  it("shows revoke errors alongside latest-link controls", async () => {
+    vi.mocked(useRevokeCustomerPortalAccessToken).mockReturnValue({
+      error: new Error("Unable to revoke"),
+      isPending: false,
+      mutate: revokeMutate,
+    } as never);
+    const user = userEvent.setup();
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+
+    expect(screen.getByRole("button", { name: "Copy latest link" })).toBeInTheDocument();
+    expect(screen.getByText("Unable to revoke portal link")).toBeInTheDocument();
   });
 });

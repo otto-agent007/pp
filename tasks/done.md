@@ -1,5 +1,15 @@
 # Done
 
+## Next Five Portal + Ledger Batch V1
+
+- Added shared portal-token readiness helpers and compact admin readiness counts for customer portal links
+- Added domain-only customer ledger entries, summaries, and next-action helpers from existing customers, jobs, invoices, and payments
+- Added admin customer ledger summaries and recent account activity to active `/customers` cards
+- Added a customer-safe portal timeline that groups existing closeouts and portal invoices without exposing internal/provider fields
+- Added closeouts, payments, and customers handoff polish for create invoice, review payment, share portal, and open customer ledger paths
+- Kept the batch free of migrations, provider setup, production mutations, service-role exposure, provider IDs, admin notes, and raw storage paths
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Bilingual Field Copy V1
 
 - Added shared English/Spanish mobile field copy for status controls, geofence capture, chemical logs, photos, signatures, and treatment forms

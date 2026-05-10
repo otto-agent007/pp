@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildBillingPortalNextActions,
   buildBillingQueue,
   filterCloseoutJobs,
   formatMissingCaptureList,
@@ -9,7 +10,6 @@ import {
   getCloseoutCounts,
   getCloseoutReviewReadiness,
   getInvoiceBalanceCents,
-  getInvoiceHandoffHref,
   type BillingQueueGroup,
   type BillingQueueItem,
   type CloseoutStatusFilter,
@@ -359,18 +359,25 @@ function NextActionCard({
   }
 
   if (!item.invoice && item.readiness.billingReady) {
+    const actions = buildBillingPortalNextActions({ job: item.job });
+
     return (
       <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
         <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
         <p className="mt-1 text-sm text-gray-700">
           Forms, chemicals, photos, and signatures captured.
         </p>
-        <a
-          className="mt-4 inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90"
-          href={getInvoiceHandoffHref(item.job.id)}
-        >
-          Create invoice
-        </a>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {actions.map((action) => (
+            <a
+              className="inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90"
+              href={action.href}
+              key={action.id}
+            >
+              {action.label}
+            </a>
+          ))}
+        </div>
       </div>
     );
   }
@@ -387,6 +394,11 @@ function NextActionCard({
   }
 
   const invoice = item.invoice;
+  const actions = buildBillingPortalNextActions({
+    hasPortalLink: false,
+    invoice,
+    job: item.job,
+  });
   const balance = getInvoiceBalanceCents(invoice);
   const titleByStatus = {
     draft: "Invoice in draft",
@@ -423,6 +435,19 @@ function NextActionCard({
           ? "Open payment link"
           : "Open invoice"}
       </a>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {actions
+          .filter((action) => action.id !== "review_payment")
+          .map((action) => (
+            <a
+              className="rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-primary hover:bg-blue-50"
+              href={action.href}
+              key={action.id}
+            >
+              {action.label}
+            </a>
+          ))}
+      </div>
     </div>
   );
 }

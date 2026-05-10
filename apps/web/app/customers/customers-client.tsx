@@ -1,22 +1,32 @@
 "use client";
 
-import { filterCustomers, validateCustomerInput } from "@pest-patrol/domain";
+import {
+  buildCustomerLedger,
+  filterCustomers,
+  getCustomerLedgerSummary,
+  validateCustomerInput,
+  type CustomerLedgerEntry,
+} from "@pest-patrol/domain";
 import type {
   Customer,
   CustomerInput,
   CustomerLocationInput,
   CustomerStatus,
+  Invoice,
+  Job,
   PropertyType,
 } from "@pest-patrol/types";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
+import { useJobs } from "../../hooks/useJobs";
 import {
   useArchiveCustomer,
   useCreateCustomer,
   useCustomers,
   useUpdateCustomer,
 } from "../../hooks/useCustomers";
+import { useInvoices } from "../../hooks/usePayments";
 import { CustomerPortalLinks } from "./customer-portal-links";
 
 const emptyLocation: CustomerLocationInput = {
@@ -40,6 +50,23 @@ const createSuccessMessage =
 const updateSuccessMessage =
   "Customer updated. Schedule the first job next; share portal links when closeout and billing are ready.";
 
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en", {
+    currency: "USD",
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return "None yet";
+  }
+
+  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
 function customerToInput(customer: Customer): CustomerInput {
   return {
     name: customer.name,
@@ -58,8 +85,112 @@ function customerToInput(customer: Customer): CustomerInput {
   };
 }
 
+function CustomerLedgerSummary({
+  customer,
+  invoices,
+  jobs,
+}: {
+  customer: Customer;
+  invoices: Invoice[];
+  jobs: Job[];
+}) {
+  const entries = useMemo(
+    () => buildCustomerLedger({ customer, invoices, jobs }),
+    [customer, invoices, jobs],
+  );
+  const summary = useMemo(() => getCustomerLedgerSummary(entries), [entries]);
+  const recentEntries = entries.slice(0, 4);
+
+  return (
+    <section className="mt-5 rounded-md border border-gray-200 bg-gray-50 p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+            Account ledger
+          </p>
+          <p className="mt-1 text-sm text-gray-600">
+            Latest service {formatDate(summary.latestServiceAt)}
+          </p>
+        </div>
+        <Link
+          className="text-sm font-semibold text-primary hover:text-blue-900"
+          href={`/payments?customer_id=${encodeURIComponent(customer.id)}`}
+        >
+          Open billing
+        </Link>
+      </div>
+
+      <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Open balance
+          </dt>
+          <dd className="mt-1 text-base font-bold text-neutralDark">
+            {formatMoney(summary.openBalanceCents)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Paid total
+          </dt>
+          <dd className="mt-1 text-base font-bold text-neutralDark">
+            {formatMoney(summary.paidCents)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Latest invoice
+          </dt>
+          <dd className="mt-1 text-base font-bold text-neutralDark">
+            {formatDate(summary.latestInvoiceAt)}
+          </dd>
+        </div>
+      </dl>
+
+      {summary.reviewCount > 0 ? (
+        <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm font-medium text-amber-800">
+          {summary.reviewCount} payment {summary.reviewCount === 1 ? "item" : "items"} needs review.
+        </p>
+      ) : null}
+
+      {recentEntries.length === 0 ? (
+        <p className="mt-4 text-sm text-gray-600">
+          No service or billing activity yet. Schedule a job, then create an invoice before sharing the portal.
+        </p>
+      ) : (
+        <ol className="mt-4 divide-y divide-gray-200">
+          {recentEntries.map((entry) => (
+            <CustomerLedgerEntryRow entry={entry} key={entry.id} />
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
+  return (
+    <li className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p className="text-sm font-semibold text-neutralDark">{entry.label}</p>
+        <p className="text-sm text-gray-600">{entry.detail}</p>
+      </div>
+      <div className="text-left sm:text-right">
+        <p className="text-sm font-medium text-gray-700">{formatDate(entry.date)}</p>
+        {entry.balance_cents !== null ? (
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Balance {formatMoney(entry.balance_cents)}
+          </p>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
 export function CustomersClient() {
   const customersQuery = useCustomers();
+  const jobsQuery = useJobs();
+  const invoicesQuery = useInvoices();
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const archiveCustomer = useArchiveCustomer();
@@ -228,6 +359,13 @@ export function CustomersClient() {
                     ) : null}
                   </div>
                 </div>
+                {customer.status === "active" ? (
+                  <CustomerLedgerSummary
+                    customer={customer}
+                    invoices={invoicesQuery.data ?? []}
+                    jobs={jobsQuery.data ?? []}
+                  />
+                ) : null}
                 {customer.status === "active" ? (
                   <CustomerPortalLinks customerId={customer.id} />
                 ) : null}

@@ -2,8 +2,11 @@
 
 import {
   getCustomerPortalAccessTokenLabel,
+  getCustomerPortalAccessTokenReadiness,
+  getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
 } from "@pest-patrol/domain";
+import type { CustomerPortalAccessTokenSummary } from "@pest-patrol/types";
 import { useState } from "react";
 
 import {
@@ -30,6 +33,17 @@ function expirationToIso(value: string) {
   return value ? `${value}T23:59:59.999Z` : null;
 }
 
+function readinessSummaryItems(tokens: CustomerPortalAccessTokenSummary[]) {
+  const summary = getCustomerPortalAccessTokenReadinessSummary(tokens);
+
+  return {
+    active: `${summary.active} active`,
+    expired: `${summary.expired} expired`,
+    neverUsed: `${summary.neverUsed} never opened`,
+    revoked: `${summary.revoked} revoked`,
+  };
+}
+
 async function copyText(value: string) {
   if (!navigator.clipboard) {
     throw new Error("Clipboard is unavailable");
@@ -46,6 +60,8 @@ export function CustomerPortalLinks({
   const tokensQuery = useCustomerPortalAccessTokens(customerId);
   const createToken = useCreateCustomerPortalAccessToken();
   const revokeToken = useRevokeCustomerPortalAccessToken(customerId);
+  const tokens = tokensQuery.data ?? [];
+  const readiness = readinessSummaryItems(tokens);
   const [expiresAt, setExpiresAt] = useState("");
   const [latestLink, setLatestLink] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -139,14 +155,33 @@ export function CustomerPortalLinks({
         </p>
       ) : null}
 
+      <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Portal readiness
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {[readiness.active, readiness.expired, readiness.revoked, readiness.neverUsed].map(
+            (item) => (
+              <span
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-neutralDark"
+                key={item}
+              >
+                {item}
+              </span>
+            ),
+          )}
+        </div>
+      </div>
+
       <div className="mt-3 flex flex-col gap-2">
         {tokensQuery.isLoading ? (
           <p className="text-xs text-gray-500">Loading portal links</p>
-        ) : (tokensQuery.data ?? []).length === 0 ? (
+        ) : tokens.length === 0 ? (
           <p className="text-xs text-gray-500">No portal links generated</p>
         ) : (
-          (tokensQuery.data ?? []).map((token) => {
+          tokens.map((token) => {
             const state = getCustomerPortalAccessTokenState(token);
+            const readiness = getCustomerPortalAccessTokenReadiness(token);
 
             return (
               <div
@@ -155,7 +190,10 @@ export function CustomerPortalLinks({
               >
                 <div>
                   <p className="text-sm font-semibold text-neutralDark">
-                    {getCustomerPortalAccessTokenLabel(token)}
+                    {readiness.label}
+                  </p>
+                  <p className="text-xs font-semibold text-gray-600">
+                    {readiness.detail}
                   </p>
                   <p className="text-xs text-gray-500">
                     Created {formatDate(token.created_at)} | Expires{" "}
@@ -163,6 +201,9 @@ export function CustomerPortalLinks({
                   </p>
                   <p className="text-xs text-gray-500">
                     Last used {formatLastUsed(token.last_used_at)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    State {getCustomerPortalAccessTokenLabel(token)}
                   </p>
                 </div>
                 {state === "active" ? (

@@ -4,18 +4,28 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CustomersClient } from "./customers-client";
+import { useJobs } from "../../hooks/useJobs";
 import {
   useArchiveCustomer,
   useCreateCustomer,
   useCustomers,
   useUpdateCustomer,
 } from "../../hooks/useCustomers";
+import { useInvoices } from "../../hooks/usePayments";
+
+vi.mock("../../hooks/useJobs", () => ({
+  useJobs: vi.fn(),
+}));
 
 vi.mock("../../hooks/useCustomers", () => ({
   useArchiveCustomer: vi.fn(),
   useCreateCustomer: vi.fn(),
   useCustomers: vi.fn(),
   useUpdateCustomer: vi.fn(),
+}));
+
+vi.mock("../../hooks/usePayments", () => ({
+  useInvoices: vi.fn(),
 }));
 
 vi.mock("./customer-portal-links", () => ({
@@ -71,6 +81,52 @@ const archivedCustomer = {
   status: "archived",
   locations: [],
 } as const;
+const completedJob = {
+  id: "job-1",
+  customer_id: "customer-1",
+  location_id: "location-1",
+  assigned_tech_id: null,
+  scheduled_start: "2026-05-06T09:00:00.000Z",
+  scheduled_end: null,
+  status: "completed",
+  service_notes: "Quarterly service",
+  created_at: "2026-05-05T00:00:00Z",
+  updated_at: "2026-05-06T00:00:00Z",
+  customer: activeCustomer,
+  location: activeCustomer.locations[0],
+} as const;
+const sentInvoice = {
+  id: "invoice-1",
+  job_id: "job-1",
+  customer_id: "customer-1",
+  status: "sent",
+  currency: "usd",
+  subtotal_cents: 12500,
+  total_cents: 12500,
+  due_date: "2026-05-20T00:00:00Z",
+  notes: "Internal invoice note should stay off the card",
+  payment_url: "https://pay.stripe.com/test",
+  stripe_payment_link_id: "plink_secret_should_not_render",
+  created_at: "2026-05-07T00:00:00Z",
+  updated_at: "2026-05-07T00:00:00Z",
+  job: completedJob,
+  customer: activeCustomer,
+  line_items: [],
+  payments: [
+    {
+      id: "payment-1",
+      invoice_id: "invoice-1",
+      provider: "stripe",
+      provider_payment_id: "pi_secret_should_not_render",
+      status: "succeeded",
+      amount_cents: 2500,
+      currency: "usd",
+      paid_at: "2026-05-08T00:00:00Z",
+      created_at: "2026-05-08T00:00:00Z",
+      updated_at: "2026-05-08T00:00:00Z",
+    },
+  ],
+} as const;
 
 describe("CustomersClient", () => {
   const mutateArchive = vi.fn();
@@ -80,6 +136,14 @@ describe("CustomersClient", () => {
   beforeEach(() => {
     vi.mocked(useCustomers).mockReturnValue({
       data: [activeCustomer, archivedCustomer],
+      isLoading: false,
+    } as never);
+    vi.mocked(useJobs).mockReturnValue({
+      data: [completedJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [sentInvoice],
       isLoading: false,
     } as never);
     vi.mocked(useArchiveCustomer).mockReturnValue({
@@ -114,6 +178,21 @@ describe("CustomersClient", () => {
     render(<CustomersClient />);
 
     expect(screen.getByText("Portal links for customer-1")).toBeInTheDocument();
+  });
+
+  it("renders a compact ledger summary without provider payment metadata", () => {
+    render(<CustomersClient />);
+
+    expect(screen.getByText("Account ledger")).toBeInTheDocument();
+    expect(screen.getByText("Open balance")).toBeInTheDocument();
+    expect(screen.getByText("$100.00")).toBeInTheDocument();
+    expect(screen.getByText("Paid total")).toBeInTheDocument();
+    expect(screen.getByText("$25.00")).toBeInTheDocument();
+    expect(screen.getByText("Latest service May 6, 2026")).toBeInTheDocument();
+    expect(screen.getByText("Partial payment")).toBeInTheDocument();
+    expect(screen.getByText("Service completed")).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent("pi_secret_should_not_render");
+    expect(document.body).not.toHaveTextContent("plink_secret_should_not_render");
   });
 
   it("shows demo data entry guidance for the next workflow step", () => {

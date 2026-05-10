@@ -69,6 +69,45 @@ export interface CustomerPortalServiceSummary {
   serviceDateLabel: string;
 }
 
+export type CustomerPortalAccessTokenReadinessState =
+  | "active"
+  | "expired"
+  | "no_expiration"
+  | "revoked";
+
+export interface CustomerPortalAccessTokenReadiness {
+  detail: string;
+  label: string;
+  needsAttention: boolean;
+  state: CustomerPortalAccessTokenReadinessState;
+}
+
+export interface CustomerPortalAccessTokenReadinessSummary {
+  active: number;
+  expired: number;
+  neverUsed: number;
+  noExpiration: number;
+  revoked: number;
+  total: number;
+}
+
+export type CustomerPortalTimelineItemType = "invoice" | "service";
+
+export interface CustomerPortalTimelineItem {
+  balance_cents: number | null;
+  captures_label: string;
+  currency: string;
+  date: string;
+  id: string;
+  invoice_id: string | null;
+  invoice_status: CustomerPortalInvoice["status"] | "none";
+  job_id: string;
+  location_label: string;
+  payment_url: string | null;
+  title: string;
+  type: CustomerPortalTimelineItemType;
+}
+
 function searchableJobText(job: Job) {
   return [
     job.customer?.name,
@@ -378,6 +417,90 @@ export function getCustomerPortalAccessTokenLabel(
   return "Revoked";
 }
 
+export function getCustomerPortalAccessTokenReadiness(
+  token: CustomerPortalAccessTokenSummary,
+  now = new Date(),
+): CustomerPortalAccessTokenReadiness {
+  const state = getCustomerPortalAccessTokenState(token, now);
+
+  if (state === "revoked") {
+    return {
+      detail: "Revoked by admin",
+      label: "Revoked portal link",
+      needsAttention: true,
+      state,
+    };
+  }
+
+  if (state === "expired") {
+    return {
+      detail: "Expired",
+      label: "Expired portal link",
+      needsAttention: true,
+      state,
+    };
+  }
+
+  if (!token.expires_at) {
+    return {
+      detail: "No expiration",
+      label: "Active portal link",
+      needsAttention: false,
+      state: "no_expiration",
+    };
+  }
+
+  return {
+    detail: token.last_used_at ? "Opened by customer" : "Generated but never opened",
+    label: "Active portal link",
+    needsAttention: false,
+    state: "active",
+  };
+}
+
+export function getCustomerPortalAccessTokenReadinessSummary(
+  tokens: CustomerPortalAccessTokenSummary[],
+  now = new Date(),
+): CustomerPortalAccessTokenReadinessSummary {
+  return tokens.reduce(
+    (summary, token) => {
+      const state = getCustomerPortalAccessTokenState(token, now);
+      const readiness = getCustomerPortalAccessTokenReadiness(token, now);
+
+      if (state === "active") {
+        summary.active += 1;
+      }
+
+      if (readiness.state === "no_expiration") {
+        summary.noExpiration += 1;
+      }
+
+      if (state === "expired") {
+        summary.expired += 1;
+      }
+
+      if (state === "revoked") {
+        summary.revoked += 1;
+      }
+
+      if (!token.last_used_at) {
+        summary.neverUsed += 1;
+      }
+
+      summary.total += 1;
+      return summary;
+    },
+    {
+      active: 0,
+      expired: 0,
+      neverUsed: 0,
+      noExpiration: 0,
+      revoked: 0,
+      total: 0,
+    },
+  );
+}
+
 export async function listCustomerPortalAccessTokens(customerId: string) {
   return listCustomerPortalAccessTokenRecords(
     validateCustomerPortalCustomerId(customerId),
@@ -461,4 +584,67 @@ export function getCustomerPortalServiceSummary(
       "Service location",
     serviceDateLabel: formatServiceDate(closeout.job.scheduled_start),
   };
+}
+
+function portalTimelineLocation(job: CustomerPortalJob | undefined) {
+  return job?.location?.nickname ?? job?.location?.address ?? "Service location";
+}
+
+function portalTimelineDate(
+  job: CustomerPortalJob | undefined,
+  fallback: string,
+) {
+  return job?.scheduled_start ?? fallback;
+}
+
+export function buildCustomerPortalTimeline(
+  closeouts: CustomerPortalCloseout[],
+  invoices: CustomerPortalInvoice[],
+): CustomerPortalTimelineItem[] {
+  const closeoutsByJobId = new Map(
+    closeouts.map((closeout) => [closeout.job.id, closeout]),
+  );
+  const invoiceByJobId = new Map(invoices.map((invoice) => [invoice.job_id, invoice]));
+  const serviceItems = closeouts.map((closeout): CustomerPortalTimelineItem => {
+    const invoice = invoiceByJobId.get(closeout.job.id);
+    const summary = getCustomerPortalServiceSummary(
+      closeout,
+      invoice ? [invoice] : [],
+    );
+
+    return {
+      balance_cents: invoice?.balance_cents ?? null,
+      captures_label: summary.capturesLabel,
+      currency: invoice?.currency ?? "usd",
+      date: closeout.job.scheduled_start,
+      id: `job-${closeout.job.id}`,
+      invoice_id: invoice?.id ?? null,
+      invoice_status: invoice?.status ?? "none",
+      job_id: closeout.job.id,
+      location_label: summary.locationLabel,
+      payment_url: invoice?.payment_url ?? null,
+      title: summary.locationLabel,
+      type: "service",
+    };
+  });
+  const invoiceOnlyItems = invoices
+    .filter((invoice) => !closeoutsByJobId.has(invoice.job_id))
+    .map((invoice): CustomerPortalTimelineItem => ({
+      balance_cents: invoice.balance_cents,
+      captures_label: "No service captures available",
+      currency: invoice.currency,
+      date: portalTimelineDate(invoice.job, invoice.created_at),
+      id: `invoice-${invoice.id}`,
+      invoice_id: invoice.id,
+      invoice_status: invoice.status,
+      job_id: invoice.job_id,
+      location_label: portalTimelineLocation(invoice.job),
+      payment_url: invoice.payment_url,
+      title: portalTimelineLocation(invoice.job),
+      type: "invoice",
+    }));
+
+  return [...serviceItems, ...invoiceOnlyItems].sort(
+    (left, right) => Date.parse(right.date) - Date.parse(left.date),
+  );
 }
