@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,7 +34,13 @@ const expiredToken = {
 const openedToken = {
   ...token,
   id: "token-opened",
+  created_at: "2026-05-07T00:00:00.000Z",
   expires_at: "2027-05-01T00:00:00.000Z",
+  last_used_at: "2026-05-07T00:00:00.000Z",
+};
+const openedNoExpirationToken = {
+  ...token,
+  id: "token-opened-no-expiration",
   last_used_at: "2026-05-07T00:00:00.000Z",
 };
 const revokedToken = {
@@ -197,17 +203,161 @@ describe("CustomerPortalLinks", () => {
     ).toBeInTheDocument();
   });
 
-  it("revokes active portal links", async () => {
+  it("confirms before revoking active portal links", async () => {
     const user = userEvent.setup();
 
     render(<CustomerPortalLinks customerId="customer-1" />);
 
-    await user.click(screen.getByRole("button", { name: "Revoke" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 6, 2026",
+      }),
+    );
+
+    expect(revokeMutate).not.toHaveBeenCalled();
+    expect(screen.getByText("Revoke this link?")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This link is active with no expiration and has never been opened.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel revoke" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Confirm revoke" }));
 
     expect(revokeMutate).toHaveBeenCalledWith(
       "token-1",
       expect.objectContaining({ onSettled: expect.any(Function) }),
     );
+  });
+
+  it("cancels and switches revoke confirmations", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [openedToken, token],
+      isLoading: false,
+    } as never);
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 7, 2026",
+      }),
+    );
+    expect(
+      screen.getByText(
+        "This link is active and expires May 1, 2027. The customer last opened it May 7, 2026.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel revoke" }));
+
+    expect(screen.queryByText("Revoke this link?")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 7, 2026",
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 6, 2026",
+      }),
+    );
+
+    expect(screen.getAllByText("Revoke this link?")).toHaveLength(1);
+    expect(
+      screen.getByText(
+        "This link is active with no expiration and has never been opened.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("returns focus to the Revoke button when Cancel is clicked", async () => {
+    const user = userEvent.setup();
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 6, 2026",
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Cancel revoke" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "Revoke portal link created May 6, 2026",
+        }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it("closes revoke confirmation with Escape and keeps copy controls available", async () => {
+    const user = userEvent.setup();
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 6, 2026",
+      }),
+    );
+
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(screen.getByText("Revoke this link?")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByText("Revoke this link?")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "Revoke portal link created May 6, 2026",
+        }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it("renders revoke confirmation copy for expiration and opened states", async () => {
+    const user = userEvent.setup();
+    const expiringNeverOpenedToken = {
+      ...token,
+      id: "token-expiring-never-opened",
+      expires_at: "2027-05-01T00:00:00.000Z",
+      created_at: "2026-05-08T00:00:00.000Z",
+    };
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [openedNoExpirationToken, expiringNeverOpenedToken],
+      isLoading: false,
+    } as never);
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 8, 2026",
+      }),
+    );
+    expect(
+      screen.getByText(
+        "This link is active and expires May 1, 2027. It has never been opened.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Revoke portal link created May 6, 2026",
+      }),
+    );
+    expect(
+      screen.getByText(
+        "This link is active with no expiration — the customer has opened it.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows revoke errors alongside latest-link controls", async () => {

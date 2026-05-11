@@ -1,12 +1,19 @@
 # Implementation Plan
 
-## Current Priority: Portal Revoke Confirmation V1
+## Current Priority: Portal Revoke Confirmation V1 Cleanup
 
-1. Start Portal Revoke Confirmation V1 from the existing `/customers` portal access panel and `CustomerPortalLinks`.
-2. Use Claude relay folder `.claude/design/004-portal-revoke-confirm/` for confirmation copy, compact row state treatment, and accessibility guidance before implementation.
-3. Keep the slice no-migration and provider-free: safer manual revoke UX only, no email/SMS send route and no token audit schema.
-4. Preserve existing React Query hooks, API routes, service-role boundaries, session-only raw generated link behavior, and token list display rules.
-5. Keep provider-approved portal resend/send and persistent token audit event logging as separate future slices.
+1. Commit the completed portal revoke confirmation slice with Claude proposal and critique markers.
+2. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
+3. Start the next safe no-provider, no-migration slice from the remaining portal follow-up candidates.
+
+## Recently Completed: Portal Revoke Confirmation V1
+
+1. Captured Claude's portal revoke confirmation proposal plus Codex's Adopt/Adapt/Defer/Reject review marker.
+2. Added an inline confirmation step before active portal links can be revoked from `/customers`.
+3. Added state-aware confirmation copy for no-expiration, expiring, never-opened, and opened portal links.
+4. Preserved existing generate/copy/manual-share behavior, React Query hooks, API route boundaries, optimistic revoke rollback, and token schema.
+5. Applied Claude's critique fix so Cancel returns focus to the triggering Revoke button.
+6. Verified with focused portal-link tests, repository test, typecheck, lint, build, and diff whitespace checks.
 
 ## Recently Completed: Customer Ledger Drill-Down V1
 

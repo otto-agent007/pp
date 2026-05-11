@@ -1,5 +1,14 @@
 # Done
 
+## Portal Revoke Confirmation V1
+
+- Added the Claude relay brief, proposal, Codex review marker, critique, and Codex critique marker for the portal revoke confirmation slice
+- Added an inline confirmation step before active customer portal links can be revoked from `/customers`
+- Added state-aware confirmation copy for no-expiration, expiring, never-opened, and opened portal links
+- Preserved existing generate, copy, manual-share, React Query hook, API route, optimistic rollback, and token schema behavior
+- Applied Claude critique feedback so Cancel and Escape both return focus to the triggering Revoke button
+- Verified with focused portal-link tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Customer Ledger Drill-Down V1
 
 - Added the Claude relay brief, proposal, Codex review marker, critique, and Codex critique marker for the customer ledger drill-down slice

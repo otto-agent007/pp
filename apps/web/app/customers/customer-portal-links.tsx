@@ -5,7 +5,7 @@ import {
   getCustomerPortalAccessTokenState,
 } from "@pest-patrol/domain";
 import type { CustomerPortalAccessTokenSummary } from "@pest-patrol/types";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   useCreateCustomerPortalAccessToken,
@@ -84,6 +84,25 @@ function tokenExpiryText(token: CustomerPortalAccessTokenSummary) {
   return "No expiration";
 }
 
+function revokeConfirmPrompt(token: CustomerPortalAccessTokenSummary) {
+  const hasExpiry = Boolean(token.expires_at);
+  const hasOpened = Boolean(token.last_used_at);
+
+  if (!hasExpiry && !hasOpened) {
+    return "This link is active with no expiration and has never been opened.";
+  }
+
+  if (!hasExpiry && hasOpened) {
+    return "This link is active with no expiration — the customer has opened it.";
+  }
+
+  if (hasExpiry && !hasOpened) {
+    return `This link is active and expires ${formatDate(token.expires_at)}. It has never been opened.`;
+  }
+
+  return `This link is active and expires ${formatDate(token.expires_at)}. The customer last opened it ${formatDate(token.last_used_at)}.`;
+}
+
 export function CustomerPortalLinks({
   customerId,
 }: {
@@ -97,12 +116,16 @@ export function CustomerPortalLinks({
   const active = useMemo(() => activeTokens(tokens), [tokens]);
   const expiresInputRef = useRef<HTMLInputElement | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelRevokeRef = useRef<HTMLButtonElement | null>(null);
+  const revokeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const returnFocusTokenIdRef = useRef<string | null>(null);
   const [expiresAt, setExpiresAt] = useState("");
   const [latestLink, setLatestLink] = useState<string | null>(null);
   const [copyUnavailable, setCopyUnavailable] = useState(false);
   const [copyFlash, setCopyFlash] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(
     () => () => {
@@ -112,6 +135,18 @@ export function CustomerPortalLinks({
     },
     [],
   );
+
+  useEffect(() => {
+    if (confirmingId) {
+      cancelRevokeRef.current?.focus();
+      return;
+    }
+
+    if (returnFocusTokenIdRef.current) {
+      revokeButtonRefs.current.get(returnFocusTokenIdRef.current)?.focus();
+      returnFocusTokenIdRef.current = null;
+    }
+  }, [confirmingId]);
 
   function showCopyFlash() {
     setCopyFlash(true);
@@ -170,6 +205,32 @@ export function CustomerPortalLinks({
     setMessage(null);
     expiresInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     expiresInputRef.current?.focus();
+  }
+
+  function cancelRevokeConfirmation(tokenId?: string) {
+    returnFocusTokenIdRef.current = tokenId ?? null;
+    setConfirmingId(null);
+  }
+
+  function confirmRevoke(tokenId: string) {
+    setConfirmingId(null);
+    setRevokingId(tokenId);
+    revokeToken.mutate(tokenId, {
+      onSettled: () => setRevokingId(null),
+    });
+  }
+
+  function handleConfirmKeyDown(
+    event: KeyboardEvent<HTMLDivElement>,
+    tokenId: string,
+  ) {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    cancelRevokeConfirmation(tokenId);
   }
 
   const readinessCard = (() => {
@@ -365,6 +426,7 @@ export function CustomerPortalLinks({
               const isRevoking =
                 revokingId === token.id ||
                 (revokeToken.isPending && revokingId === null);
+              const isConfirming = confirmingId === token.id;
 
               return (
                 <div className="px-3 py-2" key={token.id}>
@@ -386,21 +448,66 @@ export function CustomerPortalLinks({
                       {tokenExpiryText(token)} · {formatOpened(token.last_used_at)}
                     </p>
                     {isActive ? (
-                      <button
-                        className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        disabled={isRevoking}
-                        onClick={() => {
-                          setRevokingId(token.id);
-                          revokeToken.mutate(token.id, {
-                            onSettled: () => setRevokingId(null),
-                          });
-                        }}
-                        type="button"
-                      >
-                        {isRevoking ? "Revoking..." : "Revoke"}
-                      </button>
+                      isRevoking ? (
+                        <button
+                          className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled
+                          type="button"
+                        >
+                          Revoking...
+                        </button>
+                      ) : isConfirming ? null : (
+                        <button
+                          aria-label={`Revoke portal link created ${formatDate(token.created_at)}`}
+                          className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => setConfirmingId(token.id)}
+                          ref={(node) => {
+                            if (node) {
+                              revokeButtonRefs.current.set(token.id, node);
+                            } else {
+                              revokeButtonRefs.current.delete(token.id);
+                            }
+                          }}
+                          type="button"
+                        >
+                          Revoke
+                        </button>
+                      )
                     ) : null}
                   </div>
+                  {isActive && isConfirming ? (
+                    <div
+                      aria-label={`Confirm revoke for ${tokenRowLabel(token)}`}
+                      className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2"
+                      onKeyDown={(event) => handleConfirmKeyDown(event, token.id)}
+                      role="group"
+                    >
+                      <p className="text-xs font-semibold text-neutralDark">
+                        Revoke this link?
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-600">
+                        {revokeConfirmPrompt(token)}
+                      </p>
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button
+                          aria-label="Cancel revoke"
+                          className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                          onClick={() => cancelRevokeConfirmation(token.id)}
+                          ref={cancelRevokeRef}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="min-h-8 rounded-md bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800"
+                          onClick={() => confirmRevoke(token.id)}
+                          type="button"
+                        >
+                          Confirm revoke
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
