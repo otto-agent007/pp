@@ -1,10 +1,11 @@
 # Implementation Plan
 
-## Current Priority: Portal/Ledger Smoke Coverage V1 Cleanup
+## Current Priority: Portal Send/Resend Boundary Brief V1
 
-1. Commit the docs-only portal/ledger smoke coverage slice.
-2. Keep provider-approved portal send/resend and persistent token audit event logging as separate future slices.
-3. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
+1. Create `.claude/design/006-portal-send-resend-boundary/brief.md` for UI-only guidance on provider-approved portal send/resend readiness.
+2. Ask Claude for hierarchy, copy, and interaction states for manual share, future send, resend, blocked provider, missing contact, copied, sending, sent, failed, retryable, and audit-visible states.
+3. Keep Codex responsible for provider boundaries, route implementation, API-client/data flow, tests, secrets, GitHub stewardship, and final scope control.
+4. Do not add migrations, provider setup, production mutations, direct Supabase UI access, service-role exposure, raw token persistence, or automatic sending in the brief step.
 
 ## Recently Completed: Portal/Ledger Smoke Coverage V1
 
