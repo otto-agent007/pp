@@ -89,18 +89,19 @@ describe("CustomerPortalLinks", () => {
     render(<CustomerPortalLinks customerId="customer-1" />);
 
     expect(screen.getByText("Portal access")).toBeInTheDocument();
-    expect(screen.getAllByText("2 active links")).toHaveLength(2);
+    expect(screen.getByText("2 active links")).toBeInTheDocument();
     expect(
       screen.getByText("Consider revoking older links before sharing again."),
     ).toBeInTheDocument();
-    expect(screen.getByText("1 expired")).toBeInTheDocument();
-    expect(screen.getByText("1 revoked")).toBeInTheDocument();
-    expect(screen.getByText("3 never opened")).toBeInTheDocument();
-    expect(screen.getByText("Active - no expiration")).toBeInTheDocument();
+    expect(screen.queryByText("Portal readiness")).not.toBeInTheDocument();
+    expect(screen.queryByText("1 expired")).not.toBeInTheDocument();
+    expect(screen.queryByText("1 revoked")).not.toBeInTheDocument();
+    expect(screen.queryByText("3 never opened")).not.toBeInTheDocument();
+    expect(screen.getByText("Active — no expiration")).toBeInTheDocument();
     expect(
       screen.getByText(
         (_content, element) =>
-          element?.textContent === "Expires May 1, 2027 | Opened May 7, 2026",
+          element?.textContent === "Expires May 1, 2027 · Opened May 7, 2026",
       ),
     ).toBeInTheDocument();
     expect(
@@ -109,11 +110,11 @@ describe("CustomerPortalLinks", () => {
       ).length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getByText(
+      screen.getAllByText(
         (_content, element) =>
-          element?.textContent === "Expired May 1, 2026 | Never opened",
-      ),
-    ).toBeInTheDocument();
+          element?.textContent === "Expired May 1, 2026 · Never opened",
+      ).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText("Revoked")).toBeInTheDocument();
   });
 
@@ -150,7 +151,7 @@ describe("CustomerPortalLinks", () => {
 
     rerender(<CustomerPortalLinks customerId="customer-1" />);
 
-    expect(screen.getByText("Could not load portal links.")).toBeInTheDocument();
+    expect(screen.getByText("Couldn't load portal links.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
@@ -165,14 +166,18 @@ describe("CustomerPortalLinks", () => {
       customer_id: "customer-1",
       expires_at: null,
     });
-    expect(screen.getByText("Link copied to clipboard.")).toBeInTheDocument();
+    expect(screen.getByText("✓ Link copied to clipboard.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Generate new" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "This link is only available during this session. Reload the page and it is gone - generate a new one to reshare.",
+        "This link is only available during this session. Reload the page and it's gone — generate a new one to reshare.",
       ),
     ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Copy again" }));
+
+    expect(screen.getByRole("button", { name: "Copied!" })).toBeInTheDocument();
   });
 
   it("shows a manual copy fallback when clipboard is unavailable", async () => {
@@ -185,7 +190,7 @@ describe("CustomerPortalLinks", () => {
 
     await user.click(screen.getByRole("button", { name: "Generate link" }));
 
-    expect(screen.getByText("Link ready - copy it manually:")).toBeInTheDocument();
+    expect(screen.getByText("Link ready — copy it manually:")).toBeInTheDocument();
     expect(screen.getByDisplayValue(/access_token=raw-token/)).toBeInTheDocument();
     expect(
       screen.getByText("Paste this into an email or text to share with the customer."),
@@ -199,7 +204,10 @@ describe("CustomerPortalLinks", () => {
 
     await user.click(screen.getByRole("button", { name: "Revoke" }));
 
-    expect(revokeMutate).toHaveBeenCalledWith("token-1");
+    expect(revokeMutate).toHaveBeenCalledWith(
+      "token-1",
+      expect.objectContaining({ onSettled: expect.any(Function) }),
+    );
   });
 
   it("shows revoke errors alongside latest-link controls", async () => {
@@ -215,7 +223,7 @@ describe("CustomerPortalLinks", () => {
     await user.click(screen.getByRole("button", { name: "Generate link" }));
 
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
-    expect(screen.getByText("Could not revoke link. Try again.")).toBeInTheDocument();
+    expect(screen.getByText("Couldn't revoke link. Try again.")).toBeInTheDocument();
   });
 
   it("shows in-flight portal actions", () => {

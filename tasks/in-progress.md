@@ -11,12 +11,14 @@ Steps:
 - [x] Polish `CustomerPortalLinks` with readiness hierarchy, generated-link copy controls, manual clipboard fallback, and token audit states
 - [x] Stabilize the date-sensitive dispatch UI test exposed during full-suite verification
 - [x] Run focused and full repository verification
+- [x] Process Claude's portal share/resend critique and rerun final verification
 
 Follow-up candidates:
+- [ ] Billing work queue critique patch: precise missing-capture pills, paid-date copy, closeout handoff cue, and queue-filter selection reset
 - [ ] Deeper customer ledger drill-down page
 - [ ] Provider-approved portal resend/send route
 - [ ] Portal token audit event log or revoke-confirm flow
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Implementation and final full repository verification are complete locally; ready for commit and PR stewardship.
+Implementation, critique patch, and final full repository verification are complete locally; ready for commit and PR stewardship.

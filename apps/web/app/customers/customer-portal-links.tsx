@@ -2,11 +2,10 @@
 
 import {
   getCustomerPortalAccessTokenLabel,
-  getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
 } from "@pest-patrol/domain";
 import type { CustomerPortalAccessTokenSummary } from "@pest-patrol/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   useCreateCustomerPortalAccessToken,
@@ -31,18 +30,6 @@ function formatOpened(value: string | null) {
 
 function expirationToIso(value: string) {
   return value ? `${value}T23:59:59.999Z` : null;
-}
-
-function readinessSummaryItems(tokens: CustomerPortalAccessTokenSummary[]) {
-  const summary = getCustomerPortalAccessTokenReadinessSummary(tokens);
-
-  return {
-    active: `${summary.active} active${summary.active === 1 ? "" : " links"}`,
-    expired: `${summary.expired} expired`,
-    neverUsed: `${summary.neverUsed} never opened`,
-    revoked: `${summary.revoked} revoked`,
-    summary,
-  };
 }
 
 async function copyText(value: string) {
@@ -77,7 +64,7 @@ function tokenRowLabel(token: CustomerPortalAccessTokenSummary) {
   const state = getCustomerPortalAccessTokenState(token);
 
   if (state === "active" && !token.expires_at) {
-    return "Active - no expiration";
+    return "Active — no expiration";
   }
 
   return getCustomerPortalAccessTokenLabel(token);
@@ -108,11 +95,31 @@ export function CustomerPortalLinks({
   const tokens = useMemo(() => tokensQuery.data ?? [], [tokensQuery.data]);
   const sortedTokens = useMemo(() => newestFirst(tokens), [tokens]);
   const active = useMemo(() => activeTokens(tokens), [tokens]);
-  const readiness = readinessSummaryItems(tokens);
+  const expiresInputRef = useRef<HTMLInputElement | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [expiresAt, setExpiresAt] = useState("");
   const [latestLink, setLatestLink] = useState<string | null>(null);
   const [copyUnavailable, setCopyUnavailable] = useState(false);
+  const [copyFlash, setCopyFlash] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  function showCopyFlash() {
+    setCopyFlash(true);
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current);
+    }
+    copyTimerRef.current = setTimeout(() => setCopyFlash(false), 1500);
+  }
 
   async function generateLink() {
     setMessage(null);
@@ -133,7 +140,7 @@ export function CustomerPortalLinks({
 
     try {
       await copyText(grant.portal_url);
-      setMessage("Link copied to clipboard.");
+      setMessage("✓ Link copied to clipboard.");
     } catch {
       setCopyUnavailable(true);
     }
@@ -148,7 +155,8 @@ export function CustomerPortalLinks({
     try {
       await copyText(latestLink);
       setCopyUnavailable(false);
-      setMessage("Link copied to clipboard.");
+      setMessage("✓ Link copied to clipboard.");
+      showCopyFlash();
     } catch {
       setCopyUnavailable(true);
       setMessage(null);
@@ -158,7 +166,10 @@ export function CustomerPortalLinks({
   function resetLatestLink() {
     setLatestLink(null);
     setCopyUnavailable(false);
+    setCopyFlash(false);
     setMessage(null);
+    expiresInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    expiresInputRef.current?.focus();
   }
 
   const readinessCard = (() => {
@@ -173,7 +184,7 @@ export function CustomerPortalLinks({
     if (tokensQuery.error) {
       return {
         body: "Use retry to reload portal access history.",
-        label: "Could not load portal links.",
+        label: "Couldn't load portal links.",
         tone: "border-l-red-500",
       };
     }
@@ -206,8 +217,8 @@ export function CustomerPortalLinks({
       }
 
       return {
-        body: "A portal link exists but has not been opened.",
-        label: "Shared - not yet opened",
+        body: "A portal link was sent but hasn't been opened.",
+        label: "Shared — not yet opened",
         tone: "border-l-amber-400",
       };
     }
@@ -221,33 +232,11 @@ export function CustomerPortalLinks({
 
   return (
     <section className="mt-4 border-t border-gray-100 pt-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-neutralDark">Portal access</h3>
-          <p className="mt-1 text-xs text-gray-500">
-            Generate links to share the customer portal.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="flex flex-col gap-1 text-xs font-semibold text-gray-600">
-            Expires
-            <input
-              className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-normal text-neutralDark outline-none focus:border-primary"
-              disabled={createToken.isPending}
-              onChange={(event) => setExpiresAt(event.target.value)}
-              type="date"
-              value={expiresAt}
-            />
-          </label>
-          <button
-            className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-400"
-            disabled={createToken.isPending}
-            onClick={() => void generateLink()}
-            type="button"
-          >
-            {createToken.isPending ? "Generating..." : "Generate link"}
-          </button>
-        </div>
+      <div>
+        <h3 className="text-sm font-semibold text-neutralDark">Portal access</h3>
+        <p className="mt-1 text-xs text-gray-500">
+          Generate links to share the customer portal.
+        </p>
       </div>
 
       <div
@@ -270,12 +259,39 @@ export function CustomerPortalLinks({
         </div>
       </div>
 
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <label className="flex flex-col gap-1 text-xs font-semibold text-gray-600">
+          Expires
+          <input
+            className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-normal text-neutralDark outline-none focus:border-primary"
+            disabled={createToken.isPending}
+            onChange={(event) => setExpiresAt(event.target.value)}
+            ref={expiresInputRef}
+            type="date"
+            value={expiresAt}
+          />
+        </label>
+        <button
+          className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-400"
+          disabled={createToken.isPending}
+          onClick={() => void generateLink()}
+          type="button"
+        >
+          {createToken.isPending ? "Generating..." : "Generate link"}
+        </button>
+        {createToken.error ? (
+          <p className="text-xs font-semibold text-red-700">
+            {"Couldn't generate portal link. Try again."}
+          </p>
+        ) : null}
+      </div>
+
       {latestLink ? (
         <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
           {copyUnavailable ? (
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-neutralDark">
-                Link ready - copy it manually:
+                Link ready — copy it manually:
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input
@@ -289,7 +305,7 @@ export function CustomerPortalLinks({
                   onClick={() => void copyLatestLink()}
                   type="button"
                 >
-                  Copy
+                  {copyFlash ? "Copied!" : "Copy"}
                 </button>
               </div>
               <p className="text-xs text-gray-500">
@@ -299,7 +315,7 @@ export function CustomerPortalLinks({
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs font-semibold text-accent">
-                {message ?? "Link copied to clipboard."}
+                {message ?? "✓ Link copied to clipboard."}
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button
@@ -307,7 +323,7 @@ export function CustomerPortalLinks({
                   onClick={() => void copyLatestLink()}
                   type="button"
                 >
-                  Copy again
+                  {copyFlash ? "Copied!" : "Copy again"}
                 </button>
                 <button
                   className="min-h-9 px-1 text-sm font-semibold text-primary hover:underline"
@@ -320,40 +336,12 @@ export function CustomerPortalLinks({
             </div>
           )}
           <p className="mt-2 text-xs italic text-gray-400">
-            This link is only available during this session. Reload the page and
-            it is gone - generate a new one to reshare.
+            {
+              "This link is only available during this session. Reload the page and it's gone — generate a new one to reshare."
+            }
           </p>
         </div>
       ) : null}
-
-      {createToken.error ? (
-        <p className="mt-2 text-xs font-semibold text-red-700">
-          Could not generate portal link. Try again.
-        </p>
-      ) : null}
-      {revokeToken.error ? (
-        <p className="mt-2 text-xs font-semibold text-red-700">
-          Could not revoke link. Try again.
-        </p>
-      ) : null}
-
-      <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Portal readiness
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {[readiness.active, readiness.expired, readiness.revoked, readiness.neverUsed].map(
-            (item) => (
-              <span
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-neutralDark"
-                key={item}
-              >
-                {item}
-              </span>
-            ),
-          )}
-        </div>
-      </div>
 
       <div className="mt-3 flex flex-col gap-2">
         {tokensQuery.isLoading ? (
@@ -372,46 +360,58 @@ export function CustomerPortalLinks({
         ) : (
           <div className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-gray-50">
             {sortedTokens.map((token) => {
-            const state = getCustomerPortalAccessTokenState(token);
-            const isActive = state === "active";
+              const state = getCustomerPortalAccessTokenState(token);
+              const isActive = state === "active";
+              const isRevoking =
+                revokingId === token.id ||
+                (revokeToken.isPending && revokingId === null);
 
-            return (
-              <div
-                className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-                key={token.id}
-              >
-                <div>
-                  <p className="text-xs font-semibold text-neutralDark">
-                    <span
-                      className={`mr-2 inline-block h-1.5 w-1.5 rounded-full align-middle ${
-                        isActive ? "bg-emerald-600" : "bg-gray-400"
-                      }`}
-                    />
-                    {tokenRowLabel(token)}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Created {formatDate(token.created_at)}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {tokenExpiryText(token)} | {formatOpened(token.last_used_at)}
-                  </p>
+              return (
+                <div className="px-3 py-2" key={token.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 text-xs font-semibold text-neutralDark">
+                      <span
+                        className={`mr-2 inline-block h-1.5 w-1.5 rounded-full align-middle ${
+                          isActive ? "bg-emerald-600" : "bg-gray-400"
+                        }`}
+                      />
+                      {tokenRowLabel(token)}
+                    </p>
+                    <p className="shrink-0 text-right text-xs font-semibold text-gray-500">
+                      Created {formatDate(token.created_at)}
+                    </p>
+                  </div>
+                  <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-gray-500">
+                      {tokenExpiryText(token)} · {formatOpened(token.last_used_at)}
+                    </p>
+                    {isActive ? (
+                      <button
+                        className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={isRevoking}
+                        onClick={() => {
+                          setRevokingId(token.id);
+                          revokeToken.mutate(token.id, {
+                            onSettled: () => setRevokingId(null),
+                          });
+                        }}
+                        type="button"
+                      >
+                        {isRevoking ? "Revoking..." : "Revoke"}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                {isActive ? (
-                  <button
-                    className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={revokeToken.isPending}
-                    onClick={() => revokeToken.mutate(token.id)}
-                    type="button"
-                  >
-                    {revokeToken.isPending ? "Revoking..." : "Revoke"}
-                  </button>
-                ) : null}
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         )}
       </div>
+      {revokeToken.error ? (
+        <p className="mt-2 text-xs font-semibold text-red-700">
+          {"Couldn't revoke link. Try again."}
+        </p>
+      ) : null}
     </section>
   );
 }
