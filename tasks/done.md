@@ -1,5 +1,14 @@
 # Done
 
+## Portal Send/Resend Boundary V1
+
+- Added the Claude relay proposal and Codex review marker for provider-approved portal send/resend readiness
+- Accepted only the no-provider contact-readiness portion of the proposal for this slice
+- Passed existing customer email/phone into `CustomerPortalLinks`
+- Added a low-priority "No contact saved" readiness state when no stronger active-link state is dominant
+- Deferred send/resend buttons, provider readiness, delivery status, retry, persistence, and route implementation to a later explicit provider-boundary slice
+- Verified with focused customer tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Portal/Ledger Smoke Coverage V1
 
 - Expanded production smoke coverage for `/customers` account ledger drill-down filters, portal readiness, manual share readiness, revoke confirmation, and tokened portal denial checks

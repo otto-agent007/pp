@@ -1,11 +1,18 @@
 # Implementation Plan
 
-## Current Priority: Portal Send/Resend Boundary Brief V1
+## Current Priority: Portal Send/Resend Boundary V1 Cleanup
 
-1. Create `.claude/design/006-portal-send-resend-boundary/brief.md` for UI-only guidance on provider-approved portal send/resend readiness.
-2. Ask Claude for hierarchy, copy, and interaction states for manual share, future send, resend, blocked provider, missing contact, copied, sending, sent, failed, retryable, and audit-visible states.
-3. Keep Codex responsible for provider boundaries, route implementation, API-client/data flow, tests, secrets, GitHub stewardship, and final scope control.
-4. Do not add migrations, provider setup, production mutations, direct Supabase UI access, service-role exposure, raw token persistence, or automatic sending in the brief step.
+1. Commit the completed no-provider contact-readiness slice with Claude proposal and Codex review marker.
+2. Keep provider send/resend buttons, provider readiness, delivery status, retry, persistence, and route implementation deferred to a later explicit provider-boundary slice.
+3. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
+
+## Recently Completed: Portal Send/Resend Boundary V1
+
+1. Reviewed Claude's `.claude/design/006-portal-send-resend-boundary/proposal.md` and accepted only the no-provider contact-readiness portion.
+2. Passed existing customer email/phone into `CustomerPortalLinks`.
+3. Added a low-priority "No contact saved" readiness state when no stronger active-link state is dominant.
+4. Preserved current manual generate/copy/share, token audit, revoke confirmation, React Query hooks, API routes, token schema, and provider-free behavior.
+5. Verified with focused customer tests, repository test, typecheck, lint, build, and diff whitespace checks.
 
 ## Recently Completed: Portal/Ledger Smoke Coverage V1
 

@@ -104,8 +104,10 @@ function revokeConfirmPrompt(token: CustomerPortalAccessTokenSummary) {
 }
 
 export function CustomerPortalLinks({
+  customerContact,
   customerId,
 }: {
+  customerContact?: { email: string | null; phone: string | null };
   customerId: string;
 }) {
   const tokensQuery = useCustomerPortalAccessTokens(customerId);
@@ -114,6 +116,9 @@ export function CustomerPortalLinks({
   const tokens = useMemo(() => tokensQuery.data ?? [], [tokensQuery.data]);
   const sortedTokens = useMemo(() => newestFirst(tokens), [tokens]);
   const active = useMemo(() => activeTokens(tokens), [tokens]);
+  const hasContact = customerContact
+    ? Boolean(customerContact.email || customerContact.phone)
+    : true;
   const expiresInputRef = useRef<HTMLInputElement | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelRevokeRef = useRef<HTMLButtonElement | null>(null);
@@ -251,6 +256,14 @@ export function CustomerPortalLinks({
     }
 
     if (tokens.length === 0) {
+      if (!hasContact) {
+        return {
+          body: "This customer has no email or phone on file. Share the link manually.",
+          label: "No contact saved",
+          tone: "border-l-gray-300",
+        };
+      }
+
       return {
         body: "Generate a link to share the customer portal.",
         label: "No portal links",
@@ -281,6 +294,14 @@ export function CustomerPortalLinks({
         body: "A portal link was sent but hasn't been opened.",
         label: "Shared — not yet opened",
         tone: "border-l-amber-400",
+      };
+    }
+
+    if (!hasContact) {
+      return {
+        body: "This customer has no email or phone on file. Share the link manually.",
+        label: "No contact saved",
+        tone: "border-l-gray-300",
       };
     }
 

@@ -608,7 +608,13 @@ export function CustomersClient() {
                   />
                 ) : null}
                 {customer.status === "active" ? (
-                  <CustomerPortalLinks customerId={customer.id} />
+                  <CustomerPortalLinks
+                    customerContact={{
+                      email: customer.email,
+                      phone: customer.phone,
+                    }}
+                    customerId={customer.id}
+                  />
                 ) : null}
               </article>
             ))

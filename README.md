@@ -68,8 +68,8 @@ Current priority is follow-up polish after the no-migration portal and ledger sl
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs and portal-token readiness
 - tokened `/portal` routes now include a customer-safe service and billing timeline
-- current slice: Claude relay brief for provider-approved portal send/resend readiness
-- next candidates: Codex implementation of provider-approved portal send/resend and persistent portal token audit events
+- current slice: no-provider contact readiness from the portal send/resend boundary proposal
+- next candidates: provider-approved portal send/resend route and persistent portal token audit events
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages

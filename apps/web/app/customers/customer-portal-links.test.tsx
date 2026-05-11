@@ -161,6 +161,57 @@ describe("CustomerPortalLinks", () => {
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
+  it("shows no-contact readiness only when no stronger portal state is dominant", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    const { rerender } = render(
+      <CustomerPortalLinks
+        customerContact={{ email: null, phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("No contact saved")).toBeInTheDocument();
+    expect(
+      screen.getByText("This customer has no email or phone on file. Share the link manually."),
+    ).toBeInTheDocument();
+
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [token],
+      isLoading: false,
+    } as never);
+
+    rerender(
+      <CustomerPortalLinks
+        customerContact={{ email: null, phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("Shared — not yet opened")).toBeInTheDocument();
+    expect(screen.queryByText("No contact saved")).not.toBeInTheDocument();
+  });
+
+  it("keeps normal empty readiness when contact is saved", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("No portal links")).toBeInTheDocument();
+    expect(screen.queryByText("No contact saved")).not.toBeInTheDocument();
+  });
+
   it("generates and copies portal links", async () => {
     const user = userEvent.setup();
 

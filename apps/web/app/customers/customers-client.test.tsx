@@ -29,8 +29,21 @@ vi.mock("../../hooks/usePayments", () => ({
 }));
 
 vi.mock("./customer-portal-links", () => ({
-  CustomerPortalLinks: ({ customerId }: { customerId: string }) => (
-    <div>Portal links for {customerId}</div>
+  CustomerPortalLinks: ({
+    customerContact,
+    customerId,
+  }: {
+    customerContact?: { email: string | null; phone: string | null };
+    customerId: string;
+  }) => (
+    <div>
+      Portal links for {customerId}
+      {customerContact
+        ? ` (${customerContact.phone ?? "no phone"} / ${
+            customerContact.email ?? "no email"
+          })`
+        : null}
+    </div>
   ),
 }));
 
@@ -239,7 +252,12 @@ describe("CustomersClient", () => {
   it("renders portal link management for active customers", () => {
     render(<CustomersClient />);
 
-    expect(screen.getByText("Portal links for customer-1")).toBeInTheDocument();
+    expect(
+      screen.getByText((_content, element) =>
+        element?.textContent ===
+        "Portal links for customer-1 (555-1111 / owner@example.com)",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("renders a compact ledger summary without provider payment metadata", () => {
