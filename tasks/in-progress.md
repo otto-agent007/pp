@@ -1,17 +1,15 @@
 # In Progress
 
-## Task: Portal Revoke Confirmation V1
+## Task: Portal/Ledger Smoke Coverage V1
 
 Goal:
-Create a safer revoke-confirmation flow for customer portal links on `/customers` without migrations, provider setup, or automatic send/resend behavior.
+Add production-readiness smoke coverage for the completed `/customers` ledger, portal link, and tokened portal workflow without migrations, provider setup, or production mutations.
 
 Steps:
-- [x] Clean up the completed customer ledger drill-down slice state
-- [x] Create the Claude portal revoke confirmation brief
-- [x] Review Claude's proposal with Adopt/Adapt/Defer/Reject and add a durable review marker
-- [x] Implement the approved revoke confirmation slice
-- [x] Process Claude's critique and add a durable critique review marker
-- [x] Run focused and full repository verification
+- [x] Complete and commit Portal Revoke Confirmation V1 cleanup
+- [x] Update production smoke checklist for customer ledger drill-down and portal share/revoke readiness
+- [x] Confirm the checklist keeps provider, token, and customer-safe portal boundaries explicit
+- [x] Run docs-only verification
 
 Follow-up candidates:
 - [ ] Provider-approved portal resend/send route
@@ -19,4 +17,4 @@ Follow-up candidates:
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Slice 004 is implemented, critique-reviewed, and verified. Ready for cleanup commit and next-slice selection.
+Slice 005 is implemented locally as a docs-only smoke coverage pass after the verified Portal Revoke Confirmation V1 commit.

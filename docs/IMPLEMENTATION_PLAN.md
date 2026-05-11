@@ -1,10 +1,16 @@
 # Implementation Plan
 
-## Current Priority: Portal Revoke Confirmation V1 Cleanup
+## Current Priority: Portal/Ledger Smoke Coverage V1 Cleanup
 
-1. Commit the completed portal revoke confirmation slice with Claude proposal and critique markers.
-2. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
-3. Start the next safe no-provider, no-migration slice from the remaining portal follow-up candidates.
+1. Commit the docs-only portal/ledger smoke coverage slice.
+2. Keep provider-approved portal send/resend and persistent token audit event logging as separate future slices.
+3. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
+
+## Recently Completed: Portal/Ledger Smoke Coverage V1
+
+1. Expanded the production smoke checklist to cover `/customers` ledger drill-down filters, portal readiness, manual share readiness, revoke confirmation, and tokened portal denial checks.
+2. Kept the slice docs-only with no migrations, provider setup, token schema changes, production mutations, or route changes.
+3. Verified with `git diff --check`.
 
 ## Recently Completed: Portal Revoke Confirmation V1
 

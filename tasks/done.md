@@ -1,5 +1,12 @@
 # Done
 
+## Portal/Ledger Smoke Coverage V1
+
+- Expanded production smoke coverage for `/customers` account ledger drill-down filters, portal readiness, manual share readiness, revoke confirmation, and tokened portal denial checks
+- Kept customer portal smoke expectations narrow around customer-safe closeouts, invoices, signed media, and no provider/internal note exposure
+- Preserved no-migration, no-provider, no-token-schema-change, and no-production-mutation scope
+- Verified with `git diff --check`
+
 ## Portal Revoke Confirmation V1
 
 - Added the Claude relay brief, proposal, Codex review marker, critique, and Codex critique marker for the portal revoke confirmation slice
