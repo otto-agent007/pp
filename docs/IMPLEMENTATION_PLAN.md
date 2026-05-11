@@ -1,12 +1,18 @@
 # Implementation Plan
 
-## Current Priority: Customer Ledger Drill-Down V1
+## Current Priority: Post-Slice 3 Review
 
-1. Start Customer Ledger Drill-Down V1 from the existing `/customers` account ledger summary and shared `buildCustomerLedger` / `getCustomerLedgerSummary` helpers.
-2. Use Claude relay folder `.claude/design/003-customer-ledger-drill-down/` for UI hierarchy, copy, state treatment, and interaction guidance before implementation.
-3. Keep the slice no-migration and provider-free: use existing customers, jobs, invoices, payments, closeouts, and portal handoff data only.
-4. Preserve AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, no direct Supabase UI calls, and no raw provider/token exposure.
-5. Keep `/closeouts` as the billing readiness queue, `/payments` as the invoice workspace, and `/customers` as the account ledger surface.
+1. Review and commit the Customer Ledger Drill-Down V1 implementation.
+2. Watch for any Claude critique on `.claude/design/003-customer-ledger-drill-down/critique.md` before merging.
+3. Choose the next slice from the remaining provider-approved portal resend/send route, portal token audit event log or revoke-confirm flow, or another user-selected operations follow-up.
+
+## Recently Completed: Customer Ledger Drill-Down V1
+
+1. Captured Claude's customer ledger proposal plus Codex's Adopt/Adapt/Defer/Reject review marker.
+2. Expanded the `/customers` account ledger into an inline drill-down with all/services/invoices/open/review filters.
+3. Added row-level service and billing actions for jobs, closeouts, invoices, receipts, and payment review.
+4. Preserved existing React Query data flow, shared domain ledger helpers, API-client boundaries, and no-migration/provider-free scope.
+5. Verified with focused customer tests, repository test, typecheck, lint, build, and diff whitespace checks.
 
 ## Recently Completed: Portal Share/Resend UI Polish V1 Critique Patch
 
