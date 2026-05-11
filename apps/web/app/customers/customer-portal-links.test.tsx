@@ -31,6 +31,12 @@ const expiredToken = {
   id: "token-expired",
   expires_at: "2026-05-01T00:00:00.000Z",
 };
+const openedToken = {
+  ...token,
+  id: "token-opened",
+  expires_at: "2027-05-01T00:00:00.000Z",
+  last_used_at: "2026-05-07T00:00:00.000Z",
+};
 const revokedToken = {
   ...token,
   id: "token-revoked",
@@ -76,21 +82,76 @@ describe("CustomerPortalLinks", () => {
 
   it("lists portal token states", () => {
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
-      data: [token, expiredToken, revokedToken],
+      data: [openedToken, token, expiredToken, revokedToken],
       isLoading: false,
     } as never);
 
     render(<CustomerPortalLinks customerId="customer-1" />);
 
-    expect(screen.getByText("Portal readiness")).toBeInTheDocument();
-    expect(screen.getByText("1 active")).toBeInTheDocument();
+    expect(screen.getByText("Portal access")).toBeInTheDocument();
+    expect(screen.getAllByText("2 active links")).toHaveLength(2);
+    expect(
+      screen.getByText("Consider revoking older links before sharing again."),
+    ).toBeInTheDocument();
     expect(screen.getByText("1 expired")).toBeInTheDocument();
     expect(screen.getByText("1 revoked")).toBeInTheDocument();
     expect(screen.getByText("3 never opened")).toBeInTheDocument();
-    expect(screen.getByText("Active portal link")).toBeInTheDocument();
-    expect(screen.getByText("Expired portal link")).toBeInTheDocument();
-    expect(screen.getByText("Revoked portal link")).toBeInTheDocument();
-    expect(screen.getAllByText("Last used Never")).toHaveLength(3);
+    expect(screen.getByText("Active - no expiration")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_content, element) =>
+          element?.textContent === "Expires May 1, 2027 | Opened May 7, 2026",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        (_content, element) => element?.textContent?.includes("Never opened") ?? false,
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        (_content, element) =>
+          element?.textContent === "Expired May 1, 2026 | Never opened",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Revoked")).toBeInTheDocument();
+  });
+
+  it("shows empty, loading, and error readiness states", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    const { rerender } = render(<CustomerPortalLinks customerId="customer-1" />);
+
+    expect(screen.getByText("No portal links")).toBeInTheDocument();
+    expect(
+      screen.getByText("Generate a link to share the customer portal."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No portal links generated")).not.toBeInTheDocument();
+
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [],
+      isLoading: true,
+    } as never);
+
+    rerender(<CustomerPortalLinks customerId="customer-1" />);
+
+    expect(screen.getByText("Loading portal status...")).toBeInTheDocument();
+    expect(screen.getAllByTestId("portal-link-skeleton")).toHaveLength(2);
+
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [],
+      error: new Error("Unable to load"),
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+
+    rerender(<CustomerPortalLinks customerId="customer-1" />);
+
+    expect(screen.getByText("Could not load portal links.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("generates and copies portal links", async () => {
@@ -104,9 +165,30 @@ describe("CustomerPortalLinks", () => {
       customer_id: "customer-1",
       expires_at: null,
     });
-    expect(screen.getByText("Portal link copied")).toBeInTheDocument();
+    expect(screen.getByText("Link copied to clipboard.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate new" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Copy latest link" }),
+      screen.getByText(
+        "This link is only available during this session. Reload the page and it is gone - generate a new one to reshare.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a manual copy fallback when clipboard is unavailable", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(
+      new Error("Clipboard unavailable"),
+    );
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+
+    expect(screen.getByText("Link ready - copy it manually:")).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/access_token=raw-token/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Paste this into an email or text to share with the customer."),
     ).toBeInTheDocument();
   });
 
@@ -132,7 +214,25 @@ describe("CustomerPortalLinks", () => {
 
     await user.click(screen.getByRole("button", { name: "Generate link" }));
 
-    expect(screen.getByRole("button", { name: "Copy latest link" })).toBeInTheDocument();
-    expect(screen.getByText("Unable to revoke portal link")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(screen.getByText("Could not revoke link. Try again.")).toBeInTheDocument();
+  });
+
+  it("shows in-flight portal actions", () => {
+    vi.mocked(useCreateCustomerPortalAccessToken).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutateAsync: createMutateAsync,
+    } as never);
+    vi.mocked(useRevokeCustomerPortalAccessToken).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutate: revokeMutate,
+    } as never);
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    expect(screen.getByRole("button", { name: "Generating..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Revoking..." })).toBeDisabled();
   });
 });

@@ -84,6 +84,7 @@ describe("DispatchClient", () => {
   const assignTechnicianMutate = vi.fn();
 
   beforeEach(() => {
+    vi.setSystemTime(new Date(now));
     vi.mocked(useCustomers).mockReturnValue({
       data: [customer],
       isLoading: false,

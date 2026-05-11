@@ -1,5 +1,15 @@
 # Done
 
+## Portal Share/Resend UI Polish V1
+
+- Added the Claude relay brief, proposal, and Codex review marker for the portal share/resend slice
+- Added a reviewed marker for the prior billing work queue relay so the watcher skips completed slice 001 design artifacts
+- Updated the Claude design relay convention to use `codex-review.md` as the durable proposal review marker
+- Reworked `/customers` portal access controls around readiness, generate/copy/share flow, clipboard fallback, generated-link session copy, and token audit states
+- Preserved existing token schema, API routes, React Query hooks, service-role boundaries, and provider-free/manual-share scope
+- Stabilized the dispatch calendar test clock so fixture jobs stay in their intended week
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Next Five Portal + Ledger Batch V1
 
 - Added shared portal-token readiness helpers and compact admin readiness counts for customer portal links

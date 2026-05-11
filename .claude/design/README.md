@@ -10,6 +10,7 @@ Shared workspace for Codex ↔ Claude design relay. Low ceremony on purpose. Thi
   NNN-slug/                       one folder per slice
     brief.md                      Codex writes — target screens, user goal, states, constraints, non-goals
     proposal.md                   Claude writes — UI hierarchy, copy, flow, state map, AGENTS-conformance pre-check
+    codex-review.md               Codex writes — proposal review marker + Adopt/Adapt/Defer/Reject notes
     critique.md                   Claude writes after Codex implements — review against the proposal (optional)
     decisions.md                  Either side appends — open questions resolved during the slice (optional)
 ```
@@ -20,6 +21,7 @@ Shared workspace for Codex ↔ Claude design relay. Low ceremony on purpose. Thi
 - **`brief.md` is the contract.** Claude's proposals stay scoped to what's in the brief. Anything outside scope goes under `## Out of scope` or `## Follow-ups` in the proposal.
 - **Proposals self-check against [AGENTS.md](../../docs/AGENTS.md)** so Codex's review is fast: no direct Supabase from UI, mobile offline-safe, business logic in shared packages, testable state boundaries.
 - **Claude advises; Codex decides.** Claude may shape visual hierarchy, density, copy, states, and interaction flow. Codex owns architecture, data access, implementation, tests, verification, GitHub hygiene, and final scope control.
+- **`codex-review.md` marks reviewed proposals.** The Claude proposal watcher treats folders with `brief.md` + `proposal.md` and no `codex-review.md` as ready for Codex review. After Codex reviews a proposal, write `codex-review.md` with Adopt/Adapt/Defer/Reject notes so future watcher runs skip it.
 - **No provider or production work.** Claude briefs and proposals must not ask for migrations, provider config, secrets, dashboard mutations, direct Supabase UI calls, or production data changes unless the approved slice explicitly includes them.
 - **No frontmatter, no required headings.** Markdown is the API. If a slice doesn't need a critique, don't write one.
 - **Authorship is implicit by filename.** No `author:` fields. If you need to argue, add a section.
@@ -32,6 +34,7 @@ Shared workspace for Codex ↔ Claude design relay. Low ceremony on purpose. Thi
 |---|---|---|
 | Briefs | ✅ writes | reads |
 | Proposals | reads + reviews | ✅ writes |
+| Proposal review marker | ✅ writes `codex-review.md` | reads |
 | Implementation + tests | ✅ owns | proposes only |
 | Critiques (post-merge) | reads | ✅ writes if asked |
 | AGENTS rules | ✅ enforces | self-checks |

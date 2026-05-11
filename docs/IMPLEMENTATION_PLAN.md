@@ -1,12 +1,21 @@
 # Implementation Plan
 
-## Current Priority: Next Follow-Up After Portal + Ledger Batch
+## Current Priority: Next Follow-Up After Portal Share/Resend Polish
 
-1. Next Five Portal + Ledger Batch V1 is implemented with no migrations, provider setup, production mutations, or direct UI data access.
+1. Portal Share/Resend UI Polish V1 is implemented locally with no migrations, provider setup, production mutations, token schema changes, or direct UI data access.
 2. Keep future billing and portal follow-ups aligned with `/closeouts` as the readiness queue, `/payments` as the invoice workspace, `/customers` as the account ledger surface, and tokened `/portal` routes as customer-safe views.
 3. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
-4. Treat Claude as optional external UI design input for UI-heavy polish, while Codex owns architecture, data flow, tests, integration, and verification.
-5. Favor one of the next follow-up candidates: deeper customer ledger drill-down, portal share auditing/resend, or production smoke coverage for the new portal/ledger workflow.
+4. Treat Claude relay artifacts as committed project history: `brief.md` for requests, `proposal.md` for Claude output, `codex-review.md` for Codex intake markers, and `critique.md`/`codex-critique-review.md` for later critique loops.
+5. Favor one of the next follow-up candidates: deeper customer ledger drill-down, provider-approved portal send/resend, portal token audit events, or production smoke coverage for the portal/ledger workflow.
+
+## Recently Completed: Portal Share/Resend UI Polish V1
+
+1. Created the Claude design relay brief for portal sharing and captured Claude's proposal plus Codex's Adopt/Adapt/Defer/Reject review.
+2. Updated the design relay convention so reviewed proposals get a durable `codex-review.md` marker before watcher runs skip them.
+3. Reworked `CustomerPortalLinks` around compact readiness, manual generate/copy/share states, clipboard fallback, generated-link session copy, and dense token audit rows.
+4. Preserved existing portal access token schema, API-client hooks, server boundaries, raw-token handling, and provider-free/manual-share scope.
+5. Stabilized the dispatch calendar test clock after full-suite verification exposed a date-sensitive fixture week.
+6. Verified with repository test, typecheck, lint, build, and diff whitespace checks.
 
 ## Recently Completed: Next Five Portal + Ledger Batch V1
 
