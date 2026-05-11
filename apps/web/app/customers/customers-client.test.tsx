@@ -308,7 +308,7 @@ describe("CustomersClient", () => {
     render(<CustomersClient />);
 
     expect(screen.getByText("1 payment needs review.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Review" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Review →" })).toHaveAttribute(
       "href",
       "/payments?customer_id=customer-1&filter=review",
     );
@@ -329,6 +329,7 @@ describe("CustomersClient", () => {
     );
     expect(document.body).not.toHaveTextContent("pi_pending_secret_should_not_render");
     expect(document.body).not.toHaveTextContent("pi_paid_secret_should_not_render");
+    expect(document.body).not.toHaveTextContent("Balance $0.00");
   });
 
   it("shows an empty filtered ledger state", async () => {

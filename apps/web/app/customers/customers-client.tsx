@@ -146,6 +146,7 @@ function isServiceEntry(entry: CustomerLedgerEntry) {
 }
 
 function isOpenLedgerEntry(entry: CustomerLedgerEntry) {
+  // Review-needed invoices still carry an open receivable, so they appear in both Open and Review.
   return (
     entry.type === "sent_invoice" ||
     entry.type === "partial_payment" ||
@@ -281,7 +282,7 @@ function CustomerLedgerSummary({
             className="font-semibold text-amber-900 hover:underline"
             href={customerReviewHref(customer.id)}
           >
-            Review
+            Review →
           </Link>
         </div>
       ) : null}
@@ -354,7 +355,7 @@ function CustomerLedgerSummary({
             }}
             type="button"
           >
-            {expanded ? "Hide activity" : "Show all activity"}
+            {expanded ? "Hide activity ↑" : "Show all activity"}
           </button>
         ) : (
           <span />
@@ -376,7 +377,7 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
     entry.amount_cents !== null
       ? formatMoney(entry.amount_cents)
       : entry.invoice_id
-        ? "-"
+        ? "—"
         : null;
 
   return (
@@ -391,7 +392,7 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
             aria-hidden="true"
             className={`mr-2 inline-block size-1.5 rounded-full align-middle ${ledgerEntryDotClass(entry)}`}
           />
-          {entry.review ? "Warning: " : ""}
+          {entry.review ? "⚠ " : ""}
           {entry.label}
         </p>
         <p className="mt-1 text-xs text-gray-600">{entry.detail}</p>
@@ -409,7 +410,7 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
             {amountText}
           </p>
         ) : null}
-        {entry.balance_cents !== null ? (
+        {entry.balance_cents !== null && entry.balance_cents > 0 ? (
           <p className="inline-flex items-center rounded bg-amber-50 px-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
             Balance {formatMoney(entry.balance_cents)}
           </p>
