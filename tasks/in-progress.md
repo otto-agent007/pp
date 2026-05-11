@@ -1,24 +1,21 @@
 # In Progress
 
-## Task: Portal Share/Resend UI Polish V1
+## Task: Customer Ledger Drill-Down V1
 
 Goal:
-Make customer portal-link sharing ready for manual resend/share workflows on `/customers` while preserving the existing token schema, API-client hooks, and provider-free boundaries.
+Create a deeper customer ledger drill-down plan for `/customers` using existing customer, job, invoice, payment, closeout, and portal handoff data without migrations or provider changes.
 
 Steps:
-- [x] Create the Claude portal share/resend brief and capture Claude's proposal as relay history
-- [x] Review Claude's proposal with Adopt/Adapt/Defer/Reject and add durable review markers
-- [x] Polish `CustomerPortalLinks` with readiness hierarchy, generated-link copy controls, manual clipboard fallback, and token audit states
-- [x] Stabilize the date-sensitive dispatch UI test exposed during full-suite verification
-- [x] Run focused and full repository verification
-- [x] Process Claude's portal share/resend critique and rerun final verification
+- [x] Confirm the billing work queue critique patch is already represented in code and focused tests
+- [x] Create the Claude customer ledger drill-down brief
+- [ ] Review Claude's proposal with Adopt/Adapt/Defer/Reject and add a durable review marker
+- [ ] Implement the approved ledger drill-down slice
+- [ ] Run focused and full repository verification
 
 Follow-up candidates:
-- [ ] Billing work queue critique patch: precise missing-capture pills, paid-date copy, closeout handoff cue, and queue-filter selection reset
-- [ ] Deeper customer ledger drill-down page
 - [ ] Provider-approved portal resend/send route
 - [ ] Portal token audit event log or revoke-confirm flow
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Implementation, critique patch, and final full repository verification are complete locally; ready for commit and PR stewardship.
+Slice 3 relay brief is created locally; waiting on Claude proposal before implementation.

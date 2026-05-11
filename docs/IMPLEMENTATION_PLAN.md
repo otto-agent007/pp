@@ -1,12 +1,18 @@
 # Implementation Plan
 
-## Current Priority: Next Follow-Up After Portal Share/Resend Polish
+## Current Priority: Customer Ledger Drill-Down V1
 
-1. Portal Share/Resend UI Polish V1 is implemented locally with no migrations, provider setup, production mutations, token schema changes, or direct UI data access.
-2. Keep future billing and portal follow-ups aligned with `/closeouts` as the readiness queue, `/payments` as the invoice workspace, `/customers` as the account ledger surface, and tokened `/portal` routes as customer-safe views.
-3. Keep future work aligned with AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, and offline-safe mobile writes.
-4. Treat Claude relay artifacts as committed project history: `brief.md` for requests, `proposal.md` for Claude output, `codex-review.md` for Codex intake markers, and `critique.md`/`codex-critique-review.md` for later critique loops.
-5. Favor one of the next follow-up candidates: deeper customer ledger drill-down, provider-approved portal send/resend, portal token audit events, or production smoke coverage for the portal/ledger workflow.
+1. Start Customer Ledger Drill-Down V1 from the existing `/customers` account ledger summary and shared `buildCustomerLedger` / `getCustomerLedgerSummary` helpers.
+2. Use Claude relay folder `.claude/design/003-customer-ledger-drill-down/` for UI hierarchy, copy, state treatment, and interaction guidance before implementation.
+3. Keep the slice no-migration and provider-free: use existing customers, jobs, invoices, payments, closeouts, and portal handoff data only.
+4. Preserve AGENTS guardrails: shared domain logic, API-client data boundaries, React Query server state, no direct Supabase UI calls, and no raw provider/token exposure.
+5. Keep `/closeouts` as the billing readiness queue, `/payments` as the invoice workspace, and `/customers` as the account ledger surface.
+
+## Recently Completed: Portal Share/Resend UI Polish V1 Critique Patch
+
+1. Applied Claude's portal share/resend critique with copy polish, duplicate readiness chip removal, denser token rows, copy-again flash, generate-new focus return, and row-scoped revoke pending state.
+2. Added `codex-critique-review.md` markers for reviewed Claude critiques so the relay watcher skips completed critique intake.
+3. Verified with repository test, typecheck, lint, build, browser gut-check, and diff whitespace checks.
 
 ## Recently Completed: Portal Share/Resend UI Polish V1
 
