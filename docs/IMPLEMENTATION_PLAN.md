@@ -1,18 +1,21 @@
 # Implementation Plan
 
-## Current Priority: Post-Slice 3 Review
+## Current Priority: Portal Revoke Confirmation V1
 
-1. Review and commit the Customer Ledger Drill-Down V1 implementation.
-2. Watch for any Claude critique on `.claude/design/003-customer-ledger-drill-down/critique.md` before merging.
-3. Choose the next slice from the remaining provider-approved portal resend/send route, portal token audit event log or revoke-confirm flow, or another user-selected operations follow-up.
+1. Start Portal Revoke Confirmation V1 from the existing `/customers` portal access panel and `CustomerPortalLinks`.
+2. Use Claude relay folder `.claude/design/004-portal-revoke-confirm/` for confirmation copy, compact row state treatment, and accessibility guidance before implementation.
+3. Keep the slice no-migration and provider-free: safer manual revoke UX only, no email/SMS send route and no token audit schema.
+4. Preserve existing React Query hooks, API routes, service-role boundaries, session-only raw generated link behavior, and token list display rules.
+5. Keep provider-approved portal resend/send and persistent token audit event logging as separate future slices.
 
 ## Recently Completed: Customer Ledger Drill-Down V1
 
 1. Captured Claude's customer ledger proposal plus Codex's Adopt/Adapt/Defer/Reject review marker.
 2. Expanded the `/customers` account ledger into an inline drill-down with all/services/invoices/open/review filters.
 3. Added row-level service and billing actions for jobs, closeouts, invoices, receipts, and payment review.
-4. Preserved existing React Query data flow, shared domain ledger helpers, API-client boundaries, and no-migration/provider-free scope.
-5. Verified with focused customer tests, repository test, typecheck, lint, build, and diff whitespace checks.
+4. Applied Claude's post-implementation critique with compact review copy, zero-balance pill cleanup, directional action copy, and an intentional Open-filter note.
+5. Preserved existing React Query data flow, shared domain ledger helpers, API-client boundaries, and no-migration/provider-free scope.
+6. Verified with focused customer tests, repository test, typecheck, lint, build, and diff whitespace checks.
 
 ## Recently Completed: Portal Share/Resend UI Polish V1 Critique Patch
 

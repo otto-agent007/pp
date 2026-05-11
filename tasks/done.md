@@ -1,5 +1,14 @@
 # Done
 
+## Customer Ledger Drill-Down V1
+
+- Added the Claude relay brief, proposal, Codex review marker, critique, and Codex critique marker for the customer ledger drill-down slice
+- Expanded `/customers` account ledger cards into an inline drill-down with all, services, invoices, open, and review filters
+- Added row-level handoffs for jobs, closeouts, invoices, receipts, and payment review
+- Applied Claude critique polish for compact review copy, zero-balance pill cleanup, directional action copy, and intentional Open-filter behavior
+- Preserved existing React Query data flow, shared domain helpers, API-client boundaries, and no-migration/provider-free scope
+- Verified with focused customer tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Portal Share/Resend UI Polish V1
 
 - Added the Claude relay brief, proposal, and Codex review marker for the portal share/resend slice

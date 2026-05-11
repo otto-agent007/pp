@@ -62,13 +62,14 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is follow-up polish after the no-migration Next Five Portal + Ledger Batch V1:
+Current priority is follow-up polish after the no-migration portal and ledger slices:
 
 - `/closeouts` is the Billing work queue for completed-job readiness
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
-- `/customers` now includes compact account ledger summaries and portal-token readiness
+- `/customers` now includes expandable account ledger drill-downs and portal-token readiness
 - tokened `/portal` routes now include a customer-safe service and billing timeline
-- next candidates: deeper customer ledger drill-down, portal share auditing/resend, and smoke coverage for the portal/ledger workflow
+- current slice: safer portal link revoke confirmation on `/customers`
+- next candidates: provider-approved portal resend/send, persistent portal token audit events, and smoke coverage for the portal/ledger workflow
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages
