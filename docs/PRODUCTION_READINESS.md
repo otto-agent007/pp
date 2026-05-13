@@ -2,6 +2,8 @@
 
 This checklist prepares Pest Patrol OS for a first real GitHub, Supabase, and Vercel setup.
 
+For the current preview-first launch pass, use `docs/PREVIEW_LAUNCH_READINESS.md` as the short punch list. This document remains the detailed setup and smoke-test reference.
+
 ## Required Environment Variables
 
 Web app:
@@ -90,11 +92,18 @@ Latest hardening status:
    - `PORTAL_DELIVERY_WEBHOOK_SECRET`
    - `CRON_SECRET`
    - `AUTOMATION_CRON_SECRET`
-4. Keep `vercel.json` at the Vercel project root so `/api/automation/scheduler` runs daily at 05:00 UTC.
+4. Keep `apps/web/vercel.json` with the deployed web app so `/api/automation/scheduler` runs daily at 05:00 UTC.
 5. Use Node 20.x.
 6. Build command: `corepack pnpm build`.
 7. Install command: `corepack pnpm install --frozen-lockfile`.
 8. Deploy a preview, then run the smoke tests below.
+
+## Preview Launch Guardrails
+
+- Provider setup is operator-assisted: Codex may verify names and smoke-test behavior, but it must not mutate Vercel, Supabase, Stripe, notification, or portal provider dashboards without explicit approval.
+- For preview, optional `NOTIFICATION_DELIVERY_*` and `PORTAL_DELIVERY_*` webhook variables may be omitted. When omitted, smoke tests should confirm manual fallback behavior instead of provider delivery.
+- Migration application is operator-approved only. A new preview database should apply every file in `supabase/migrations` in timestamp order, ending with `20260513120000_portal_send_audit_events_v1.sql`.
+- Never paste secrets, recovery links, portal URLs with raw tokens, provider payloads, or production records into docs, commits, task files, or chat.
 
 ## Smoke Tests
 

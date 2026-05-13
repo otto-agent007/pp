@@ -264,6 +264,7 @@ export function CustomerPortalLinks({
   const [sendRequested, setSendRequested] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [freshSendError, setFreshSendError] = useState<string | null>(null);
+  const [freshSendErrorId, setFreshSendErrorId] = useState<string | null>(null);
   const [freshSendingId, setFreshSendingId] = useState<string | null>(null);
   const [freshSendRequestedId, setFreshSendRequestedId] = useState<string | null>(
     null,
@@ -373,6 +374,7 @@ export function CustomerPortalLinks({
     setFreshSendingId(token.id);
     setFreshSendRequestedId(null);
     setFreshSendError(null);
+    setFreshSendErrorId(null);
     setSendError(null);
     setSendRequested(false);
     setCopyUnavailable(false);
@@ -387,6 +389,7 @@ export function CustomerPortalLinks({
     if (!grant) {
       setFreshSendingId(null);
       setFreshSendError("Couldn't generate a new link to send. Try again.");
+      setFreshSendErrorId(token.id);
       return;
     }
 
@@ -415,11 +418,13 @@ export function CustomerPortalLinks({
       setFreshSendError(
         "Couldn't request send. Copy the newly generated link manually or try again.",
       );
+      setFreshSendErrorId(token.id);
       return;
     }
 
     setSendRequested(true);
     setFreshSendRequestedId(token.id);
+    setFreshSendErrorId(null);
   }
 
   async function copyLatestLink() {
@@ -467,23 +472,27 @@ export function CustomerPortalLinks({
 
     return "Portal delivery provider is manual-only. Share links manually.";
   })();
+  const showProviderCopy =
+    !providerReady ||
+    providerStatus.isLoading ||
+    Boolean(providerStatus.error) ||
+    tokens.length === 0;
 
-  const sendButton = latestLink ? (
+  const sendButton = latestLink && providerReady ? (
     sendRequested ? (
       <p className="text-xs font-semibold text-accent">✓ Send requested.</p>
     ) : (
       <button
-        aria-disabled={!hasContact || !providerReady || sendToken.isPending}
+        aria-busy={sendToken.isPending}
+        aria-disabled={!hasContact || sendToken.isPending}
         aria-label="Send portal link via provider"
         className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={!hasContact || !providerReady || sendToken.isPending}
+        disabled={!hasContact || sendToken.isPending}
         onClick={() => void sendLatestLink()}
         title={
           !hasContact
             ? "No contact saved — share the link manually"
-            : !providerReady
-              ? "Portal delivery provider is manual-only — share the link manually"
-              : undefined
+            : undefined
         }
         type="button"
       >
@@ -615,9 +624,11 @@ export function CustomerPortalLinks({
             {readinessCard.body ? (
               <p className="mt-0.5 text-xs text-gray-600">{readinessCard.body}</p>
             ) : null}
-            <p className="mt-1 text-xs font-medium text-gray-500">
-              {providerCopy}
-            </p>
+            {showProviderCopy ? (
+              <p className="mt-1 text-xs font-medium text-gray-500">
+                {providerCopy}
+              </p>
+            ) : null}
           </div>
           {tokensQuery.error ? (
             <button
@@ -795,24 +806,23 @@ export function CustomerPortalLinks({
                         <>
                           {freshSendingId === token.id ? (
                             <button
+                              aria-busy="true"
                               className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark disabled:cursor-not-allowed disabled:opacity-60"
                               disabled
                               type="button"
                             >
-                              Sending new...
+                              Sending new…
                             </button>
-                          ) : freshSendRequestedId === token.id ? null : (
+                          ) : freshSendRequestedId === token.id || !providerReady ? null : (
                             <button
                               aria-label={`Send new portal link for link created ${formatDate(token.created_at)}`}
                               className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                              disabled={!hasContact || !providerReady || Boolean(freshSendingId)}
+                              disabled={!hasContact || Boolean(freshSendingId)}
                               onClick={() => void sendNewLink(token)}
                               title={
                                 !hasContact
                                   ? "No contact saved — share the link manually"
-                                  : !providerReady
-                                    ? "Portal delivery provider is manual-only — share links manually"
-                                    : undefined
+                                  : undefined
                               }
                               type="button"
                             >
@@ -850,7 +860,12 @@ export function CustomerPortalLinks({
                   </div>
                   {freshSendRequestedId === token.id ? (
                     <p className="mt-2 text-xs font-semibold text-accent">
-                      ✓ Send requested with a new link.
+                      ✓ Send requested.
+                    </p>
+                  ) : null}
+                  {freshSendError && freshSendErrorId === token.id ? (
+                    <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
+                      {freshSendError}
                     </p>
                   ) : null}
                   {isHistoryExpanded ? (
@@ -899,11 +914,6 @@ export function CustomerPortalLinks({
           </div>
         )}
       </div>
-      {freshSendError ? (
-        <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
-          {freshSendError}
-        </p>
-      ) : null}
       {revokeToken.error ? (
         <p className="mt-2 text-xs font-semibold text-red-700">
           {"Couldn't revoke link. Try again."}

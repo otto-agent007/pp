@@ -1,14 +1,16 @@
 # Implementation Plan
 
-## Current Priority: Portal Send Provider V1
+## Current Priority: Preview Launch Readiness
 
-1. Implement the approved session-link portal send route using `PORTAL_DELIVERY_WEBHOOK_URL` and `PORTAL_DELIVERY_WEBHOOK_SECRET`.
-2. Keep V1 send limited to freshly generated links while the raw portal URL is still available in the admin session.
-3. Keep row-level resend, encrypted token storage, persistent send events, delivery receipts, schema/RLS changes, and production migration application out of scope.
-4. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
+1. Treat PR #27 as merged and start readiness work from updated `main`.
+2. Prepare an operator-assisted Vercel preview backed by an approved Supabase environment.
+3. Keep provider dashboard changes, environment variable mutations, production data mutations, and migration application operator-approved only.
+4. Use `docs/PREVIEW_LAUNCH_READINESS.md` as the launch punch list and `docs/PRODUCTION_READINESS.md` as the longer setup and smoke-test reference.
+5. Leave `tools/` untouched because it is unrelated local MCP/tooling scratch.
 
 ## Next Decision Points
 
-1. Decide whether V2 resend should generate a fresh token or store encrypted token material.
-2. Decide whether provider send attempts should become durable audit events after the session-only V1 proves useful.
-3. If Claude drops a critique for slice 009, process it through the relay watcher markers before moving on.
+1. Decide which Supabase environment backs the first preview smoke run.
+2. Decide whether optional portal and notification webhook providers are configured for preview or left in manual fallback mode.
+3. Decide whether `/dispatch?technician=...` should preselect the technician filter in a follow-up slice.
+4. Decide whether provider delivery receipts are needed after operator-assisted webhook smoke testing.

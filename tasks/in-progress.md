@@ -1,23 +1,25 @@
 # In Progress
 
-## Task: Portal-Led Batch V1
+## Task: Preview Launch Readiness V1
 
 Goal:
-Implement the portal-led next-five batch after PR #26: portal provider readiness, fresh-token resend, minimal send-attempt audit events, payment action confirmations, and technician route-load snapshots. Keep encrypted token storage, delivery receipts, provider dashboard mutation, and production env changes out of scope.
+Prepare Pest Patrol OS for a preview-first launch readiness pass after PR #27. Keep provider setup operator-assisted and avoid dashboard, secret, production data, or migration-application mutations unless explicitly approved.
 
 Steps:
-- [x] Add admin-authenticated portal provider status route, API-client/domain/hook wiring, UI readiness copy, and production smoke guidance.
-- [x] Add active-row `Send new link` behavior that creates a fresh portal token before requesting provider send, preserving manual copy fallback.
-- [x] Persist minimal portal send-attempt audit events: `send_requested` and `send_failed`.
-- [x] Add inline confirmation for payment `Mark paid` and `Void` actions.
-- [x] Add technician route-load summaries from existing jobs and show today/upcoming/status with dispatch handoff links.
-- [x] Run focused and full verification.
+- [x] Confirm PR #27 is merged and start from updated `main`.
+- [x] Refresh `README.md`, `docs/IMPLEMENTATION_PLAN.md`, and task status for the post-PR #27 launch-readiness phase.
+- [x] Add `docs/PREVIEW_LAUNCH_READINESS.md` with Codex-owned work, operator-only setup, migration readiness, preview smoke steps, and deferred follow-ups.
+- [x] Tighten production readiness guidance for preview guardrails, operator-assisted providers, and the current Vercel cron config path.
+- [x] Apply low-risk portal UI polish discovered during readiness review without changing the approved send-event history scope.
+- [x] Run local verification.
 
 Follow-up candidates:
-- [ ] Apply the new portal send audit enum migration in the target Supabase environment during an approved deployment window.
+- [ ] Choose the Supabase environment for the first preview smoke run.
+- [ ] Operator applies pending migrations in the approved environment.
+- [ ] Operator configures Vercel preview env vars and optional provider webhooks.
+- [ ] Run the preview smoke checklist and record findings.
 - [ ] Decide whether dispatch should consume `/dispatch?technician=...` as a preselected technician filter.
 - [ ] Decide whether portal send events need provider delivery receipts after webhook-backed sends prove useful.
-- [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Portal-Led Batch V1 is implemented and verified locally. Fresh resend generates a new token and sends only that session URL while raw token material is available. Send-attempt history stores only provider-safe event kinds and does not persist provider payloads, raw URLs, token hashes, or provider IDs. No delivery receipts, provider dashboard changes, production data changes, or environment mutations are included.
+Preview Launch Readiness V1 documents the operator-assisted launch path and keeps provider setup, secret mutation, production data mutation, and migration application out of Codex scope. Local verification is the gate before opening the readiness PR.
