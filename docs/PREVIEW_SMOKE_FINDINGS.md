@@ -4,7 +4,7 @@ This file records operator-assisted preview smoke preflight and run findings. Do
 
 ## 2026-05-13 Web-First Manual-Fallback Preflight
 
-Status: preflight repaired; blocked before interactive browser smoke.
+Status: Vercel preview access repaired; blocked before authenticated workflow smoke.
 
 What passed:
 - Local `main` was fast-forwarded to `139123d` from PR #28.
@@ -22,6 +22,9 @@ What passed:
   - alias: `https://pest-patrol-os-git-codex-11c506-ottoagent007-gmailcoms-projects.vercel.app`
 - `vercel inspect` confirms the preview deployment is Ready.
 - `vercel curl / --deployment <preview-url>` returns the Pest Patrol OS app shell through Deployment Protection.
+- Existing Vercel Protection Bypass for Automation is enabled for the project.
+- The existing bypass value returns HTTP 200 for the latest preview when passed as the `x-vercel-protection-bypass` header.
+- The approved bypass-cookie URL was opened in the operator's browser for interactive preview access without printing or committing the bypass value.
 - Vercel Preview env vars are present for Supabase and scheduler secrets:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -32,9 +35,9 @@ What passed:
 Blockers:
 - Vercel connector returned `403 Forbidden` for project inspection.
 - GitHub deployments API returned `403` for this token.
-- Direct browser access to the preview URL returns Vercel Deployment Protection (`401`) unless the operator provides an authenticated browser session, a temporary share link, or explicitly approves a protection-bypass access path.
+- Direct browser access to the preview URL returns Vercel Deployment Protection (`401`) unless the operator uses the approved protection-bypass cookie or an authenticated Vercel session.
 - The Browser plugin could not start in this desktop session because its runtime asset initialization failed, so interactive smoke was not attempted.
-- No admin/dispatcher preview credentials or approved browser access path were available in the workspace.
+- No admin/dispatcher preview credentials were available in the workspace.
 - Stripe preview env vars are not present, so Stripe payment-link/webhook smoke remains deferred:
   - `STRIPE_SECRET_KEY`
   - `STRIPE_WEBHOOK_SECRET`
@@ -46,11 +49,10 @@ Blockers:
 
 Operator inputs needed before smoke can continue:
 - Confirmation that the preview deployment points at the existing dev Supabase project inspected above.
-- Approved interactive browser access path: authenticated Vercel/browser session, temporary share link, or explicit approval for Codex to create a protected-preview access link if available.
 - Admin or dispatcher sign-in path for the smoke run, shared outside docs/chat if credentials are needed.
 - Confirmation that portal and notification webhooks are intentionally unset for the manual-fallback pass, or confirmation of the expected provider mode.
 
 Next pass:
-- Open the Ready preview URL through the approved browser access path.
+- Use the operator browser where the bypass cookie was set, or another authenticated Vercel browser session.
 - Run the web-only manual-fallback smoke checklist in `docs/PREVIEW_LAUNCH_READINESS.md`.
 - Record each workflow as pass/fail with the failure class: app bug, missing env/setup, migration drift, expected manual-fallback limitation, or follow-up polish.

@@ -15,6 +15,7 @@ Steps:
 - [x] Run web-first manual-fallback preflight against updated `main`.
 - [x] Record preflight findings and current smoke blockers.
 - [x] Repair Vercel preflight visibility with CLI discovery, preview inspection, env listing, and protected app-shell curl.
+- [x] Confirm existing Vercel automation bypass works and open the approved bypass-cookie URL in the operator browser without recording the secret.
 
 Follow-up candidates:
 - [ ] Choose the Supabase environment for the first preview smoke run.
@@ -25,4 +26,4 @@ Follow-up candidates:
 - [ ] Decide whether portal send events need provider delivery receipts after webhook-backed sends prove useful.
 
 Status:
-Preview Launch Readiness V1 documents the operator-assisted launch path and keeps provider setup, secret mutation, production data mutation, and migration application out of Codex scope. Web-first manual-fallback preflight found the linked dev Supabase migrations aligned and a Ready Vercel preview that boots through `vercel curl`, but interactive browser smoke is blocked until the operator provides or approves a Deployment Protection access path plus admin/dispatcher sign-in path.
+Preview Launch Readiness V1 documents the operator-assisted launch path and keeps provider setup, secret mutation, production data mutation, and migration application out of Codex scope. Web-first manual-fallback preflight found the linked dev Supabase migrations aligned and a Ready Vercel preview that boots through `vercel curl`. Vercel Deployment Protection access is available through the approved automation-bypass cookie, but authenticated workflow smoke is blocked until an admin/dispatcher sign-in path is available and Browser plugin runtime access is working or the operator runs the browser steps manually.
