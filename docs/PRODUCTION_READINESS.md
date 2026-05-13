@@ -15,6 +15,8 @@ Web app:
 | `STRIPE_WEBHOOK_SECRET` | Server only | Used only by `apps/web/app/api/payments/stripe-webhook/route.ts` to verify Stripe webhook signatures. Never expose as `NEXT_PUBLIC_*`. |
 | `NOTIFICATION_DELIVERY_WEBHOOK_URL` | Server only | Optional webhook endpoint for Notification Delivery V1. If omitted, delivery is recorded through the server-side manual provider. |
 | `NOTIFICATION_DELIVERY_WEBHOOK_SECRET` | Server only | Optional bearer secret sent only from the server delivery route to the webhook provider. |
+| `PORTAL_DELIVERY_WEBHOOK_URL` | Server only | Optional webhook endpoint for Portal Send Provider V1. If omitted, generated portal links remain manual-copy only. |
+| `PORTAL_DELIVERY_WEBHOOK_SECRET` | Server only | Optional bearer secret sent only from the server portal-send route to the portal delivery webhook. |
 | `CRON_SECRET` | Server only | Vercel Cron secret sent as a Bearer token to `apps/web/app/api/automation/scheduler/route.ts`. |
 | `AUTOMATION_CRON_SECRET` | Server only | Optional project-specific secret for manual or non-Vercel scheduler calls. |
 
@@ -84,6 +86,8 @@ Latest hardening status:
    - `STRIPE_WEBHOOK_SECRET`
    - `NOTIFICATION_DELIVERY_WEBHOOK_URL`
    - `NOTIFICATION_DELIVERY_WEBHOOK_SECRET`
+   - `PORTAL_DELIVERY_WEBHOOK_URL`
+   - `PORTAL_DELIVERY_WEBHOOK_SECRET`
    - `CRON_SECRET`
    - `AUTOMATION_CRON_SECRET`
 4. Keep `vercel.json` at the Vercel project root so `/api/automation/scheduler` runs daily at 05:00 UTC.
@@ -107,7 +111,7 @@ created during the check.
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
 | Queue field captures | Expo mobile app | Technician queues status, geofence, form, chemical, photo, and signature captures offline-first. |
 | Review closeout | `/closeouts` | Office can review synced field captures and see whether billing is ready. |
-| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data. |
+| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data; if the portal webhook is configured, the freshly generated session link can be sent with `Send link`. |
 | Review customer ledger | `/customers` | Customer account ledger expands with service, invoice, open-balance, and review filters without exposing provider payment metadata. |
 | Revoke portal access | `/customers` | Active portal links require confirmation before revoke and revoked links stop loading customer portal data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
@@ -153,7 +157,7 @@ Customer portal:
 
 1. Open `/customers` and find a customer with completed closeouts and at least one invoice.
 2. Expand the account ledger and confirm service rows, invoice rows, open balances, and review-needed items match the customer history already visible in `/closeouts` and `/payments`.
-3. Generate a portal access token and confirm the latest-link area offers copy/share readiness without automatically sending email or SMS.
+3. Generate a portal access token and confirm the latest-link area offers copy/share readiness. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link` and confirm the UI says `Send requested` without claiming delivery.
 4. Open `/portal/<customer-id>?access_token=<token>`.
 5. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
 6. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
@@ -177,11 +181,13 @@ Mobile:
 - Provider secrets must stay in server-only code.
 - Stripe webhook signing secrets must stay behind `apps/web/app/api/payments/stripe-webhook/route.ts`.
 - Notification delivery provider URLs and secrets must stay behind `apps/web/app/api/automation/notifications/[notificationId]/deliver/route.ts`.
+- Portal delivery provider URLs and secrets must stay behind `apps/web/app/api/portal/access-tokens/send/route.ts`.
 - Automation scheduler generation must stay behind `apps/web/app/api/automation/scheduler/route.ts` and require either Vercel `CRON_SECRET` or `AUTOMATION_CRON_SECRET`.
 - Manual scheduler runs must stay behind admin/dispatcher auth and must not expose cron secrets to the browser.
 - Automation scheduler run history is admin/dispatcher-readable only and should not expose provider secrets or customer portal data.
 - Customer portal payloads must stay narrower than admin payloads.
 - Customer portal reads must go through token-validated server routes; customer ids alone are not sufficient authorization.
+- Portal send V1 is session-link only; existing active links cannot be resent because only token hashes are stored.
 - Customer portal billing must never expose provider payment ids, raw payment records, admin invoice notes, or void/draft invoices.
 - Mobile write paths must remain queue-first and retry-safe.
 - The Supabase anon key is acceptable in web/mobile only because RLS owns authorization.

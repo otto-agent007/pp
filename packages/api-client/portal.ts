@@ -1,10 +1,13 @@
 import type {
   CustomerPortalAccessGrant,
   CustomerPortalAccessInput,
+  CustomerPortalAccessTokenEventListResponse,
   CustomerPortalAccessTokenListResponse,
   CustomerPortalAccessTokenSummary,
   CustomerPortalBillingResponse,
   CustomerPortalCloseoutResponse,
+  CustomerPortalSendInput,
+  CustomerPortalSendResult,
 } from "@pest-patrol/types";
 
 import { supabase } from "./supabase";
@@ -135,4 +138,54 @@ export async function revokeCustomerPortalAccessTokenRecord(id: string) {
   }
 
   return (await response.json()) as CustomerPortalAccessTokenSummary;
+}
+
+export async function listCustomerPortalAccessTokenEventRecords(id: string) {
+  const adminAccessToken = await getAccessToken();
+  const headers: Record<string, string> = {};
+
+  if (adminAccessToken) {
+    headers.Authorization = `Bearer ${adminAccessToken}`;
+  }
+
+  const response = await fetch(
+    `/api/portal/access-tokens/${encodeURIComponent(id)}/events`,
+    {
+      headers,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load portal access history");
+  }
+
+  const body =
+    (await response.json()) as CustomerPortalAccessTokenEventListResponse;
+
+  return body;
+}
+
+export async function sendCustomerPortalAccessTokenRecord(
+  input: CustomerPortalSendInput,
+) {
+  const adminAccessToken = await getAccessToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (adminAccessToken) {
+    headers.Authorization = `Bearer ${adminAccessToken}`;
+  }
+
+  const response = await fetch("/api/portal/access-tokens/send", {
+    body: JSON.stringify(input),
+    headers,
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to request portal send");
+  }
+
+  return (await response.json()) as CustomerPortalSendResult;
 }

@@ -1,23 +1,23 @@
 # In Progress
 
-## Task: Portal Send/Resend Boundary V1
+## Task: Portal Send Provider V1
 
 Goal:
-Use Claude's send/resend boundary proposal to add no-provider contact readiness to the customer portal link panel, while keeping implementation, provider boundaries, secrets, tests, and data flow with Codex.
+Implement approved provider-backed portal sending for freshly generated customer portal links while keeping row-level resend, encrypted token storage, schema/RLS changes, persistent send events, delivery receipts, provider setup, and production mutations out of scope.
 
 Steps:
-- [x] Complete the docs-only Portal/Ledger Smoke Coverage V1 slice
-- [x] Create `.claude/design/006-portal-send-resend-boundary/brief.md`
-- [x] Keep the brief scoped to UI/copy/interaction guidance only
-- [x] Review Claude's proposal and add a durable Codex review marker
-- [x] Implement the accepted no-provider contact-readiness pass
-- [x] Run focused customer portal tests
-- [x] Run full repository verification
+- [x] Complete and verify local Portal Token Audit Events V1
+- [x] Create `.claude/design/009-portal-send-resend-provider-boundary/brief.md`
+- [x] Receive `.claude/design/009-portal-send-resend-provider-boundary/proposal.md`
+- [x] Review Claude's proposal and write `.claude/design/009-portal-send-resend-provider-boundary/codex-review.md`
+- [x] Decide whether provider send/resend implementation is explicitly approved
+- [x] Implement session-link portal send route, API-client/domain/hook wiring, and generated-link UI
+- [x] Run full verification
 
 Follow-up candidates:
-- [ ] Implement provider-approved portal send/resend route after an explicit provider-boundary slice
-- [ ] Portal token audit event log
+- [ ] Decide whether V2 resend generates a new token or stores encrypted token material
+- [ ] Decide whether portal send attempts become durable audit events
 - [ ] Revisit Supabase leaked password protection if the project moves to Supabase Pro
 
 Status:
-Slice 006 is implemented and verified. No provider setup, route implementation, migration, or production mutation is included.
+Portal Send Provider V1 is implemented and verified for freshly generated session links only. No row-level resend, encrypted token storage, schema/RLS change, persistent send events, delivery receipts, production migration apply, or provider dashboard mutation is included. Next decision is whether V2 resend generates a fresh token or stores encrypted token material.

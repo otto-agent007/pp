@@ -1,16 +1,22 @@
 "use client";
 
 import {
+  getCustomerPortalAccessTokenEventLabel,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
 } from "@pest-patrol/domain";
-import type { CustomerPortalAccessTokenSummary } from "@pest-patrol/types";
+import type {
+  CustomerPortalAccessTokenEventSummary,
+  CustomerPortalAccessTokenSummary,
+} from "@pest-patrol/types";
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   useCreateCustomerPortalAccessToken,
+  useCustomerPortalAccessTokenEvents,
   useCustomerPortalAccessTokens,
   useRevokeCustomerPortalAccessToken,
+  useSendCustomerPortalAccessToken,
 } from "../../hooks/useCustomerPortalAccess";
 
 function formatDate(value: string | null) {
@@ -26,6 +32,14 @@ function formatDate(value: string | null) {
 
 function formatOpened(value: string | null) {
   return value ? `Opened ${formatDate(value)}` : "Never opened";
+}
+
+function eventDetail(event: CustomerPortalAccessTokenEventSummary) {
+  if (event.kind === "opened") {
+    return "via portal link";
+  }
+
+  return "by an admin";
 }
 
 function expirationToIso(value: string) {
@@ -103,6 +117,118 @@ function revokeConfirmPrompt(token: CustomerPortalAccessTokenSummary) {
   return `This link is active and expires ${formatDate(token.expires_at)}. The customer last opened it ${formatDate(token.last_used_at)}.`;
 }
 
+function CustomerPortalTokenHistory({
+  onCollapse,
+  regionId,
+  tokenId,
+}: {
+  onCollapse: () => void;
+  regionId: string;
+  tokenId: string;
+}) {
+  const eventsQuery = useCustomerPortalAccessTokenEvents(tokenId);
+  const history = eventsQuery.data;
+  const events = history?.events ?? [];
+  const truncatedBefore = history?.truncated_before ?? null;
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    onCollapse();
+  }
+
+  if (eventsQuery.isLoading) {
+    return (
+      <div
+        aria-label="Event history for portal link"
+        className="mt-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-500"
+        id={regionId}
+        onKeyDown={handleKeyDown}
+        role="region"
+      >
+        Loading history...
+      </div>
+    );
+  }
+
+  if (eventsQuery.error) {
+    return (
+      <div
+        aria-label="Event history for portal link"
+        className="mt-2 flex items-center justify-between gap-3 rounded-md border border-red-100 bg-white px-3 py-2"
+        id={regionId}
+        onKeyDown={handleKeyDown}
+        role="region"
+      >
+        <p className="text-xs font-semibold text-red-700">
+          {"Couldn't load portal history."}
+        </p>
+        <button
+          className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+          onClick={() => void eventsQuery.refetch()}
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <div
+        aria-label="Event history for portal link"
+        className="mt-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500"
+        id={regionId}
+        onKeyDown={handleKeyDown}
+        role="region"
+      >
+        <p>No history recorded for this link.</p>
+        {truncatedBefore ? (
+          <p className="mt-2 text-xs italic text-gray-400">
+            {`History before ${formatDate(truncatedBefore)} isn't recorded.`}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      aria-label="Event history for portal link"
+      className="mt-2 rounded-md border border-gray-200 bg-white"
+      id={regionId}
+      onKeyDown={handleKeyDown}
+      role="region"
+    >
+      <ul className="divide-y divide-gray-100">
+        {events.map((event) => (
+          <li className="flex justify-between gap-3 px-3 py-2" key={event.id}>
+            <div>
+              <p className="text-xs font-semibold text-neutralDark">
+                {getCustomerPortalAccessTokenEventLabel(event)}
+              </p>
+              <p className="text-xs text-gray-500">{eventDetail(event)}</p>
+            </div>
+            <p className="shrink-0 text-right text-xs font-semibold text-gray-500">
+              {formatDate(event.occurred_at)}
+            </p>
+          </li>
+        ))}
+      </ul>
+      {truncatedBefore ? (
+        <p className="border-t border-gray-100 px-3 py-2 text-xs italic text-gray-400">
+          {`History before ${formatDate(truncatedBefore)} isn't recorded.`}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function CustomerPortalLinks({
   customerContact,
   customerId,
@@ -113,6 +239,7 @@ export function CustomerPortalLinks({
   const tokensQuery = useCustomerPortalAccessTokens(customerId);
   const createToken = useCreateCustomerPortalAccessToken();
   const revokeToken = useRevokeCustomerPortalAccessToken(customerId);
+  const sendToken = useSendCustomerPortalAccessToken();
   const tokens = useMemo(() => tokensQuery.data ?? [], [tokensQuery.data]);
   const sortedTokens = useMemo(() => newestFirst(tokens), [tokens]);
   const active = useMemo(() => activeTokens(tokens), [tokens]);
@@ -123,14 +250,22 @@ export function CustomerPortalLinks({
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelRevokeRef = useRef<HTMLButtonElement | null>(null);
   const revokeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const historyButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const returnFocusTokenIdRef = useRef<string | null>(null);
+  const returnFocusHistoryTokenIdRef = useRef<string | null>(null);
   const [expiresAt, setExpiresAt] = useState("");
   const [latestLink, setLatestLink] = useState<string | null>(null);
+  const [latestTokenId, setLatestTokenId] = useState<string | null>(null);
   const [copyUnavailable, setCopyUnavailable] = useState(false);
   const [copyFlash, setCopyFlash] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [sendRequested, setSendRequested] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(
+    null,
+  );
 
   useEffect(
     () => () => {
@@ -142,6 +277,12 @@ export function CustomerPortalLinks({
   );
 
   useEffect(() => {
+    if (expandedHistoryId && !sortedTokens.some((token) => token.id === expandedHistoryId)) {
+      setExpandedHistoryId(null);
+    }
+  }, [expandedHistoryId, sortedTokens]);
+
+  useEffect(() => {
     if (confirmingId) {
       cancelRevokeRef.current?.focus();
       return;
@@ -151,7 +292,12 @@ export function CustomerPortalLinks({
       revokeButtonRefs.current.get(returnFocusTokenIdRef.current)?.focus();
       returnFocusTokenIdRef.current = null;
     }
-  }, [confirmingId]);
+
+    if (returnFocusHistoryTokenIdRef.current) {
+      historyButtonRefs.current.get(returnFocusHistoryTokenIdRef.current)?.focus();
+      returnFocusHistoryTokenIdRef.current = null;
+    }
+  }, [confirmingId, expandedHistoryId]);
 
   function showCopyFlash() {
     setCopyFlash(true);
@@ -163,6 +309,8 @@ export function CustomerPortalLinks({
 
   async function generateLink() {
     setMessage(null);
+    setSendError(null);
+    setSendRequested(false);
     setCopyUnavailable(false);
 
     const grant = await createToken
@@ -177,6 +325,7 @@ export function CustomerPortalLinks({
     }
 
     setLatestLink(grant.portal_url);
+    setLatestTokenId(grant.token_id);
 
     try {
       await copyText(grant.portal_url);
@@ -184,6 +333,29 @@ export function CustomerPortalLinks({
     } catch {
       setCopyUnavailable(true);
     }
+  }
+
+  async function sendLatestLink() {
+    if (!latestLink || !latestTokenId || !hasContact) {
+      return;
+    }
+
+    setSendError(null);
+
+    const result = await sendToken
+      .mutateAsync({
+        customer_id: customerId,
+        token_id: latestTokenId,
+        portal_url: latestLink,
+      })
+      .catch(() => null);
+
+    if (!result) {
+      setSendError("Couldn't request send. Share the link manually or try again.");
+      return;
+    }
+
+    setSendRequested(true);
   }
 
   async function copyLatestLink() {
@@ -205,12 +377,33 @@ export function CustomerPortalLinks({
 
   function resetLatestLink() {
     setLatestLink(null);
+    setLatestTokenId(null);
     setCopyUnavailable(false);
     setCopyFlash(false);
     setMessage(null);
+    setSendError(null);
+    setSendRequested(false);
     expiresInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     expiresInputRef.current?.focus();
   }
+
+  const sendButton = latestLink ? (
+    sendRequested ? (
+      <p className="text-xs font-semibold text-accent">✓ Send requested.</p>
+    ) : (
+      <button
+        aria-disabled={!hasContact || sendToken.isPending}
+        aria-label="Send portal link via provider"
+        className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={!hasContact || sendToken.isPending}
+        onClick={() => void sendLatestLink()}
+        title={!hasContact ? "No contact saved — share the link manually" : undefined}
+        type="button"
+      >
+        {sendToken.isPending ? "Sending..." : "Send link"}
+      </button>
+    )
+  ) : null;
 
   function cancelRevokeConfirmation(tokenId?: string) {
     returnFocusTokenIdRef.current = tokenId ?? null;
@@ -223,6 +416,11 @@ export function CustomerPortalLinks({
     revokeToken.mutate(tokenId, {
       onSettled: () => setRevokingId(null),
     });
+  }
+
+  function collapseHistory(tokenId: string) {
+    returnFocusHistoryTokenIdRef.current = tokenId;
+    setExpandedHistoryId(null);
   }
 
   function handleConfirmKeyDown(
@@ -241,8 +439,8 @@ export function CustomerPortalLinks({
   const readinessCard = (() => {
     if (tokensQuery.isLoading) {
       return {
-        body: "Checking customer portal access.",
-        label: "Loading portal status...",
+        body: null,
+        label: "Loading portal status…",
         tone: "border-l-gray-300",
       };
     }
@@ -291,7 +489,7 @@ export function CustomerPortalLinks({
       }
 
       return {
-        body: "A portal link was sent but hasn't been opened.",
+        body: "A portal link was shared but hasn't been opened.",
         label: "Shared — not yet opened",
         tone: "border-l-amber-400",
       };
@@ -317,7 +515,7 @@ export function CustomerPortalLinks({
       <div>
         <h3 className="text-sm font-semibold text-neutralDark">Portal access</h3>
         <p className="mt-1 text-xs text-gray-500">
-          Generate links to share the customer portal.
+          Generate links to share with this customer.
         </p>
       </div>
 
@@ -327,7 +525,9 @@ export function CustomerPortalLinks({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="font-semibold text-neutralDark">{readinessCard.label}</p>
-            <p className="mt-0.5 text-xs text-gray-600">{readinessCard.body}</p>
+            {readinessCard.body ? (
+              <p className="mt-0.5 text-xs text-gray-600">{readinessCard.body}</p>
+            ) : null}
           </div>
           {tokensQuery.error ? (
             <button
@@ -393,12 +593,16 @@ export function CustomerPortalLinks({
               <p className="text-xs text-gray-500">
                 Paste this into an email or text to share with the customer.
               </p>
+              <div>{sendButton}</div>
             </div>
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-semibold text-accent">
-                {message ?? "✓ Link copied to clipboard."}
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-semibold text-accent">
+                  {message ?? "✓ Link copied to clipboard."}
+                </p>
+                {sendRequested ? sendButton : null}
+              </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button
                   className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
@@ -407,6 +611,7 @@ export function CustomerPortalLinks({
                 >
                   {copyFlash ? "Copied!" : "Copy again"}
                 </button>
+                {sendRequested ? null : sendButton}
                 <button
                   className="min-h-9 px-1 text-sm font-semibold text-primary hover:underline"
                   onClick={resetLatestLink}
@@ -417,6 +622,11 @@ export function CustomerPortalLinks({
               </div>
             </div>
           )}
+          {sendError ? (
+            <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
+              {sendError}
+            </p>
+          ) : null}
           <p className="mt-2 text-xs italic text-gray-400">
             {
               "This link is only available during this session. Reload the page and it's gone — generate a new one to reshare."
@@ -448,6 +658,8 @@ export function CustomerPortalLinks({
                 revokingId === token.id ||
                 (revokeToken.isPending && revokingId === null);
               const isConfirming = confirmingId === token.id;
+              const isHistoryExpanded = expandedHistoryId === token.id;
+              const historyRegionId = `portal-token-history-${token.id}`;
 
               return (
                 <div className="px-3 py-2" key={token.id}>
@@ -468,34 +680,63 @@ export function CustomerPortalLinks({
                     <p className="text-xs text-gray-500">
                       {tokenExpiryText(token)} · {formatOpened(token.last_used_at)}
                     </p>
-                    {isActive ? (
-                      isRevoking ? (
-                        <button
-                          className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled
-                          type="button"
-                        >
-                          Revoking...
-                        </button>
-                      ) : isConfirming ? null : (
-                        <button
-                          aria-label={`Revoke portal link created ${formatDate(token.created_at)}`}
-                          className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          onClick={() => setConfirmingId(token.id)}
-                          ref={(node) => {
-                            if (node) {
-                              revokeButtonRefs.current.set(token.id, node);
-                            } else {
-                              revokeButtonRefs.current.delete(token.id);
-                            }
-                          }}
-                          type="button"
-                        >
-                          Revoke
-                        </button>
-                      )
-                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        aria-controls={historyRegionId}
+                        aria-expanded={isHistoryExpanded}
+                        className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                        onClick={() =>
+                          setExpandedHistoryId((current) =>
+                            current === token.id ? null : token.id,
+                          )
+                        }
+                        ref={(node) => {
+                          if (node) {
+                            historyButtonRefs.current.set(token.id, node);
+                          } else {
+                            historyButtonRefs.current.delete(token.id);
+                          }
+                        }}
+                        type="button"
+                      >
+                        {isHistoryExpanded ? "Hide history" : "History"}
+                      </button>
+                      {isActive ? (
+                        isRevoking ? (
+                          <button
+                            className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled
+                            type="button"
+                          >
+                            Revoking...
+                          </button>
+                        ) : isConfirming ? null : (
+                          <button
+                            aria-label={`Revoke portal link created ${formatDate(token.created_at)}`}
+                            className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            onClick={() => setConfirmingId(token.id)}
+                            ref={(node) => {
+                              if (node) {
+                                revokeButtonRefs.current.set(token.id, node);
+                              } else {
+                                revokeButtonRefs.current.delete(token.id);
+                              }
+                            }}
+                            type="button"
+                          >
+                            Revoke
+                          </button>
+                        )
+                      ) : null}
+                    </div>
                   </div>
+                  {isHistoryExpanded ? (
+                    <CustomerPortalTokenHistory
+                      onCollapse={() => collapseHistory(token.id)}
+                      regionId={historyRegionId}
+                      tokenId={token.id}
+                    />
+                  ) : null}
                   {isActive && isConfirming ? (
                     <div
                       aria-label={`Confirm revoke for ${tokenRowLabel(token)}`}

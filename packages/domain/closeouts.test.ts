@@ -11,6 +11,7 @@ import {
   getBillingQueueCounts,
   getBillingQueueItemSummary,
   getCustomerPortalAccessTokenLabel,
+  getCustomerPortalAccessTokenEventLabel,
   getCustomerPortalAccessTokenReadiness,
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
@@ -18,7 +19,9 @@ import {
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
+  getCustomerPortalSendProviderStatusLabel,
   validateCustomerPortalAccessInput,
+  validateCustomerPortalSendInput,
   validateCustomerPortalAccessToken,
   validateCustomerPortalAccessTokenId,
   validateCustomerPortalCustomerId,
@@ -447,6 +450,42 @@ describe("closeouts domain", () => {
     );
   });
 
+  it("validates portal send inputs and provider status labels", () => {
+    expect(
+      validateCustomerPortalSendInput({
+        customer_id: " customer-1 ",
+        token_id: " token-1 ",
+        portal_url:
+          " http://localhost:3000/portal/customer-1?access_token=raw-token ",
+      }),
+    ).toEqual({
+      customer_id: "customer-1",
+      token_id: "token-1",
+      portal_url:
+        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+    });
+    expect(() =>
+      validateCustomerPortalSendInput({
+        customer_id: "customer-1",
+        token_id: "",
+        portal_url: "http://localhost:3000/portal/customer-1",
+      }),
+    ).toThrow("Portal access token is required");
+    expect(() =>
+      validateCustomerPortalSendInput({
+        customer_id: "customer-1",
+        token_id: "token-1",
+        portal_url: "",
+      }),
+    ).toThrow("Portal URL is required");
+    expect(getCustomerPortalSendProviderStatusLabel(true)).toBe(
+      "Portal delivery provider configured",
+    );
+    expect(getCustomerPortalSendProviderStatusLabel(false)).toBe(
+      "Portal delivery provider not configured",
+    );
+  });
+
   it("labels portal access token states", () => {
     const activeToken = {
       id: "token-1",
@@ -486,6 +525,36 @@ describe("closeouts domain", () => {
     expect(getCustomerPortalAccessTokenLabel(revokedToken, currentDate)).toBe(
       "Revoked",
     );
+  });
+
+  it("labels portal access token audit events", () => {
+    expect(
+      getCustomerPortalAccessTokenEventLabel({
+        id: "event-1",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "generated",
+        occurred_at: "2026-05-06T00:00:00.000Z",
+      }),
+    ).toBe("Link generated");
+    expect(
+      getCustomerPortalAccessTokenEventLabel({
+        id: "event-2",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "opened",
+        occurred_at: "2026-05-06T01:00:00.000Z",
+      }),
+    ).toBe("Opened by customer");
+    expect(
+      getCustomerPortalAccessTokenEventLabel({
+        id: "event-3",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "revoked",
+        occurred_at: "2026-05-06T02:00:00.000Z",
+      }),
+    ).toBe("Revoked");
   });
 
   it("summarizes portal access token readiness for admins", () => {

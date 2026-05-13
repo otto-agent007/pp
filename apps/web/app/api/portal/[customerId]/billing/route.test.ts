@@ -25,6 +25,11 @@ class MockQuery<T> {
     return this;
   }
 
+  insert(...args: unknown[]) {
+    this.calls.push(["insert", args]);
+    return this;
+  }
+
   maybeSingle() {
     this.calls.push(["maybeSingle", []]);
     return Promise.resolve(this.result);
@@ -188,5 +193,8 @@ describe("customer portal billing route", () => {
       "eq",
       ["customer_id", "customer-1"],
     ]);
+    expect(serviceClient.from).not.toHaveBeenCalledWith(
+      "customer_portal_access_token_events",
+    );
   });
 });

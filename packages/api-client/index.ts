@@ -83,10 +83,12 @@ export {
 } from "./payments";
 export {
   createCustomerPortalAccessTokenRecord,
+  listCustomerPortalAccessTokenEventRecords,
   listCustomerPortalBillingRecords,
   listCustomerPortalAccessTokenRecords,
   listCustomerPortalCloseoutRecords,
   revokeCustomerPortalAccessTokenRecord,
+  sendCustomerPortalAccessTokenRecord,
 } from "./portal";
 export {
   inviteTechnicianRecord,

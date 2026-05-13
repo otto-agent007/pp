@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 
 import {
   createServiceRoleSupabaseClient,
-  requireAdminAccess,
+  getAdminAccess,
 } from "../../../../_lib/server-auth";
+import { recordCustomerPortalAccessTokenEvent } from "../../../_lib/access-token-events";
 
 export const runtime = "nodejs";
 
@@ -32,11 +33,12 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ tokenId: string }> },
 ) {
-  const authError = await requireAdminAccess(request);
+  const auth = await getAdminAccess(request);
 
-  if (authError) {
-    return authError;
+  if (auth.response) {
+    return auth.response;
   }
+  const access = auth.access;
 
   try {
     const { tokenId } = await params;
@@ -56,6 +58,13 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    await recordCustomerPortalAccessTokenEvent(client, {
+      actorProfileId: access.userId,
+      customerId: data.customer_id,
+      kind: "revoked",
+      tokenId: data.id,
+    });
 
     return NextResponse.json(tokenSummary(data));
   } catch (error) {

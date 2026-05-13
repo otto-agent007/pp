@@ -1,5 +1,25 @@
 # Done
 
+## Portal Send Provider V1
+
+- Added a server-only portal delivery webhook route for freshly generated session links using `PORTAL_DELIVERY_WEBHOOK_URL` and `PORTAL_DELIVERY_WEBHOOK_SECRET`
+- Validated admin auth, token/customer ownership, active status, same-app portal URL shape, and raw-token hash match before sending
+- Added shared portal send contracts, domain validation/status labels, API-client/domain wrappers, and a React Query mutation
+- Added generated-link `Send link` UI with missing-contact disablement, `Send requested` uncertainty-safe copy, provider failure copy, and preserved manual copy fallback
+- Kept row-level resend, encrypted token storage, persistent send events, delivery receipts, schema/RLS changes, production migrations, and provider dashboard setup out of scope
+- Updated env examples and production readiness docs for the portal-specific webhook boundary
+- Verified with focused portal send tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Portal Token Audit Events V1
+
+- Added a local Supabase migration for `generated`, `opened`, and `revoked` portal token audit events with indexes and admin/dispatcher RLS
+- Added server-side event writes for token generation, portal access, and revoke, plus an admin-only events read route
+- Added shared types, API-client/domain/hook plumbing, and a reduced per-token history drawer in `CustomerPortalLinks`
+- Processed Claude's slice 008 critique and added a durable `codex-critique-review.md` marker
+- Created `.claude/design/009-portal-send-resend-provider-boundary/brief.md` for the next relay slice
+- Preserved the public metadata boundary and did not apply production migrations or implement provider send/resend
+- Verified with focused tests, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, and `git diff --check`
+
 ## Portal Send/Resend Boundary V1
 
 - Added the Claude relay proposal and Codex review marker for provider-approved portal send/resend readiness

@@ -1,6 +1,8 @@
 import type {
   ChemicalLog,
   CustomerPortalAccessInput,
+  CustomerPortalSendInput,
+  CustomerPortalAccessTokenEventSummary,
   CustomerPortalAccessTokenSummary,
   CustomerPortalCloseout,
   CustomerPortalFormSubmission,
@@ -17,9 +19,11 @@ import type {
 import {
   createCustomerPortalAccessTokenRecord,
   listCloseoutCaptureSummaryRecords,
+  listCustomerPortalAccessTokenEventRecords,
   listCustomerPortalAccessTokenRecords,
   listCustomerPortalCloseoutRecords,
   revokeCustomerPortalAccessTokenRecord,
+  sendCustomerPortalAccessTokenRecord,
   listCustomerPortalBillingRecords,
 } from "@pest-patrol/api-client";
 
@@ -361,6 +365,20 @@ export function validateCustomerPortalAccessInput(
   };
 }
 
+export function validateCustomerPortalSendInput(input: CustomerPortalSendInput) {
+  return {
+    customer_id: validateCustomerPortalCustomerId(input.customer_id),
+    token_id: validateCustomerPortalAccessTokenId(input.token_id),
+    portal_url: requireNonEmpty(input.portal_url, "Portal URL"),
+  };
+}
+
+export function getCustomerPortalSendProviderStatusLabel(configured: boolean) {
+  return configured
+    ? "Portal delivery provider configured"
+    : "Portal delivery provider not configured";
+}
+
 export async function listCustomerPortalCloseouts(
   customerId: string,
   accessToken: string,
@@ -507,6 +525,26 @@ export async function listCustomerPortalAccessTokens(customerId: string) {
   );
 }
 
+export async function listCustomerPortalAccessTokenEvents(id: string) {
+  return listCustomerPortalAccessTokenEventRecords(
+    validateCustomerPortalAccessTokenId(id),
+  );
+}
+
+export function getCustomerPortalAccessTokenEventLabel(
+  event: CustomerPortalAccessTokenEventSummary,
+) {
+  if (event.kind === "generated") {
+    return "Link generated";
+  }
+
+  if (event.kind === "opened") {
+    return "Opened by customer";
+  }
+
+  return "Revoked";
+}
+
 export async function createCustomerPortalAccessToken(
   input: CustomerPortalAccessInput,
 ) {
@@ -518,6 +556,14 @@ export async function createCustomerPortalAccessToken(
 export async function revokeCustomerPortalAccessToken(id: string) {
   return revokeCustomerPortalAccessTokenRecord(
     validateCustomerPortalAccessTokenId(id),
+  );
+}
+
+export async function sendCustomerPortalAccessToken(
+  input: CustomerPortalSendInput,
+) {
+  return sendCustomerPortalAccessTokenRecord(
+    validateCustomerPortalSendInput(input),
   );
 }
 

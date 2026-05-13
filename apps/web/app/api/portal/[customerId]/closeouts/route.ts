@@ -8,6 +8,7 @@ import { buildCustomerPortalCloseouts } from "@pest-patrol/domain";
 import { NextResponse } from "next/server";
 
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
+import { recordCustomerPortalOpenedEvent } from "../../_lib/access-token-events";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,10 @@ async function validatePortalAccess(
     .from("customer_portal_access_tokens")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", data.id);
+  await recordCustomerPortalOpenedEvent(client, {
+    customerId: data.customer_id,
+    tokenId: data.id,
+  });
 
   return null;
 }

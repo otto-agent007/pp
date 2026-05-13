@@ -6,14 +6,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomerPortalLinks } from "./customer-portal-links";
 import {
   useCreateCustomerPortalAccessToken,
+  useCustomerPortalAccessTokenEvents,
   useCustomerPortalAccessTokens,
   useRevokeCustomerPortalAccessToken,
+  useSendCustomerPortalAccessToken,
 } from "../../hooks/useCustomerPortalAccess";
 
 vi.mock("../../hooks/useCustomerPortalAccess", () => ({
   useCreateCustomerPortalAccessToken: vi.fn(),
+  useCustomerPortalAccessTokenEvents: vi.fn(),
   useCustomerPortalAccessTokens: vi.fn(),
   useRevokeCustomerPortalAccessToken: vi.fn(),
+  useSendCustomerPortalAccessToken: vi.fn(),
 }));
 
 const now = "2026-05-06T00:00:00.000Z";
@@ -52,12 +56,19 @@ const revokedToken = {
 describe("CustomerPortalLinks", () => {
   const createMutateAsync = vi.fn();
   const revokeMutate = vi.fn();
+  const sendMutateAsync = vi.fn();
   const writeText = vi.fn();
 
   beforeEach(() => {
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
       data: [token],
       isLoading: false,
+    } as never);
+    vi.mocked(useCustomerPortalAccessTokenEvents).mockReturnValue({
+      data: { events: [], truncated_before: null },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
     } as never);
     vi.mocked(useCreateCustomerPortalAccessToken).mockReturnValue({
       error: null,
@@ -69,8 +80,14 @@ describe("CustomerPortalLinks", () => {
       isPending: false,
       mutate: revokeMutate,
     } as never);
+    vi.mocked(useSendCustomerPortalAccessToken).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutateAsync: sendMutateAsync,
+    } as never);
     createMutateAsync.mockReset();
     revokeMutate.mockReset();
+    sendMutateAsync.mockReset();
     writeText.mockReset();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -80,8 +97,13 @@ describe("CustomerPortalLinks", () => {
       customer_id: "customer-1",
       access_token: "raw-token",
       expires_at: null,
+      token_id: "token-1",
       portal_url:
         "http://localhost:3000/portal/customer-1?access_token=raw-token",
+    });
+    sendMutateAsync.mockResolvedValue({
+      provider: "webhook",
+      status: "requested",
     });
     writeText.mockResolvedValue(undefined);
   });
@@ -124,6 +146,59 @@ describe("CustomerPortalLinks", () => {
     expect(screen.getByText("Revoked")).toBeInTheDocument();
   });
 
+  it("expands one portal token audit history at a time", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [openedToken, token],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCustomerPortalAccessTokenEvents).mockImplementation(
+      (tokenId: string | null) =>
+        ({
+          data: {
+            events:
+              tokenId === "token-opened"
+                ? [
+                    {
+                      id: "event-opened",
+                      token_id: "token-opened",
+                      customer_id: "customer-1",
+                      kind: "opened",
+                      occurred_at: "2026-05-07T00:00:00.000Z",
+                    },
+                  ]
+                : [
+                    {
+                      id: "event-generated",
+                      token_id: "token-1",
+                      customer_id: "customer-1",
+                      kind: "generated",
+                      occurred_at: "2026-05-06T00:00:00.000Z",
+                    },
+                  ],
+            truncated_before: null,
+          },
+          error: null,
+          isLoading: false,
+          refetch: vi.fn(),
+        }) as never,
+    );
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+    const historyButtons = screen.getAllByRole("button", { name: "History" });
+
+    await user.click(historyButtons[0]!);
+
+    expect(screen.getByText("Opened by customer")).toBeInTheDocument();
+    expect(screen.getByText("via portal link")).toBeInTheDocument();
+    expect(screen.queryByText("Link generated")).not.toBeInTheDocument();
+
+    await user.click(historyButtons[1]!);
+
+    expect(screen.getByText("Link generated")).toBeInTheDocument();
+    expect(screen.queryByText("Opened by customer")).not.toBeInTheDocument();
+  });
+
   it("shows empty, loading, and error readiness states", () => {
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
       data: [],
@@ -133,6 +208,9 @@ describe("CustomerPortalLinks", () => {
     const { rerender } = render(<CustomerPortalLinks customerId="customer-1" />);
 
     expect(screen.getByText("No portal links")).toBeInTheDocument();
+    expect(
+      screen.getByText("Generate links to share with this customer."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Generate a link to share the customer portal."),
     ).toBeInTheDocument();
@@ -145,7 +223,7 @@ describe("CustomerPortalLinks", () => {
 
     rerender(<CustomerPortalLinks customerId="customer-1" />);
 
-    expect(screen.getByText("Loading portal status...")).toBeInTheDocument();
+    expect(screen.getByText("Loading portal status…")).toBeInTheDocument();
     expect(screen.getAllByTestId("portal-link-skeleton")).toHaveLength(2);
 
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
@@ -192,6 +270,36 @@ describe("CustomerPortalLinks", () => {
     );
 
     expect(screen.getByText("Shared — not yet opened")).toBeInTheDocument();
+    expect(
+      screen.getByText("A portal link was shared but hasn't been opened."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No contact saved")).not.toBeInTheDocument();
+  });
+
+  it("shows no-contact readiness for inactive portal history without saved contact", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [expiredToken, revokedToken],
+      isLoading: false,
+    } as never);
+
+    const { rerender } = render(
+      <CustomerPortalLinks
+        customerContact={{ email: null, phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("No contact saved")).toBeInTheDocument();
+    expect(screen.queryByText("No active links")).not.toBeInTheDocument();
+
+    rerender(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("No active links")).toBeInTheDocument();
     expect(screen.queryByText("No contact saved")).not.toBeInTheDocument();
   });
 
@@ -225,6 +333,9 @@ describe("CustomerPortalLinks", () => {
     });
     expect(screen.getByText("✓ Link copied to clipboard.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Send portal link via provider" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Generate new" })).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -235,6 +346,75 @@ describe("CustomerPortalLinks", () => {
     await user.click(screen.getByRole("button", { name: "Copy again" }));
 
     expect(screen.getByRole("button", { name: "Copied!" })).toBeInTheDocument();
+  });
+
+  it("requests provider send only for the freshly generated session link", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await user.click(
+      screen.getByRole("button", { name: "Send portal link via provider" }),
+    );
+
+    expect(sendMutateAsync).toHaveBeenCalledWith({
+      customer_id: "customer-1",
+      token_id: "token-1",
+      portal_url:
+        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+    });
+    expect(screen.getByText("✓ Send requested.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resend" })).not.toBeInTheDocument();
+  });
+
+  it("keeps manual copy available when portal send fails", async () => {
+    const user = userEvent.setup();
+    sendMutateAsync.mockRejectedValue(new Error("Provider failed"));
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await user.click(
+      screen.getByRole("button", { name: "Send portal link via provider" }),
+    );
+
+    expect(
+      screen.getByText("Couldn't request send. Share the link manually or try again."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Send portal link via provider" }),
+    ).toBeEnabled();
+  });
+
+  it("disables generated-link send when contact is missing", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: null, phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+
+    expect(
+      screen.getByRole("button", { name: "Send portal link via provider" }),
+    ).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Resend" })).not.toBeInTheDocument();
   });
 
   it("shows a manual copy fallback when clipboard is unavailable", async () => {
