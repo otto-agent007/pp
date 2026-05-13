@@ -50,6 +50,8 @@ Before applying migrations, the operator should confirm the target Supabase proj
 
 ## Preview Smoke Run
 
+Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
+
 Run these in order after the preview deployment has the approved environment variables:
 
 1. Sign in as admin or dispatcher and confirm the protected admin shell loads.

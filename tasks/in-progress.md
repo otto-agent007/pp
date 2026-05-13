@@ -12,6 +12,8 @@ Steps:
 - [x] Tighten production readiness guidance for preview guardrails, operator-assisted providers, and the current Vercel cron config path.
 - [x] Apply low-risk portal UI polish discovered during readiness review without changing the approved send-event history scope.
 - [x] Run local verification.
+- [x] Run web-first manual-fallback preflight against updated `main`.
+- [x] Record preflight findings and current smoke blockers.
 
 Follow-up candidates:
 - [ ] Choose the Supabase environment for the first preview smoke run.
@@ -22,4 +24,4 @@ Follow-up candidates:
 - [ ] Decide whether portal send events need provider delivery receipts after webhook-backed sends prove useful.
 
 Status:
-Preview Launch Readiness V1 documents the operator-assisted launch path and keeps provider setup, secret mutation, production data mutation, and migration application out of Codex scope. Local verification is the gate before opening the readiness PR.
+Preview Launch Readiness V1 documents the operator-assisted launch path and keeps provider setup, secret mutation, production data mutation, and migration application out of Codex scope. Web-first manual-fallback preflight found the linked dev Supabase migrations aligned, but browser smoke is blocked until the operator provides or approves a preview deployment URL and admin/dispatcher access path.
