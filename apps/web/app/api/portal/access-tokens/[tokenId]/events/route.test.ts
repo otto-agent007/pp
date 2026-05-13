@@ -72,9 +72,19 @@ describe("customer portal access token events route", () => {
           id: "event-1",
           token_id: "token-1",
           customer_id: "customer-1",
-          kind: "generated",
+          kind: "send_requested",
           occurred_at: "2026-05-06T00:00:00.000Z",
           actor_profile_id: "admin-1",
+          provider_payload: { portal_url: "http://localhost/portal/customer-1" },
+        },
+        {
+          id: "event-2",
+          token_id: "token-1",
+          customer_id: "customer-1",
+          kind: "send_failed",
+          occurred_at: "2026-05-06T01:00:00.000Z",
+          actor_profile_id: "admin-1",
+          provider_error: "provider-detail",
         },
       ],
       error: null,
@@ -94,12 +104,21 @@ describe("customer portal access token events route", () => {
         id: "event-1",
         token_id: "token-1",
         customer_id: "customer-1",
-        kind: "generated",
+        kind: "send_requested",
         occurred_at: "2026-05-06T00:00:00.000Z",
+      },
+      {
+        id: "event-2",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "send_failed",
+        occurred_at: "2026-05-06T01:00:00.000Z",
       },
     ]);
     expect(body.truncated_before).toBeNull();
     expect(serialized).not.toContain("admin-1");
+    expect(serialized).not.toContain("provider-detail");
+    expect(serialized).not.toContain("portal/customer-1");
     expect(eventQuery.calls).toContainEqual(["eq", ["token_id", "token-1"]]);
   });
 });

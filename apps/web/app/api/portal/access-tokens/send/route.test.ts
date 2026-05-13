@@ -35,9 +35,25 @@ class MockQuery<T> {
     return this;
   }
 
+  insert(...args: unknown[]) {
+    this.calls.push(["insert", args]);
+    return this;
+  }
+
   single() {
     this.calls.push(["single", []]);
     return Promise.resolve(this.result);
+  }
+
+  then<TResult1 = T, TResult2 = never>(
+    onfulfilled?:
+      | ((value: T) => TResult1 | PromiseLike<TResult1>)
+      | null,
+    onrejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null,
+  ) {
+    return Promise.resolve(this.result).then(onfulfilled, onrejected);
   }
 }
 
@@ -80,7 +96,7 @@ describe("customer portal send route", () => {
       response: null,
     };
     serviceClient = {
-      from: vi.fn(),
+      from: vi.fn(() => new MockQuery({ error: null })),
     };
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
@@ -114,6 +130,9 @@ describe("customer portal send route", () => {
     expect(response.status).toBe(503);
     expect(body.error).toBe("Portal delivery provider is not configured");
     expect(JSON.stringify(body)).not.toContain("portal-token");
+    expect(serviceClient.from).toHaveBeenCalledWith(
+      "customer_portal_access_token_events",
+    );
   });
 
   it("rejects portal URLs that do not match the customer portal route", async () => {
@@ -275,6 +294,9 @@ describe("customer portal send route", () => {
     expect(JSON.stringify(fetchMock.mock.calls[0])).not.toContain(
       "0ba11c8c03cc892e40cac090ac14c4db6e655ecfaff2490257fbe4c10fba19f9",
     );
+    expect(serviceClient.from).toHaveBeenCalledWith(
+      "customer_portal_access_token_events",
+    );
   });
 
   it("returns provider failures without exposing provider internals", async () => {
@@ -296,5 +318,10 @@ describe("customer portal send route", () => {
     expect(response.status).toBe(502);
     expect(body.error).toBe("Portal delivery provider request failed");
     expect(JSON.stringify(body)).not.toContain("provider-detail");
+    expect(
+      serviceClient.from.mock.calls.filter(
+        ([table]) => table === "customer_portal_access_token_events",
+      ),
+    ).toHaveLength(2);
   });
 });

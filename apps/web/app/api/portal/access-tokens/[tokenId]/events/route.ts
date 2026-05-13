@@ -1,4 +1,5 @@
 import { validateCustomerPortalAccessTokenId } from "@pest-patrol/domain";
+import type { CustomerPortalAccessEventKind } from "@pest-patrol/types";
 import { NextResponse } from "next/server";
 
 import {
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
 function eventSummary(event: {
   customer_id: string;
   id: string;
-  kind: "generated" | "opened" | "revoked";
+  kind: CustomerPortalAccessEventKind;
   occurred_at: string;
   token_id: string;
 }) {

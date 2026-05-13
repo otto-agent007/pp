@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createCustomerPortalAccessTokenRecord,
+  getCustomerPortalProviderStatusRecord,
   listCustomerPortalAccessTokenEventRecords,
   listCustomerPortalAccessTokenRecords,
   listCustomerPortalBillingRecords,
@@ -148,6 +149,35 @@ describe("portal api client", () => {
           Authorization: "Bearer admin-token",
         }),
         method: "POST",
+      }),
+    );
+  });
+
+  it("loads portal provider status without provider secrets", async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { access_token: "admin-token" } },
+      error: null,
+    } as never);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        provider: "manual",
+        webhook_configured: false,
+        webhook_secret_configured: true,
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const status = await getCustomerPortalProviderStatusRecord();
+
+    expect(status.provider).toBe("manual");
+    expect(status.webhook_configured).toBe(false);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/portal/access-tokens/provider-status",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer admin-token",
+        }),
       }),
     );
   });

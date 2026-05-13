@@ -6,6 +6,7 @@ import type {
   CustomerPortalAccessTokenSummary,
   CustomerPortalBillingResponse,
   CustomerPortalCloseoutResponse,
+  CustomerPortalProviderStatus,
   CustomerPortalSendInput,
   CustomerPortalSendResult,
 } from "@pest-patrol/types";
@@ -163,6 +164,25 @@ export async function listCustomerPortalAccessTokenEventRecords(id: string) {
     (await response.json()) as CustomerPortalAccessTokenEventListResponse;
 
   return body;
+}
+
+export async function getCustomerPortalProviderStatusRecord() {
+  const adminAccessToken = await getAccessToken();
+  const headers: Record<string, string> = {};
+
+  if (adminAccessToken) {
+    headers.Authorization = `Bearer ${adminAccessToken}`;
+  }
+
+  const response = await fetch("/api/portal/access-tokens/provider-status", {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load portal provider status");
+  }
+
+  return (await response.json()) as CustomerPortalProviderStatus;
 }
 
 export async function sendCustomerPortalAccessTokenRecord(

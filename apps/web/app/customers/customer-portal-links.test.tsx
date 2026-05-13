@@ -8,6 +8,7 @@ import {
   useCreateCustomerPortalAccessToken,
   useCustomerPortalAccessTokenEvents,
   useCustomerPortalAccessTokens,
+  useCustomerPortalProviderStatus,
   useRevokeCustomerPortalAccessToken,
   useSendCustomerPortalAccessToken,
 } from "../../hooks/useCustomerPortalAccess";
@@ -16,6 +17,7 @@ vi.mock("../../hooks/useCustomerPortalAccess", () => ({
   useCreateCustomerPortalAccessToken: vi.fn(),
   useCustomerPortalAccessTokenEvents: vi.fn(),
   useCustomerPortalAccessTokens: vi.fn(),
+  useCustomerPortalProviderStatus: vi.fn(),
   useRevokeCustomerPortalAccessToken: vi.fn(),
   useSendCustomerPortalAccessToken: vi.fn(),
 }));
@@ -69,6 +71,15 @@ describe("CustomerPortalLinks", () => {
       error: null,
       isLoading: false,
       refetch: vi.fn(),
+    } as never);
+    vi.mocked(useCustomerPortalProviderStatus).mockReturnValue({
+      data: {
+        provider: "webhook",
+        webhook_configured: true,
+        webhook_secret_configured: true,
+      },
+      error: null,
+      isLoading: false,
     } as never);
     vi.mocked(useCreateCustomerPortalAccessToken).mockReturnValue({
       error: null,
@@ -372,6 +383,114 @@ describe("CustomerPortalLinks", () => {
     expect(screen.getByText("✓ Send requested.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Resend" })).not.toBeInTheDocument();
+  });
+
+  it("shows manual-only provider readiness and keeps send actions disabled", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomerPortalProviderStatus).mockReturnValue({
+      data: {
+        provider: "manual",
+        webhook_configured: false,
+        webhook_secret_configured: false,
+      },
+      error: null,
+      isLoading: false,
+    } as never);
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(
+      screen.getByText("Portal delivery provider is manual-only. Share links manually."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Send new portal link for link created May 6, 2026",
+      }),
+    ).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+
+    expect(
+      screen.getByRole("button", { name: "Send portal link via provider" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+  });
+
+  it("sends a fresh token from an active row and keeps manual fallback available", async () => {
+    const user = userEvent.setup();
+    createMutateAsync.mockResolvedValueOnce({
+      customer_id: "customer-1",
+      access_token: "fresh-raw-token",
+      expires_at: null,
+      token_id: "token-fresh",
+      portal_url:
+        "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
+    });
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Send new portal link for link created May 6, 2026",
+      }),
+    );
+
+    expect(createMutateAsync).toHaveBeenCalledWith({
+      customer_id: "customer-1",
+      expires_at: null,
+    });
+    expect(sendMutateAsync).toHaveBeenCalledWith({
+      customer_id: "customer-1",
+      token_id: "token-fresh",
+      portal_url:
+        "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
+    });
+    expect(screen.getByText("✓ Fresh link copied to clipboard.")).toBeInTheDocument();
+    expect(screen.getByText("✓ Send requested.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+  });
+
+  it("preserves the freshly generated manual fallback when row send fails", async () => {
+    const user = userEvent.setup();
+    createMutateAsync.mockResolvedValueOnce({
+      customer_id: "customer-1",
+      access_token: "fresh-raw-token",
+      expires_at: null,
+      token_id: "token-fresh",
+      portal_url:
+        "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
+    });
+    sendMutateAsync.mockRejectedValue(new Error("Provider failed"));
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Send new portal link for link created May 6, 2026",
+      }),
+    );
+
+    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Couldn't request send. Copy the newly generated link manually or try again.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("keeps manual copy available when portal send fails", async () => {

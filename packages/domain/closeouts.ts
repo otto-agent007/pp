@@ -18,6 +18,7 @@ import type {
 } from "@pest-patrol/types";
 import {
   createCustomerPortalAccessTokenRecord,
+  getCustomerPortalProviderStatusRecord,
   listCloseoutCaptureSummaryRecords,
   listCustomerPortalAccessTokenEventRecords,
   listCustomerPortalAccessTokenRecords,
@@ -379,6 +380,10 @@ export function getCustomerPortalSendProviderStatusLabel(configured: boolean) {
     : "Portal delivery provider not configured";
 }
 
+export async function getCustomerPortalProviderStatus() {
+  return getCustomerPortalProviderStatusRecord();
+}
+
 export async function listCustomerPortalCloseouts(
   customerId: string,
   accessToken: string,
@@ -540,6 +545,14 @@ export function getCustomerPortalAccessTokenEventLabel(
 
   if (event.kind === "opened") {
     return "Opened by customer";
+  }
+
+  if (event.kind === "send_requested") {
+    return "Send requested";
+  }
+
+  if (event.kind === "send_failed") {
+    return "Send failed";
   }
 
   return "Revoked";
