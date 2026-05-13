@@ -50,6 +50,16 @@ const createSuccessMessage =
 const updateSuccessMessage =
   "Customer updated. Schedule the first job next; share portal links when closeout and billing are ready.";
 
+type LedgerTabId = "all" | "services" | "invoices" | "open" | "review";
+
+const ledgerTabs: Array<{ id: LedgerTabId; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "services", label: "Services" },
+  { id: "invoices", label: "Invoices" },
+  { id: "open", label: "Open" },
+  { id: "review", label: "Review" },
+];
+
 function formatMoney(cents: number) {
   return new Intl.NumberFormat("en", {
     currency: "USD",
@@ -65,6 +75,103 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
     new Date(value),
   );
+}
+
+function customerBillingHref(customerId: string) {
+  return `/payments?customer_id=${encodeURIComponent(customerId)}`;
+}
+
+function customerReviewHref(customerId: string) {
+  return `/payments?customer_id=${encodeURIComponent(customerId)}&filter=review`;
+}
+
+function ledgerEntryHref(entry: CustomerLedgerEntry) {
+  if (entry.invoice_id) {
+    return `/payments?invoice_id=${encodeURIComponent(entry.invoice_id)}`;
+  }
+
+  if (entry.type === "completed_service" && entry.job_id) {
+    return `/closeouts?job_id=${encodeURIComponent(entry.job_id)}`;
+  }
+
+  if (entry.type === "scheduled_service" && entry.job_id) {
+    return `/jobs?job_id=${encodeURIComponent(entry.job_id)}`;
+  }
+
+  return null;
+}
+
+function ledgerEntryActionLabel(entry: CustomerLedgerEntry) {
+  if (entry.type === "scheduled_service") {
+    return "View job";
+  }
+
+  if (entry.type === "completed_service") {
+    return "View closeout";
+  }
+
+  if (entry.type === "paid_invoice") {
+    return "View receipt";
+  }
+
+  if (entry.type === "needs_review_payment" || entry.type === "partial_payment") {
+    return "Review payment";
+  }
+
+  if (entry.type === "void_invoice") {
+    return "View invoice";
+  }
+
+  return "Open invoice";
+}
+
+function ledgerEntryDotClass(entry: CustomerLedgerEntry) {
+  if (entry.type === "completed_service" || entry.type === "paid_invoice") {
+    return "bg-emerald-500";
+  }
+
+  if (entry.type === "partial_payment" || entry.type === "needs_review_payment") {
+    return "bg-amber-400";
+  }
+
+  if (entry.type === "draft_invoice" || entry.type === "void_invoice") {
+    return "bg-gray-300";
+  }
+
+  return "bg-blue-400";
+}
+
+function isServiceEntry(entry: CustomerLedgerEntry) {
+  return entry.type === "completed_service" || entry.type === "scheduled_service";
+}
+
+function isOpenLedgerEntry(entry: CustomerLedgerEntry) {
+  // Review-needed invoices still carry an open receivable, so they appear in both Open and Review.
+  return (
+    entry.type === "sent_invoice" ||
+    entry.type === "partial_payment" ||
+    entry.type === "needs_review_payment"
+  );
+}
+
+function filterLedgerEntries(entries: CustomerLedgerEntry[], tab: LedgerTabId) {
+  if (tab === "services") {
+    return entries.filter(isServiceEntry);
+  }
+
+  if (tab === "invoices") {
+    return entries.filter((entry) => Boolean(entry.invoice_id));
+  }
+
+  if (tab === "open") {
+    return entries.filter(isOpenLedgerEntry);
+  }
+
+  if (tab === "review") {
+    return entries.filter((entry) => entry.review);
+  }
+
+  return entries;
 }
 
 function customerToInput(customer: Customer): CustomerInput {
@@ -94,12 +201,31 @@ function CustomerLedgerSummary({
   invoices: Invoice[];
   jobs: Job[];
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<LedgerTabId>("all");
   const entries = useMemo(
     () => buildCustomerLedger({ customer, invoices, jobs }),
     [customer, invoices, jobs],
   );
   const summary = useMemo(() => getCustomerLedgerSummary(entries), [entries]);
   const recentEntries = entries.slice(0, 4);
+  const visibleEntries = expanded
+    ? filterLedgerEntries(entries, activeTab)
+    : recentEntries;
+  const tabCounts = useMemo(
+    () =>
+      ledgerTabs.reduce<Record<LedgerTabId, number>>(
+        (counts, tab) => ({
+          ...counts,
+          [tab.id]: filterLedgerEntries(entries, tab.id).length,
+        }),
+        { all: 0, invoices: 0, open: 0, review: 0, services: 0 },
+      ),
+    [entries],
+  );
+  const activeTabLabel =
+    ledgerTabs.find((tab) => tab.id === activeTab)?.label.toLowerCase() ?? "ledger";
+  const showExpandButton = entries.length > recentEntries.length;
 
   return (
     <section className="mt-5 rounded-md border border-gray-200 bg-gray-50 p-4">
@@ -114,7 +240,7 @@ function CustomerLedgerSummary({
         </div>
         <Link
           className="text-sm font-semibold text-primary hover:text-blue-900"
-          href={`/payments?customer_id=${encodeURIComponent(customer.id)}`}
+          href={customerBillingHref(customer.id)}
         >
           Open billing
         </Link>
@@ -148,39 +274,154 @@ function CustomerLedgerSummary({
       </dl>
 
       {summary.reviewCount > 0 ? (
-        <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm font-medium text-amber-800">
-          {summary.reviewCount} payment {summary.reviewCount === 1 ? "item" : "items"} needs review.
-        </p>
+        <div className="mt-3 flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm font-medium text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            {summary.reviewCount} payment{summary.reviewCount === 1 ? "" : "s"} need{summary.reviewCount === 1 ? "s" : ""} review.
+          </p>
+          <Link
+            className="font-semibold text-amber-900 hover:underline"
+            href={customerReviewHref(customer.id)}
+          >
+            Review →
+          </Link>
+        </div>
       ) : null}
 
-      {recentEntries.length === 0 ? (
+      {expanded ? (
+        <div
+          aria-label="Ledger filters"
+          className="mt-4 flex flex-wrap gap-1.5"
+          role="tablist"
+        >
+          {ledgerTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const badgeClass =
+              tab.id === "review" && tabCounts.review > 0 && !isActive
+                ? "bg-amber-100 text-amber-700"
+                : isActive
+                  ? "bg-white/30 text-white"
+                  : "bg-gray-100 text-gray-500";
+
+            return (
+              <button
+                aria-selected={isActive}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  isActive
+                    ? "bg-primary text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                type="button"
+              >
+                {tab.label}
+                <span className={`ml-1 rounded-full px-1.5 text-[10px] font-bold ${badgeClass}`}>
+                  {tabCounts[tab.id]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {entries.length === 0 ? (
         <p className="mt-4 text-sm text-gray-600">
           No service or billing activity yet. Schedule a job, then create an invoice before sharing the portal.
         </p>
+      ) : visibleEntries.length === 0 ? (
+        <p className="py-4 text-center text-sm text-gray-500">
+          No {activeTabLabel} entries for this customer.
+        </p>
       ) : (
-        <ol className="mt-4 divide-y divide-gray-200">
-          {recentEntries.map((entry) => (
+        <ol
+          className={`mt-4 divide-y divide-gray-200 ${
+            expanded && entries.length > 10 ? "max-h-[480px] overflow-y-auto pr-2" : ""
+          }`}
+        >
+          {visibleEntries.map((entry) => (
             <CustomerLedgerEntryRow entry={entry} key={entry.id} />
           ))}
         </ol>
       )}
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        {showExpandButton ? (
+          <button
+            className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+            onClick={() => {
+              setExpanded((current) => !current);
+              setActiveTab("all");
+            }}
+            type="button"
+          >
+            {expanded ? "Hide activity ↑" : "Show all activity"}
+          </button>
+        ) : (
+          <span />
+        )}
+        <Link
+          className="text-sm font-semibold text-primary hover:text-blue-900"
+          href={customerBillingHref(customer.id)}
+        >
+          Open billing
+        </Link>
+      </div>
     </section>
   );
 }
 
 function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
+  const href = ledgerEntryHref(entry);
+  const amountText =
+    entry.amount_cents !== null
+      ? formatMoney(entry.amount_cents)
+      : entry.invoice_id
+        ? "—"
+        : null;
+
   return (
-    <li className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <p className="text-sm font-semibold text-neutralDark">{entry.label}</p>
-        <p className="text-sm text-gray-600">{entry.detail}</p>
+    <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <p
+          className={`text-sm font-semibold ${
+            entry.review ? "text-amber-800" : "text-neutralDark"
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className={`mr-2 inline-block size-1.5 rounded-full align-middle ${ledgerEntryDotClass(entry)}`}
+          />
+          {entry.review ? "⚠ " : ""}
+          {entry.label}
+        </p>
+        <p className="mt-1 text-xs text-gray-600">{entry.detail}</p>
       </div>
-      <div className="text-left sm:text-right">
-        <p className="text-sm font-medium text-gray-700">{formatDate(entry.date)}</p>
-        {entry.balance_cents !== null ? (
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <div className="flex shrink-0 flex-col gap-1 text-left sm:items-end sm:text-right">
+        <p className="text-xs font-medium text-gray-500">{formatDate(entry.date)}</p>
+        {amountText ? (
+          <p
+            className={`text-xs font-semibold ${
+              entry.type === "void_invoice"
+                ? "text-gray-400 line-through"
+                : "text-neutralDark"
+            }`}
+          >
+            {amountText}
+          </p>
+        ) : null}
+        {entry.balance_cents !== null && entry.balance_cents > 0 ? (
+          <p className="inline-flex items-center rounded bg-amber-50 px-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
             Balance {formatMoney(entry.balance_cents)}
           </p>
+        ) : null}
+        {href ? (
+          <Link
+            className="text-xs font-semibold text-primary hover:underline"
+            href={href}
+          >
+            {ledgerEntryActionLabel(entry)}
+          </Link>
         ) : null}
       </div>
     </li>
@@ -367,7 +608,13 @@ export function CustomersClient() {
                   />
                 ) : null}
                 {customer.status === "active" ? (
-                  <CustomerPortalLinks customerId={customer.id} />
+                  <CustomerPortalLinks
+                    customerContact={{
+                      email: customer.email,
+                      phone: customer.phone,
+                    }}
+                    customerId={customer.id}
+                  />
                 ) : null}
               </article>
             ))

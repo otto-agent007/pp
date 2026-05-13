@@ -47,6 +47,8 @@ STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NOTIFICATION_DELIVERY_WEBHOOK_URL=
 NOTIFICATION_DELIVERY_WEBHOOK_SECRET=
+PORTAL_DELIVERY_WEBHOOK_URL=
+PORTAL_DELIVERY_WEBHOOK_SECRET=
 CRON_SECRET=
 AUTOMATION_CRON_SECRET=
 ```
@@ -62,14 +64,15 @@ See [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel
 
 ## Current Focus
 
-Current priority is follow-up polish after the no-migration Next Five Portal + Ledger Batch V1:
+Current priority is follow-up polish after the no-migration portal and ledger slices:
 
 - `/closeouts` is the Billing work queue for completed-job readiness
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
-- `/customers` now includes compact account ledger summaries and portal-token readiness
+- `/customers` now includes expandable account ledger drill-downs and portal-token readiness
 - tokened `/portal` routes now include a customer-safe service and billing timeline
-- next candidates: deeper customer ledger drill-down, portal share auditing/resend, and smoke coverage for the portal/ledger workflow
+- current slice: Portal Send Provider V1 adds a server-only webhook boundary for freshly generated session links
+- next candidates: verify portal provider setup in an operator-assisted environment, then decide whether V2 resend should generate a fresh token or store encrypted token material
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages
-- avoid provider config, migrations, Supabase dashboard changes, or production mutations without explicit approval
+- avoid migrations, Supabase dashboard changes, encrypted token storage, persistent send events, or production provider mutations without explicit approval

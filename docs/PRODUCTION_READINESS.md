@@ -15,6 +15,8 @@ Web app:
 | `STRIPE_WEBHOOK_SECRET` | Server only | Used only by `apps/web/app/api/payments/stripe-webhook/route.ts` to verify Stripe webhook signatures. Never expose as `NEXT_PUBLIC_*`. |
 | `NOTIFICATION_DELIVERY_WEBHOOK_URL` | Server only | Optional webhook endpoint for Notification Delivery V1. If omitted, delivery is recorded through the server-side manual provider. |
 | `NOTIFICATION_DELIVERY_WEBHOOK_SECRET` | Server only | Optional bearer secret sent only from the server delivery route to the webhook provider. |
+| `PORTAL_DELIVERY_WEBHOOK_URL` | Server only | Optional webhook endpoint for Portal Send Provider V1. If omitted, generated portal links remain manual-copy only. |
+| `PORTAL_DELIVERY_WEBHOOK_SECRET` | Server only | Optional bearer secret sent only from the server portal-send route to the portal delivery webhook. |
 | `CRON_SECRET` | Server only | Vercel Cron secret sent as a Bearer token to `apps/web/app/api/automation/scheduler/route.ts`. |
 | `AUTOMATION_CRON_SECRET` | Server only | Optional project-specific secret for manual or non-Vercel scheduler calls. |
 
@@ -84,6 +86,8 @@ Latest hardening status:
    - `STRIPE_WEBHOOK_SECRET`
    - `NOTIFICATION_DELIVERY_WEBHOOK_URL`
    - `NOTIFICATION_DELIVERY_WEBHOOK_SECRET`
+   - `PORTAL_DELIVERY_WEBHOOK_URL`
+   - `PORTAL_DELIVERY_WEBHOOK_SECRET`
    - `CRON_SECRET`
    - `AUTOMATION_CRON_SECRET`
 4. Keep `vercel.json` at the Vercel project root so `/api/automation/scheduler` runs daily at 05:00 UTC.
@@ -107,7 +111,9 @@ created during the check.
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
 | Queue field captures | Expo mobile app | Technician queues status, geofence, form, chemical, photo, and signature captures offline-first. |
 | Review closeout | `/closeouts` | Office can review synced field captures and see whether billing is ready. |
-| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data. |
+| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data; if the portal webhook is configured, the freshly generated session link can be sent with `Send link`. |
+| Review customer ledger | `/customers` | Customer account ledger expands with service, invoice, open-balance, and review filters without exposing provider payment metadata. |
+| Revoke portal access | `/customers` | Active portal links require confirmation before revoke and revoked links stop loading customer portal data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
 | Check billing path | `/payments` | Invoice or payment setup state is visible without secret exposure. |
 
@@ -118,20 +124,22 @@ Admin web:
 3. Create a completed job for that customer and location.
 4. Open `/closeouts` and confirm the completed job appears.
 5. Open `/payments`, create an invoice for the completed job, and confirm it moves through draft and sent states.
-6. Configure Stripe to send `checkout.session.completed` events to `/api/payments/stripe-webhook`, then confirm a test payment marks the matching invoice paid.
-7. Open `/automation`, create a notification template with variables, confirm the preview renders customer/location/date values, bind it to a follow-up rule, create a reminder from the template, then mark it handled.
-8. Confirm the `/automation` scheduler preview shows due notification copy, target context, generated keys, and duplicate labels before any run is executed.
-9. Trigger `/api/automation/scheduler` with `Authorization: Bearer <CRON_SECRET>` and confirm due bound rules generate pending notification events with interpolated template copy and no duplicates.
-10. Open `/automation`, use the manual Run scheduler action, and confirm the scheduler panel refreshes without using a cron secret in the browser.
-11. Confirm the `/automation` scheduler panel shows the latest run status, cron/manual source, created count, duplicate count, and generated notifications.
-12. Send one pending reminder and then send visible pending reminders in bulk; confirm delivery status updates and failed reminders remain visible through the delivery-status filter and Failed/Retryable quick filters without exposing provider secrets in the browser.
-13. If a notification webhook is configured, inspect the provider request and confirm the payload includes event, target, customer, job, and location context while excluding internal service notes and provider secrets.
-14. Confirm sent reminders show provider message ids when the provider returns one, and failed retries do not show stale provider message ids.
-15. Trigger a notification delivery and confirm the reminder briefly moves through `sending`; duplicate sends while `sending` or already `sent` should be rejected without creating a second provider request.
-16. Confirm notification cards show whether each reminder has customer email and/or phone contact data, including a visible missing-contact state.
-17. Confirm `/automation` shows provider mode without exposing webhook URL or secret values.
-18. Use recipient readiness filters to confirm reachable, missing-contact, email-ready, and phone-ready reminders can be isolated.
-19. Confirm sent or failed delivery attempts show last-attempt timing and the delivery controls show total attempts.
+6. Return to `/customers`, expand the customer's account ledger, and confirm all/services/invoices/open/review filters show service and billing history without provider payment ids, raw payment records, or admin notes.
+7. Confirm the customer card's portal readiness explains whether closeout and billing data are ready to share.
+8. Configure Stripe to send `checkout.session.completed` events to `/api/payments/stripe-webhook`, then confirm a test payment marks the matching invoice paid.
+9. Open `/automation`, create a notification template with variables, confirm the preview renders customer/location/date values, bind it to a follow-up rule, create a reminder from the template, then mark it handled.
+10. Confirm the `/automation` scheduler preview shows due notification copy, target context, generated keys, and duplicate labels before any run is executed.
+11. Trigger `/api/automation/scheduler` with `Authorization: Bearer <CRON_SECRET>` and confirm due bound rules generate pending notification events with interpolated template copy and no duplicates.
+12. Open `/automation`, use the manual Run scheduler action, and confirm the scheduler panel refreshes without using a cron secret in the browser.
+13. Confirm the `/automation` scheduler panel shows the latest run status, cron/manual source, created count, duplicate count, and generated notifications.
+14. Send one pending reminder and then send visible pending reminders in bulk; confirm delivery status updates and failed reminders remain visible through the delivery-status filter and Failed/Retryable quick filters without exposing provider secrets in the browser.
+15. If a notification webhook is configured, inspect the provider request and confirm the payload includes event, target, customer, job, and location context while excluding internal service notes and provider secrets.
+16. Confirm sent reminders show provider message ids when the provider returns one, and failed retries do not show stale provider message ids.
+17. Trigger a notification delivery and confirm the reminder briefly moves through `sending`; duplicate sends while `sending` or already `sent` should be rejected without creating a second provider request.
+18. Confirm notification cards show whether each reminder has customer email and/or phone contact data, including a visible missing-contact state.
+19. Confirm `/automation` shows provider mode without exposing webhook URL or secret values.
+20. Use recipient readiness filters to confirm reachable, missing-contact, email-ready, and phone-ready reminders can be isolated.
+21. Confirm sent or failed delivery attempts show last-attempt timing and the delivery controls show total attempts.
 
 Mobile technician:
 
@@ -147,14 +155,18 @@ Mobile technician:
 
 Customer portal:
 
-1. Open `/customers` and generate a portal access token for a customer with completed jobs.
-2. Open `/portal/<customer-id>?access_token=<token>`.
-3. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
-4. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
-5. Confirm private job media renders through signed URLs.
-6. Confirm open and paid invoices render without provider ids, raw payment records, or admin billing notes.
-7. Open `/portal/<customer-id>` without a token and confirm closeouts and billing do not load.
-8. Revoke the portal link in `/customers` and confirm the old link no longer loads closeouts or billing.
+1. Open `/customers` and find a customer with completed closeouts and at least one invoice.
+2. Expand the account ledger and confirm service rows, invoice rows, open balances, and review-needed items match the customer history already visible in `/closeouts` and `/payments`.
+3. Generate a portal access token and confirm the latest-link area offers copy/share readiness. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link` and confirm the UI says `Send requested` without claiming delivery.
+4. Open `/portal/<customer-id>?access_token=<token>`.
+5. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
+6. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
+7. Confirm private job media renders through signed URLs.
+8. Confirm open and paid invoices render without provider ids, raw payment records, or admin billing notes.
+9. Return to `/customers`, open the active token row, and confirm revoke requires the inline "Confirm revoke" action.
+10. Cancel revoke once and confirm focus returns to the same Revoke button.
+11. Confirm revoke, then open the old tokened portal URL and confirm closeouts and billing no longer load.
+12. Open `/portal/<customer-id>` without a token and confirm closeouts and billing do not load.
 
 Mobile:
 
@@ -169,11 +181,13 @@ Mobile:
 - Provider secrets must stay in server-only code.
 - Stripe webhook signing secrets must stay behind `apps/web/app/api/payments/stripe-webhook/route.ts`.
 - Notification delivery provider URLs and secrets must stay behind `apps/web/app/api/automation/notifications/[notificationId]/deliver/route.ts`.
+- Portal delivery provider URLs and secrets must stay behind `apps/web/app/api/portal/access-tokens/send/route.ts`.
 - Automation scheduler generation must stay behind `apps/web/app/api/automation/scheduler/route.ts` and require either Vercel `CRON_SECRET` or `AUTOMATION_CRON_SECRET`.
 - Manual scheduler runs must stay behind admin/dispatcher auth and must not expose cron secrets to the browser.
 - Automation scheduler run history is admin/dispatcher-readable only and should not expose provider secrets or customer portal data.
 - Customer portal payloads must stay narrower than admin payloads.
 - Customer portal reads must go through token-validated server routes; customer ids alone are not sufficient authorization.
+- Portal send V1 is session-link only; existing active links cannot be resent because only token hashes are stored.
 - Customer portal billing must never expose provider payment ids, raw payment records, admin invoice notes, or void/draft invoices.
 - Mobile write paths must remain queue-first and retry-safe.
 - The Supabase anon key is acceptable in web/mobile only because RLS owns authorization.

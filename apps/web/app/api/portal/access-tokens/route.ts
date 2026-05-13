@@ -7,8 +7,9 @@ import { NextResponse } from "next/server";
 
 import {
   createServiceRoleSupabaseClient,
-  requireAdminAccess,
+  getAdminAccess,
 } from "../../_lib/server-auth";
+import { recordCustomerPortalAccessTokenEvent } from "../_lib/access-token-events";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,7 @@ function tokenSummary(token: {
 }
 
 export async function GET(request: Request) {
-  const authError = await requireAdminAccess(request);
+  const { response: authError } = await getAdminAccess(request);
 
   if (authError) {
     return authError;
@@ -81,28 +82,43 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdminAccess(request);
+  const auth = await getAdminAccess(request);
 
-  if (authError) {
-    return authError;
+  if (auth.response) {
+    return auth.response;
   }
+  const access = auth.access;
 
   try {
     const input = validateCustomerPortalAccessInput(await request.json());
     const accessToken = newPortalToken();
     const client = createServiceRoleSupabaseClient();
-    const { error } = await client.from("customer_portal_access_tokens").insert({
-      customer_id: input.customer_id,
-      expires_at: input.expires_at,
-      token_hash: hashToken(accessToken),
-    });
+    const { data, error } = await client
+      .from("customer_portal_access_tokens")
+      .insert({
+        created_by: access.userId,
+        customer_id: input.customer_id,
+        expires_at: input.expires_at,
+        token_hash: hashToken(accessToken),
+      })
+      .select(
+        "id, customer_id, status, expires_at, last_used_at, created_at, updated_at",
+      )
+      .single();
 
-    if (error) {
+    if (error || !data) {
       return NextResponse.json(
         { error: "Unable to create portal access token" },
         { status: 400 },
       );
     }
+
+    await recordCustomerPortalAccessTokenEvent(client, {
+      actorProfileId: access.userId,
+      customerId: data.customer_id,
+      kind: "generated",
+      tokenId: data.id,
+    });
 
     const portalUrl = new URL(`/portal/${input.customer_id}`, request.url);
     portalUrl.searchParams.set("access_token", accessToken);
@@ -111,6 +127,7 @@ export async function POST(request: Request) {
       customer_id: input.customer_id,
       access_token: accessToken,
       expires_at: input.expires_at,
+      token_id: data.id,
       portal_url: portalUrl.toString(),
     });
   } catch (error) {

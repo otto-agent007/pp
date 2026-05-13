@@ -21,6 +21,11 @@ class MockQuery<T> {
     return this;
   }
 
+  insert(...args: unknown[]) {
+    this.calls.push(["insert", args]);
+    return this;
+  }
+
   maybeSingle() {
     this.calls.push(["maybeSingle", []]);
     return Promise.resolve(this.result);
@@ -120,6 +125,7 @@ describe("customer portal closeouts route", () => {
           error: null,
         }),
       )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }))
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }))

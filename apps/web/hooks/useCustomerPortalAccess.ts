@@ -2,8 +2,10 @@
 
 import {
   createCustomerPortalAccessToken,
+  listCustomerPortalAccessTokenEvents,
   listCustomerPortalAccessTokens,
   revokeCustomerPortalAccessToken,
+  sendCustomerPortalAccessToken,
 } from "@pest-patrol/domain";
 import type {
   CustomerPortalAccessGrant,
@@ -14,10 +16,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export const customerPortalAccessTokensQueryKey = (customerId: string) =>
   ["customer-portal-access-tokens", customerId] as const;
 
+export const customerPortalAccessTokenEventsQueryKey = (tokenId: string) =>
+  ["customer-portal-access-token-events", tokenId] as const;
+
 export function useCustomerPortalAccessTokens(customerId: string) {
   return useQuery({
     queryKey: customerPortalAccessTokensQueryKey(customerId),
     queryFn: () => listCustomerPortalAccessTokens(customerId),
+  });
+}
+
+export function useCustomerPortalAccessTokenEvents(tokenId: string | null) {
+  return useQuery({
+    queryKey: customerPortalAccessTokenEventsQueryKey(tokenId ?? ""),
+    queryFn: () => listCustomerPortalAccessTokenEvents(tokenId ?? ""),
+    enabled: Boolean(tokenId),
   });
 }
 
@@ -66,10 +79,19 @@ export function useRevokeCustomerPortalAccessToken(customerId: string) {
         queryClient.setQueryData(context.queryKey, context.previous);
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _error, id) => {
       void queryClient.invalidateQueries({
         queryKey: customerPortalAccessTokensQueryKey(customerId),
       });
+      void queryClient.invalidateQueries({
+        queryKey: customerPortalAccessTokenEventsQueryKey(id),
+      });
     },
+  });
+}
+
+export function useSendCustomerPortalAccessToken() {
+  return useMutation({
+    mutationFn: sendCustomerPortalAccessToken,
   });
 }

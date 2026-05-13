@@ -46,6 +46,7 @@ export type PaymentProvider = "stripe";
 export type PaymentWebhookReconciliationStatus = "processed" | "ignored";
 
 export type CustomerPortalAccessStatus = "active" | "revoked";
+export type CustomerPortalAccessEventKind = "generated" | "opened" | "revoked";
 
 export type AutomationRuleType =
   | "follow_up_reminder"
@@ -612,6 +613,14 @@ export interface CustomerPortalAccessTokenSummary {
   updated_at: string;
 }
 
+export interface CustomerPortalAccessTokenEventSummary {
+  id: string;
+  token_id: string;
+  customer_id: string;
+  kind: CustomerPortalAccessEventKind;
+  occurred_at: string;
+}
+
 export interface CustomerPortalAccessInput {
   customer_id: string;
   expires_at?: string | null;
@@ -621,7 +630,33 @@ export interface CustomerPortalAccessGrant {
   customer_id: string;
   access_token: string;
   expires_at: string | null;
+  token_id: string;
   portal_url: string;
+}
+
+export interface CustomerPortalSendInput {
+  customer_id: string;
+  token_id: string;
+  portal_url: string;
+}
+
+export interface CustomerPortalSendResult {
+  provider: "webhook";
+  status: "requested";
+}
+
+export interface CustomerPortalSendProviderPayload {
+  portal_access: {
+    customer_id: string;
+    token_id: string;
+    portal_url: string;
+  };
+  customer: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
 }
 
 export interface CustomerPortalCloseoutResponse {
@@ -634,6 +669,11 @@ export interface CustomerPortalBillingResponse {
 
 export interface CustomerPortalAccessTokenListResponse {
   tokens: CustomerPortalAccessTokenSummary[];
+}
+
+export interface CustomerPortalAccessTokenEventListResponse {
+  events: CustomerPortalAccessTokenEventSummary[];
+  truncated_before: string | null;
 }
 
 export interface JobPhotoUploadQueuePayload extends Record<string, unknown> {

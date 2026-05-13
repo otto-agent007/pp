@@ -1,5 +1,69 @@
 # Done
 
+## Portal Send Provider V1
+
+- Added a server-only portal delivery webhook route for freshly generated session links using `PORTAL_DELIVERY_WEBHOOK_URL` and `PORTAL_DELIVERY_WEBHOOK_SECRET`
+- Validated admin auth, token/customer ownership, active status, same-app portal URL shape, and raw-token hash match before sending
+- Added shared portal send contracts, domain validation/status labels, API-client/domain wrappers, and a React Query mutation
+- Added generated-link `Send link` UI with missing-contact disablement, `Send requested` uncertainty-safe copy, provider failure copy, and preserved manual copy fallback
+- Kept row-level resend, encrypted token storage, persistent send events, delivery receipts, schema/RLS changes, production migrations, and provider dashboard setup out of scope
+- Updated env examples and production readiness docs for the portal-specific webhook boundary
+- Verified with focused portal send tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Portal Token Audit Events V1
+
+- Added a local Supabase migration for `generated`, `opened`, and `revoked` portal token audit events with indexes and admin/dispatcher RLS
+- Added server-side event writes for token generation, portal access, and revoke, plus an admin-only events read route
+- Added shared types, API-client/domain/hook plumbing, and a reduced per-token history drawer in `CustomerPortalLinks`
+- Processed Claude's slice 008 critique and added a durable `codex-critique-review.md` marker
+- Created `.claude/design/009-portal-send-resend-provider-boundary/brief.md` for the next relay slice
+- Preserved the public metadata boundary and did not apply production migrations or implement provider send/resend
+- Verified with focused tests, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, and `git diff --check`
+
+## Portal Send/Resend Boundary V1
+
+- Added the Claude relay proposal and Codex review marker for provider-approved portal send/resend readiness
+- Accepted only the no-provider contact-readiness portion of the proposal for this slice
+- Passed existing customer email/phone into `CustomerPortalLinks`
+- Added a low-priority "No contact saved" readiness state when no stronger active-link state is dominant
+- Deferred send/resend buttons, provider readiness, delivery status, retry, persistence, and route implementation to a later explicit provider-boundary slice
+- Verified with focused customer tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Portal/Ledger Smoke Coverage V1
+
+- Expanded production smoke coverage for `/customers` account ledger drill-down filters, portal readiness, manual share readiness, revoke confirmation, and tokened portal denial checks
+- Kept customer portal smoke expectations narrow around customer-safe closeouts, invoices, signed media, and no provider/internal note exposure
+- Preserved no-migration, no-provider, no-token-schema-change, and no-production-mutation scope
+- Verified with `git diff --check`
+
+## Portal Revoke Confirmation V1
+
+- Added the Claude relay brief, proposal, Codex review marker, critique, and Codex critique marker for the portal revoke confirmation slice
+- Added an inline confirmation step before active customer portal links can be revoked from `/customers`
+- Added state-aware confirmation copy for no-expiration, expiring, never-opened, and opened portal links
+- Preserved existing generate, copy, manual-share, React Query hook, API route, optimistic rollback, and token schema behavior
+- Applied Claude critique feedback so Cancel and Escape both return focus to the triggering Revoke button
+- Verified with focused portal-link tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Customer Ledger Drill-Down V1
+
+- Added the Claude relay brief, proposal, Codex review marker, critique, and Codex critique marker for the customer ledger drill-down slice
+- Expanded `/customers` account ledger cards into an inline drill-down with all, services, invoices, open, and review filters
+- Added row-level handoffs for jobs, closeouts, invoices, receipts, and payment review
+- Applied Claude critique polish for compact review copy, zero-balance pill cleanup, directional action copy, and intentional Open-filter behavior
+- Preserved existing React Query data flow, shared domain helpers, API-client boundaries, and no-migration/provider-free scope
+- Verified with focused customer tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Portal Share/Resend UI Polish V1
+
+- Added the Claude relay brief, proposal, and Codex review marker for the portal share/resend slice
+- Added a reviewed marker for the prior billing work queue relay so the watcher skips completed slice 001 design artifacts
+- Updated the Claude design relay convention to use `codex-review.md` as the durable proposal review marker
+- Reworked `/customers` portal access controls around readiness, generate/copy/share flow, clipboard fallback, generated-link session copy, and token audit states
+- Preserved existing token schema, API routes, React Query hooks, service-role boundaries, and provider-free/manual-share scope
+- Stabilized the dispatch calendar test clock so fixture jobs stay in their intended week
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Next Five Portal + Ledger Batch V1
 
 - Added shared portal-token readiness helpers and compact admin readiness counts for customer portal links
