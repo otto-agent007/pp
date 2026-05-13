@@ -385,7 +385,7 @@ describe("CustomerPortalLinks", () => {
     expect(screen.queryByRole("button", { name: "Resend" })).not.toBeInTheDocument();
   });
 
-  it("shows manual-only provider readiness and keeps send actions disabled", async () => {
+  it("shows manual-only provider readiness and keeps send actions hidden", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomerPortalProviderStatus).mockReturnValue({
       data: {
@@ -408,16 +408,16 @@ describe("CustomerPortalLinks", () => {
       screen.getByText("Portal delivery provider is manual-only. Share links manually."),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", {
+      screen.queryByRole("button", {
         name: "Send new portal link for link created May 6, 2026",
       }),
-    ).toBeDisabled();
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Generate link" }));
 
     expect(
-      screen.getByRole("button", { name: "Send portal link via provider" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Send portal link via provider" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
   });
 
@@ -456,7 +456,7 @@ describe("CustomerPortalLinks", () => {
         "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
     });
     expect(screen.getByText("✓ Fresh link copied to clipboard.")).toBeInTheDocument();
-    expect(screen.getByText("✓ Send requested.")).toBeInTheDocument();
+    expect(screen.getAllByText("✓ Send requested.").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
   });
 

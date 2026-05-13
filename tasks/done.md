@@ -1,5 +1,15 @@
 # Done
 
+## Portal-Led Batch V1
+
+- Added admin-authenticated portal provider status reporting without exposing webhook URL or secret values
+- Added fresh-token active-row portal sending so resend generates a new link instead of recovering historical raw token material
+- Added provider-safe portal send attempt audit events: `send_requested` and `send_failed`
+- Added inline payment confirmations before `Mark paid` and `Void`
+- Added technician route-load summaries from existing jobs with today/upcoming counts, route status, and dispatch handoff links
+- Kept encrypted token storage, delivery receipts, provider dashboard mutation, production env changes, and production migration application out of scope
+- Verified with focused tests, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Portal Send Provider V1
 
 - Added a server-only portal delivery webhook route for freshly generated session links using `PORTAL_DELIVERY_WEBHOOK_URL` and `PORTAL_DELIVERY_WEBHOOK_SECRET`
