@@ -2,6 +2,7 @@
 
 import {
   createCustomerPortalAccessToken,
+  getCustomerPortalProviderStatus,
   listCustomerPortalAccessTokenEvents,
   listCustomerPortalAccessTokens,
   revokeCustomerPortalAccessToken,
@@ -19,6 +20,9 @@ export const customerPortalAccessTokensQueryKey = (customerId: string) =>
 export const customerPortalAccessTokenEventsQueryKey = (tokenId: string) =>
   ["customer-portal-access-token-events", tokenId] as const;
 
+export const customerPortalProviderStatusQueryKey = () =>
+  ["customer-portal-provider-status"] as const;
+
 export function useCustomerPortalAccessTokens(customerId: string) {
   return useQuery({
     queryKey: customerPortalAccessTokensQueryKey(customerId),
@@ -31,6 +35,13 @@ export function useCustomerPortalAccessTokenEvents(tokenId: string | null) {
     queryKey: customerPortalAccessTokenEventsQueryKey(tokenId ?? ""),
     queryFn: () => listCustomerPortalAccessTokenEvents(tokenId ?? ""),
     enabled: Boolean(tokenId),
+  });
+}
+
+export function useCustomerPortalProviderStatus() {
+  return useQuery({
+    queryKey: customerPortalProviderStatusQueryKey(),
+    queryFn: getCustomerPortalProviderStatus,
   });
 }
 

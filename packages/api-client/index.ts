@@ -83,6 +83,7 @@ export {
 } from "./payments";
 export {
   createCustomerPortalAccessTokenRecord,
+  getCustomerPortalProviderStatusRecord,
   listCustomerPortalAccessTokenEventRecords,
   listCustomerPortalBillingRecords,
   listCustomerPortalAccessTokenRecords,

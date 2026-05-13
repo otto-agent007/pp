@@ -10,6 +10,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../../_lib/server-auth";
+import { recordCustomerPortalAccessTokenEvent } from "../../_lib/access-token-events";
 
 export const runtime = "nodejs";
 
@@ -188,7 +189,25 @@ export async function POST(request: Request) {
       token: data,
     });
 
-    await sendThroughProvider(payload);
+    await recordCustomerPortalAccessTokenEvent(client, {
+      actorProfileId: auth.access.userId,
+      customerId: data.customer_id,
+      kind: "send_requested",
+      tokenId: data.id,
+    });
+
+    try {
+      await sendThroughProvider(payload);
+    } catch (error) {
+      await recordCustomerPortalAccessTokenEvent(client, {
+        actorProfileId: auth.access.userId,
+        customerId: data.customer_id,
+        kind: "send_failed",
+        tokenId: data.id,
+      });
+
+      throw error;
+    }
 
     return NextResponse.json({
       provider: "webhook",

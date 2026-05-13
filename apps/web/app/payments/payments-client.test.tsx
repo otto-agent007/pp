@@ -378,16 +378,48 @@ describe("PaymentsClient", () => {
     );
   });
 
-  it("creates payment links and updates invoice state", async () => {
+  it("creates payment links and confirms paid or void status changes", async () => {
     const user = userEvent.setup();
     render(<PaymentsClient />);
 
     await user.click(screen.getByRole("button", { name: "Create link" }));
-    await user.click(screen.getByRole("button", { name: "Mark paid" }));
-    await user.click(screen.getByRole("button", { name: "Void" }));
 
     expect(createPaymentLink).toHaveBeenCalledWith(invoice);
+
+    await user.click(screen.getByRole("button", { name: "Mark paid" }));
+
+    expect(markPaid).not.toHaveBeenCalled();
+    expect(screen.getByText("Mark this invoice paid?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Apex Homes · invoice invoice-1 · $125.00"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel mark paid" }));
+
+    expect(screen.queryByText("Mark this invoice paid?")).not.toBeInTheDocument();
+    expect(markPaid).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Mark paid" }));
+    await user.click(screen.getByRole("button", { name: "Confirm mark paid" }));
+
     expect(markPaid).toHaveBeenCalledWith("invoice-1");
+
+    await user.click(screen.getByRole("button", { name: "Void" }));
+
+    expect(voidInvoice).not.toHaveBeenCalled();
+    expect(screen.getByText("Void this invoice?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Apex Homes · invoice invoice-1 · $125.00"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel void" }));
+
+    expect(screen.queryByText("Void this invoice?")).not.toBeInTheDocument();
+    expect(voidInvoice).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Void" }));
+    await user.click(screen.getByRole("button", { name: "Confirm void" }));
+
     expect(voidInvoice).toHaveBeenCalledWith("invoice-1");
   });
 });

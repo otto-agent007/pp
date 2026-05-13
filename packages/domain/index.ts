@@ -139,6 +139,7 @@ export {
   getCustomerPortalAccessTokenReadiness,
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
+  getCustomerPortalProviderStatus,
   getCustomerPortalSendProviderStatusLabel,
   buildCustomerPortalTimeline,
   getCustomerPortalServiceSummary,
@@ -208,11 +209,16 @@ export type {
   MobileRouteTimelineSummary,
 } from "./jobs";
 export {
+  buildTechnicianRouteLoadSummaries,
   getTechnicianLabel,
   inviteTechnician,
   listTechnicianDirectory,
   normalizeTechnicianInviteInput,
   validateTechnicianInviteInput,
+} from "./technicians";
+export type {
+  TechnicianRouteLoadSummary,
+  TechnicianRouteStatus,
 } from "./technicians";
 export {
   archiveChemicalInventory,

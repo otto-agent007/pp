@@ -45,6 +45,10 @@ const emptyForm: InvoiceFormState = {
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
 type ReconciliationFilter = InvoiceReconciliationStatus | "all";
+type InvoiceActionConfirmation = {
+  action: "mark_paid" | "void";
+  invoiceId: string;
+} | null;
 
 function formatMoney(cents: number, currency = "usd") {
   return new Intl.NumberFormat("en", {
@@ -155,6 +159,8 @@ export function PaymentsClient() {
     () => searchParams.get("job_id") ?? "",
   );
   const [formError, setFormError] = useState<string | null>(null);
+  const [actionConfirmation, setActionConfirmation] =
+    useState<InvoiceActionConfirmation>(null);
   const highlightedInvoiceId = searchParams.get("invoice_id") ?? "";
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
@@ -253,6 +259,17 @@ export function PaymentsClient() {
         error instanceof Error ? error.message : "Unable to create invoice",
       );
     }
+  }
+
+  function confirmInvoiceAction(invoiceId: string, action: "mark_paid" | "void") {
+    setActionConfirmation(null);
+
+    if (action === "mark_paid") {
+      markPaid.mutate(invoiceId);
+      return;
+    }
+
+    voidInvoice.mutate(invoiceId);
   }
 
   return (
@@ -399,6 +416,13 @@ export function PaymentsClient() {
               const latestPaidAt = formatPaymentDate(reconciliation.latestPaidAt);
               const invoiceJob =
                 invoice.job ?? jobs.find((job) => job.id === invoice.job_id) ?? null;
+              const confirmingAction =
+                actionConfirmation?.invoiceId === invoice.id
+                  ? actionConfirmation.action
+                  : null;
+              const confirmationContext = `${invoiceTitle(invoice)} · invoice ${
+                invoice.id
+              } · ${formatMoney(invoice.total_cents, invoice.currency)}`;
 
               return (
                 <article
@@ -484,7 +508,12 @@ export function PaymentsClient() {
                           <button
                             className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
                             disabled={markPaid.isPending}
-                            onClick={() => markPaid.mutate(invoice.id)}
+                            onClick={() =>
+                              setActionConfirmation({
+                                action: "mark_paid",
+                                invoiceId: invoice.id,
+                              })
+                            }
                             type="button"
                           >
                             Mark paid
@@ -494,13 +523,72 @@ export function PaymentsClient() {
                           <button
                             className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
                             disabled={voidInvoice.isPending}
-                            onClick={() => voidInvoice.mutate(invoice.id)}
+                            onClick={() =>
+                              setActionConfirmation({
+                                action: "void",
+                                invoiceId: invoice.id,
+                              })
+                            }
                             type="button"
                           >
                             Void
                           </button>
                         ) : null}
                       </div>
+                      {confirmingAction ? (
+                        <div
+                          aria-label={
+                            confirmingAction === "mark_paid"
+                              ? `Confirm mark paid for ${invoiceTitle(invoice)}`
+                              : `Confirm void for ${invoiceTitle(invoice)}`
+                          }
+                          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-left"
+                          role="group"
+                        >
+                          <p className="text-sm font-semibold text-neutralDark">
+                            {confirmingAction === "mark_paid"
+                              ? "Mark this invoice paid?"
+                              : "Void this invoice?"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-600">
+                            {confirmationContext}
+                          </p>
+                          <div className="mt-3 flex flex-wrap justify-end gap-2">
+                            <button
+                              aria-label={
+                                confirmingAction === "mark_paid"
+                                  ? "Cancel mark paid"
+                                  : "Cancel void"
+                              }
+                              className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                              onClick={() => setActionConfirmation(null)}
+                              type="button"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              className={
+                                confirmingAction === "mark_paid"
+                                  ? "min-h-8 rounded-md bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                                  : "min-h-8 rounded-md bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-60"
+                              }
+                              disabled={
+                                confirmingAction === "mark_paid"
+                                  ? markPaid.isPending
+                                  : voidInvoice.isPending
+                              }
+                              onClick={() =>
+                                confirmInvoiceAction(invoice.id, confirmingAction)
+                              }
+                              type="button"
+                            >
+                              {confirmingAction === "mark_paid"
+                                ? "Confirm mark paid"
+                                : "Confirm void"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </article>

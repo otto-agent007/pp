@@ -46,7 +46,13 @@ export type PaymentProvider = "stripe";
 export type PaymentWebhookReconciliationStatus = "processed" | "ignored";
 
 export type CustomerPortalAccessStatus = "active" | "revoked";
-export type CustomerPortalAccessEventKind = "generated" | "opened" | "revoked";
+export type CustomerPortalAccessEventKind =
+  | "generated"
+  | "opened"
+  | "revoked"
+  | "send_requested"
+  | "send_failed";
+export type CustomerPortalDeliveryProvider = "manual" | "webhook";
 
 export type AutomationRuleType =
   | "follow_up_reminder"
@@ -409,6 +415,12 @@ export interface NotificationDeliveryProviderPayload {
 
 export interface NotificationProviderStatus {
   provider: NotificationDeliveryProvider;
+  webhook_configured: boolean;
+  webhook_secret_configured: boolean;
+}
+
+export interface CustomerPortalProviderStatus {
+  provider: CustomerPortalDeliveryProvider;
   webhook_configured: boolean;
   webhook_secret_configured: boolean;
 }

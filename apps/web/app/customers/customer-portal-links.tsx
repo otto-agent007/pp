@@ -15,6 +15,7 @@ import {
   useCreateCustomerPortalAccessToken,
   useCustomerPortalAccessTokenEvents,
   useCustomerPortalAccessTokens,
+  useCustomerPortalProviderStatus,
   useRevokeCustomerPortalAccessToken,
   useSendCustomerPortalAccessToken,
 } from "../../hooks/useCustomerPortalAccess";
@@ -237,6 +238,7 @@ export function CustomerPortalLinks({
   customerId: string;
 }) {
   const tokensQuery = useCustomerPortalAccessTokens(customerId);
+  const providerStatus = useCustomerPortalProviderStatus();
   const createToken = useCreateCustomerPortalAccessToken();
   const revokeToken = useRevokeCustomerPortalAccessToken(customerId);
   const sendToken = useSendCustomerPortalAccessToken();
@@ -261,6 +263,11 @@ export function CustomerPortalLinks({
   const [message, setMessage] = useState<string | null>(null);
   const [sendRequested, setSendRequested] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [freshSendError, setFreshSendError] = useState<string | null>(null);
+  const [freshSendingId, setFreshSendingId] = useState<string | null>(null);
+  const [freshSendRequestedId, setFreshSendRequestedId] = useState<string | null>(
+    null,
+  );
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(
@@ -336,7 +343,7 @@ export function CustomerPortalLinks({
   }
 
   async function sendLatestLink() {
-    if (!latestLink || !latestTokenId || !hasContact) {
+    if (!latestLink || !latestTokenId || !hasContact || !providerReady) {
       return;
     }
 
@@ -356,6 +363,63 @@ export function CustomerPortalLinks({
     }
 
     setSendRequested(true);
+  }
+
+  async function sendNewLink(token: CustomerPortalAccessTokenSummary) {
+    if (!hasContact || !providerReady || freshSendingId) {
+      return;
+    }
+
+    setFreshSendingId(token.id);
+    setFreshSendRequestedId(null);
+    setFreshSendError(null);
+    setSendError(null);
+    setSendRequested(false);
+    setCopyUnavailable(false);
+
+    const grant = await createToken
+      .mutateAsync({
+        customer_id: customerId,
+        expires_at: token.expires_at,
+      })
+      .catch(() => null);
+
+    if (!grant) {
+      setFreshSendingId(null);
+      setFreshSendError("Couldn't generate a new link to send. Try again.");
+      return;
+    }
+
+    setLatestLink(grant.portal_url);
+    setLatestTokenId(grant.token_id);
+
+    try {
+      await copyText(grant.portal_url);
+      setMessage("✓ Fresh link copied to clipboard.");
+    } catch {
+      setCopyUnavailable(true);
+      setMessage(null);
+    }
+
+    const result = await sendToken
+      .mutateAsync({
+        customer_id: customerId,
+        token_id: grant.token_id,
+        portal_url: grant.portal_url,
+      })
+      .catch(() => null);
+
+    setFreshSendingId(null);
+
+    if (!result) {
+      setFreshSendError(
+        "Couldn't request send. Copy the newly generated link manually or try again.",
+      );
+      return;
+    }
+
+    setSendRequested(true);
+    setFreshSendRequestedId(token.id);
   }
 
   async function copyLatestLink() {
@@ -387,17 +451,40 @@ export function CustomerPortalLinks({
     expiresInputRef.current?.focus();
   }
 
+  const providerReady = providerStatus.data?.provider === "webhook";
+  const providerCopy = (() => {
+    if (providerStatus.isLoading) {
+      return "Checking portal delivery provider...";
+    }
+
+    if (providerStatus.error) {
+      return "Provider status unavailable. Manual copy remains available.";
+    }
+
+    if (providerReady) {
+      return "Portal delivery provider ready. Manual copy remains available.";
+    }
+
+    return "Portal delivery provider is manual-only. Share links manually.";
+  })();
+
   const sendButton = latestLink ? (
     sendRequested ? (
       <p className="text-xs font-semibold text-accent">✓ Send requested.</p>
     ) : (
       <button
-        aria-disabled={!hasContact || sendToken.isPending}
+        aria-disabled={!hasContact || !providerReady || sendToken.isPending}
         aria-label="Send portal link via provider"
         className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={!hasContact || sendToken.isPending}
+        disabled={!hasContact || !providerReady || sendToken.isPending}
         onClick={() => void sendLatestLink()}
-        title={!hasContact ? "No contact saved — share the link manually" : undefined}
+        title={
+          !hasContact
+            ? "No contact saved — share the link manually"
+            : !providerReady
+              ? "Portal delivery provider is manual-only — share the link manually"
+              : undefined
+        }
         type="button"
       >
         {sendToken.isPending ? "Sending..." : "Send link"}
@@ -528,6 +615,9 @@ export function CustomerPortalLinks({
             {readinessCard.body ? (
               <p className="mt-0.5 text-xs text-gray-600">{readinessCard.body}</p>
             ) : null}
+            <p className="mt-1 text-xs font-medium text-gray-500">
+              {providerCopy}
+            </p>
           </div>
           {tokensQuery.error ? (
             <button
@@ -702,7 +792,34 @@ export function CustomerPortalLinks({
                         {isHistoryExpanded ? "Hide history" : "History"}
                       </button>
                       {isActive ? (
-                        isRevoking ? (
+                        <>
+                          {freshSendingId === token.id ? (
+                            <button
+                              className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled
+                              type="button"
+                            >
+                              Sending new...
+                            </button>
+                          ) : freshSendRequestedId === token.id ? null : (
+                            <button
+                              aria-label={`Send new portal link for link created ${formatDate(token.created_at)}`}
+                              className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={!hasContact || !providerReady || Boolean(freshSendingId)}
+                              onClick={() => void sendNewLink(token)}
+                              title={
+                                !hasContact
+                                  ? "No contact saved — share the link manually"
+                                  : !providerReady
+                                    ? "Portal delivery provider is manual-only — share links manually"
+                                    : undefined
+                              }
+                              type="button"
+                            >
+                              Send new link
+                            </button>
+                          )}
+                          {isRevoking ? (
                           <button
                             className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                             disabled
@@ -726,10 +843,16 @@ export function CustomerPortalLinks({
                           >
                             Revoke
                           </button>
-                        )
+                          )}
+                        </>
                       ) : null}
                     </div>
                   </div>
+                  {freshSendRequestedId === token.id ? (
+                    <p className="mt-2 text-xs font-semibold text-accent">
+                      ✓ Send requested with a new link.
+                    </p>
+                  ) : null}
                   {isHistoryExpanded ? (
                     <CustomerPortalTokenHistory
                       onCollapse={() => collapseHistory(token.id)}
@@ -776,6 +899,11 @@ export function CustomerPortalLinks({
           </div>
         )}
       </div>
+      {freshSendError ? (
+        <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
+          {freshSendError}
+        </p>
+      ) : null}
       {revokeToken.error ? (
         <p className="mt-2 text-xs font-semibold text-red-700">
           {"Couldn't revoke link. Try again."}

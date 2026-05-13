@@ -111,7 +111,7 @@ created during the check.
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
 | Queue field captures | Expo mobile app | Technician queues status, geofence, form, chemical, photo, and signature captures offline-first. |
 | Review closeout | `/closeouts` | Office can review synced field captures and see whether billing is ready. |
-| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data; if the portal webhook is configured, the freshly generated session link can be sent with `Send link`. |
+| Generate portal access | `/customers` | Portal link opens token-protected customer closeout data; provider readiness shows webhook or manual-only mode without exposing env values, and active rows can request a fresh-link send. |
 | Review customer ledger | `/customers` | Customer account ledger expands with service, invoice, open-balance, and review filters without exposing provider payment metadata. |
 | Revoke portal access | `/customers` | Active portal links require confirmation before revoke and revoked links stop loading customer portal data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
@@ -157,16 +157,19 @@ Customer portal:
 
 1. Open `/customers` and find a customer with completed closeouts and at least one invoice.
 2. Expand the account ledger and confirm service rows, invoice rows, open balances, and review-needed items match the customer history already visible in `/closeouts` and `/payments`.
-3. Generate a portal access token and confirm the latest-link area offers copy/share readiness. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link` and confirm the UI says `Send requested` without claiming delivery.
-4. Open `/portal/<customer-id>?access_token=<token>`.
-5. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
-6. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
-7. Confirm private job media renders through signed URLs.
-8. Confirm open and paid invoices render without provider ids, raw payment records, or admin billing notes.
-9. Return to `/customers`, open the active token row, and confirm revoke requires the inline "Confirm revoke" action.
-10. Cancel revoke once and confirm focus returns to the same Revoke button.
-11. Confirm revoke, then open the old tokened portal URL and confirm closeouts and billing no longer load.
-12. Open `/portal/<customer-id>` without a token and confirm closeouts and billing do not load.
+3. Generate a portal access token and confirm the latest-link area offers copy/share readiness.
+4. Confirm the portal provider readiness copy reports webhook-backed or manual-only mode without exposing the webhook URL or secret.
+5. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link` and confirm the UI says `Send requested` without claiming delivery.
+6. From an active token row, use `Send new link` and confirm it creates a fresh session link before requesting send; if the provider fails, the fresh link remains available for manual copy.
+7. Open `/portal/<customer-id>?access_token=<token>`.
+8. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
+9. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
+10. Confirm private job media renders through signed URLs.
+11. Confirm open and paid invoices render without provider ids, raw payment records, or admin billing notes.
+12. Return to `/customers`, open the active token row, and confirm revoke requires the inline "Confirm revoke" action.
+13. Cancel revoke once and confirm focus returns to the same Revoke button.
+14. Confirm revoke, then open the old tokened portal URL and confirm closeouts and billing no longer load.
+15. Open `/portal/<customer-id>` without a token and confirm closeouts and billing do not load.
 
 Mobile:
 

@@ -555,6 +555,24 @@ describe("closeouts domain", () => {
         occurred_at: "2026-05-06T02:00:00.000Z",
       }),
     ).toBe("Revoked");
+    expect(
+      getCustomerPortalAccessTokenEventLabel({
+        id: "event-4",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "send_requested",
+        occurred_at: "2026-05-06T03:00:00.000Z",
+      }),
+    ).toBe("Send requested");
+    expect(
+      getCustomerPortalAccessTokenEventLabel({
+        id: "event-5",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "send_failed",
+        occurred_at: "2026-05-06T04:00:00.000Z",
+      }),
+    ).toBe("Send failed");
   });
 
   it("summarizes portal access token readiness for admins", () => {

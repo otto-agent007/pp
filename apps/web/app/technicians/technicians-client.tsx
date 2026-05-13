@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  buildTechnicianRouteLoadSummaries,
   getTechnicianLabel,
   validateTechnicianInviteInput,
 } from "@pest-patrol/domain";
 import type { TechnicianInviteInput } from "@pest-patrol/types";
 import { FormEvent, useMemo, useState } from "react";
 
+import { useJobs } from "../../hooks/useJobs";
 import {
   useInviteTechnician,
   useTechnicianDirectory,
@@ -19,6 +21,7 @@ const emptyForm: TechnicianInviteInput = {
 
 export function TechniciansClient() {
   const techniciansQuery = useTechnicianDirectory();
+  const jobsQuery = useJobs();
   const inviteTechnician = useInviteTechnician();
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<TechnicianInviteInput>(emptyForm);
@@ -45,6 +48,16 @@ export function TechniciansClient() {
         .includes(query);
     });
   }, [search, techniciansQuery.data]);
+  const routeLoadByTechnician = useMemo(() => {
+    const summaries = buildTechnicianRouteLoadSummaries(
+      techniciansQuery.data ?? [],
+      jobsQuery.data ?? [],
+    );
+
+    return new Map(
+      summaries.map((summary) => [summary.technician_id, summary]),
+    );
+  }, [jobsQuery.data, techniciansQuery.data]);
 
   function updateForm(update: Partial<TechnicianInviteInput>) {
     setForm((current) => ({
@@ -102,35 +115,58 @@ export function TechniciansClient() {
               No technicians found
             </p>
           ) : (
-            visibleTechnicians.map((technician) => (
-              <article
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-                key={technician.id}
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-neutralDark">
-                      {getTechnicianLabel(technician)}
-                    </h2>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {technician.email ?? "No email saved"}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-500">
-                      ID {technician.id}
-                    </p>
+            visibleTechnicians.map((technician) => {
+              const routeLoad = routeLoadByTechnician.get(technician.id);
+
+              return (
+                <article
+                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                  key={technician.id}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-semibold text-neutralDark">
+                        {getTechnicianLabel(technician)}
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {technician.email ?? "No email saved"}
+                      </p>
+                      <p className="mt-2 text-xs text-gray-500">
+                        ID {technician.id}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-neutralDark">
+                        <span className="rounded-md bg-blue-50 px-2 py-1 text-blue-700">
+                          {routeLoad?.today_assigned_job_count ?? 0} today
+                        </span>
+                        <span className="rounded-md bg-gray-100 px-2 py-1 text-gray-700">
+                          {routeLoad?.upcoming_assigned_job_count ?? 0} upcoming
+                        </span>
+                        <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-700">
+                          {routeLoad?.route_status_label ?? "No route today"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-start gap-3 sm:items-end">
+                      <span
+                        className={`w-fit rounded-md px-2 py-1 text-xs font-semibold capitalize ${
+                          technician.status === "active"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {technician.status}
+                      </span>
+                      <a
+                        className="min-h-10 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                        href={`/dispatch?technician=${encodeURIComponent(technician.id)}`}
+                      >
+                        Open in dispatch
+                      </a>
+                    </div>
                   </div>
-                  <span
-                    className={`w-fit rounded-md px-2 py-1 text-xs font-semibold capitalize ${
-                      technician.status === "active"
-                        ? "bg-green-50 text-green-700"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {technician.status}
-                  </span>
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           )}
         </div>
 
