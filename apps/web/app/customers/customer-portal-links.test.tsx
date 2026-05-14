@@ -42,12 +42,12 @@ const openedToken = {
   id: "token-opened",
   created_at: "2026-05-07T00:00:00.000Z",
   expires_at: "2027-05-01T00:00:00.000Z",
-  last_used_at: "2026-05-07T00:00:00.000Z",
+  last_used_at: "2026-05-07T09:38:00.000Z",
 };
 const openedNoExpirationToken = {
   ...token,
   id: "token-opened-no-expiration",
-  last_used_at: "2026-05-07T00:00:00.000Z",
+  last_used_at: "2026-05-07T09:38:00.000Z",
 };
 const revokedToken = {
   ...token,
@@ -62,6 +62,7 @@ describe("CustomerPortalLinks", () => {
   const writeText = vi.fn();
 
   beforeEach(() => {
+    vi.setSystemTime(new Date("2026-05-07T10:08:00.000Z"));
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
       data: [token],
       isLoading: false,
@@ -140,7 +141,8 @@ describe("CustomerPortalLinks", () => {
     expect(
       screen.getByText(
         (_content, element) =>
-          element?.textContent === "Expires May 1, 2027 · Opened May 7, 2026",
+          element?.textContent ===
+          "Expires May 1, 2027 · Opened May 7, 2026, 2:38 AM PDT (30 minutes ago)",
       ),
     ).toBeInTheDocument();
     expect(
@@ -287,6 +289,20 @@ describe("CustomerPortalLinks", () => {
     expect(screen.queryByText("No contact saved")).not.toBeInTheDocument();
   });
 
+  it("shows the last portal access time and relative age when opened", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [openedToken],
+      isLoading: false,
+    } as never);
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    expect(screen.getByText("Customer has accessed the portal")).toBeInTheDocument();
+    expect(
+      screen.getByText("Last opened May 7, 2026, 2:38 AM PDT (30 minutes ago)."),
+    ).toBeInTheDocument();
+  });
+
   it("shows no-contact readiness for inactive portal history without saved contact", () => {
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
       data: [expiredToken, revokedToken],
@@ -347,6 +363,7 @@ describe("CustomerPortalLinks", () => {
     expect(
       screen.getByRole("button", { name: "Send portal link via provider" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Send link ▶")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Generate new" })).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -419,6 +436,25 @@ describe("CustomerPortalLinks", () => {
       screen.queryByRole("button", { name: "Send portal link via provider" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+  });
+
+  it("does not show provider-ready copy as a readiness-card status", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(
+      <CustomerPortalLinks
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("No portal links")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Portal delivery provider ready. Manual copy remains available."),
+    ).not.toBeInTheDocument();
   });
 
   it("sends a fresh token from an active row and keeps manual fallback available", async () => {
@@ -597,7 +633,7 @@ describe("CustomerPortalLinks", () => {
     );
     expect(
       screen.getByText(
-        "This link is active and expires May 1, 2027. The customer last opened it May 7, 2026.",
+        "This link is active and expires May 1, 2027. The customer last opened it May 7, 2026, 2:38 AM PDT (30 minutes ago).",
       ),
     ).toBeInTheDocument();
 

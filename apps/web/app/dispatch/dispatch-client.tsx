@@ -5,9 +5,10 @@ import {
   getTechnicianLabel,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
+  parseJobScheduleWallTime,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobStatus } from "@pest-patrol/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCustomers } from "../../hooks/useCustomers";
 import {
@@ -48,7 +49,7 @@ function formatTime(value: string) {
   return new Intl.DateTimeFormat("en", {
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(value));
+  }).format(parseJobScheduleWallTime(value));
 }
 
 export function DispatchClient() {
@@ -57,9 +58,33 @@ export function DispatchClient() {
   const techniciansQuery = useTechnicians();
   const changeStatus = useChangeJobStatus();
   const assignTechnician = useAssignJobTechnician();
+  const hasAppliedTechnicianQuery = useRef(false);
   const [anchorDate, setAnchorDate] = useState(todayKey());
   const [status, setStatus] = useState<StatusFilter>("all");
   const [technician, setTechnician] = useState<TechnicianFilter>("all");
+  const technicians = useMemo(
+    () => techniciansQuery.data ?? [],
+    [techniciansQuery.data],
+  );
+
+  useEffect(() => {
+    if (hasAppliedTechnicianQuery.current || techniciansQuery.isLoading) {
+      return;
+    }
+
+    hasAppliedTechnicianQuery.current = true;
+
+    const requestedTechnician = new URLSearchParams(window.location.search).get(
+      "technician",
+    );
+
+    if (
+      requestedTechnician &&
+      technicians.some((item) => item.id === requestedTechnician)
+    ) {
+      setTechnician(requestedTechnician);
+    }
+  }, [technicians, techniciansQuery.isLoading]);
 
   const decoratedJobs = useMemo(
     () => (jobsQuery.data ?? []).map((job) => decorateJob(job, customersQuery.data ?? [])),
@@ -158,7 +183,7 @@ export function DispatchClient() {
             >
               <option value="all">All technicians</option>
               <option value="unassigned">Unassigned</option>
-              {(techniciansQuery.data ?? []).map((item) => (
+              {technicians.map((item) => (
                 <option key={item.id} value={item.id}>
                   {getTechnicianLabel(item)}
                 </option>
@@ -261,7 +286,7 @@ export function DispatchClient() {
                         value={job.assigned_tech_id ?? ""}
                       >
                         <option value="">Unassigned</option>
-                        {(techniciansQuery.data ?? []).map((item) => (
+                        {technicians.map((item) => (
                           <option key={item.id} value={item.id}>
                             {getTechnicianLabel(item)}
                           </option>

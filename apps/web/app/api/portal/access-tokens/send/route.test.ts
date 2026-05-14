@@ -14,6 +14,7 @@ let adminAccess:
 let serviceClient: {
   from: ReturnType<typeof vi.fn>;
 };
+let eventInsertCalls: unknown[][];
 
 vi.mock("../../../_lib/server-auth", () => ({
   createServiceRoleSupabaseClient: () => serviceClient,
@@ -37,6 +38,7 @@ class MockQuery<T> {
 
   insert(...args: unknown[]) {
     this.calls.push(["insert", args]);
+    eventInsertCalls.push(args);
     return this;
   }
 
@@ -98,6 +100,7 @@ describe("customer portal send route", () => {
     serviceClient = {
       from: vi.fn(() => new MockQuery({ error: null })),
     };
+    eventInsertCalls = [];
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -130,9 +133,10 @@ describe("customer portal send route", () => {
     expect(response.status).toBe(503);
     expect(body.error).toBe("Portal delivery provider is not configured");
     expect(JSON.stringify(body)).not.toContain("portal-token");
-    expect(serviceClient.from).toHaveBeenCalledWith(
+    expect(serviceClient.from).not.toHaveBeenCalledWith(
       "customer_portal_access_token_events",
     );
+    expect(eventInsertCalls).toHaveLength(0);
   });
 
   it("rejects portal URLs that do not match the customer portal route", async () => {
@@ -247,9 +251,13 @@ describe("customer portal send route", () => {
   it("sends a sanitized portal payload with the server-only secret", async () => {
     vi.stubEnv("PORTAL_DELIVERY_WEBHOOK_URL", "https://provider.example/portal");
     vi.stubEnv("PORTAL_DELIVERY_WEBHOOK_SECRET", "provider-secret");
-    const fetchMock = vi.fn().mockResolvedValue({
-      json: vi.fn().mockResolvedValue({ message_id: "provider-message-1" }),
-      ok: true,
+    const fetchMock = vi.fn().mockImplementation(() => {
+      expect(eventInsertCalls).toHaveLength(0);
+
+      return Promise.resolve({
+        json: vi.fn().mockResolvedValue({ message_id: "provider-message-1" }),
+        ok: true,
+      });
     });
     vi.stubGlobal("fetch", fetchMock);
     serviceClient.from.mockReturnValueOnce(
@@ -297,6 +305,16 @@ describe("customer portal send route", () => {
     expect(serviceClient.from).toHaveBeenCalledWith(
       "customer_portal_access_token_events",
     );
+    expect(eventInsertCalls).toEqual([
+      [
+        {
+          actor_profile_id: "admin-1",
+          customer_id: "customer-1",
+          kind: "send_requested",
+          token_id: "token-1",
+        },
+      ],
+    ]);
   });
 
   it("returns provider failures without exposing provider internals", async () => {
@@ -318,10 +336,15 @@ describe("customer portal send route", () => {
     expect(response.status).toBe(502);
     expect(body.error).toBe("Portal delivery provider request failed");
     expect(JSON.stringify(body)).not.toContain("provider-detail");
-    expect(
-      serviceClient.from.mock.calls.filter(
-        ([table]) => table === "customer_portal_access_token_events",
-      ),
-    ).toHaveLength(2);
+    expect(eventInsertCalls).toEqual([
+      [
+        {
+          actor_profile_id: "admin-1",
+          customer_id: "customer-1",
+          kind: "send_failed",
+          token_id: "token-1",
+        },
+      ],
+    ]);
   });
 });

@@ -196,6 +196,13 @@ describe("JobsClient", () => {
     expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();
   });
 
+  it("renders Z-suffixed scheduled timestamps as wall-clock job time", () => {
+    render(<JobsClient />);
+
+    expect(screen.getAllByText(/May 6, 2026, 9:00 AM/).length)
+      .toBeGreaterThan(0);
+  });
+
   it("validates required create fields", async () => {
     const user = userEvent.setup();
     render(<JobsClient />);

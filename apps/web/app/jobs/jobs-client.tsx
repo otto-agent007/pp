@@ -3,6 +3,7 @@
 import {
   filterJobs,
   getTechnicianLabel,
+  parseJobScheduleWallTime,
   validateJobInput,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobInput, JobStatus } from "@pest-patrol/types";
@@ -80,7 +81,7 @@ function formatSchedule(value: string) {
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(parseJobScheduleWallTime(value));
 }
 
 export function JobsClient() {

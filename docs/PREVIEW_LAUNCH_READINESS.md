@@ -36,6 +36,32 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - Configure Stripe test-mode webhook delivery to `/api/payments/stripe-webhook` if payment webhook smoke is in scope.
 - Optionally configure notification and portal delivery webhook endpoints. If omitted, notification delivery and portal sharing must be smoke-tested through manual fallback behavior.
+- Provide an interactive Vercel preview access path before browser smoke. If Deployment Protection is enabled, use an authenticated browser session, a temporary share link, or explicitly approve Codex to create a protected-preview access link if available.
+
+## Operator Smoke Access Handoff
+
+Before authenticated smoke can run, the operator should provide access through an interactive protected-preview browser session and a valid admin or dispatcher sign-in path. Share credentials, reset links, bypass values, and portal tokens only through an approved out-of-band channel; do not paste them into repo files, docs, tests, commits, or chat.
+
+Codex should record only sanitized smoke evidence:
+
+- route or workflow name
+- action attempted
+- pass/fail result
+- blocker category
+- next action
+
+Use these blocker categories consistently: app bug, missing env/setup, migration drift, expected manual-fallback limitation, operator access blocked, or deferred product follow-up.
+
+## Preview Deployment Discovery
+
+Use local Vercel project metadata and CLI access when connector/API access is unavailable:
+
+- `corepack pnpm dlx vercel ls pest-patrol-os`
+- `corepack pnpm dlx vercel inspect <preview-url>`
+- `corepack pnpm dlx vercel env ls`
+- `corepack pnpm dlx vercel curl / --deployment <preview-url>`
+
+`vercel curl` can verify that a Deployment Protection-protected preview boots, but it does not replace an operator-approved interactive browser access path for the web smoke.
 
 ## Migration Readiness
 
@@ -50,6 +76,8 @@ Before applying migrations, the operator should confirm the target Supabase proj
 
 ## Preview Smoke Run
 
+Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
+
 Run these in order after the preview deployment has the approved environment variables:
 
 1. Sign in as admin or dispatcher and confirm the protected admin shell loads.
@@ -63,7 +91,7 @@ Run these in order after the preview deployment has the approved environment var
 9. Expand the customer ledger and confirm service, invoice, open-balance, and review filters do not expose provider internals.
 10. Generate a portal token, copy the session link, and open `/portal/<customer-id>?access_token=<token>`.
 11. Confirm portal provider readiness shows webhook-backed or manual-only mode without exposing env values.
-12. If portal webhook is configured, use `Send link` and active-row `Send new link`; confirm the UI says `Send requested` without claiming delivery and the history drawer shows provider-safe send attempt events.
+12. If portal webhook is configured, use `Send link ▶` and active-row `Send new link`; confirm the UI says `Send requested` without claiming delivery and the history drawer shows provider-safe send attempt events.
 13. If portal webhook is not configured, confirm manual copy remains available and provider send controls do not invite a send.
 14. Revoke an active portal link and confirm the old tokened portal URL no longer loads.
 15. Create an automation template/rule, preview scheduler output, run the scheduler manually, and confirm generated notifications.
@@ -73,7 +101,6 @@ Run these in order after the preview deployment has the approved environment var
 
 ## Deferred Follow-Ups
 
-- Dispatch query-param preselection for `/dispatch?technician=...`.
 - Durable provider delivery receipts for portal sends.
 - Richer provider failure classification in portal send UI.
 - Supabase leaked password protection if the project moves to Supabase Pro.
