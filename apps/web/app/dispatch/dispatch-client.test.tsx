@@ -85,6 +85,7 @@ describe("DispatchClient", () => {
 
   beforeEach(() => {
     vi.setSystemTime(new Date(now));
+    window.history.replaceState({}, "", "/dispatch");
     vi.mocked(useCustomers).mockReturnValue({
       data: [customer],
       isLoading: false,
@@ -114,6 +115,17 @@ describe("DispatchClient", () => {
 
     expect(screen.getAllByText("Apex Homes")).toHaveLength(2);
     expect(screen.getAllByText("10 Pine Street")).toHaveLength(2);
+  });
+
+  it("renders Z-suffixed scheduled timestamps as wall-clock dispatch time", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [{ ...scheduledJob, scheduled_start: "2026-05-06T09:38:00Z" }],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    expect(screen.getByText("9:38 AM")).toBeInTheDocument();
   });
 
   it("explains scheduled job visibility and completed handoff", () => {
@@ -172,6 +184,34 @@ describe("DispatchClient", () => {
     render(<DispatchClient />);
 
     expect(screen.getAllByRole("option", { name: "Testnician" }).length).toBeGreaterThan(0);
+  });
+
+  it("preselects a matching technician from the query string", () => {
+    window.history.replaceState({}, "", "/dispatch?technician=technician-1");
+
+    render(<DispatchClient />);
+
+    expect(screen.getByLabelText("Dispatch technician")).toHaveValue("technician-1");
+    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
+  });
+
+  it("keeps all technicians selected when the query string omits technician", () => {
+    render(<DispatchClient />);
+
+    expect(screen.getByLabelText("Dispatch technician")).toHaveValue("all");
+    expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
+    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
+  });
+
+  it("ignores unknown technician query string values", () => {
+    window.history.replaceState({}, "", "/dispatch?technician=technician-missing");
+
+    render(<DispatchClient />);
+
+    expect(screen.getByLabelText("Dispatch technician")).toHaveValue("all");
+    expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
+    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
   });
 
   it("navigates weeks", async () => {

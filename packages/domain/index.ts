@@ -200,6 +200,7 @@ export {
   listJobs,
   listTechnicians,
   normalizeJobInput,
+  parseJobScheduleWallTime,
   updateJob,
   validateJobInput,
 } from "./jobs";

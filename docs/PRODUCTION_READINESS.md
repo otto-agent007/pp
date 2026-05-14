@@ -168,7 +168,7 @@ Customer portal:
 2. Expand the account ledger and confirm service rows, invoice rows, open balances, and review-needed items match the customer history already visible in `/closeouts` and `/payments`.
 3. Generate a portal access token and confirm the latest-link area offers copy/share readiness.
 4. Confirm the portal provider readiness copy reports webhook-backed or manual-only mode without exposing the webhook URL or secret.
-5. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link` and confirm the UI says `Send requested` without claiming delivery.
+5. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link ▶` and confirm the UI says `Send requested` without claiming delivery.
 6. From an active token row, use `Send new link` and confirm it creates a fresh session link before requesting send; if the provider fails, the fresh link remains available for manual copy.
 7. Open `/portal/<customer-id>?access_token=<token>`.
 8. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.

@@ -183,17 +183,14 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!process.env.PORTAL_DELIVERY_WEBHOOK_URL) {
+      throw new Error("Portal delivery provider is not configured");
+    }
+
     const payload = buildProviderPayload({
       customer: data.customer,
       portalUrl,
       token: data,
-    });
-
-    await recordCustomerPortalAccessTokenEvent(client, {
-      actorProfileId: auth.access.userId,
-      customerId: data.customer_id,
-      kind: "send_requested",
-      tokenId: data.id,
     });
 
     try {
@@ -208,6 +205,13 @@ export async function POST(request: Request) {
 
       throw error;
     }
+
+    await recordCustomerPortalAccessTokenEvent(client, {
+      actorProfileId: auth.access.userId,
+      customerId: data.customer_id,
+      kind: "send_requested",
+      tokenId: data.id,
+    });
 
     return NextResponse.json({
       provider: "webhook",

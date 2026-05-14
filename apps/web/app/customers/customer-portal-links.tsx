@@ -31,8 +31,63 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatRelativeAge(value: string) {
+  const timestamp = new Date(value).getTime();
+  const now = Date.now();
+
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+
+  const diffMs = Math.max(0, now - timestamp);
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  if (diffMinutes < 1) {
+    return "just now";
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+
+  return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+}
+
+function formatAccessTimestamp(value: string | null) {
+  if (!value) {
+    return "Never opened";
+  }
+
+  const timestamp = new Date(value);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    return "Unknown open time";
+  }
+
+  const absolute = new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    timeZone: "America/Los_Angeles",
+    timeZoneName: "short",
+    year: "numeric",
+  }).format(timestamp);
+  const relative = formatRelativeAge(value);
+
+  return relative ? `${absolute} (${relative})` : absolute;
+}
+
 function formatOpened(value: string | null) {
-  return value ? `Opened ${formatDate(value)}` : "Never opened";
+  return value ? `Opened ${formatAccessTimestamp(value)}` : "Never opened";
 }
 
 function eventDetail(event: CustomerPortalAccessTokenEventSummary) {
@@ -115,7 +170,7 @@ function revokeConfirmPrompt(token: CustomerPortalAccessTokenSummary) {
     return `This link is active and expires ${formatDate(token.expires_at)}. It has never been opened.`;
   }
 
-  return `This link is active and expires ${formatDate(token.expires_at)}. The customer last opened it ${formatDate(token.last_used_at)}.`;
+  return `This link is active and expires ${formatDate(token.expires_at)}. The customer last opened it ${formatAccessTimestamp(token.last_used_at)}.`;
 }
 
 function CustomerPortalTokenHistory({
@@ -216,7 +271,7 @@ function CustomerPortalTokenHistory({
               <p className="text-xs text-gray-500">{eventDetail(event)}</p>
             </div>
             <p className="shrink-0 text-right text-xs font-semibold text-gray-500">
-              {formatDate(event.occurred_at)}
+              {formatAccessTimestamp(event.occurred_at)}
             </p>
           </li>
         ))}
@@ -467,16 +522,12 @@ export function CustomerPortalLinks({
     }
 
     if (providerReady) {
-      return "Portal delivery provider ready. Manual copy remains available.";
+      return null;
     }
 
     return "Portal delivery provider is manual-only. Share links manually.";
   })();
-  const showProviderCopy =
-    !providerReady ||
-    providerStatus.isLoading ||
-    Boolean(providerStatus.error) ||
-    tokens.length === 0;
+  const showProviderCopy = Boolean(providerCopy);
 
   const sendButton = latestLink && providerReady ? (
     sendRequested ? (
@@ -496,7 +547,7 @@ export function CustomerPortalLinks({
         }
         type="button"
       >
-        {sendToken.isPending ? "Sending..." : "Send link"}
+        {sendToken.isPending ? "Sending..." : "Send link ▶"}
       </button>
     )
   ) : null;
@@ -578,7 +629,7 @@ export function CustomerPortalLinks({
 
       if (openedAt) {
         return {
-          body: `Last opened ${formatDate(openedAt)}.`,
+          body: `Last opened ${formatAccessTimestamp(openedAt)}.`,
           label: "Customer has accessed the portal",
           tone: "border-l-emerald-500",
         };

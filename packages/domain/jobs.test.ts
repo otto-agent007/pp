@@ -9,6 +9,7 @@ import {
   filterJobs,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
+  parseJobScheduleWallTime,
   validateJobInput,
 } from "./jobs";
 import type { OfflineQueueItem } from "@pest-patrol/types";
@@ -115,6 +116,16 @@ describe("job domain", () => {
     expect(filterJobs(jobs, "", "canceled")).toHaveLength(1);
   });
 
+  it("treats scheduled job timestamps as operator-entered wall time", () => {
+    const parsed = parseJobScheduleWallTime("2026-05-06T09:38:00Z");
+
+    expect(parsed.getFullYear()).toBe(2026);
+    expect(parsed.getMonth()).toBe(4);
+    expect(parsed.getDate()).toBe(6);
+    expect(parsed.getHours()).toBe(9);
+    expect(parsed.getMinutes()).toBe(38);
+  });
+
   it("groups dispatch jobs into a navigable week", () => {
     const jobs = [
       {
@@ -150,6 +161,28 @@ describe("job domain", () => {
     expect(week).toHaveLength(7);
     expect(week.find((day) => day.date === "2026-05-06")?.jobs).toHaveLength(1);
     expect(week.find((day) => day.date === "2026-05-06")?.jobs[0].id).toBe("job-1");
+  });
+
+  it("keeps Z-suffixed scheduled jobs on their wall-clock dispatch day", () => {
+    const jobs = [
+      {
+        id: "job-1",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T09:38:00Z",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+
+    const week = buildDispatchWeek(jobs, "2026-05-06");
+
+    expect(week.find((day) => day.date === "2026-05-06")?.jobs[0]?.id)
+      .toBe("job-1");
   });
 
   it("builds the mobile daily job list for assigned jobs", () => {

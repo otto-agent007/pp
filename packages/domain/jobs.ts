@@ -51,6 +51,9 @@ export interface MobileDailyRouteTimeline {
   summary: MobileRouteTimelineSummary;
 }
 
+const scheduleDateTimePattern =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/;
+
 function normalizeOptional(value?: string | null) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
@@ -67,7 +70,7 @@ function requireNonEmpty(value: string, fieldName: string) {
 function requireScheduledStart(value: string) {
   const scheduledStart = requireNonEmpty(value, "Scheduled start");
 
-  if (Number.isNaN(Date.parse(scheduledStart))) {
+  if (Number.isNaN(getJobScheduleTime(scheduledStart))) {
     throw new Error("Scheduled start must be a valid date");
   }
 
@@ -77,7 +80,7 @@ function requireScheduledStart(value: string) {
 function normalizeScheduledEnd(value?: string | null) {
   const scheduledEnd = normalizeOptional(value);
 
-  if (scheduledEnd && Number.isNaN(Date.parse(scheduledEnd))) {
+  if (scheduledEnd && Number.isNaN(getJobScheduleTime(scheduledEnd))) {
     throw new Error("Scheduled end must be a valid date");
   }
 
@@ -88,7 +91,7 @@ export function normalizeJobInput(input: JobInput): JobInput {
   const scheduledStart = requireScheduledStart(input.scheduled_start);
   const scheduledEnd = normalizeScheduledEnd(input.scheduled_end);
 
-  if (scheduledEnd && Date.parse(scheduledEnd) < Date.parse(scheduledStart)) {
+  if (scheduledEnd && getJobScheduleTime(scheduledEnd) < getJobScheduleTime(scheduledStart)) {
     throw new Error("Scheduled end must be after scheduled start");
   }
 
@@ -107,6 +110,29 @@ export function validateJobInput(input: JobInput) {
   return normalizeJobInput(input);
 }
 
+export function parseJobScheduleWallTime(value: string) {
+  const match = scheduleDateTimePattern.exec(value.trim());
+
+  if (match) {
+    const [, year, month, day, hour, minute, second = "0"] = match;
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+    );
+  }
+
+  return new Date(value);
+}
+
+export function getJobScheduleTime(value: string) {
+  return parseJobScheduleWallTime(value).getTime();
+}
+
 export function filterJobs(
   jobs: Job[],
   search: string,
@@ -123,7 +149,7 @@ export function filterJobs(
       return false;
     }
 
-    const scheduledTime = Date.parse(job.scheduled_start);
+    const scheduledTime = getJobScheduleTime(job.scheduled_start);
 
     if (fromTime && scheduledTime < fromTime) {
       return false;
@@ -208,7 +234,7 @@ export function buildDispatchWeek(
 
       return job.assigned_tech_id === technician;
     })
-    .sort((left, right) => Date.parse(left.scheduled_start) - Date.parse(right.scheduled_start));
+    .sort((left, right) => getJobScheduleTime(left.scheduled_start) - getJobScheduleTime(right.scheduled_start));
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart);
@@ -218,7 +244,7 @@ export function buildDispatchWeek(
     return {
       date: dateKey,
       label: toDateLabel(date),
-      jobs: filteredJobs.filter((job) => toDateKey(new Date(job.scheduled_start)) === dateKey),
+      jobs: filteredJobs.filter((job) => toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === dateKey),
     };
   });
 }
@@ -227,8 +253,8 @@ export function buildMobileDailyJobs(jobs: Job[], date: string): MobileDailyJobs
   return {
     date,
     jobs: jobs
-      .filter((job) => toDateKey(new Date(job.scheduled_start)) === date)
-      .sort((left, right) => Date.parse(left.scheduled_start) - Date.parse(right.scheduled_start)),
+      .filter((job) => toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === date)
+      .sort((left, right) => getJobScheduleTime(left.scheduled_start) - getJobScheduleTime(right.scheduled_start)),
   };
 }
 
@@ -259,7 +285,7 @@ function sortLaterTimelineJobs(left: Job, right: Job) {
     return priorityDifference;
   }
 
-  return Date.parse(left.scheduled_start) - Date.parse(right.scheduled_start);
+  return getJobScheduleTime(left.scheduled_start) - getJobScheduleTime(right.scheduled_start);
 }
 
 function getReadinessLabel(workPlan: MobileJobWorkPlanItem[]) {
