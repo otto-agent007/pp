@@ -6,6 +6,9 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 
 - Keep `README.md`, `docs/IMPLEMENTATION_PLAN.md`, `tasks/in-progress.md`, and `docs/PRODUCTION_READINESS.md` aligned to preview launch readiness.
 - Verify route and env names against the code before smoke testing.
+- Run the read-only demo smoke preflight before seed/reset commands:
+  - `corepack pnpm demo:smoke -- --target local`
+  - `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`
 - Run local verification before every readiness PR:
   - `corepack pnpm test`
   - `corepack pnpm typecheck`
@@ -37,6 +40,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 - Configure Stripe test-mode webhook delivery to `/api/payments/stripe-webhook` if payment webhook smoke is in scope.
 - Optionally configure notification and portal delivery webhook endpoints. If omitted, notification delivery and portal sharing must be smoke-tested through manual fallback behavior.
 - Provide an interactive Vercel preview access path before browser smoke. If Deployment Protection is enabled, use an authenticated browser session, a temporary share link, or explicitly approve Codex to create a protected-preview access link if available.
+- For synthetic demo smoke, run `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>` first. It is read-only and reports shell seed readiness separately from the required protected-preview browser access and admin/dispatcher sign-in path.
 
 ## Operator Smoke Access Handoff
 
@@ -77,6 +81,8 @@ Before applying migrations, the operator should confirm the target Supabase proj
 ## Preview Smoke Run
 
 Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
+
+For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
 Run these in order after the preview deployment has the approved environment variables:
 

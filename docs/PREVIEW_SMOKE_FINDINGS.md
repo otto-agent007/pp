@@ -105,6 +105,17 @@ Findings:
 - Blocker category: deferred product follow-up.
 - Next action: verify the richer last-opened copy in the next deployed preview after a customer opens a portal link.
 
+## 2026-05-14 Codex Browser Recovery Check
+
+Status: Codex in-app Browser runtime is available for local smoke in this desktop session.
+
+Findings:
+- Route: local `/`
+- Action: started the web dev server on `http://localhost:3000` and opened it through the Codex in-app Browser.
+- Result: pass; the app loaded at `http://127.0.0.1:3000/` and showed the admin sign-in screen with the local demo login shortcut.
+- Blocker category: none for local browser use.
+- Next action: use Browser for local UI smoke where useful; protected preview browser smoke still requires an operator-approved Vercel preview access path and sign-in path.
+
 ## 2026-05-13 Web-First Manual-Fallback Preflight
 
 Status: Vercel preview access repaired; blocked before authenticated workflow smoke.

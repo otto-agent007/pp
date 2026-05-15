@@ -5,6 +5,7 @@ import {
   getRemainingProductionReadinessActions,
 } from "@pest-patrol/domain";
 import Link from "next/link";
+import { DemoSeedControls } from "./demo-seed-controls";
 
 const roadmapItems = [
   { href: "/customers", label: "Customers" },
@@ -57,9 +58,8 @@ export default function HomePage() {
             Ops demo command center
           </h2>
           <p className="max-w-3xl text-sm text-gray-600">
-            Use live production data intentionally. This walkthrough keeps the
-            demo focused on records you are comfortable keeping or archiving
-            later.
+            Seed a safe Pest Patrol story, sign in with the demo account, and
+            walk through the ops flow without touching production records.
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -89,6 +89,7 @@ export default function HomePage() {
               <p className="mt-2 text-sm text-gray-600">{action.action}</p>
             </div>
           ))}
+          <DemoSeedControls />
         </div>
         <div className="grid gap-3 lg:grid-cols-5">
           {demoWorkflowSteps.map((step, index) => (

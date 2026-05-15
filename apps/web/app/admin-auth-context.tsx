@@ -6,9 +6,11 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@pest-patrol/api-client";
 import type { UserProfile } from "@pest-patrol/types";
 import {
+  buildDemoWorkflowFixtures,
   establishPasswordRecoverySession,
   getCurrentAdminAuth,
   requestPasswordReset as requestPasswordResetDomain,
+  shouldUseLocalDemoFixtures,
   signInAdmin,
   signOutAdmin,
   updateCurrentUserPassword,
@@ -31,6 +33,7 @@ interface AdminAuthSnapshot extends AdminAuthState {
   initialize: () => Promise<void>;
   requestPasswordReset: (email: string, redirectTo: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInLocalDemo: () => Promise<void>;
   signOut: () => Promise<void>;
   updatePassword: (
     password: string,
@@ -55,11 +58,13 @@ let authSnapshot: AdminAuthSnapshot = {
   initialize: initializeAdminAuth,
   requestPasswordReset,
   signIn,
+  signInLocalDemo,
   signOut,
   updatePassword,
 };
 let subscriptionStarted = false;
 const listeners = new Set<() => void>();
+const localDemoSessionKey = "pest-patrol-local-demo-session";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unable to authenticate";
@@ -73,6 +78,7 @@ function setAuthState(nextState: AdminAuthState) {
     initialize: initializeAdminAuth,
     requestPasswordReset,
     signIn,
+    signInLocalDemo,
     signOut,
     updatePassword,
   };
@@ -91,6 +97,64 @@ function subscribe(listener: () => void) {
   };
 }
 
+function localDemoFixtureModeEnabled() {
+  return shouldUseLocalDemoFixtures({
+    nodeEnv: process.env.NODE_ENV,
+    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  });
+}
+
+function readLocalDemoSession() {
+  return (
+    typeof window !== "undefined" &&
+    window.localStorage.getItem(localDemoSessionKey) === "active"
+  );
+}
+
+function writeLocalDemoSession(active: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (active) {
+    window.localStorage.setItem(localDemoSessionKey, "active");
+    return;
+  }
+
+  window.localStorage.removeItem(localDemoSessionKey);
+}
+
+function buildLocalDemoAuthState(): AdminAuthState {
+  const fixtures = buildDemoWorkflowFixtures();
+  const profile = fixtures.adminProfile;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  return {
+    error: null,
+    profile,
+    session: {
+      access_token: "local-demo-access-token",
+      refresh_token: "local-demo-refresh-token",
+      expires_in: 60 * 60,
+      expires_at: nowSeconds + 60 * 60,
+      token_type: "bearer",
+      user: {
+        id: profile.id,
+        aud: "authenticated",
+        app_metadata: {},
+        user_metadata: {
+          display_name: profile.display_name,
+          role: profile.role,
+        },
+        created_at: profile.created_at,
+        email: profile.email ?? undefined,
+      },
+    } as Session,
+    status: "signed_in",
+  };
+}
+
 export async function initializeAdminAuth() {
   patchAuthState({
     error: null,
@@ -98,6 +162,11 @@ export async function initializeAdminAuth() {
   });
 
   try {
+    if (localDemoFixtureModeEnabled() && readLocalDemoSession()) {
+      setAuthState(buildLocalDemoAuthState());
+      return;
+    }
+
     const record = await getCurrentAdminAuth(supabase);
 
     if (!record) {
@@ -146,10 +215,20 @@ async function signIn(email: string, password: string) {
   }
 }
 
+async function signInLocalDemo() {
+  if (!localDemoFixtureModeEnabled()) {
+    throw new Error("Local fixture demo is not available in this environment.");
+  }
+
+  writeLocalDemoSession(true);
+  setAuthState(buildLocalDemoAuthState());
+}
+
 async function signOut() {
   try {
     await signOutAdmin(supabase);
   } finally {
+    writeLocalDemoSession(false);
     setAuthState(signedOutState);
   }
 }

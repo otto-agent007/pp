@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminSignIn } from "./admin-sign-in";
 
 const signIn = vi.fn();
+const signInLocalDemo = vi.fn();
+const prepareLocalDemoLogin = vi.fn();
 let authError: string | null = null;
 let authStatus: "loading" | "signed_in" | "signed_out" = "signed_out";
 
@@ -13,7 +15,15 @@ vi.mock("./admin-auth-context", () => ({
   useAdminAuth: () => ({
     error: authError,
     signIn,
+    signInLocalDemo,
     status: authStatus,
+  }),
+}));
+
+vi.mock("../hooks/useDemoSeed", () => ({
+  usePrepareLocalDemoLogin: () => ({
+    isPending: false,
+    mutateAsync: prepareLocalDemoLogin,
   }),
 }));
 
@@ -21,7 +31,10 @@ describe("AdminSignIn", () => {
   beforeEach(() => {
     authError = null;
     authStatus = "signed_out";
+    prepareLocalDemoLogin.mockReset();
+    prepareLocalDemoLogin.mockResolvedValue({});
     signIn.mockReset();
+    signInLocalDemo.mockReset();
   });
 
   it("validates required fields before sign-in", async () => {
@@ -46,6 +59,36 @@ describe("AdminSignIn", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(signIn).toHaveBeenCalledWith("admin@example.com", "secret-password");
+  });
+
+  it("signs in with the easy local demo credentials", async () => {
+    const user = userEvent.setup();
+
+    render(<AdminSignIn />);
+
+    await user.click(screen.getByRole("button", { name: "Log in as demo" }));
+
+    expect(screen.getByLabelText("Email")).toHaveValue("demo@email.com");
+    expect(screen.getByLabelText("Password")).toHaveValue("password");
+    expect(prepareLocalDemoLogin).toHaveBeenCalledTimes(1);
+    expect(signIn).toHaveBeenCalledWith("demo@email.com", "password");
+  });
+
+  it("falls back to a local fixture demo session when seed env is unavailable", async () => {
+    const user = userEvent.setup();
+    prepareLocalDemoLogin.mockRejectedValue(
+      new Error("NEXT_PUBLIC_SUPABASE_URL is required."),
+    );
+
+    render(<AdminSignIn />);
+
+    await user.click(screen.getByRole("button", { name: "Log in as demo" }));
+
+    expect(prepareLocalDemoLogin).toHaveBeenCalledTimes(1);
+    expect(signIn).not.toHaveBeenCalled();
+    expect(signInLocalDemo).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("NEXT_PUBLIC_SUPABASE_URL is required."))
+      .not.toBeInTheDocument();
   });
 
   it("links to password reset", () => {

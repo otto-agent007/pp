@@ -1,5 +1,32 @@
 # Done
 
+## Demo Smoke Preflight V1
+
+- Added a domain-backed demo smoke preflight helper with target, ready/blocked state, missing env names, demo seed summary, safe next commands, and sanitized evidence prompts
+- Added the read-only root `demo:smoke` script with `--target local|preview`, optional `--base-url`, and optional `--tech-password-env`
+- Kept smoke preflight free of Supabase calls, seed/reset writes, dev-server startup, browser automation, and secret value output
+- Required local smoke env names and blocked non-local Supabase URLs for `--target local`
+- Reported protected-preview shell seed readiness separately from operator-approved browser access and sign-in requirements
+- Updated README, preview readiness, implementation plan, and task tracking so preflight comes before seed/reset and Browser smoke
+- Verified with focused domain tests, blocked CLI preflight, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Demo Seed Data V1
+
+- Added guarded dashboard and CLI demo seed/reset workflows for local and protected preview environments
+- Added an admin dashboard Demo data panel with availability, dry-run counts, seed, reset, refresh, success, and blocked-state copy
+- Added an easy demo admin login seeded as `demo@email.com` / `password`, with a local one-click sign-in button
+- Added a localhost-only demo login prepare route so the sign-in button can create the fake story before signing in without a manual local seed command
+- Added an admin-authenticated server route for demo seed status, dry run, idempotent seed, and reset actions
+- Added reusable synthetic seed payloads, Pacific wall-clock demo schedules, guardrail validation, reset filters, and seed/reset ordering in the domain layer
+- Added API-client seed/reset helpers that run through a provided service-role Supabase client instead of app/UI code
+- Seeded a full demo ops story: admin auth/profile record, customers, locations, technician auth/profile records, chemical inventory, jobs, chemical logs, treatment form data, invoices, and payment state
+- Required `--target local|preview`, `--confirm seed-demo-data`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` before any write can run
+- Refused production targets and kept service-role keys, generated passwords, protected preview URLs, portal raw tokens, provider payloads, migrations, provider setup, and dashboard mutations out of scope
+- Added reverse-order reset cleanup that targets only seed-owned records, the demo admin user, and matching demo technician auth users; reseeding resets demo-owned records first
+- Updated README, implementation plan, and task tracking with safe operator commands and preview boundaries
+- Kept local tooling and critique scratch separate until the later repo cleanup request folded it into the dirty-work merge
+- Verified with focused seed tests, CLI refusal checks, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
 ## Portal-Led Batch V1
 
 - Added admin-authenticated portal provider status reporting without exposing webhook URL or secret values

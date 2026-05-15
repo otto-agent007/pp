@@ -35,6 +35,18 @@ pnpm typecheck
 pnpm build
 ```
 
+Preflight local or protected preview demo smoke before running any write-capable seed/reset command:
+
+```bash
+corepack pnpm demo:smoke -- --target local
+corepack pnpm demo:seed -- --target local --confirm seed-demo-data
+corepack pnpm demo:reset -- --target local --confirm seed-demo-data
+```
+
+`demo:smoke` is read-only: it checks required environment variable names, reports blockers, prints the safe next commands, and never calls Supabase or prints secret values. Seed local or protected preview demo data from the dashboard's Demo data panel, or from an operator shell after the preflight is ready.
+
+The seed creates the easy admin demo login `demo@email.com` / `password` plus the synthetic ops story. Local development sign-in also shows a one-click demo login button that prepares the fake story on localhost before signing in, so a manual local seed step is optional. Use `--target preview` only from an operator shell with the approved preview Supabase URL and `SUPABASE_SERVICE_ROLE_KEY` already loaded. Optional technician login demos can pass `--tech-password-env DEMO_TECH_PASSWORD`; that technician password value stays in the operator environment and is never written to the repo. The dashboard action uses the same server-side guardrails and replaces existing demo-owned records before reseeding.
+
 ## Environment
 
 Copy `.env.example` to the app-specific env file you need, then provide Supabase and provider credentials.
@@ -70,8 +82,8 @@ Current priority is preview launch readiness after the portal-led batch in PR #2
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, provider status, fresh-token send, and send-attempt history
 - tokened `/portal` routes now include a customer-safe service and billing timeline
-- current slice: Preview Launch Readiness now has a Ready Vercel preview baseline, aligned Supabase migrations, and dispatch technician query-param preselection for `/dispatch?technician=...`
-- next candidates: operator provides protected preview browser access and admin/dispatcher sign-in access for authenticated smoke, then decide whether portal delivery receipts are needed
+- current slice: Demo Smoke Preflight V1 adds a read-only preflight before local/protected-preview demo smoke, then keeps all writes in the existing seed/reset/dashboard paths
+- next candidates: operator runs local or protected-preview smoke against the seeded story, then decide whether portal delivery receipts are needed
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages

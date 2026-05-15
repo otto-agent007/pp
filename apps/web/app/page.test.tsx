@@ -19,6 +19,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("./demo-seed-controls", () => ({
+  DemoSeedControls: () => <div>Demo data controls</div>,
+}));
+
 describe("HomePage", () => {
   it("renders the demo workflow without promising seeded production data", () => {
     render(<HomePage />);
@@ -27,7 +31,7 @@ describe("HomePage", () => {
       screen.getByRole("heading", { name: "Ops demo command center" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Use live production data intentionally/i),
+      screen.getByText(/Seed a safe Pest Patrol story/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Create customer and location/ }),
@@ -65,6 +69,7 @@ describe("HomePage", () => {
       screen.getByText("9 operator-run checks ready for live-data demos."),
     ).toBeInTheDocument();
     expect(screen.getByText("Dashboard action")).toBeInTheDocument();
+    expect(screen.getByText("Demo data controls")).toBeInTheDocument();
     expect(screen.getByText("Leaked password protection")).toBeInTheDocument();
     expect(
       screen.getByText(

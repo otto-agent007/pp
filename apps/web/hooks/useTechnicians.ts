@@ -7,6 +7,7 @@ import {
 } from "@pest-patrol/domain";
 import type { TechnicianProfile } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const techniciansQueryKey = ["technicians"] as const;
 export const technicianDirectoryQueryKey = ["technician-directory"] as const;
@@ -14,14 +15,15 @@ export const technicianDirectoryQueryKey = ["technician-directory"] as const;
 export function useTechnicians() {
   return useQuery({
     queryKey: techniciansQueryKey,
-    queryFn: listTechnicians,
+    queryFn: () => getLocalDemoFixtures()?.technicians ?? listTechnicians(),
   });
 }
 
 export function useTechnicianDirectory() {
   return useQuery({
     queryKey: technicianDirectoryQueryKey,
-    queryFn: listTechnicianDirectory,
+    queryFn: () =>
+      getLocalDemoFixtures()?.technicians ?? listTechnicianDirectory(),
   });
 }
 

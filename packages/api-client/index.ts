@@ -96,3 +96,16 @@ export {
   inviteTechnicianWithAdminClientRecord,
   listTechnicianProfileRecords,
 } from "./technicians";
+export {
+  getDemoSeedStatusRecord,
+  prepareLocalDemoLoginRecord,
+  replaceDemoSeedRecords,
+  resetDemoSeedRecords,
+  runDemoSeedActionRecord,
+  seedDemoRecords,
+  validateDemoSeedExecution,
+} from "./demoSeed";
+export type {
+  DemoSeedSummary,
+  DemoSeedSupabaseClient,
+} from "./demoSeed";

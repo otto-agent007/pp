@@ -29,6 +29,7 @@ import type {
   NotificationTemplateInput,
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const automationRulesQueryKey = ["automation-rules"] as const;
 export const automationSchedulerRunsQueryKey = [
@@ -45,14 +46,15 @@ export const notificationProviderStatusQueryKey = [
 export function useAutomationRules() {
   return useQuery({
     queryKey: automationRulesQueryKey,
-    queryFn: listAutomationRules,
+    queryFn: () => (getLocalDemoFixtures() ? [] : listAutomationRules()),
   });
 }
 
 export function useAutomationSchedulerRuns() {
   return useQuery({
     queryKey: automationSchedulerRunsQueryKey,
-    queryFn: listAutomationSchedulerRuns,
+    queryFn: () =>
+      getLocalDemoFixtures() ? [] : listAutomationSchedulerRuns(),
   });
 }
 
@@ -73,21 +75,29 @@ export function useRunAutomationScheduler() {
 export function useNotificationEvents() {
   return useQuery({
     queryKey: notificationEventsQueryKey,
-    queryFn: listNotificationEvents,
+    queryFn: () => (getLocalDemoFixtures() ? [] : listNotificationEvents()),
   });
 }
 
 export function useNotificationTemplates() {
   return useQuery({
     queryKey: notificationTemplatesQueryKey,
-    queryFn: listNotificationTemplates,
+    queryFn: () =>
+      getLocalDemoFixtures() ? [] : listNotificationTemplates(),
   });
 }
 
 export function useNotificationProviderStatus() {
   return useQuery({
     queryKey: notificationProviderStatusQueryKey,
-    queryFn: getNotificationProviderStatus,
+    queryFn: () =>
+      getLocalDemoFixtures()
+        ? {
+            provider: "manual" as const,
+            webhook_configured: false,
+            webhook_secret_configured: false,
+          }
+        : getNotificationProviderStatus(),
   });
 }
 

@@ -15,6 +15,7 @@ import type {
   ChemicalLogInput,
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const chemicalInventoryQueryKey = ["chemical-inventory"] as const;
 export const chemicalLogsQueryKey = ["chemical-logs"] as const;
@@ -49,14 +50,14 @@ function makeOptimisticChemicalLog(input: ChemicalLogInput): ChemicalLog {
 export function useChemicalInventory() {
   return useQuery({
     queryKey: chemicalInventoryQueryKey,
-    queryFn: listChemicalInventory,
+    queryFn: () => getLocalDemoFixtures()?.inventory ?? listChemicalInventory(),
   });
 }
 
 export function useChemicalLogs() {
   return useQuery({
     queryKey: chemicalLogsQueryKey,
-    queryFn: listChemicalLogs,
+    queryFn: () => getLocalDemoFixtures()?.chemicalLogs ?? listChemicalLogs(),
   });
 }
 

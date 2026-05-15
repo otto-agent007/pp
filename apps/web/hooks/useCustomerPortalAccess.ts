@@ -13,6 +13,7 @@ import type {
   CustomerPortalAccessTokenSummary,
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const customerPortalAccessTokensQueryKey = (customerId: string) =>
   ["customer-portal-access-tokens", customerId] as const;
@@ -26,14 +27,30 @@ export const customerPortalProviderStatusQueryKey = () =>
 export function useCustomerPortalAccessTokens(customerId: string) {
   return useQuery({
     queryKey: customerPortalAccessTokensQueryKey(customerId),
-    queryFn: () => listCustomerPortalAccessTokens(customerId),
+    queryFn: () => {
+      const fixtures = getLocalDemoFixtures();
+
+      return fixtures
+        ? (fixtures.portalAccessTokensByCustomerId[customerId] ?? [])
+        : listCustomerPortalAccessTokens(customerId);
+    },
   });
 }
 
 export function useCustomerPortalAccessTokenEvents(tokenId: string | null) {
   return useQuery({
     queryKey: customerPortalAccessTokenEventsQueryKey(tokenId ?? ""),
-    queryFn: () => listCustomerPortalAccessTokenEvents(tokenId ?? ""),
+    queryFn: () => {
+      const fixtures = getLocalDemoFixtures();
+
+      return fixtures
+        ? {
+            events:
+              fixtures.portalAccessTokenEventsByTokenId[tokenId ?? ""] ?? [],
+            truncated_before: null,
+          }
+        : listCustomerPortalAccessTokenEvents(tokenId ?? "");
+    },
     enabled: Boolean(tokenId),
   });
 }
@@ -41,7 +58,9 @@ export function useCustomerPortalAccessTokenEvents(tokenId: string | null) {
 export function useCustomerPortalProviderStatus() {
   return useQuery({
     queryKey: customerPortalProviderStatusQueryKey(),
-    queryFn: getCustomerPortalProviderStatus,
+    queryFn: () =>
+      getLocalDemoFixtures()?.portalProviderStatus ??
+      getCustomerPortalProviderStatus(),
   });
 }
 
