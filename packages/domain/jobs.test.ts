@@ -2,6 +2,7 @@ import type { Job } from "@pest-patrol/types";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDispatchRouteIntelligence,
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
@@ -183,6 +184,190 @@ describe("job domain", () => {
 
     expect(week.find((day) => day.date === "2026-05-06")?.jobs[0]?.id)
       .toBe("job-1");
+  });
+
+  it("builds provider-free dispatch route intelligence by technician and readiness", () => {
+    const jobs = [
+      {
+        id: "job-late",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T11:00:00Z",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-1",
+          name: "Apex Homes",
+          phone: null,
+          email: null,
+          property_type: "residential",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "10 Pine Street",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 33.8121,
+          longitude: -117.919,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-early",
+        customer_id: "customer-1",
+        location_id: "location-2",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00Z",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-1",
+          name: "Apex Homes",
+          phone: null,
+          email: null,
+          property_type: "residential",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-2",
+          customer_id: "customer-1",
+          address: "20 Oak Avenue",
+          nickname: null,
+          service_notes: null,
+          is_primary: false,
+          latitude: null,
+          longitude: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-unassigned",
+        customer_id: "customer-2",
+        location_id: "location-3",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T09:00:00Z",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-canceled",
+        customer_id: "customer-2",
+        location_id: "location-3",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T10:00:00Z",
+        scheduled_end: null,
+        status: "canceled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+
+    const intelligence = buildDispatchRouteIntelligence(
+      jobs,
+      "2026-05-06",
+      "technician-1",
+    );
+
+    expect(intelligence.summary).toMatchObject({
+      active_stops: 1,
+      completed_stops: 1,
+      missing_coordinates_count: 1,
+      missing_location_count: 1,
+      provider_label: "Provider-free scheduled order",
+      total_stops: 3,
+    });
+    expect(intelligence.stops.map((stop) => stop.job.id)).toEqual([
+      "job-early",
+      "job-canceled",
+      "job-late",
+    ]);
+    expect(intelligence.stops.map((stop) => stop.sequence)).toEqual([1, 2, 3]);
+    expect(intelligence.stops[0]).toMatchObject({
+      address_label: "20 Oak Avenue",
+      location_state: "missing_coordinates",
+      next_stop_job_id: "job-canceled",
+      status_state: "completed",
+    });
+    expect(intelligence.stops[1]).toMatchObject({
+      address_label: "No location saved",
+      location_state: "missing_location",
+      next_stop_job_id: "job-late",
+      status_state: "canceled",
+    });
+    expect(intelligence.stops[2]).toMatchObject({
+      address_label: "10 Pine Street",
+      location_map_url: "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+      location_state: "ready",
+      next_stop_job_id: null,
+      schedule_label: "11:00 AM",
+      status_state: "active",
+    });
+  });
+
+  it("summarizes all and unassigned provider-free dispatch routes", () => {
+    const jobs = [
+      {
+        id: "job-assigned",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-unassigned",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+
+    expect(
+      buildDispatchRouteIntelligence(jobs, "2026-05-06").summary,
+    ).toMatchObject({
+      active_stops: 2,
+      total_stops: 2,
+      unassigned_stops: 1,
+    });
+    expect(
+      buildDispatchRouteIntelligence(jobs, "2026-05-06", "unassigned").stops.map(
+        (stop) => stop.job.id,
+      ),
+    ).toEqual(["job-unassigned"]);
   });
 
   it("builds the mobile daily job list for assigned jobs", () => {

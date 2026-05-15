@@ -7,6 +7,7 @@ import {
   useCloseoutCaptureSummaries,
   useJobCloseoutReview,
 } from "../../hooks/useCloseouts";
+import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 import { CloseoutsClient } from "./closeouts-client";
@@ -18,6 +19,10 @@ vi.mock("../../hooks/useCloseouts", () => ({
 
 vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
+}));
+
+vi.mock("../../hooks/useGeofencing", () => ({
+  useJobGeofenceEvents: vi.fn(),
 }));
 
 vi.mock("../../hooks/usePayments", () => ({
@@ -102,6 +107,28 @@ const invoice = {
   created_at: "2026-05-06T00:00:00Z",
   updated_at: "2026-05-06T00:00:00Z",
   payments: [],
+} as const;
+const arrivalEvent = {
+  id: "event-arrival",
+  job_id: "job-1",
+  event_type: "arrival",
+  latitude: 33.8121,
+  longitude: -117.919,
+  accuracy_m: 12,
+  distance_m: 80,
+  within_radius: true,
+  recorded_by: "tech-1",
+  client_event_id: "00000000-0000-4000-8000-000000000301",
+  captured_at: "2026-05-06T09:05:00.000Z",
+  created_at: "2026-05-06T09:05:00.000Z",
+} as const;
+const departureEvent = {
+  ...arrivalEvent,
+  id: "event-departure",
+  event_type: "departure",
+  client_event_id: "00000000-0000-4000-8000-000000000302",
+  captured_at: "2026-05-06T09:50:00.000Z",
+  created_at: "2026-05-06T09:50:00.000Z",
 } as const;
 const review = {
   job: completedJob,
@@ -222,6 +249,10 @@ describe("CloseoutsClient", () => {
       isLoading: false,
       review,
     } as never);
+    vi.mocked(useJobGeofenceEvents).mockReturnValue({
+      data: [arrivalEvent, departureEvent],
+      isLoading: false,
+    } as never);
   });
 
   it("renders closeout captures for the selected completed job", () => {
@@ -237,6 +268,14 @@ describe("CloseoutsClient", () => {
     expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
     expect(screen.getByText("Total completed")).toBeInTheDocument();
+    expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
+    expect(screen.getByText("Arrival GPS captured")).toBeInTheDocument();
+    expect(screen.getByText("Departure GPS captured")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Customer portal proof stays sanitized and does not expose exact technician GPS.",
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Needs photo and signature before billing."),
     ).toBeInTheDocument();
@@ -351,7 +390,7 @@ describe("CloseoutsClient", () => {
 
     render(<CloseoutsClient />);
 
-    expect(screen.getByText("Needs field captures")).toBeInTheDocument();
+    expect(screen.getAllByText("Needs field captures").length).toBeGreaterThan(0);
     expect(
       screen.getByText(
         "Missing treatment form, chemical log, photo, and signature before billing.",

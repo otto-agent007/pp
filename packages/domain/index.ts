@@ -20,6 +20,18 @@ export type {
   MobileTechnicianReadinessInput,
   MobileTechnicianReadinessPanel,
 } from "./demoReadiness";
+export { buildHomeCommandCenterState } from "./homeCommandCenter";
+export type {
+  HomeCommandCenterAlert,
+  HomeCommandCenterInput,
+  HomeCommandCenterKpi,
+  HomeCommandCenterKpiId,
+  HomeCommandCenterNextAction,
+  HomeCommandCenterScheduleItem,
+  HomeCommandCenterSeverity,
+  HomeCommandCenterState,
+  HomeSmokeChecklistItem,
+} from "./homeCommandCenter";
 export {
   DEMO_SEED_CONFIRMATION,
   DEMO_SEED_ADMIN_EMAIL,
@@ -184,6 +196,7 @@ export {
   getCustomerPortalAccessTokenReadiness,
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
+  getCustomerPortalProofHandoff,
   getCustomerPortalProviderStatus,
   getCustomerPortalSendProviderStatusLabel,
   buildCustomerPortalTimeline,
@@ -214,6 +227,7 @@ export type {
   CustomerPortalAccessTokenReadiness,
   CustomerPortalAccessTokenReadinessState,
   CustomerPortalAccessTokenReadinessSummary,
+  CustomerPortalProofHandoff,
   CustomerPortalServiceSummary,
   CustomerPortalTimelineItem,
   CustomerPortalTimelineItemType,
@@ -229,6 +243,7 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildDispatchRouteIntelligence,
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
@@ -250,6 +265,12 @@ export {
   validateJobInput,
 } from "./jobs";
 export type {
+  DispatchRouteIntelligence,
+  DispatchRouteIntelligenceSummary,
+  DispatchRouteLocationState,
+  DispatchRouteStop,
+  DispatchRouteStopStatusState,
+  TechnicianFilter,
   MobileDailyRouteTimeline,
   MobileRouteTimelineJob,
   MobileRouteTimelineSummary,
@@ -315,14 +336,25 @@ export {
   validateFormTemplate,
 } from "./forms";
 export {
+  buildDispatchLocationEvidenceByJob,
+  buildDispatchLocationMapUrl,
   buildJobGeofenceCheck,
   calculateDistanceMeters,
   createJobGeofenceEventQueuePayload,
   DEFAULT_GEOFENCE_RADIUS_METERS,
+  listJobGeofenceEvents,
   normalizeJobGeofenceEventInput,
   validateJobGeofenceEventInput,
 } from "./geofencing";
-export type { GeoPoint, JobGeofenceCheck } from "./geofencing";
+export type {
+  DispatchLocationEvidence,
+  DispatchLocationEvidenceByJob,
+  DispatchLocationEvidenceEvent,
+  DispatchLocationEvidenceRadiusState,
+  DispatchLocationEvidenceState,
+  GeoPoint,
+  JobGeofenceCheck,
+} from "./geofencing";
 export {
   buildJobPhotoStoragePath,
   buildJobSignatureStoragePath,

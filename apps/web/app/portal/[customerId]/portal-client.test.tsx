@@ -144,10 +144,17 @@ describe("CustomerPortalClient", () => {
     expect(screen.getByText("Account timeline")).toBeInTheDocument();
     expect(screen.getByText("Service completed")).toBeInTheDocument();
     expect(screen.getByText("Invoice open | Balance $125.00")).toBeInTheDocument();
-    expect(screen.getAllByText("Main house")).toHaveLength(4);
-    expect(screen.getByText("May 6, 2026")).toBeInTheDocument();
+    expect(screen.getAllByText("Main house")).toHaveLength(5);
+    expect(screen.getAllByText("May 6, 2026").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1 form, 1 photo, 1 signature")).toHaveLength(2);
     expect(screen.getByText("Invoice open")).toBeInTheDocument();
+    expect(screen.getByText("Proof of service")).toBeInTheDocument();
+    expect(
+      screen.getByText("Service form, photo, and signature are available."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Exact technician GPS is not shown in the customer portal."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();
@@ -164,6 +171,9 @@ describe("CustomerPortalClient", () => {
     expect(screen.queryByText("EPA-123")).not.toBeInTheDocument();
     expect(screen.queryByText("pi_secret")).not.toBeInTheDocument();
     expect(screen.queryByText("provider_payment_id")).not.toBeInTheDocument();
+    expect(screen.queryByText("33.8121")).not.toBeInTheDocument();
+    expect(screen.queryByText("-117.919")).not.toBeInTheDocument();
+    expect(screen.queryByText("Open service map")).not.toBeInTheDocument();
   });
 
   it("filters completed service visits", async () => {

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createJobGeofenceEventRecord } from "./geofencing";
+import {
+  createJobGeofenceEventRecord,
+  listJobGeofenceEventRecords,
+} from "./geofencing";
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -10,6 +13,11 @@ class MockQuery<T> {
   select(...args: unknown[]) {
     this.calls.push(["select", args]);
     return this;
+  }
+
+  order(...args: unknown[]) {
+    this.calls.push(["order", args]);
+    return Promise.resolve(this.result);
   }
 
   single() {
@@ -84,6 +92,27 @@ describe("geofencing api client", () => {
         }),
         { onConflict: "client_event_id" },
       ],
+    ]);
+  });
+
+  it("lists geofence events with job and location context", async () => {
+    const query = new MockQuery({ data: [event], error: null });
+    const clientFrom = vi.fn().mockReturnValue(query);
+    const client = {
+      from: clientFrom,
+    } as never;
+
+    const result = await listJobGeofenceEventRecords(client);
+
+    expect(result).toEqual([event]);
+    expect(clientFrom).toHaveBeenCalledWith("job_location_events");
+    expect(query.calls).toContainEqual([
+      "select",
+      ["*, job:jobs(*, customer:customers(*), location:locations(*))"],
+    ]);
+    expect(query.calls).toContainEqual([
+      "order",
+      ["captured_at", { ascending: false }],
     ]);
   });
 });

@@ -12,6 +12,7 @@ import type { Job, JobInput, JobStatus, OfflineQueueItem } from "@pest-patrol/ty
 
 import { buildMobileJobWorkPlan } from "./demoReadiness";
 import type { MobileJobWorkPlanItem } from "./demoReadiness";
+import { buildDispatchLocationMapUrl } from "./geofencing";
 import { getOfflineQueueJobTriage } from "./offlineQueue";
 import type { OfflineQueueJobTriage } from "./offlineQueue";
 
@@ -22,6 +23,44 @@ export interface DispatchCalendarDay {
   date: string;
   label: string;
   jobs: Job[];
+}
+
+export type DispatchRouteLocationState =
+  | "missing_coordinates"
+  | "missing_location"
+  | "ready";
+
+export type DispatchRouteStopStatusState = "active" | "canceled" | "completed";
+
+export interface DispatchRouteStop {
+  address_label: string;
+  customer_label: string;
+  job: Job;
+  location_map_url: string | null;
+  location_state: DispatchRouteLocationState;
+  next_stop_job_id: string | null;
+  schedule_label: string;
+  sequence: number;
+  status_state: DispatchRouteStopStatusState;
+  technician_id: string | null;
+}
+
+export interface DispatchRouteIntelligenceSummary {
+  active_stops: number;
+  canceled_stops: number;
+  completed_stops: number;
+  missing_coordinates_count: number;
+  missing_location_count: number;
+  provider_label: "Provider-free scheduled order";
+  total_stops: number;
+  unassigned_stops: number;
+}
+
+export interface DispatchRouteIntelligence {
+  date: string;
+  stops: DispatchRouteStop[];
+  summary: DispatchRouteIntelligenceSummary;
+  technician_id: TechnicianFilter;
 }
 
 export interface MobileDailyJobs {
@@ -199,6 +238,13 @@ function toDateLabel(date: Date) {
   }).format(date);
 }
 
+function toTimeLabel(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parseJobScheduleWallTime(value));
+}
+
 export function getDispatchWeekStart(anchorDate: string) {
   const date = parseDateOnly(anchorDate);
   date.setHours(0, 0, 0, 0);
@@ -247,6 +293,119 @@ export function buildDispatchWeek(
       jobs: filteredJobs.filter((job) => toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === dateKey),
     };
   });
+}
+
+function filterDispatchRouteJobs(
+  jobs: Job[],
+  date: string,
+  technician: TechnicianFilter,
+) {
+  return jobs
+    .filter(
+      (job) =>
+        toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === date,
+    )
+    .filter((job) => {
+      if (technician === "all") {
+        return true;
+      }
+
+      if (technician === "unassigned") {
+        return !job.assigned_tech_id;
+      }
+
+      return job.assigned_tech_id === technician;
+    })
+    .sort(
+      (left, right) =>
+        getJobScheduleTime(left.scheduled_start) -
+        getJobScheduleTime(right.scheduled_start),
+    );
+}
+
+function getDispatchRouteLocationState(
+  job: Job,
+): DispatchRouteLocationState {
+  if (!job.location) {
+    return "missing_location";
+  }
+
+  if (
+    typeof job.location.latitude !== "number" ||
+    typeof job.location.longitude !== "number"
+  ) {
+    return "missing_coordinates";
+  }
+
+  return "ready";
+}
+
+function getDispatchRouteStatusState(
+  status: JobStatus,
+): DispatchRouteStopStatusState {
+  if (status === "completed") {
+    return "completed";
+  }
+
+  if (status === "canceled") {
+    return "canceled";
+  }
+
+  return "active";
+}
+
+function getLocationMapUrl(job: Job) {
+  if (
+    typeof job.location?.latitude !== "number" ||
+    typeof job.location.longitude !== "number"
+  ) {
+    return null;
+  }
+
+  return buildDispatchLocationMapUrl({
+    latitude: job.location.latitude,
+    longitude: job.location.longitude,
+  });
+}
+
+export function buildDispatchRouteIntelligence(
+  jobs: Job[],
+  date: string,
+  technician: TechnicianFilter = "all",
+): DispatchRouteIntelligence {
+  const routeJobs = filterDispatchRouteJobs(jobs, date, technician);
+  const stops = routeJobs.map((job, index): DispatchRouteStop => ({
+    address_label: job.location?.address ?? "No location saved",
+    customer_label: job.customer?.name ?? "Unknown customer",
+    job,
+    location_map_url: getLocationMapUrl(job),
+    location_state: getDispatchRouteLocationState(job),
+    next_stop_job_id: routeJobs[index + 1]?.id ?? null,
+    schedule_label: toTimeLabel(job.scheduled_start),
+    sequence: index + 1,
+    status_state: getDispatchRouteStatusState(job.status),
+    technician_id: job.assigned_tech_id,
+  }));
+
+  return {
+    date,
+    stops,
+    summary: {
+      active_stops: stops.filter((stop) => stop.status_state === "active").length,
+      canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
+      completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
+      missing_coordinates_count: stops.filter(
+        (stop) => stop.location_state === "missing_coordinates",
+      ).length,
+      missing_location_count: stops.filter(
+        (stop) => stop.location_state === "missing_location",
+      ).length,
+      provider_label: "Provider-free scheduled order",
+      total_stops: stops.length,
+      unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
+    },
+    technician_id: technician,
+  };
 }
 
 export function buildMobileDailyJobs(jobs: Job[], date: string): MobileDailyJobs {

@@ -62,6 +62,7 @@ describe("AdminNav", () => {
       "aria-current",
       "page",
     );
+    expect(screen.getByText("Field command")).toBeInTheDocument();
     expect(screen.getByText("admin")).toBeInTheDocument();
   });
 
