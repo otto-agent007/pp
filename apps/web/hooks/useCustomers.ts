@@ -8,6 +8,7 @@ import {
 } from "@pest-patrol/domain";
 import type { Customer, CustomerInput } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const customersQueryKey = ["customers"] as const;
 
@@ -42,7 +43,7 @@ function makeOptimisticCustomer(input: CustomerInput): Customer {
 export function useCustomers() {
   return useQuery({
     queryKey: customersQueryKey,
-    queryFn: listCustomers,
+    queryFn: () => getLocalDemoFixtures()?.customers ?? listCustomers(),
   });
 }
 

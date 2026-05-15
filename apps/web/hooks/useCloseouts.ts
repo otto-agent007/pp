@@ -9,6 +9,7 @@ import {
 } from "@pest-patrol/domain";
 import type { Job } from "@pest-patrol/types";
 import { useQuery } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const closeoutFormsQueryKey = (jobId: string) =>
   ["closeout-forms", jobId] as const;
@@ -25,7 +26,15 @@ export function useCloseoutCaptureSummaries(jobIds: string[]) {
   return useQuery({
     enabled: uniqueJobIds.length > 0,
     queryKey: closeoutCaptureSummariesQueryKey(uniqueJobIds),
-    queryFn: () => listCloseoutCaptureSummaries(uniqueJobIds),
+    queryFn: () => {
+      const fixtures = getLocalDemoFixtures();
+
+      return fixtures
+        ? fixtures.closeoutSummaries.filter((summary) =>
+            uniqueJobIds.includes(summary.jobId),
+          )
+        : listCloseoutCaptureSummaries(uniqueJobIds);
+    },
   });
 }
 
@@ -34,17 +43,37 @@ export function useJobCloseoutReview(job: Job | null) {
   const formsQuery = useQuery({
     enabled: Boolean(job),
     queryKey: closeoutFormsQueryKey(jobId),
-    queryFn: () => listJobFormSubmissions(jobId),
+    queryFn: () => {
+      const fixtures = getLocalDemoFixtures();
+
+      return fixtures
+        ? fixtures.formSubmissions.filter(
+            (submission) => submission.job_id === jobId,
+          )
+        : listJobFormSubmissions(jobId);
+    },
   });
   const logsQuery = useQuery({
     enabled: Boolean(job),
     queryKey: closeoutLogsQueryKey(jobId),
-    queryFn: () => listJobChemicalLogs(jobId),
+    queryFn: () => {
+      const fixtures = getLocalDemoFixtures();
+
+      return fixtures
+        ? fixtures.chemicalLogs.filter((log) => log.job_id === jobId)
+        : listJobChemicalLogs(jobId);
+    },
   });
   const mediaQuery = useQuery({
     enabled: Boolean(job),
     queryKey: closeoutMediaQueryKey(jobId),
-    queryFn: () => listJobMedia(jobId),
+    queryFn: () => {
+      const fixtures = getLocalDemoFixtures();
+
+      return fixtures
+        ? fixtures.media.filter((item) => item.job_id === jobId)
+        : listJobMedia(jobId);
+    },
   });
 
   return {

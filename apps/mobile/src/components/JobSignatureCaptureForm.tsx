@@ -1,9 +1,13 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactElement } from "react";
 import { Text, TextInput, View } from "react-native";
 import SignatureCanvas from "react-native-signature-canvas";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobSignatures } from "../store/useJobSignatures";
+
+const SignatureCanvasComponent = SignatureCanvas as unknown as (
+  props: Record<string, unknown>,
+) => ReactElement | null;
 
 interface SignatureCanvasHandle {
   clearSignature: () => void;
@@ -108,7 +112,7 @@ export function JobSignatureCaptureForm({
           overflow: "hidden",
         }}
       >
-        <SignatureCanvas
+        <SignatureCanvasComponent
           autoClear={false}
           clearText={copy.signature.clear}
           confirmText={copy.signature.queue}

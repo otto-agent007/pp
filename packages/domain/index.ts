@@ -21,6 +21,51 @@ export type {
   MobileTechnicianReadinessPanel,
 } from "./demoReadiness";
 export {
+  DEMO_SEED_CONFIRMATION,
+  DEMO_SEED_ADMIN_EMAIL,
+  DEMO_SEED_ADMIN_PASSWORD,
+  DEMO_SEED_MARKER,
+  buildDemoSeedRuntimeStatus,
+  buildDemoSeedPlan,
+  getDemoSeedPlanSummary,
+  validateDemoSeedGuardrails,
+} from "./demoSeedData";
+export type {
+  DemoSeedAdminUser,
+  DemoSeedChemicalLog,
+  DemoSeedCustomer,
+  DemoSeedFormSubmission,
+  DemoSeedGuardrailInput,
+  DemoSeedGuardrailResult,
+  DemoSeedInventoryItem,
+  DemoSeedInvoice,
+  DemoSeedInvoiceLineItem,
+  DemoSeedJob,
+  DemoSeedPayment,
+  DemoSeedPlan,
+  DemoSeedRuntimeStatusInput,
+  DemoSeedTable,
+  DemoSeedTarget,
+  DemoSeedTechnician,
+} from "./demoSeedData";
+export {
+  buildDemoWorkflowFixtures,
+  shouldUseLocalDemoFixtures,
+} from "./demoWorkflowFixtures";
+export type {
+  DemoWorkflowFixtureEnv,
+  DemoWorkflowFixtures,
+} from "./demoWorkflowFixtures";
+export { buildDemoSmokePreflight } from "./demoSmokePreflight";
+export type {
+  DemoSmokeEnv,
+  DemoSmokeEnvName,
+  DemoSmokePreflightCommand,
+  DemoSmokePreflightInput,
+  DemoSmokePreflightResult,
+  DemoSmokePreflightState,
+} from "./demoSmokePreflight";
+export {
   getProductionSmokeChecklist,
   getRemainingProductionReadinessActions,
 } from "./productionReadiness";

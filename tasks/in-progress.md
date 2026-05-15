@@ -1,32 +1,26 @@
 # In Progress
 
-## Task: Preview Launch Readiness V1
+## Task: Preview Demo Smoke Handoff V1
 
 Goal:
-Prepare Pest Patrol OS for a preview-first launch readiness pass after PR #27. Keep provider setup operator-assisted and avoid dashboard, secret, production data, or migration-application mutations unless explicitly approved.
+Keep preview launch readiness and demo smoke tooling aligned so operators can run safe local or protected-preview smoke without committing secrets, provider payloads, or production data.
 
 Steps:
-- [x] Confirm PR #27 is merged and start from updated `main`.
-- [x] Refresh `README.md`, `docs/IMPLEMENTATION_PLAN.md`, and task status for the post-PR #27 launch-readiness phase.
-- [x] Add `docs/PREVIEW_LAUNCH_READINESS.md` with Codex-owned work, operator-only setup, migration readiness, preview smoke steps, and deferred follow-ups.
-- [x] Tighten production readiness guidance for preview guardrails, operator-assisted providers, and the current Vercel cron config path.
-- [x] Apply low-risk portal UI polish discovered during readiness review without changing the approved send-event history scope.
-- [x] Run local verification.
-- [x] Run web-first manual-fallback preflight against updated `main`.
-- [x] Record preflight findings and current smoke blockers.
-- [x] Repair Vercel preflight visibility with CLI discovery, preview inspection, env listing, and protected app-shell curl.
-- [x] Confirm existing Vercel automation bypass works and open the approved bypass-cookie URL in the operator browser without recording the secret.
-- [x] Apply portal send critique cleanup for provider-ready copy, generated-link send copy, and send-attempt event ordering.
-- [x] Add dispatch technician query-param preselection for `/dispatch?technician=...`.
-- [x] Refresh preview baseline, read-only preflight findings, and launch triage status.
-- [x] Add the operator smoke access handoff, sanitized findings format, blocker categories, and launch gate for the next five preview slices.
+- [x] Confirm PR #27 and PR #29 readiness work is merged into `origin/main`.
+- [x] Preserve portal send critique cleanup, dispatch technician query-param preselection, readiness docs, and preview preflight findings from `origin/main`.
+- [x] Add a domain-backed demo smoke preflight helper with target, ready/blocked state, missing env names, seed summary, safe next commands, and sanitized evidence prompts.
+- [x] Add root `demo:smoke`, `demo:seed`, and `demo:reset` commands with local/preview guardrails.
+- [x] Keep `demo:smoke` read-only and keep seed/reset writes behind explicit confirmation, local URL safety, preview handoff gating, and server-side service-role boundaries.
+- [x] Add a local no-env browser demo fallback that loads typed fixture data when local seed/login is blocked by missing Supabase env.
+- [x] Fold local GitHub MCP tooling and critique notes into the cleanup request without committing secrets or protected preview values.
+- [x] Run focused tests, blocked CLI preflight, and full verification.
 
 Follow-up candidates:
-- [ ] Operator provides the protected-preview browser path and admin/dispatcher sign-in path through an approved channel.
-- [ ] Operator confirms whether Stripe, portal delivery, and notification delivery provider env vars are intentionally unset for manual fallback mode.
-- [ ] Run the authenticated preview smoke checklist and record sanitized findings.
-- [ ] Triage smoke-proven blockers and implement only small repo-contained fixes.
-- [ ] Decide whether portal send events need delivery receipts, richer failure states, or neither after webhook-backed sends prove useful.
+- [ ] Operator runs local seed/reset with approved local Supabase credentials.
+- [ ] Operator runs preview seed from the dashboard or a protected shell with preview Supabase credentials.
+- [ ] Operator optionally supplies `DEMO_TECH_PASSWORD` for technician login demos.
+- [ ] Run authenticated preview smoke against the seeded story and record sanitized findings.
+- [ ] Decide whether portal delivery receipts, richer provider failure states, or production launch checklist work should be next after webhook-backed evidence exists.
 
 Status:
-Preview Launch Readiness V1 documents the operator-assisted launch path and keeps provider setup, secret mutation, production data mutation, and migration application out of Codex scope. Portal send critique cleanup keeps send-attempt history in V1, removes redundant provider-ready readiness copy, and records `send_requested` only after provider acceptance. Dispatch now consumes valid `/dispatch?technician=...` links from technician route-load cards. Read-only preflight found the linked dev Supabase migrations aligned and a Ready Vercel preview that boots through `vercel curl`. The next five preview slices are closed to the current evidence: batch closure and handoff docs are recorded, authenticated smoke cannot run without operator access, no additional smoke-proven repo blocker is available, and the launch gate is now the operator-provided protected-preview browser session plus admin/dispatcher sign-in path.
+Preview launch readiness is caught up with the latest `origin/main` baseline and demo seed/smoke tooling is ready for operator-assisted local or protected-preview smoke. Provider setup, secret mutation, production data mutation, and migration application remain operator-approved only.

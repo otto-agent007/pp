@@ -9,13 +9,14 @@ import {
 } from "@pest-patrol/domain";
 import type { Invoice, InvoiceInput } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 
 export const invoicesQueryKey = ["invoices"] as const;
 
 export function useInvoices() {
   return useQuery({
     queryKey: invoicesQueryKey,
-    queryFn: listInvoices,
+    queryFn: () => getLocalDemoFixtures()?.invoices ?? listInvoices(),
   });
 }
 

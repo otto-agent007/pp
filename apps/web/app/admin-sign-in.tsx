@@ -2,15 +2,27 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import {
+  DEMO_SEED_ADMIN_EMAIL,
+  DEMO_SEED_ADMIN_PASSWORD,
+} from "@pest-patrol/domain";
+import { usePrepareLocalDemoLogin } from "../hooks/useDemoSeed";
 import { useAdminAuth } from "./admin-auth-context";
 
+const showLocalDemoShortcut = process.env.NODE_ENV !== "production";
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unable to prepare demo login";
+}
+
 export function AdminSignIn() {
-  const { error, signIn, status } = useAdminAuth();
+  const { error, signIn, signInLocalDemo, status } = useAdminAuth();
+  const prepareDemoLogin = usePrepareLocalDemoLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const submitting = status === "loading";
+  const submitting = status === "loading" || prepareDemoLogin.isPending;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,6 +34,26 @@ export function AdminSignIn() {
     }
 
     await signIn(email, password);
+  }
+
+  async function signInDemo() {
+    setEmail(DEMO_SEED_ADMIN_EMAIL);
+    setPassword(DEMO_SEED_ADMIN_PASSWORD);
+    setFormError(null);
+
+    try {
+      await prepareDemoLogin.mutateAsync();
+      await signIn(DEMO_SEED_ADMIN_EMAIL, DEMO_SEED_ADMIN_PASSWORD);
+    } catch (error) {
+      try {
+        await signInLocalDemo();
+        return;
+      } catch {
+        // Keep the seed/login error visible when fixture mode is not allowed.
+      }
+
+      setFormError(errorMessage(error));
+    }
   }
 
   return (
@@ -83,6 +115,25 @@ export function AdminSignIn() {
               <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
                 {formError ?? error}
               </p>
+            ) : null}
+
+            {showLocalDemoShortcut ? (
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Local demo login
+                </p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {DEMO_SEED_ADMIN_EMAIL} / {DEMO_SEED_ADMIN_PASSWORD}
+                </p>
+                <button
+                  className="mt-3 w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-neutralDark transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={submitting}
+                  onClick={signInDemo}
+                  type="button"
+                >
+                  {submitting ? "Logging in..." : "Log in as demo"}
+                </button>
+              </div>
             ) : null}
 
             <button

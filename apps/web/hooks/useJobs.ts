@@ -10,6 +10,7 @@ import {
 } from "@pest-patrol/domain";
 import type { Job, JobInput, JobStatus } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLocalDemoFixtures } from "./localDemoData";
 export { techniciansQueryKey, useTechnicians } from "./useTechnicians";
 
 export const jobsQueryKey = ["jobs"] as const;
@@ -34,7 +35,7 @@ function makeOptimisticJob(input: JobInput): Job {
 export function useJobs() {
   return useQuery({
     queryKey: jobsQueryKey,
-    queryFn: listJobs,
+    queryFn: () => getLocalDemoFixtures()?.jobs ?? listJobs(),
   });
 }
 

@@ -17,8 +17,16 @@ vi.mock("./admin-auth-context", () => ({
     profile: null,
     session: null,
     signIn: vi.fn(),
+    signInLocalDemo: vi.fn(),
     signOut: vi.fn(),
     status: authStatus,
+  }),
+}));
+
+vi.mock("../hooks/useDemoSeed", () => ({
+  usePrepareLocalDemoLogin: () => ({
+    isPending: false,
+    mutateAsync: vi.fn(),
   }),
 }));
 
