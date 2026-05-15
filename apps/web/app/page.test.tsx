@@ -132,7 +132,9 @@ describe("HomePage", () => {
         "Record the route, action taken, and visible success signal without adding provider secrets or production customer data.",
       ),
     ).toHaveLength(5);
-    expect(screen.getByText(/Success: Customer appears active/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Success: Customer appears active/i),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/seed fake production data/i)).not.toBeInTheDocument();
   });
 });
