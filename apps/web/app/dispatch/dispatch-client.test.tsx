@@ -56,6 +56,8 @@ const customer = {
       nickname: null,
       service_notes: null,
       is_primary: true,
+      latitude: 33.8121,
+      longitude: -117.919,
       status: "active",
       created_at: now,
       updated_at: now,
@@ -106,6 +108,19 @@ const completedJob = {
   status: "completed",
   assigned_tech_id: "technician-1",
   scheduled_start: "2026-05-07T10:00:00",
+} as const;
+const missingCoordinateJob = {
+  ...scheduledJob,
+  id: "job-missing-coordinates",
+  assigned_tech_id: "technician-1",
+  scheduled_start: "2026-05-06T11:00:00",
+  location: {
+    ...customer.locations[0],
+    id: "location-missing-coordinates",
+    address: "20 Oak Avenue",
+    latitude: null,
+    longitude: null,
+  },
 } as const;
 
 describe("DispatchClient", () => {
@@ -181,9 +196,52 @@ describe("DispatchClient", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Daily Route V1 stays provider-free: no map routing, optimization, or external navigation setup is required.",
+        /no map routing, optimization, or external navigation setup is required/,
       ),
     ).toBeInTheDocument();
+  });
+
+  it("renders provider-free route intelligence and stop readiness", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [scheduledJob, missingCoordinateJob, completedJob],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    expect(screen.getByText("Provider-free scheduled order")).toBeInTheDocument();
+    expect(screen.getByText("3 stops")).toBeInTheDocument();
+    expect(screen.getByText("2 active")).toBeInTheDocument();
+    expect(screen.getByText("1 completed")).toBeInTheDocument();
+    expect(screen.getByText("1 missing coordinates")).toBeInTheDocument();
+    expect(screen.getByText("Stop 1")).toBeInTheDocument();
+    expect(screen.getByText("Stop 2")).toBeInTheDocument();
+    expect(screen.getAllByText("Service coordinates ready").length).toBeGreaterThan(0);
+    expect(screen.getByText("Missing service coordinates")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open service map for job-1" }))
+      .toHaveAttribute(
+        "href",
+        "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+      );
+  });
+
+  it("updates route intelligence when technician filter changes", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        { ...scheduledJob, assigned_tech_id: "technician-1" },
+        { ...missingCoordinateJob, assigned_tech_id: null },
+      ],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    expect(screen.getByText("2 stops")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Dispatch technician"), "technician-1");
+
+    expect(screen.getByText("1 stop")).toBeInTheDocument();
   });
 
   it("guides users when no jobs are scheduled for a day", () => {

@@ -2,6 +2,7 @@
 
 import {
   buildDispatchLocationEvidenceByJob,
+  buildDispatchRouteIntelligence,
   buildDispatchWeek,
   getTechnicianLabel,
   getDispatchWeekStart,
@@ -11,6 +12,9 @@ import {
 import type {
   DispatchLocationEvidence,
   DispatchLocationEvidenceEvent,
+  DispatchRouteIntelligence,
+  DispatchRouteStop,
+  TechnicianFilter,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobStatus } from "@pest-patrol/types";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -25,8 +29,6 @@ import {
 } from "../../hooks/useJobs";
 
 type StatusFilter = JobStatus | "all";
-type TechnicianFilter = "all" | "unassigned" | string;
-
 const statusLabels: Record<JobStatus, string> = {
   scheduled: "Scheduled",
   en_route: "En route",
@@ -71,6 +73,26 @@ function gpsEventLabel(eventType: DispatchLocationEvidenceEvent["event_type"]) {
 
 function accuracyLabel(value: number | null) {
   return value === null ? "Accuracy unavailable" : `Accuracy ${Math.round(value)} m`;
+}
+
+function plural(count: number, singular: string, pluralLabel = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : pluralLabel}`;
+}
+
+function routeStopLocationLabel(stop?: DispatchRouteStop) {
+  if (!stop) {
+    return "Location readiness unavailable";
+  }
+
+  if (stop.location_state === "ready") {
+    return "Service coordinates ready";
+  }
+
+  if (stop.location_state === "missing_coordinates") {
+    return "Missing service coordinates";
+  }
+
+  return "Missing service location";
 }
 
 function missingLocationEvidence(jobId: string): DispatchLocationEvidence {
@@ -158,6 +180,94 @@ function LocationEvidencePanel({
   );
 }
 
+function RouteIntelligencePanel({
+  intelligence,
+}: {
+  intelligence: DispatchRouteIntelligence;
+}) {
+  const summary = intelligence.summary;
+
+  return (
+    <section className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="font-semibold">Technician daily route companion</p>
+          <p className="mt-1">
+            Technician mobile routes use the same assigned jobs, status priority,
+            and scheduled order shown here.
+          </p>
+          <p className="mt-1">
+            <span>{summary.provider_label}</span>
+            <span>
+              : no map routing, optimization, or external navigation setup is
+              required.
+            </span>
+          </p>
+        </div>
+        <div className="grid gap-2 text-xs font-semibold sm:grid-cols-2 lg:min-w-80">
+          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+            {plural(summary.total_stops, "stop")}
+          </span>
+          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+            {plural(summary.active_stops, "active", "active")}
+          </span>
+          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+            {plural(summary.completed_stops, "completed", "completed")}
+          </span>
+          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+            {plural(summary.missing_coordinates_count, "missing coordinates", "missing coordinates")}
+          </span>
+        </div>
+      </div>
+      {summary.missing_location_count > 0 || summary.unassigned_stops > 0 ? (
+        <p className="mt-3 text-xs font-medium text-blue-900">
+          {summary.missing_location_count > 0
+            ? `${plural(summary.missing_location_count, "stop")} missing service location. `
+            : ""}
+          {summary.unassigned_stops > 0
+            ? `${plural(summary.unassigned_stops, "stop")} needs technician assignment.`
+            : ""}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function mergeRouteIntelligenceByWeek(
+  days: ReturnType<typeof buildDispatchWeek>,
+  technician: TechnicianFilter,
+): DispatchRouteIntelligence {
+  const stops = days
+    .flatMap((day) =>
+      buildDispatchRouteIntelligence(day.jobs, day.date, technician).stops,
+    )
+    .map((stop, index, allStops) => ({
+      ...stop,
+      next_stop_job_id: allStops[index + 1]?.job.id ?? null,
+      sequence: index + 1,
+    }));
+
+  return {
+    date: days[0]?.date ?? "",
+    stops,
+    summary: {
+      active_stops: stops.filter((stop) => stop.status_state === "active").length,
+      canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
+      completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
+      missing_coordinates_count: stops.filter(
+        (stop) => stop.location_state === "missing_coordinates",
+      ).length,
+      missing_location_count: stops.filter(
+        (stop) => stop.location_state === "missing_location",
+      ).length,
+      provider_label: "Provider-free scheduled order",
+      total_stops: stops.length,
+      unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
+    },
+    technician_id: technician,
+  };
+}
+
 export function DispatchClient() {
   const jobsQuery = useJobs();
   const customersQuery = useCustomers();
@@ -209,6 +319,17 @@ export function DispatchClient() {
         geofenceEventsQuery.data ?? [],
       ),
     [decoratedJobs, geofenceEventsQuery.data],
+  );
+  const routeIntelligence = useMemo(
+    () => mergeRouteIntelligenceByWeek(calendarDays, technician),
+    [calendarDays, technician],
+  );
+  const routeStopsByJobId = useMemo(
+    () =>
+      Object.fromEntries(
+        routeIntelligence.stops.map((stop) => [stop.job.id, stop]),
+      ),
+    [routeIntelligence.stops],
   );
   const isUpdating = changeStatus.isPending || assignTechnician.isPending;
 
@@ -309,17 +430,7 @@ export function DispatchClient() {
 
         <p className="text-sm text-gray-600">Week starting {weekStart}</p>
 
-        <section className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
-          <p className="font-semibold">Technician daily route companion</p>
-          <p className="mt-1">
-            Technician mobile routes use the same assigned jobs, status priority,
-            and scheduled order shown here.
-          </p>
-          <p className="mt-1">
-            Daily Route V1 stays provider-free: no map routing, optimization, or
-            external navigation setup is required.
-          </p>
-        </section>
+        <RouteIntelligencePanel intelligence={routeIntelligence} />
       </header>
 
       {jobsQuery.isLoading ? (
@@ -352,6 +463,16 @@ export function DispatchClient() {
                     className="flex flex-col gap-3 rounded-md border border-gray-200 bg-gray-50 p-3"
                     key={job.id}
                   >
+                    <div className="flex items-center justify-between gap-2 text-xs font-semibold">
+                      <span className="rounded-md bg-white px-2 py-1 text-blue-900">
+                        {routeStopsByJobId[job.id]
+                          ? `Stop ${routeStopsByJobId[job.id].sequence}`
+                          : "Outside route"}
+                      </span>
+                      <span className="text-gray-600">
+                        {routeStopLocationLabel(routeStopsByJobId[job.id])}
+                      </span>
+                    </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
                         {formatTime(job.scheduled_start)}
@@ -362,6 +483,16 @@ export function DispatchClient() {
                       <p className="mt-1 text-xs text-gray-600">
                         {job.location?.address ?? "No location saved"}
                       </p>
+                      {routeStopsByJobId[job.id]?.location_map_url ? (
+                        <a
+                          className="mt-2 inline-flex text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                          href={routeStopsByJobId[job.id].location_map_url ?? undefined}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          Open service map for {job.id}
+                        </a>
+                      ) : null}
                     </div>
 
                     <LocationEvidencePanel
