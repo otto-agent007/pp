@@ -15,6 +15,7 @@ import {
   getCustomerPortalAccessTokenReadiness,
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
+  getCustomerPortalProofHandoff,
   buildCustomerPortalTimeline,
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
@@ -338,6 +339,59 @@ describe("closeouts domain", () => {
     expect(closeouts[0].photos).toHaveLength(1);
     expect(closeouts[0].signatures).toHaveLength(1);
     expect("service_notes" in closeouts[0].job).toBe(false);
+  });
+
+  it("builds customer-safe proof handoff without exact technician GPS", () => {
+    const closeout = buildCustomerPortalCloseouts({
+      jobs: [
+        {
+          id: "job-1",
+          customer_id: "customer-1",
+          location_id: "location-1",
+          status: "completed",
+          scheduled_start: "2026-05-06T09:00:00Z",
+          scheduled_end: null,
+          customer: { id: "customer-1", name: "Apex Homes" },
+          location: {
+            id: "location-1",
+            address: "10 Pine Street",
+            nickname: "Main house",
+          },
+        },
+      ],
+      formSubmissions: [],
+      media: [
+        {
+          id: "media-1",
+          job_id: "job-1",
+          media_type: "photo",
+          signed_url: "https://signed.example/photo.jpg",
+          description: "Kitchen",
+          captured_at: now,
+        },
+      ],
+    })[0];
+
+    const handoff = getCustomerPortalProofHandoff(closeout);
+    const serialized = JSON.stringify(handoff);
+
+    expect(handoff).toEqual({
+      capture_counts: {
+        forms: 0,
+        photos: 1,
+        signatures: 0,
+      },
+      completion_label: "Proof in progress",
+      exact_coordinates_disclosed: false,
+      job_id: "job-1",
+      location_label: "Main house",
+      missing_labels: ["service form", "signature"],
+      service_date_label: "May 6, 2026",
+      summary_label: "Missing service form and signature.",
+    });
+    expect(serialized).not.toContain("latitude");
+    expect(serialized).not.toContain("longitude");
+    expect(serialized).not.toContain("map_url");
   });
 
   it("filters customer portal closeouts and validates customer ids", () => {

@@ -74,6 +74,21 @@ export interface CustomerPortalServiceSummary {
   serviceDateLabel: string;
 }
 
+export interface CustomerPortalProofHandoff {
+  capture_counts: {
+    forms: number;
+    photos: number;
+    signatures: number;
+  };
+  completion_label: string;
+  exact_coordinates_disclosed: false;
+  job_id: string;
+  location_label: string;
+  missing_labels: string[];
+  service_date_label: string;
+  summary_label: string;
+}
+
 export type CustomerPortalAccessTokenReadinessState =
   | "active"
   | "expired"
@@ -642,6 +657,38 @@ export function getCustomerPortalServiceSummary(
       closeout.job.location?.address ??
       "Service location",
     serviceDateLabel: formatServiceDate(closeout.job.scheduled_start),
+  };
+}
+
+export function getCustomerPortalProofHandoff(
+  closeout: CustomerPortalCloseout,
+): CustomerPortalProofHandoff {
+  const captureCounts = {
+    forms: closeout.form_submissions.length,
+    photos: closeout.photos.length,
+    signatures: closeout.signatures.length,
+  };
+  const missingLabels = [
+    captureCounts.forms === 0 ? "service form" : null,
+    captureCounts.photos === 0 ? "photo" : null,
+    captureCounts.signatures === 0 ? "signature" : null,
+  ].filter((item): item is string => Boolean(item));
+  const complete = missingLabels.length === 0;
+
+  return {
+    capture_counts: captureCounts,
+    completion_label: complete ? "Proof ready" : "Proof in progress",
+    exact_coordinates_disclosed: false,
+    job_id: closeout.job.id,
+    location_label:
+      closeout.job.location?.nickname ??
+      closeout.job.location?.address ??
+      "Service location",
+    missing_labels: missingLabels,
+    service_date_label: formatServiceDate(closeout.job.scheduled_start),
+    summary_label: complete
+      ? "Service form, photo, and signature are available."
+      : `Missing ${formatMissingCaptureList(missingLabels)}.`,
   };
 }
 

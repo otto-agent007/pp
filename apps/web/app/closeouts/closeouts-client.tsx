@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildDispatchLocationEvidenceByJob,
   buildBillingPortalNextActions,
   buildBillingQueue,
   filterCloseoutJobs,
@@ -27,6 +28,7 @@ import {
   useCloseoutCaptureSummaries,
   useJobCloseoutReview,
 } from "../../hooks/useCloseouts";
+import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 
@@ -452,9 +454,43 @@ function NextActionCard({
   );
 }
 
+function ProofHandoffCard({
+  evidence,
+  readinessLabel,
+}: {
+  evidence?: ReturnType<typeof buildDispatchLocationEvidenceByJob>[string];
+  readinessLabel: string;
+}) {
+  const arrivalLabel = evidence?.latest_arrival ? "Arrival GPS captured" : "Arrival GPS missing";
+  const departureLabel = evidence?.latest_departure
+    ? "Departure GPS captured"
+    : "Departure GPS missing";
+
+  return (
+    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
+      <p className="text-sm font-semibold text-neutralDark">
+        Proof handoff readiness
+      </p>
+      <p className="mt-1 text-sm text-gray-700">{readinessLabel}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {arrivalLabel}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {departureLabel}
+        </span>
+      </div>
+      <p className="mt-3 text-xs font-medium text-gray-600">
+        Customer portal proof stays sanitized and does not expose exact technician GPS.
+      </p>
+    </div>
+  );
+}
+
 export function CloseoutsClient() {
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
+  const geofenceEventsQuery = useJobGeofenceEvents();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CloseoutStatusFilter>("completed");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>(() => {
@@ -476,6 +512,14 @@ export function CloseoutsClient() {
     [jobs],
   );
   const summariesQuery = useCloseoutCaptureSummaries(completedJobIds);
+  const locationEvidenceByJob = useMemo(
+    () =>
+      buildDispatchLocationEvidenceByJob(
+        completedJobIds,
+        geofenceEventsQuery.data ?? [],
+      ),
+    [completedJobIds, geofenceEventsQuery.data],
+  );
   const visibleJobs = useMemo(
     () => filterCloseoutJobs(jobs, search, status),
     [jobs, search, status],
@@ -670,6 +714,16 @@ export function CloseoutsClient() {
             <>
               <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <NextActionCard item={selectedQueueItem} />
+                <ProofHandoffCard
+                  evidence={
+                    selectedJob ? locationEvidenceByJob[selectedJob.id] : undefined
+                  }
+                  readinessLabel={
+                    readiness?.billingReady
+                      ? "Field captures are ready for admin billing review."
+                      : readiness?.label ?? "Select a completed job to review proof."
+                  }
+                />
                 <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-secondary">

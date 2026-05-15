@@ -142,4 +142,57 @@ describe("customer portal closeouts route", () => {
       "customer_portal_access_tokens",
     );
   });
+
+  it("does not serialize exact GPS evidence or map links in portal closeouts", async () => {
+    serviceClient.from
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            id: "token-1",
+            customer_id: "customer-1",
+            expires_at: null,
+            status: "active",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: [
+            {
+              id: "job-1",
+              customer_id: "customer-1",
+              location_id: "location-1",
+              status: "completed",
+              scheduled_start: "2026-05-06T09:00:00Z",
+              scheduled_end: null,
+              customer: { id: "customer-1", name: "Apex Homes" },
+              location: {
+                id: "location-1",
+                address: "10 Pine Street",
+                nickname: "Main house",
+              },
+            },
+          ],
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: [], error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: [], error: null }));
+
+    const response = await GET(requestWithToken("valid-token"), {
+      params: Promise.resolve({ customerId: "customer-1" }),
+    });
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(serialized).not.toContain("latitude");
+    expect(serialized).not.toContain("longitude");
+    expect(serialized).not.toContain("map_url");
+    expect(serialized).not.toContain("33.8121");
+    expect(serialized).not.toContain("-117.919");
+  });
 });

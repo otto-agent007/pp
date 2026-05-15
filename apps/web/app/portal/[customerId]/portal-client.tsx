@@ -5,6 +5,7 @@ import {
   filterCustomerPortalInvoices,
   filterCustomerPortalCloseouts,
   getCustomerPortalInvoiceStatusLabel,
+  getCustomerPortalProofHandoff,
   getCustomerPortalServiceSummary,
   type CustomerPortalTimelineItem,
 } from "@pest-patrol/domain";
@@ -330,6 +331,7 @@ function CloseoutCard({
   invoices: CustomerPortalInvoice[];
 }) {
   const summary = getCustomerPortalServiceSummary(closeout, invoices);
+  const proof = getCustomerPortalProofHandoff(closeout);
 
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
@@ -389,6 +391,40 @@ function CloseoutCard({
           </div>
         </div>
       </div>
+
+      <section className="mt-6 rounded-md border border-emerald-100 bg-emerald-50 p-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-neutralDark">
+              Proof of service
+            </p>
+            <p className="mt-1 text-sm text-gray-700">{proof.summary_label}</p>
+            <p className="mt-1 text-xs font-medium text-gray-600">
+              Exact technician GPS is not shown in the customer portal.
+            </p>
+          </div>
+          <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold uppercase text-emerald-800">
+            {proof.completion_label}
+          </span>
+        </div>
+        <dl className="mt-3 grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+          <div>
+            <dt className="font-semibold text-gray-900">Service date</dt>
+            <dd>{proof.service_date_label}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-gray-900">Location</dt>
+            <dd>{proof.location_label}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-gray-900">Customer proof</dt>
+            <dd>
+              {proof.capture_counts.forms} forms, {proof.capture_counts.photos} photos,{" "}
+              {proof.capture_counts.signatures} signatures
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       <section className="mt-6 flex flex-col gap-3">
         <h3 className="text-lg font-semibold text-neutralDark">Service forms</h3>
