@@ -83,10 +83,12 @@ Current priority is provider-free operations readiness after the preview smoke h
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, provider status, fresh-token send, and send-attempt history
 - tokened `/portal` routes now include a customer-safe service, billing timeline, and proof-of-service summary
 - `/dispatch` includes provider-free scheduled route intelligence, GPS evidence after mobile sync, and external map links without embedded map SDKs
-- the mobile technician route flow groups existing offline-first field controls into a clearer visit sequence
+- the design-token foundation now feeds Tailwind, Figma variable names, and the Expo mobile route shell
+- the signed-in mobile technician route shell uses shared tokens for the technician header, sync confidence, route timeline, assigned job card, and visit-flow wrapper
+- the mobile technician route flow still preserves existing offline-first field controls and queue behavior
 - preview launch readiness has a Ready Vercel preview baseline, aligned Supabase migrations, dispatch technician query-param preselection, and demo seed/smoke tooling
-- current status: no active implementation slice is open after the provider-free dispatch/mobile/closeout proof batch
-- next candidates: operator runs local or protected-preview smoke against the seeded story, richer provider-free dispatch grouping, mobile flow refinement, deeper billing readiness, or later map-provider planning
+- current status: no active implementation slice is open after the design-system foundation and mobile route-shell pilot
+- next candidates: operator runs local or protected-preview smoke against the seeded story, richer provider-free dispatch grouping, mobile capture-control tokenization, deeper billing readiness, or later map-provider planning
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages

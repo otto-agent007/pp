@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc --noEmit",
     "lint": "eslint \"**/*.ts\"",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

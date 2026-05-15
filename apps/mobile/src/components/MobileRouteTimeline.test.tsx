@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { MobileDailyRouteTimeline } from "@pest-patrol/domain";
 
+import { mobileRouteShellPalette } from "../styles/routeShellStyles";
 import { MobileRouteTimeline } from "./MobileRouteTimeline";
 
 vi.mock("react-native", async () => {
@@ -13,17 +14,24 @@ vi.mock("react-native", async () => {
     StyleSheet: {
       create: <T,>(styles: T) => styles,
     },
-    Text: ({ children }: { children?: ReactNode }) =>
-      ReactModule.createElement("Text", null, children),
+    Text: ({
+      children,
+      style,
+    }: {
+      children?: ReactNode;
+      style?: unknown;
+    }) => ReactModule.createElement("Text", { style }, children),
     Pressable: ({
       children,
       onPress,
+      style,
     }: {
       children?: ReactNode;
       onPress?: () => void;
-    }) => ReactModule.createElement("Pressable", { onPress }, children),
-    View: ({ children }: { children?: ReactNode }) =>
-      ReactModule.createElement("View", null, children),
+      style?: unknown;
+    }) => ReactModule.createElement("Pressable", { onPress, style }, children),
+    View: ({ children, style }: { children?: ReactNode; style?: unknown }) =>
+      ReactModule.createElement("View", { style }, children),
   };
 });
 
@@ -101,6 +109,22 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
       ...collectElementsByType(element.props.children, type),
       ...rendered,
     ];
+  }
+
+  return [];
+}
+
+function flattenStyles(style: unknown): Record<string, unknown>[] {
+  if (!style) {
+    return [];
+  }
+
+  if (Array.isArray(style)) {
+    return style.flatMap(flattenStyles);
+  }
+
+  if (typeof style === "object") {
+    return [style as Record<string, unknown>];
   }
 
   return [];
@@ -270,6 +294,39 @@ describe("MobileRouteTimeline", () => {
     expect(text).toContain("1 done, 0 pending, 5 missing");
     expect(text).toContain("No local sync work");
     expect(text).not.toContain("Controls for job-later");
+  });
+
+  it("renders the operational rail summary with shared route-shell tokens", () => {
+    const element = (
+      <MobileRouteTimeline
+        renderJobControls={(job) => `Controls for ${job.id}`}
+        statusLabels={{
+          canceled: "Canceled",
+          completed: "Completed",
+          en_route: "En route",
+          in_progress: "In progress",
+          scheduled: "Scheduled",
+        }}
+        timeline={timeline}
+      />
+    );
+    const viewStyles = collectElementsByType(element, "View").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+    const textStyles = collectElementsByType(element, "Text").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+
+    expect(viewStyles).toContainEqual(
+      expect.objectContaining({
+        backgroundColor: mobileRouteShellPalette.rail,
+      }),
+    );
+    expect(textStyles).toContainEqual(
+      expect.objectContaining({
+        color: mobileRouteShellPalette.inverseText,
+      }),
+    );
   });
 
   it("renders full controls for a focused later route stop", () => {

@@ -2,6 +2,12 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
 
+import {
+  mobileRouteShellPalette,
+  mobileRouteShellStyles,
+  mobileRouteShellTone,
+} from "../styles/routeShellStyles";
+
 export interface AssignedJobCardProps {
   address?: string | null;
   children?: ReactNode;
@@ -82,7 +88,7 @@ export function AssignedJobCard({
 
 const styles = StyleSheet.create({
   address: {
-    color: "#4B5563",
+    color: mobileRouteShellPalette.secondaryText,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -90,18 +96,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 16,
+    ...mobileRouteShellStyles.card,
   },
   controls: {
     gap: 10,
     marginTop: 14,
   },
   customer: {
-    color: "#111827",
+    color: mobileRouteShellPalette.primaryText,
     fontSize: 19,
     fontWeight: "800",
     lineHeight: 24,
@@ -114,55 +116,55 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   notes: {
-    color: "#374151",
+    color: mobileRouteShellPalette.secondaryText,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 3,
   },
   notesBox: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
+    backgroundColor: mobileRouteShellPalette.surfaceSubtle,
+    borderColor: mobileRouteShellPalette.border,
+    borderRadius: mobileRouteShellStyles.card.borderRadius,
     borderWidth: 1,
     marginTop: 12,
     padding: 12,
   },
   notesLabel: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
   },
   statusPill: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#BFDBFE",
+    backgroundColor: mobileRouteShellPalette.routeSoft,
+    borderColor: mobileRouteShellTone.sync.ready.borderColor,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   statusText: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 12,
     fontWeight: "800",
   },
   time: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 17,
     fontWeight: "800",
     lineHeight: 22,
   },
   timeLabel: {
-    color: "#6B7280",
+    color: mobileRouteShellPalette.mutedText,
     fontSize: 12,
     fontWeight: "700",
     marginBottom: 2,
     textTransform: "uppercase",
   },
   workPlan: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
+    backgroundColor: mobileRouteShellPalette.surfaceSubtle,
+    borderColor: mobileRouteShellPalette.border,
+    borderRadius: mobileRouteShellStyles.card.borderRadius,
     borderWidth: 1,
     gap: 9,
     marginTop: 14,
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   workPlanDone: {
-    backgroundColor: "#047857",
+    backgroundColor: mobileRouteShellPalette.signalSynced,
   },
   workPlanDot: {
     borderRadius: 999,
@@ -186,23 +188,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   workPlanLabel: {
-    color: "#111827",
+    color: mobileRouteShellPalette.primaryText,
     fontSize: 13,
     fontWeight: "800",
   },
   workPlanMissing: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: mobileRouteShellPalette.signalMissing,
   },
   workPlanPending: {
-    backgroundColor: "#B45309",
+    backgroundColor: mobileRouteShellPalette.signalQueued,
   },
   workPlanSummary: {
-    color: "#4B5563",
+    color: mobileRouteShellPalette.secondaryText,
     fontSize: 12,
     lineHeight: 16,
   },
   workPlanTitle: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",

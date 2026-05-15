@@ -2,6 +2,12 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
 
+import {
+  getVisitFlowTone,
+  mobileRouteShellPalette,
+  mobileRouteShellStyles,
+} from "../styles/routeShellStyles";
+
 export interface MobileJobFieldFlowProps {
   chemicalLog: ReactNode;
   geofenceControls: ReactNode;
@@ -74,11 +80,7 @@ export function MobileJobFieldFlow({
               <View
                 style={[
                   styles.statePill,
-                  planItem?.state === "done"
-                    ? styles.stateDone
-                    : planItem?.state === "pending"
-                      ? styles.statePending
-                      : styles.stateMissing,
+                  getVisitFlowTone(planItem?.state),
                 ]}
               >
                 <Text style={styles.stateText}>{stateLabel(planItem?.state)}</Text>
@@ -97,16 +99,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   stateDone: {
-    backgroundColor: "#ECFDF5",
-    borderColor: "#A7F3D0",
+    backgroundColor: getVisitFlowTone("done").backgroundColor,
+    borderColor: getVisitFlowTone("done").borderColor,
   },
   stateMissing: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: getVisitFlowTone("missing").backgroundColor,
+    borderColor: getVisitFlowTone("missing").borderColor,
   },
   statePending: {
-    backgroundColor: "#FFFBEB",
-    borderColor: "#FDE68A",
+    backgroundColor: getVisitFlowTone("pending").backgroundColor,
+    borderColor: getVisitFlowTone("pending").borderColor,
   },
   statePill: {
     borderRadius: 999,
@@ -115,16 +117,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   stateText: {
-    color: "#111827",
+    color: mobileRouteShellPalette.primaryText,
     fontSize: 11,
     fontWeight: "800",
   },
   step: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 12,
+    ...mobileRouteShellStyles.compactCard,
   },
   stepControl: {
     marginTop: 10,
@@ -139,9 +137,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   stepNumber: {
-    backgroundColor: "#1E3A8A",
+    backgroundColor: mobileRouteShellPalette.rail,
     borderRadius: 999,
-    color: "#FFFFFF",
+    color: mobileRouteShellPalette.inverseText,
     fontSize: 12,
     fontWeight: "800",
     height: 24,
@@ -150,17 +148,17 @@ const styles = StyleSheet.create({
     width: 24,
   },
   stepSummary: {
-    color: "#4B5563",
+    color: mobileRouteShellPalette.secondaryText,
     fontSize: 12,
     lineHeight: 16,
   },
   stepTitle: {
-    color: "#111827",
+    color: mobileRouteShellPalette.primaryText,
     fontSize: 14,
     fontWeight: "800",
   },
   title: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",

@@ -1,5 +1,15 @@
 # Done
 
+## Design System Foundation + Mobile Route Shell Pilot V1
+
+- Finalized the Pest Patrol design-token foundation with expanded primitive palette steps, light/dark semantic roles, border/text/action paths, visual status tokens, motion tokens, and Figma variable names
+- Added durable design-system and asset-pipeline docs plus the Claude relay brief for mobile route-shell design guidance
+- Wired Tailwind to consume the shared token package for web semantic colors, spacing, radius, typography, and shadows
+- Added an app-local Expo route-shell style layer that consumes `@pest-patrol/ui-tokens`
+- Applied the token pilot to the signed-in technician route shell: technician header, sync confidence panel, route timeline, assigned job card, and visit-flow wrapper
+- Kept individual capture controls, login/loading screens, Figma canvas writes, provider setup, schema changes, Vercel/env mutation, and production data changes out of scope
+- Verified with focused token/mobile tests and focused token/mobile typechecks; full repo verification followed before PR handoff
+
 ## Demo Smoke Preflight V1
 
 - Added a domain-backed demo smoke preflight helper with target, ready/blocked state, missing env names, demo seed summary, safe next commands, and sanitized evidence prompts

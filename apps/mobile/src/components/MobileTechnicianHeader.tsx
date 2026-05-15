@@ -2,6 +2,10 @@ import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { buildMobileTechnicianReadinessPanel } from "@pest-patrol/domain";
 
+import {
+  mobileRouteShellPalette,
+  mobileRouteShellStyles,
+} from "../styles/routeShellStyles";
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
 import { useLanguage } from "../store/useLanguage";
 
@@ -42,13 +46,31 @@ export function MobileTechnicianHeader({
         }}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ color: "#1E3A8A", fontSize: 13, fontWeight: "700" }}>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.accentText,
+              fontSize: 13,
+              fontWeight: "700",
+            }}
+          >
             Technician
           </Text>
-          <Text style={{ color: "#111827", fontSize: 26, fontWeight: "800" }}>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.primaryText,
+              fontSize: 26,
+              fontWeight: "800",
+            }}
+          >
             {readiness.title}
           </Text>
-          <Text style={{ color: "#6B7280", fontSize: 14, marginTop: 6 }}>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.mutedText,
+              fontSize: 14,
+              marginTop: 6,
+            }}
+          >
             {readiness.identityLabel}
           </Text>
         </View>
@@ -57,16 +79,18 @@ export function MobileTechnicianHeader({
           <Pressable
             onPress={toggleLanguage}
             style={{
-              alignItems: "center",
-              borderColor: "#D1D5DB",
-              borderRadius: 8,
+              ...mobileRouteShellStyles.control,
+              borderColor: mobileRouteShellPalette.border,
               borderWidth: 1,
-              justifyContent: "center",
-              minHeight: 40,
-              paddingHorizontal: 12,
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 13, fontWeight: "800" }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.primaryText,
+                fontSize: 13,
+                fontWeight: "800",
+              }}
+            >
               {lang === "en" ? "Español" : "English"}
             </Text>
           </Pressable>
@@ -74,16 +98,18 @@ export function MobileTechnicianHeader({
             <Pressable
               onPress={onSignOut}
               style={{
-                alignItems: "center",
-                borderColor: "#D1D5DB",
-                borderRadius: 8,
+                ...mobileRouteShellStyles.control,
+                borderColor: mobileRouteShellPalette.border,
                 borderWidth: 1,
-                justifyContent: "center",
-                minHeight: 40,
-                paddingHorizontal: 12,
               }}
             >
-              <Text style={{ color: "#111827", fontSize: 13, fontWeight: "800" }}>
+              <Text
+                style={{
+                  color: mobileRouteShellPalette.primaryText,
+                  fontSize: 13,
+                  fontWeight: "800",
+                }}
+              >
                 Sign out
               </Text>
             </Pressable>
@@ -92,19 +118,21 @@ export function MobileTechnicianHeader({
       </View>
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 14, marginTop: 12 }}>
+        <Text
+          style={{
+            color: mobileRouteShellPalette.signalDanger,
+            fontSize: 14,
+            marginTop: 12,
+          }}
+        >
           {error}
         </Text>
       ) : null}
 
       <View
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#E5E7EB",
-          borderRadius: 8,
-          borderWidth: 1,
+          ...mobileRouteShellStyles.card,
           marginTop: 16,
-          padding: 14,
         }}
       >
         <View
@@ -115,32 +143,54 @@ export function MobileTechnicianHeader({
             justifyContent: "space-between",
           }}
         >
-          <Text style={{ color: "#111827", fontSize: 16, fontWeight: "800" }}>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.primaryText,
+              fontSize: 16,
+              fontWeight: "800",
+            }}
+          >
             {readiness.assignedJobsLabel}
           </Text>
           {onRefreshJobs ? (
             <Pressable
               onPress={onRefreshJobs}
               style={{
-                alignItems: "center",
-                backgroundColor: "#111827",
-                borderRadius: 8,
-                justifyContent: "center",
-                minHeight: 36,
-                paddingHorizontal: 12,
+                ...mobileRouteShellStyles.control,
+                backgroundColor: mobileRouteShellPalette.rail,
               }}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+              <Text
+                style={{
+                  color: mobileRouteShellPalette.inverseText,
+                  fontSize: 13,
+                  fontWeight: "800",
+                }}
+              >
                 Refresh
               </Text>
             </Pressable>
           ) : null}
         </View>
 
-        <Text style={{ color: "#1E3A8A", fontSize: 13, fontWeight: "800", marginTop: 12 }}>
+        <Text
+          style={{
+            color: mobileRouteShellPalette.accentText,
+            fontSize: 13,
+            fontWeight: "800",
+            marginTop: 12,
+          }}
+        >
           {readiness.demoNextLabel}
         </Text>
-        <Text style={{ color: "#4B5563", fontSize: 14, lineHeight: 20, marginTop: 4 }}>
+        <Text
+          style={{
+            color: mobileRouteShellPalette.secondaryText,
+            fontSize: 14,
+            lineHeight: 20,
+            marginTop: 4,
+          }}
+        >
           {readiness.demoNextSummary}
         </Text>
       </View>
