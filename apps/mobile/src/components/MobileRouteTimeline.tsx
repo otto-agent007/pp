@@ -8,7 +8,7 @@ import { AssignedJobCard } from "./AssignedJobCard";
 interface MobileRouteTimelineProps {
   focusedJobId?: string | null;
   onFocusJob?: (jobId: string) => void;
-  renderJobControls: (job: Job) => ReactNode;
+  renderJobControls: (job: Job, workPlan: MobileRouteTimelineJob["workPlan"]) => ReactNode;
   statusLabels: Record<JobStatus, string>;
   timeline: MobileDailyRouteTimeline;
 }
@@ -26,7 +26,10 @@ function RouteSection({
   statusLabels,
 }: {
   item: MobileRouteTimelineJob;
-  renderJobControls: (job: Job) => ReactNode;
+  renderJobControls: (
+    job: Job,
+    workPlan: MobileRouteTimelineJob["workPlan"],
+  ) => ReactNode;
   statusLabels: Record<JobStatus, string>;
 }) {
   return (
@@ -46,7 +49,7 @@ function RouteSection({
         statusLabel={statusLabels[item.job.status]}
         workPlan={item.workPlan}
       >
-        {renderJobControls(item.job)}
+        {renderJobControls(item.job, item.workPlan)}
       </AssignedJobCard>
     </View>
   );

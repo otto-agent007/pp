@@ -11,10 +11,12 @@ import {
   buildMobileDailyRouteTimeline,
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
+import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
 
 import { JobChemicalLogForm } from "../src/components/JobChemicalLogForm";
 import { JobGeofenceControls } from "../src/components/JobGeofenceControls";
+import { MobileJobFieldFlow } from "../src/components/MobileJobFieldFlow";
 import { JobPhotoUploadForm } from "../src/components/JobPhotoUploadForm";
 import { MobileRouteTimeline } from "../src/components/MobileRouteTimeline";
 import { JobSignatureCaptureForm } from "../src/components/JobSignatureCaptureForm";
@@ -44,16 +46,17 @@ function formatTime(value: string) {
   }).format(new Date(value));
 }
 
-function renderFieldControls(job: Job) {
+function renderFieldControls(job: Job, workPlan: MobileJobWorkPlanItem[]) {
   return (
-    <>
-      <JobStatusControls job={job} />
-      <JobGeofenceControls job={job} />
-      <JobChemicalLogForm jobId={job.id} />
-      <JobPhotoUploadForm jobId={job.id} />
-      <JobSignatureCaptureForm jobId={job.id} />
-      <JobTreatmentForm jobId={job.id} />
-    </>
+    <MobileJobFieldFlow
+      chemicalLog={<JobChemicalLogForm jobId={job.id} />}
+      geofenceControls={<JobGeofenceControls job={job} />}
+      jobStatusControls={<JobStatusControls job={job} />}
+      photoUpload={<JobPhotoUploadForm jobId={job.id} />}
+      signatureCapture={<JobSignatureCaptureForm jobId={job.id} />}
+      treatmentForm={<JobTreatmentForm jobId={job.id} />}
+      workPlan={workPlan}
+    />
   );
 }
 
