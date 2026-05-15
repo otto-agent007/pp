@@ -82,7 +82,7 @@ Current priority is preview launch readiness after the portal-led batch in PR #2
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, provider status, fresh-token send, and send-attempt history
 - tokened `/portal` routes now include a customer-safe service and billing timeline
-- current slice: Demo Smoke Preflight V1 adds a read-only preflight before local/protected-preview demo smoke, then keeps all writes in the existing seed/reset/dashboard paths
+- current slice: preview launch readiness now has a Ready Vercel preview baseline, aligned Supabase migrations, dispatch technician query-param preselection, and demo seed/smoke tooling
 - next candidates: operator runs local or protected-preview smoke against the seeded story, then decide whether portal delivery receipts are needed
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop

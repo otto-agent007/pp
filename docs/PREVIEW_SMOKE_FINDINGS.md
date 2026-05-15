@@ -9,9 +9,7 @@ Status: latest preview is Ready and app-shell reachable; authenticated workflow 
 Baseline:
 - Local branch: `codex/preview-smoke-runbook`.
 - Current repo baseline includes portal send critique cleanup and dispatch technician query-param preselection.
-- Local scratch remains untracked and out of scope:
-  - `tools/`
-  - `critique-009-staging.md`
+- Local GitHub MCP tooling and critique notes were later folded into the repo cleanup commit; no secrets or protected preview values were committed.
 - No migrations, Supabase dashboard changes, Vercel env mutations, provider dashboard mutations, credentials, or production data changes were performed.
 
 Read-only checks:
@@ -52,7 +50,7 @@ Triage:
 Status: preview launch batch is locally verified and ready for operator handoff; authenticated smoke is still blocked on operator access.
 
 Slice outcomes:
-- Preview Launch Batch Closure V1: current tracked changes include portal send critique cleanup, dispatch technician preselection, readiness docs, and preview preflight findings. `tools/` and `critique-009-staging.md` remain untracked scratch and out of scope.
+- Preview Launch Batch Closure V1: current tracked changes include portal send critique cleanup, dispatch technician preselection, readiness docs, and preview preflight findings.
 - Operator Smoke Access Handoff V1: `docs/PREVIEW_LAUNCH_READINESS.md` now names the required protected-preview browser session, admin/dispatcher sign-in path, sanitized evidence format, and blocker categories.
 - Authenticated Preview Smoke Run V1: not run because no operator-confirmed interactive protected-preview session and no admin/dispatcher sign-in path are available in the workspace.
 - Preview Smoke Blocker Fixes V1: no new smoke-proven app blocker was available to fix beyond the already implemented portal send cleanup and dispatch preselection.
