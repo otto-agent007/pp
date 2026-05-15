@@ -172,6 +172,7 @@ describe("demo readiness domain", () => {
     );
 
     expect(getMobileCompletionReadinessGuard(plan)).toEqual({
+      failedLabels: [],
       label: "Review before completing",
       missingLabels: [
         "Capture arrival/departure",
@@ -183,6 +184,38 @@ describe("demo readiness domain", () => {
       ready: false,
       summary:
         "Missing capture arrival/departure, log chemicals, capture photos, and capture signature. Pending sync for submit treatment form.",
+    });
+  });
+
+  it("separates failed mobile captures from pending sync work", () => {
+    const plan = buildMobileJobWorkPlan(
+      { id: "job-1", status: "in_progress" },
+      [
+        {
+          id: "queue-1",
+          action: "photo_upload",
+          payload: { job_id: "job-1" },
+          status: "failed",
+          attempts: 2,
+          created_at: "2026-05-05T12:00:00.000Z",
+          updated_at: "2026-05-05T12:05:00.000Z",
+          next_retry_at: "2026-05-05T12:10:00.000Z",
+          last_error: "Upload failed",
+        },
+      ],
+    );
+
+    expect(plan.find((item) => item.id === "photo")).toMatchObject({
+      state: "failed",
+      summary: "Photo capture needs retry.",
+    });
+    expect(getMobileCompletionReadinessGuard(plan)).toMatchObject({
+      failedLabels: ["Capture photos"],
+      label: "Review before completing",
+      ready: false,
+      summary: expect.stringContaining(
+        "Retry failed capture photos before closeout.",
+      ),
     });
   });
 
@@ -227,6 +260,7 @@ describe("demo readiness domain", () => {
         },
       ]),
     ).toEqual({
+      failedLabels: [],
       label: "Ready to complete",
       missingLabels: [],
       pendingLabels: [],

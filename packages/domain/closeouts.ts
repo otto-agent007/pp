@@ -27,6 +27,7 @@ import {
   sendCustomerPortalAccessTokenRecord,
   listCustomerPortalBillingRecords,
 } from "@pest-patrol/api-client";
+import type { DispatchLocationEvidence } from "./geofencing";
 
 export type CloseoutStatusFilter = "completed" | "all";
 
@@ -65,6 +66,16 @@ export interface CloseoutReviewReadiness {
   label: string;
   missing: string[];
   summary: string;
+}
+
+export interface AdminCloseoutProofReview {
+  billing_label: string;
+  completion_label: "Missing evidence" | "Needs review" | "Ready";
+  gps_label: string;
+  invoice_label: string;
+  missing_labels: string[];
+  summary: string;
+  sync_confidence_label: string;
 }
 
 export interface CustomerPortalServiceSummary {
@@ -237,6 +248,60 @@ export function getCloseoutReviewReadiness(
     label: "Needs field captures",
     missing,
     summary: `${prefix}Missing ${formatMissingCaptureList(missing)} before billing.`,
+  };
+}
+
+export function getAdminCloseoutProofReview(input: {
+  evidence?: DispatchLocationEvidence;
+  invoice?: Invoice | null;
+  review: JobCloseoutReview;
+}): AdminCloseoutProofReview {
+  const readiness = getCloseoutReviewReadiness(input.review);
+  const missingLabels = [...readiness.missing];
+  const arrivalCaptured = Boolean(input.evidence?.latest_arrival);
+  const departureCaptured = Boolean(input.evidence?.latest_departure);
+
+  if (!arrivalCaptured) {
+    missingLabels.push("arrival GPS");
+  }
+
+  if (!departureCaptured) {
+    missingLabels.push("departure GPS");
+  }
+
+  const gpsLabel =
+    arrivalCaptured && departureCaptured
+      ? "Arrival and departure GPS captured"
+      : arrivalCaptured || departureCaptured
+        ? "Partial GPS evidence"
+        : "GPS evidence missing";
+  const invoiceLabel = input.invoice
+    ? `Invoice ${input.invoice.status}`
+    : "No invoice yet";
+  const syncConfidenceLabel =
+    missingLabels.length === 0
+      ? "High sync confidence"
+      : "Review synced field evidence";
+  const completionLabel =
+    missingLabels.length === 0
+      ? "Ready"
+      : readiness.billingReady
+        ? "Needs review"
+        : "Missing evidence";
+
+  return {
+    billing_label: readiness.billingReady
+      ? "Billing captures ready"
+      : readiness.label,
+    completion_label: completionLabel,
+    gps_label: gpsLabel,
+    invoice_label: invoiceLabel,
+    missing_labels: missingLabels,
+    summary:
+      missingLabels.length === 0
+        ? "Field proof is synced and ready for billing review."
+        : `Review ${formatMissingCaptureList(missingLabels)} before billing handoff.`,
+    sync_confidence_label: syncConfidenceLabel,
   };
 }
 

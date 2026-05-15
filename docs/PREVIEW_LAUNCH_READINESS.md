@@ -84,6 +84,8 @@ Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
 For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
+Latest local preflight note: the May 15, 2026 read-only local preflight is blocked until the operator loads approved local Supabase env names in their shell. No seed/reset or browser login was attempted during that blocked pass.
+
 Run these in order after the preview deployment has the approved environment variables:
 
 1. Sign in as admin or dispatcher and confirm the protected admin shell loads.
