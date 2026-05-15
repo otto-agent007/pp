@@ -12,7 +12,18 @@ export {
   getMobileCompletionReadinessGuard,
   getDemoWorkflowSteps,
 } from "./demoReadiness";
+export { buildHomeCommandCenterState } from "./homeCommandCenter";
 export type {
+  HomeCommandCenterAlert,
+  HomeCommandCenterInput,
+  HomeCommandCenterKpi,
+  HomeCommandCenterKpiId,
+  HomeCommandCenterNextAction,
+  HomeCommandCenterScheduleItem,
+  HomeCommandCenterSeverity,
+  HomeCommandCenterState,
+  HomeSmokeChecklistItem,
+} from "./homeCommandCenter";export type {
   DemoWorkflowStep,
   MobileCompletionReadinessGuard,
   MobileJobWorkPlanItem,
@@ -20,7 +31,18 @@ export type {
   MobileTechnicianReadinessInput,
   MobileTechnicianReadinessPanel,
 } from "./demoReadiness";
-export {
+export { buildHomeCommandCenterState } from "./homeCommandCenter";
+export type {
+  HomeCommandCenterAlert,
+  HomeCommandCenterInput,
+  HomeCommandCenterKpi,
+  HomeCommandCenterKpiId,
+  HomeCommandCenterNextAction,
+  HomeCommandCenterScheduleItem,
+  HomeCommandCenterSeverity,
+  HomeCommandCenterState,
+  HomeSmokeChecklistItem,
+} from "./homeCommandCenter";export {
   DEMO_SEED_CONFIRMATION,
   DEMO_SEED_ADMIN_EMAIL,
   DEMO_SEED_ADMIN_PASSWORD,

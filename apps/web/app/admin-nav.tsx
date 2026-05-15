@@ -33,14 +33,20 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 px-6 py-3 shadow-sm backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-          <Link className="text-base font-bold text-neutralDark" href="/">
+    <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-2 shadow-sm backdrop-blur sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            className="rounded-md bg-[#071A3D] px-3 py-2 text-sm font-bold text-white"
+            href="/"
+          >
             Pest Patrol OS
           </Link>
+          <span className="rounded-md bg-[#FACC15]/30 px-2 py-1 text-xs font-bold uppercase text-[#071A3D]">
+            Field command
+          </span>
           {profile ? (
-            <span className="text-xs font-semibold uppercase text-gray-500">
+            <span className="text-xs font-bold uppercase text-slate-500">
               {profile.role}
             </span>
           ) : null}
@@ -52,10 +58,10 @@ export function AdminNav() {
             return (
               <Link
                 aria-current={active ? "page" : undefined}
-                className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${
+                className={`whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-bold transition ${
                   active
-                    ? "bg-primary text-white"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-neutralDark"
+                    ? "bg-[#0EA5E9] text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-[#071A3D]"
                 }`}
                 href={route.href}
                 key={route.href}
@@ -65,7 +71,7 @@ export function AdminNav() {
             );
           })}
           <button
-            className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 hover:text-neutralDark"
+            className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-[#071A3D]"
             onClick={() => void signOut()}
             type="button"
           >

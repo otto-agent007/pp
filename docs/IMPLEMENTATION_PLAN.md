@@ -1,19 +1,18 @@
 # Implementation Plan
 
-## Current Priority: Preview Demo Smoke Handoff
+## Current Priority: Web Home Command Center V1
 
-1. Use `docs/PREVIEW_LAUNCH_READINESS.md` as the launch punch list and `docs/PRODUCTION_READINESS.md` as the longer setup and smoke-test reference.
-2. Keep provider dashboard changes, environment variable mutations, production data mutations, and migration application operator-approved only.
-3. Current baseline includes portal send critique cleanup, dispatch technician preselection from `/dispatch?technician=...`, a Ready Vercel preview, and aligned Supabase migrations through `20260513120000_portal_send_audit_events_v1.sql`.
-4. Run the read-only `demo:smoke` preflight before local or protected-preview seed/reset/browser smoke.
-5. Keep seed/reset writes in `demo:seed`, `demo:reset`, the dashboard Demo data panel, and the localhost demo login path.
-6. Require local seed/smoke to point at a local Supabase URL, and never print env values, service-role keys, credentials, bypass URLs, portal raw tokens, or provider payloads.
-7. Include local tooling or critique scratch only when explicitly requested, and keep secrets, credentials, protected preview URLs, and provider payloads out of committed artifacts.
+1. Make the web home page an operational command center, not a marketing landing page.
+2. Keep live data flowing through existing React Query hooks and existing domain/API-client boundaries; do not add home-specific API routes, Supabase calls from UI, database tables, or migrations.
+3. Add domain-only presentation state for home KPIs, schedule rows, alerts, next best action copy, provider labeling, and guided smoke checklist prompts.
+4. Follow the Option 1 visual direction: bold navy command header, compact KPI cards, high-clarity panels, and blue/yellow/red/green status accents.
+5. Keep `DemoSeedControls` available on the home page, but fold it into the command-center workflow.
+6. Add guided demo smoke route links with sanitized evidence prompts and no persistent pass/fail state.
+7. Lightly polish `AdminNav` while preserving active-route accessibility, portal-route hiding, and sign-out.
 
 ## Next Decision Points
 
-1. Run `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke.
-2. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`.
-3. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
-4. Run authenticated preview smoke against the seeded demo story and record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
-5. Decide whether provider delivery receipts, richer provider failure states, or production launch checklist work should be the next product slice after operator-assisted webhook smoke testing.
+1. Run full verification for the command-center slice.
+2. Decide whether the next web slice should add richer dispatch map/route widgets, deeper billing readiness, or more provider delivery evidence.
+3. Keep mobile restyling as a separate slice.
+4. Add persistent checklist completion only after an explicit operator workflow requires it.

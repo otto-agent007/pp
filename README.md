@@ -76,14 +76,14 @@ See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current
 
 ## Current Focus
 
-Current priority is preview launch readiness after the portal-led batch in PR #27:
+Current priority is the web Home Command Center V1 after the preview smoke handoff work:
 
 - `/closeouts` is the Billing work queue for completed-job readiness
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, provider status, fresh-token send, and send-attempt history
 - tokened `/portal` routes now include a customer-safe service and billing timeline
-- current slice: preview launch readiness now has a Ready Vercel preview baseline, aligned Supabase migrations, dispatch technician query-param preselection, and demo seed/smoke tooling
-- next candidates: operator runs local or protected-preview smoke against the seeded story, then decide whether portal delivery receipts are needed
+- current slice: `/` is becoming an Option 1-inspired field-command dashboard with live hook-backed KPIs, dispatch schedule, demo readiness, seed controls, and guided smoke prompts
+- next candidates: richer dispatch route/map widgets, deeper billing readiness, provider delivery evidence, or a separate mobile restyle pass
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages
