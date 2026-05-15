@@ -1,16 +1,22 @@
 "use client";
 
 import {
+  buildDispatchLocationEvidenceByJob,
   buildDispatchWeek,
   getTechnicianLabel,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
   parseJobScheduleWallTime,
 } from "@pest-patrol/domain";
+import type {
+  DispatchLocationEvidence,
+  DispatchLocationEvidenceEvent,
+} from "@pest-patrol/domain";
 import type { Customer, Job, JobStatus } from "@pest-patrol/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCustomers } from "../../hooks/useCustomers";
+import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import {
   useAssignJobTechnician,
   useChangeJobStatus,
@@ -52,9 +58,110 @@ function formatTime(value: string) {
   }).format(parseJobScheduleWallTime(value));
 }
 
+function formatCapturedTime(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function gpsEventLabel(eventType: DispatchLocationEvidenceEvent["event_type"]) {
+  return eventType === "departure" ? "Departure" : "Arrival";
+}
+
+function accuracyLabel(value: number | null) {
+  return value === null ? "Accuracy unavailable" : `Accuracy ${Math.round(value)} m`;
+}
+
+function missingLocationEvidence(jobId: string): DispatchLocationEvidence {
+  return {
+    job_id: jobId,
+    latest_arrival: null,
+    latest_departure: null,
+    latest_event: null,
+    state: "missing",
+    summary_label: "No synced GPS evidence yet",
+  };
+}
+
+function GpsEvidenceEventRow({
+  event,
+}: {
+  event: DispatchLocationEvidenceEvent;
+}) {
+  const label = gpsEventLabel(event.event_type);
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-neutralDark">{label}</p>
+        <a
+          className="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+          href={event.map_url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Open {label.toLowerCase()} map
+        </a>
+      </div>
+      <p className="mt-1 text-xs text-gray-600">
+        {formatCapturedTime(event.captured_at)} - {event.radius_label}
+      </p>
+      <p className="mt-1 text-xs text-gray-500">{accuracyLabel(event.accuracy_m)}</p>
+    </div>
+  );
+}
+
+function LocationEvidencePanel({
+  evidence,
+  isLoading,
+  jobId,
+}: {
+  evidence?: DispatchLocationEvidence;
+  isLoading: boolean;
+  jobId: string;
+}) {
+  const state = evidence ?? missingLocationEvidence(jobId);
+  const events = [state.latest_arrival, state.latest_departure].filter(
+    (event): event is DispatchLocationEvidenceEvent => Boolean(event),
+  );
+
+  return (
+    <section
+      aria-label={`GPS evidence for ${jobId}`}
+      className="rounded-md border border-blue-100 bg-blue-50/70 p-3"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-900">
+          GPS evidence
+        </p>
+        <p className="text-xs font-semibold text-blue-950">
+          {isLoading ? "Loading GPS evidence" : state.summary_label}
+        </p>
+      </div>
+      {events.length > 0 ? (
+        <div className="mt-2 space-y-2">
+          {events.map((event) => (
+            <GpsEvidenceEventRow
+              event={event}
+              key={`${event.event_type}-${event.captured_at}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-gray-600">
+          Arrival and departure GPS points will appear here after the technician
+          syncs mobile captures.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function DispatchClient() {
   const jobsQuery = useJobs();
   const customersQuery = useCustomers();
+  const geofenceEventsQuery = useJobGeofenceEvents();
   const techniciansQuery = useTechnicians();
   const changeStatus = useChangeJobStatus();
   const assignTechnician = useAssignJobTechnician();
@@ -94,6 +201,14 @@ export function DispatchClient() {
   const calendarDays = useMemo(
     () => buildDispatchWeek(decoratedJobs, anchorDate, status, technician),
     [anchorDate, decoratedJobs, status, technician],
+  );
+  const locationEvidenceByJob = useMemo(
+    () =>
+      buildDispatchLocationEvidenceByJob(
+        decoratedJobs.map((job) => job.id),
+        geofenceEventsQuery.data ?? [],
+      ),
+    [decoratedJobs, geofenceEventsQuery.data],
   );
   const isUpdating = changeStatus.isPending || assignTechnician.isPending;
 
@@ -248,6 +363,12 @@ export function DispatchClient() {
                         {job.location?.address ?? "No location saved"}
                       </p>
                     </div>
+
+                    <LocationEvidencePanel
+                      evidence={locationEvidenceByJob[job.id]}
+                      isLoading={geofenceEventsQuery.isLoading}
+                      jobId={job.id}
+                    />
 
                     <label className="flex flex-col gap-1 text-xs font-medium text-neutralDark">
                       Status

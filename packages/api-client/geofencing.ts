@@ -63,3 +63,18 @@ export async function createJobGeofenceEventRecord(
 
   return data as JobGeofenceEvent;
 }
+
+export async function listJobGeofenceEventRecords(
+  client: GeofencingClient = supabase,
+) {
+  const { data, error } = await client
+    .from("job_location_events")
+    .select(geofenceEventSelect)
+    .order("captured_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as JobGeofenceEvent[];
+}

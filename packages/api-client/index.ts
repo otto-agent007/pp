@@ -65,7 +65,10 @@ export {
   listActiveFormTemplateRecords,
   listJobFormSubmissionRecords,
 } from "./forms";
-export { createJobGeofenceEventRecord } from "./geofencing";
+export {
+  createJobGeofenceEventRecord,
+  listJobGeofenceEventRecords,
+} from "./geofencing";
 export {
   createJobMediaRecord,
   listCustomerPortalMediaRecords,
