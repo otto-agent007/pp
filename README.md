@@ -76,14 +76,16 @@ See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current
 
 ## Current Focus
 
-Current priority is the web Home Command Center V1 after the preview smoke handoff work:
+Current priority is provider-free operations readiness after the preview smoke handoff work:
 
 - `/closeouts` is the Billing work queue for completed-job readiness
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, provider status, fresh-token send, and send-attempt history
-- tokened `/portal` routes now include a customer-safe service and billing timeline
-- current slice: `/` is becoming an Option 1-inspired field-command dashboard with live hook-backed KPIs, dispatch schedule, demo readiness, seed controls, and guided smoke prompts
-- next candidates: richer dispatch route/map widgets, deeper billing readiness, provider delivery evidence, or a separate mobile restyle pass
+- tokened `/portal` routes now include a customer-safe service, billing timeline, and proof-of-service summary
+- `/dispatch` includes provider-free scheduled route intelligence, GPS evidence after mobile sync, and external map links without embedded map SDKs
+- the mobile technician route flow groups existing offline-first field controls into a clearer visit sequence
+- current status: no active implementation slice is open after the provider-free dispatch/mobile/closeout proof batch
+- next candidates: browser/demo smoke, richer provider-free dispatch grouping, mobile flow refinement, deeper billing readiness, or later map-provider planning
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages

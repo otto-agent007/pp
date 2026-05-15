@@ -779,3 +779,46 @@
 - Updated job and dispatch technician selectors to show display names like `Testnician`
 - Extended `/auth/update-password` to accept Supabase invite links in addition to recovery links
 - Added focused API-client, domain, API route, admin nav, job, dispatch, password setup, and technicians UI coverage
+
+## Agent Workflow Guidance V1
+
+- Strengthened root `AGENTS.md` as a concise launch checklist
+- Added plugin/MCP/skill trigger guidance to `docs/AGENTS.md`
+- Preserved detailed workflow policy in existing docs
+- Verified with `git diff --check`
+
+## Web Home Command Center V1
+
+- Added domain-backed home KPIs, alerts, schedule rows, next actions, and guided smoke prompts
+- Replaced the static web home page with a live command-center dashboard
+- Integrated demo seed controls and polished the admin nav
+- Verified with focused domain/web tests and full verification
+
+## GPS Arrival Proof + Dispatch Evidence V1
+
+- Added API-client and domain read paths for synced job geofence events
+- Added dispatch GPS evidence summaries and provider-free external map links
+- Rendered compact arrival/departure evidence in `/dispatch`
+- Kept customer portal, billing, and notification surfaces free of exact technician GPS
+- Verified with focused API-client/domain/web tests and full verification
+
+## Provider-Free Dispatch Route Intelligence V1
+
+- Added domain route intelligence for scheduled-order stops, technician filtering, location readiness, and status counts
+- Rendered provider-free route summaries, stop labels, and service-coordinate map links in `/dispatch`
+- Kept Google Maps/Mapbox SDKs, env vars, background tracking, and migrations deferred
+- Verified with focused domain/web tests
+
+## Mobile Visit Flow Organization V1
+
+- Grouped mobile field controls into a clear visit flow: start, arrive/depart, treatment, chemicals, photos, signature
+- Reused existing offline queue, draft stores, geofence controls, and completion guard behavior
+- Preserved manual foreground GPS capture only
+- Verified with focused mobile component tests and mobile typecheck
+
+## Closeout Proof Handoff V1
+
+- Added admin proof handoff readiness in `/closeouts`
+- Added customer-safe proof-of-service summaries in the portal
+- Kept exact technician GPS, map URLs, chemical internals, storage paths, and provider internals out of customer portal payloads
+- Verified with focused domain, admin, portal UI, and portal API tests
