@@ -34,6 +34,10 @@ function stateLabel(state?: MobileJobWorkPlanItem["state"]) {
     return "Queued";
   }
 
+  if (state === "failed") {
+    return "Retry";
+  }
+
   return "Needed";
 }
 
@@ -54,10 +58,18 @@ export function MobileJobFieldFlow({
     signatureCapture,
     treatmentForm,
   };
+  const doneCount = workPlan.filter((item) => item.state === "done").length;
+  const queuedCount = workPlan.filter((item) => item.state === "pending").length;
+  const failedCount = workPlan.filter((item) => item.state === "failed").length;
+  const neededCount = workPlan.filter((item) => item.state === "missing").length;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Visit flow</Text>
+      <Text style={styles.summary}>
+        {doneCount} done - {queuedCount} queued - {failedCount} retry -{" "}
+        {neededCount} needed
+      </Text>
       {flowSteps.map((step, index) => {
         const planItem = workPlan.find((item) => item.id === step.id);
 
@@ -76,6 +88,8 @@ export function MobileJobFieldFlow({
                   styles.statePill,
                   planItem?.state === "done"
                     ? styles.stateDone
+                    : planItem?.state === "failed"
+                      ? styles.stateFailed
                     : planItem?.state === "pending"
                       ? styles.statePending
                       : styles.stateMissing,
@@ -99,6 +113,10 @@ const styles = StyleSheet.create({
   stateDone: {
     backgroundColor: "#ECFDF5",
     borderColor: "#A7F3D0",
+  },
+  stateFailed: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
   },
   stateMissing: {
     backgroundColor: "#F9FAFB",
@@ -153,6 +171,11 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     fontSize: 12,
     lineHeight: 16,
+  },
+  summary: {
+    color: "#4B5563",
+    fontSize: 12,
+    fontWeight: "700",
   },
   stepTitle: {
     color: "#111827",

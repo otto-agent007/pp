@@ -264,6 +264,11 @@ describe("PaymentsClient", () => {
 
     expect(screen.getByText("From closeouts")).toBeInTheDocument();
     expect(screen.getByText("1 ready to bill · 1 need captures")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Use closeouts to confirm proof handoff, GPS evidence, and customer-safe portal readiness before invoicing.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View queue" })).toHaveAttribute(
       "href",
       "/closeouts",

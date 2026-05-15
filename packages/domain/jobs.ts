@@ -13,6 +13,7 @@ import type { Job, JobInput, JobStatus, OfflineQueueItem } from "@pest-patrol/ty
 import { buildMobileJobWorkPlan } from "./demoReadiness";
 import type { MobileJobWorkPlanItem } from "./demoReadiness";
 import { buildDispatchLocationMapUrl } from "./geofencing";
+import type { DispatchLocationEvidenceByJob } from "./geofencing";
 import { getOfflineQueueJobTriage } from "./offlineQueue";
 import type { OfflineQueueJobTriage } from "./offlineQueue";
 
@@ -31,25 +32,38 @@ export type DispatchRouteLocationState =
   | "ready";
 
 export type DispatchRouteStopStatusState = "active" | "canceled" | "completed";
+export type DispatchRouteEvidenceState = "complete" | "missing" | "partial";
+export type DispatchRouteRiskState = "at_risk" | "closed" | "on_track";
+export type DispatchRouteTriageFilter =
+  | "all"
+  | "at_risk"
+  | "missing_coordinates"
+  | "missing_evidence"
+  | "unassigned";
 
 export interface DispatchRouteStop {
   address_label: string;
   customer_label: string;
+  evidence_state: DispatchRouteEvidenceState;
   job: Job;
   location_map_url: string | null;
   location_state: DispatchRouteLocationState;
   next_stop_job_id: string | null;
+  risk_state: DispatchRouteRiskState;
   schedule_label: string;
   sequence: number;
   status_state: DispatchRouteStopStatusState;
   technician_id: string | null;
+  triage_labels: string[];
 }
 
 export interface DispatchRouteIntelligenceSummary {
   active_stops: number;
+  at_risk_stops: number;
   canceled_stops: number;
   completed_stops: number;
   missing_coordinates_count: number;
+  missing_evidence_count: number;
   missing_location_count: number;
   provider_label: "Provider-free scheduled order";
   total_stops: number;
@@ -61,6 +75,11 @@ export interface DispatchRouteIntelligence {
   stops: DispatchRouteStop[];
   summary: DispatchRouteIntelligenceSummary;
   technician_id: TechnicianFilter;
+}
+
+export interface DispatchRouteIntelligenceOptions {
+  evidenceByJob?: DispatchLocationEvidenceByJob;
+  now?: Date | string;
 }
 
 export interface MobileDailyJobs {
@@ -368,34 +387,110 @@ function getLocationMapUrl(job: Job) {
   });
 }
 
+function getDispatchRouteEvidenceState(
+  job: Job,
+  evidenceByJob: DispatchLocationEvidenceByJob,
+): DispatchRouteEvidenceState {
+  const evidence = evidenceByJob[job.id];
+
+  if (evidence?.latest_arrival && evidence.latest_departure) {
+    return "complete";
+  }
+
+  if (evidence?.latest_arrival || evidence?.latest_departure) {
+    return "partial";
+  }
+
+  return "missing";
+}
+
+function getDispatchRouteRiskState(
+  job: Job,
+  statusState: DispatchRouteStopStatusState,
+  now?: Date | string,
+): DispatchRouteRiskState {
+  if (statusState !== "active") {
+    return "closed";
+  }
+
+  if (!now) {
+    return "on_track";
+  }
+
+  const nowTime = typeof now === "string" ? Date.parse(now) : now.getTime();
+
+  if (Number.isNaN(nowTime)) {
+    return "on_track";
+  }
+
+  return getJobScheduleTime(job.scheduled_start) < nowTime
+    ? "at_risk"
+    : "on_track";
+}
+
+function getDispatchRouteTriageLabels(stop: {
+  evidence_state: DispatchRouteEvidenceState;
+  location_state: DispatchRouteLocationState;
+  risk_state: DispatchRouteRiskState;
+  technician_id: string | null;
+}) {
+  return [
+    stop.technician_id ? null : "Unassigned",
+    stop.location_state === "missing_coordinates"
+      ? "Missing service coordinates"
+      : null,
+    stop.location_state === "missing_location" ? "Missing service location" : null,
+    stop.evidence_state === "complete" ? null : "Missing GPS evidence",
+    stop.risk_state === "at_risk" ? "At risk" : null,
+  ].filter((label): label is string => Boolean(label));
+}
+
 export function buildDispatchRouteIntelligence(
   jobs: Job[],
   date: string,
   technician: TechnicianFilter = "all",
+  options: DispatchRouteIntelligenceOptions = {},
 ): DispatchRouteIntelligence {
   const routeJobs = filterDispatchRouteJobs(jobs, date, technician);
-  const stops = routeJobs.map((job, index): DispatchRouteStop => ({
-    address_label: job.location?.address ?? "No location saved",
-    customer_label: job.customer?.name ?? "Unknown customer",
-    job,
-    location_map_url: getLocationMapUrl(job),
-    location_state: getDispatchRouteLocationState(job),
-    next_stop_job_id: routeJobs[index + 1]?.id ?? null,
-    schedule_label: toTimeLabel(job.scheduled_start),
-    sequence: index + 1,
-    status_state: getDispatchRouteStatusState(job.status),
-    technician_id: job.assigned_tech_id,
-  }));
+  const stops = routeJobs.map((job, index): DispatchRouteStop => {
+    const statusState = getDispatchRouteStatusState(job.status);
+    const stop = {
+      address_label: job.location?.address ?? "No location saved",
+      customer_label: job.customer?.name ?? "Unknown customer",
+      evidence_state: getDispatchRouteEvidenceState(
+        job,
+        options.evidenceByJob ?? {},
+      ),
+      job,
+      location_map_url: getLocationMapUrl(job),
+      location_state: getDispatchRouteLocationState(job),
+      next_stop_job_id: routeJobs[index + 1]?.id ?? null,
+      risk_state: getDispatchRouteRiskState(job, statusState, options.now),
+      schedule_label: toTimeLabel(job.scheduled_start),
+      sequence: index + 1,
+      status_state: statusState,
+      technician_id: job.assigned_tech_id,
+    };
+
+    return {
+      ...stop,
+      triage_labels: getDispatchRouteTriageLabels(stop),
+    };
+  });
 
   return {
     date,
     stops,
     summary: {
       active_stops: stops.filter((stop) => stop.status_state === "active").length,
+      at_risk_stops: stops.filter((stop) => stop.risk_state === "at_risk").length,
       canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
       completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
       missing_coordinates_count: stops.filter(
         (stop) => stop.location_state === "missing_coordinates",
+      ).length,
+      missing_evidence_count: stops.filter(
+        (stop) => stop.evidence_state !== "complete",
       ).length,
       missing_location_count: stops.filter(
         (stop) => stop.location_state === "missing_location",
@@ -406,6 +501,34 @@ export function buildDispatchRouteIntelligence(
     },
     technician_id: technician,
   };
+}
+
+export function filterDispatchRouteStops(
+  stops: DispatchRouteStop[],
+  filter: DispatchRouteTriageFilter,
+) {
+  if (filter === "all") {
+    return stops;
+  }
+
+  return stops.filter((stop) => {
+    if (filter === "at_risk") {
+      return stop.risk_state === "at_risk";
+    }
+
+    if (filter === "missing_coordinates") {
+      return (
+        stop.location_state === "missing_coordinates" ||
+        stop.location_state === "missing_location"
+      );
+    }
+
+    if (filter === "missing_evidence") {
+      return stop.evidence_state !== "complete";
+    }
+
+    return !stop.technician_id;
+  });
 }
 
 export function buildMobileDailyJobs(jobs: Job[], date: string): MobileDailyJobs {

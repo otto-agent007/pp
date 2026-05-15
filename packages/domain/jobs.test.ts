@@ -6,6 +6,7 @@ import {
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
+  filterDispatchRouteStops,
   filterAssignedTechnicianJobs,
   filterJobs,
   getDispatchWeekStart,
@@ -368,6 +369,162 @@ describe("job domain", () => {
         (stop) => stop.job.id,
       ),
     ).toEqual(["job-unassigned"]);
+  });
+
+  it("adds dispatch triage for missing GPS evidence and at-risk stops", () => {
+    const jobs = [
+      {
+        id: "job-ready",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "10 Pine Street",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 33.8121,
+          longitude: -117.919,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-missing-evidence",
+        customer_id: "customer-1",
+        location_id: "location-2",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T10:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-2",
+          customer_id: "customer-1",
+          address: "20 Oak Avenue",
+          nickname: null,
+          service_notes: null,
+          is_primary: false,
+          latitude: null,
+          longitude: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-closed",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T07:00:00",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+
+    const intelligence = buildDispatchRouteIntelligence(
+      jobs,
+      "2026-05-06",
+      "all",
+      {
+        evidenceByJob: {
+          "job-ready": {
+            job_id: "job-ready",
+            latest_arrival: {
+              accuracy_m: 10,
+              captured_at: "2026-05-06T08:01:00.000Z",
+              distance_m: 5,
+              event_type: "arrival",
+              latitude: 33.8121,
+              longitude: -117.919,
+              map_url:
+                "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+              radius_label: "Within service radius (5 m)",
+              radius_state: "inside",
+              within_radius: true,
+            },
+            latest_departure: {
+              accuracy_m: 12,
+              captured_at: "2026-05-06T08:45:00.000Z",
+              distance_m: 8,
+              event_type: "departure",
+              latitude: 33.8121,
+              longitude: -117.919,
+              map_url:
+                "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+              radius_label: "Within service radius (8 m)",
+              radius_state: "inside",
+              within_radius: true,
+            },
+            latest_event: {
+              accuracy_m: 12,
+              captured_at: "2026-05-06T08:45:00.000Z",
+              distance_m: 8,
+              event_type: "departure",
+              latitude: 33.8121,
+              longitude: -117.919,
+              map_url:
+                "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+              radius_label: "Within service radius (8 m)",
+              radius_state: "inside",
+              within_radius: true,
+            },
+            state: "captured",
+            summary_label: "Arrival and departure GPS synced",
+          },
+        },
+        now: "2026-05-06T09:30:00",
+      },
+    );
+
+    expect(intelligence.summary).toMatchObject({
+      at_risk_stops: 1,
+      missing_coordinates_count: 1,
+      missing_evidence_count: 2,
+      unassigned_stops: 1,
+    });
+    expect(intelligence.stops.find((stop) => stop.job.id === "job-ready"))
+      .toMatchObject({
+        evidence_state: "complete",
+        risk_state: "at_risk",
+        triage_labels: ["At risk"],
+      });
+    expect(
+      intelligence.stops.find((stop) => stop.job.id === "job-missing-evidence"),
+    ).toMatchObject({
+      evidence_state: "missing",
+      location_state: "missing_coordinates",
+      risk_state: "on_track",
+      triage_labels: [
+        "Unassigned",
+        "Missing service coordinates",
+        "Missing GPS evidence",
+      ],
+    });
+    expect(filterDispatchRouteStops(intelligence.stops, "at_risk").map((stop) => stop.job.id))
+      .toEqual(["job-ready"]);
+    expect(
+      filterDispatchRouteStops(intelligence.stops, "missing_evidence").map(
+        (stop) => stop.job.id,
+      ),
+    ).toEqual(["job-closed", "job-missing-evidence"]);
+    expect(filterDispatchRouteStops(intelligence.stops, "unassigned").map((stop) => stop.job.id))
+      .toEqual(["job-missing-evidence"]);
   });
 
   it("builds the mobile daily job list for assigned jobs", () => {

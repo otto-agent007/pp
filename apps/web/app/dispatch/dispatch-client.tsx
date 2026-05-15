@@ -4,6 +4,7 @@ import {
   buildDispatchLocationEvidenceByJob,
   buildDispatchRouteIntelligence,
   buildDispatchWeek,
+  filterDispatchRouteStops,
   getTechnicianLabel,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
@@ -14,6 +15,7 @@ import type {
   DispatchLocationEvidenceEvent,
   DispatchRouteIntelligence,
   DispatchRouteStop,
+  DispatchRouteTriageFilter,
   TechnicianFilter,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobStatus } from "@pest-patrol/types";
@@ -35,6 +37,13 @@ const statusLabels: Record<JobStatus, string> = {
   in_progress: "In progress",
   completed: "Completed",
   canceled: "Canceled",
+};
+const triageLabels: Record<DispatchRouteTriageFilter, string> = {
+  all: "All dispatch work",
+  at_risk: "At risk",
+  missing_coordinates: "Missing coordinates",
+  missing_evidence: "Missing GPS evidence",
+  unassigned: "Unassigned",
 };
 
 function todayKey() {
@@ -93,6 +102,34 @@ function routeStopLocationLabel(stop?: DispatchRouteStop) {
   }
 
   return "Missing service location";
+}
+
+function routeStopEvidenceLabel(stop?: DispatchRouteStop) {
+  if (!stop) {
+    return "GPS evidence unavailable";
+  }
+
+  if (stop.evidence_state === "complete") {
+    return "Arrival and departure synced";
+  }
+
+  if (stop.evidence_state === "partial") {
+    return "Partial GPS evidence";
+  }
+
+  return "No synced GPS evidence";
+}
+
+function routeStopRiskLabel(stop?: DispatchRouteStop) {
+  if (!stop || stop.risk_state === "on_track") {
+    return "On track";
+  }
+
+  if (stop.risk_state === "closed") {
+    return "Closed";
+  }
+
+  return "At risk";
 }
 
 function missingLocationEvidence(jobId: string): DispatchLocationEvidence {
@@ -182,8 +219,10 @@ function LocationEvidencePanel({
 
 function RouteIntelligencePanel({
   intelligence,
+  triage,
 }: {
   intelligence: DispatchRouteIntelligence;
+  triage: DispatchRouteTriageFilter;
 }) {
   const summary = intelligence.summary;
 
@@ -217,9 +256,21 @@ function RouteIntelligencePanel({
           <span className="rounded-md bg-white px-3 py-2 text-blue-950">
             {plural(summary.missing_coordinates_count, "missing coordinates", "missing coordinates")}
           </span>
+          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+            {plural(summary.missing_evidence_count, "missing GPS evidence", "missing GPS evidence")}
+          </span>
+          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+            {plural(summary.at_risk_stops, "at risk", "at risk")}
+          </span>
         </div>
       </div>
-      {summary.missing_location_count > 0 || summary.unassigned_stops > 0 ? (
+      <p className="mt-3 text-xs font-semibold text-blue-900">
+        Showing {triageLabels[triage].toLowerCase()}.
+      </p>
+      {summary.missing_location_count > 0 ||
+      summary.unassigned_stops > 0 ||
+      summary.missing_evidence_count > 0 ||
+      summary.at_risk_stops > 0 ? (
         <p className="mt-3 text-xs font-medium text-blue-900">
           {summary.missing_location_count > 0
             ? `${plural(summary.missing_location_count, "stop")} missing service location. `
@@ -227,19 +278,52 @@ function RouteIntelligencePanel({
           {summary.unassigned_stops > 0
             ? `${plural(summary.unassigned_stops, "stop")} needs technician assignment.`
             : ""}
+          {summary.missing_evidence_count > 0
+            ? ` ${plural(summary.missing_evidence_count, "stop")} missing synced GPS evidence.`
+            : ""}
+          {summary.at_risk_stops > 0
+            ? ` ${plural(summary.at_risk_stops, "stop")} at risk.`
+            : ""}
         </p>
       ) : null}
     </section>
   );
 }
 
+function summarizeRouteStops(
+  stops: DispatchRouteStop[],
+): DispatchRouteIntelligence["summary"] {
+  return {
+    active_stops: stops.filter((stop) => stop.status_state === "active").length,
+    at_risk_stops: stops.filter((stop) => stop.risk_state === "at_risk").length,
+    canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
+    completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
+    missing_coordinates_count: stops.filter(
+      (stop) => stop.location_state === "missing_coordinates",
+    ).length,
+    missing_evidence_count: stops.filter(
+      (stop) => stop.evidence_state !== "complete",
+    ).length,
+    missing_location_count: stops.filter(
+      (stop) => stop.location_state === "missing_location",
+    ).length,
+    provider_label: "Provider-free scheduled order",
+    total_stops: stops.length,
+    unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
+  };
+}
+
 function mergeRouteIntelligenceByWeek(
   days: ReturnType<typeof buildDispatchWeek>,
   technician: TechnicianFilter,
+  evidenceByJob: ReturnType<typeof buildDispatchLocationEvidenceByJob>,
 ): DispatchRouteIntelligence {
   const stops = days
     .flatMap((day) =>
-      buildDispatchRouteIntelligence(day.jobs, day.date, technician).stops,
+      buildDispatchRouteIntelligence(day.jobs, day.date, technician, {
+        evidenceByJob,
+        now: new Date(),
+      }).stops,
     )
     .map((stop, index, allStops) => ({
       ...stop,
@@ -250,20 +334,7 @@ function mergeRouteIntelligenceByWeek(
   return {
     date: days[0]?.date ?? "",
     stops,
-    summary: {
-      active_stops: stops.filter((stop) => stop.status_state === "active").length,
-      canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
-      completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
-      missing_coordinates_count: stops.filter(
-        (stop) => stop.location_state === "missing_coordinates",
-      ).length,
-      missing_location_count: stops.filter(
-        (stop) => stop.location_state === "missing_location",
-      ).length,
-      provider_label: "Provider-free scheduled order",
-      total_stops: stops.length,
-      unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
-    },
+    summary: summarizeRouteStops(stops),
     technician_id: technician,
   };
 }
@@ -279,6 +350,7 @@ export function DispatchClient() {
   const [anchorDate, setAnchorDate] = useState(todayKey());
   const [status, setStatus] = useState<StatusFilter>("all");
   const [technician, setTechnician] = useState<TechnicianFilter>("all");
+  const [triage, setTriage] = useState<DispatchRouteTriageFilter>("all");
   const technicians = useMemo(
     () => techniciansQuery.data ?? [],
     [techniciansQuery.data],
@@ -321,8 +393,32 @@ export function DispatchClient() {
     [decoratedJobs, geofenceEventsQuery.data],
   );
   const routeIntelligence = useMemo(
-    () => mergeRouteIntelligenceByWeek(calendarDays, technician),
-    [calendarDays, technician],
+    () => mergeRouteIntelligenceByWeek(calendarDays, technician, locationEvidenceByJob),
+    [calendarDays, locationEvidenceByJob, technician],
+  );
+  const visibleRouteStops = useMemo(
+    () => filterDispatchRouteStops(routeIntelligence.stops, triage),
+    [routeIntelligence.stops, triage],
+  );
+  const visibleRouteJobIds = useMemo(
+    () => new Set(visibleRouteStops.map((stop) => stop.job.id)),
+    [visibleRouteStops],
+  );
+  const visibleCalendarDays = useMemo(
+    () =>
+      calendarDays.map((day) => ({
+        ...day,
+        jobs: day.jobs.filter((job) => visibleRouteJobIds.has(job.id)),
+      })),
+    [calendarDays, visibleRouteJobIds],
+  );
+  const visibleRouteIntelligence = useMemo(
+    () => ({
+      ...routeIntelligence,
+      stops: visibleRouteStops,
+      summary: summarizeRouteStops(visibleRouteStops),
+    }),
+    [routeIntelligence, visibleRouteStops],
   );
   const routeStopsByJobId = useMemo(
     () =>
@@ -382,7 +478,7 @@ export function DispatchClient() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Week of
             <input
@@ -426,11 +522,31 @@ export function DispatchClient() {
               ))}
             </select>
           </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            Triage
+            <select
+              aria-label="Dispatch triage"
+              className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+              onChange={(event) =>
+                setTriage(event.target.value as DispatchRouteTriageFilter)
+              }
+              value={triage}
+            >
+              {Object.entries(triageLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <p className="text-sm text-gray-600">Week starting {weekStart}</p>
 
-        <RouteIntelligencePanel intelligence={routeIntelligence} />
+        <RouteIntelligencePanel
+          intelligence={visibleRouteIntelligence}
+          triage={triage}
+        />
       </header>
 
       {jobsQuery.isLoading ? (
@@ -439,7 +555,7 @@ export function DispatchClient() {
         </p>
       ) : (
         <section className="grid gap-3 lg:grid-cols-7">
-          {calendarDays.map((day) => (
+          {visibleCalendarDays.map((day) => (
             <section
               className="flex min-h-64 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
               key={day.date}
@@ -472,6 +588,22 @@ export function DispatchClient() {
                       <span className="text-gray-600">
                         {routeStopLocationLabel(routeStopsByJobId[job.id])}
                       </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                      <span className="rounded-md bg-white px-2 py-1 text-gray-700">
+                        {routeStopEvidenceLabel(routeStopsByJobId[job.id])}
+                      </span>
+                      <span className="rounded-md bg-white px-2 py-1 text-gray-700">
+                        {routeStopRiskLabel(routeStopsByJobId[job.id])}
+                      </span>
+                      {routeStopsByJobId[job.id]?.triage_labels.map((label) => (
+                        <span
+                          className="rounded-md bg-amber-50 px-2 py-1 text-amber-800"
+                          key={label}
+                        >
+                          {label}
+                        </span>
+                      ))}
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-secondary">

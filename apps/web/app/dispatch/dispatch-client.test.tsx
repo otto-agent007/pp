@@ -214,10 +214,17 @@ describe("DispatchClient", () => {
     expect(screen.getByText("2 active")).toBeInTheDocument();
     expect(screen.getByText("1 completed")).toBeInTheDocument();
     expect(screen.getByText("1 missing coordinates")).toBeInTheDocument();
+    expect(screen.getByText("2 missing GPS evidence")).toBeInTheDocument();
+    expect(screen.getByText("0 at risk")).toBeInTheDocument();
     expect(screen.getByText("Stop 1")).toBeInTheDocument();
     expect(screen.getByText("Stop 2")).toBeInTheDocument();
     expect(screen.getAllByText("Service coordinates ready").length).toBeGreaterThan(0);
-    expect(screen.getByText("Missing service coordinates")).toBeInTheDocument();
+    expect(screen.getAllByText("Missing service coordinates").length)
+      .toBeGreaterThan(0);
+    expect(screen.getAllByText("Arrival and departure synced").length)
+      .toBeGreaterThan(0);
+    expect(screen.getAllByText("No synced GPS evidence").length)
+      .toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Open service map for job-1" }))
       .toHaveAttribute(
         "href",
@@ -242,6 +249,29 @@ describe("DispatchClient", () => {
     await user.selectOptions(screen.getByLabelText("Dispatch technician"), "technician-1");
 
     expect(screen.getByText("1 stop")).toBeInTheDocument();
+  });
+
+  it("filters dispatch triage for missing evidence", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [scheduledJob, missingCoordinateJob, completedJob],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    await user.selectOptions(
+      screen.getByLabelText("Dispatch triage"),
+      "missing_evidence",
+    );
+
+    expect(screen.getByText("2 stops")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Status for job-missing-coordinates"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
+    expect(screen.getByText("Showing missing gps evidence.")).toBeInTheDocument();
   });
 
   it("guides users when no jobs are scheduled for a day", () => {

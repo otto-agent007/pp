@@ -271,6 +271,9 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
     expect(screen.getByText("Arrival GPS captured")).toBeInTheDocument();
     expect(screen.getByText("Departure GPS captured")).toBeInTheDocument();
+    expect(screen.getAllByText("Ready").length).toBeGreaterThan(0);
+    expect(screen.getByText("High sync confidence")).toBeInTheDocument();
+    expect(screen.getByText("No invoice yet")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Customer portal proof stays sanitized and does not expose exact technician GPS.",
