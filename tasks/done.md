@@ -1,5 +1,12 @@
 # Done
 
+## Billing Readiness Reconciliation Polish V1
+
+- Added shared billing handoff and invoice reconciliation guidance for `/payments`
+- Clarified closeout-to-invoice state, needs-review explanations, manual paid confirmation, and void confirmation copy
+- Kept Stripe provider setup, webhooks, refunds, new schemas, production payment actions, and provider mutations out of scope
+- Verified with focused payments domain/UI tests, focused typechecks, and `git diff --check`
+
 ## Closeout Proof Handoff Polish V1
 
 - Added a shared office proof-handoff summary for readiness, missing-capture guidance, and sanitized GPS evidence

@@ -7,11 +7,13 @@ import {
   filterCustomerPortalInvoices,
   filterInvoices,
   getCustomerPortalInvoiceStatusLabel,
+  getBillingCloseoutHandoffSummary,
   getInvoiceBalanceCents,
   getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
   getInvoiceReconciliation,
+  getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
   validateInvoiceInput,
@@ -302,6 +304,58 @@ describe("payments domain", () => {
       needsReviewCount: 1,
       paidCents: 5000,
       remainingCents: 32500,
+    });
+  });
+
+  it("builds reconciliation guidance and closeout handoff copy", () => {
+    const manualPaidInvoice: Invoice = {
+      ...invoice,
+      id: "invoice-manual",
+      status: "paid",
+    };
+    const needsReviewInvoice: Invoice = {
+      ...invoice,
+      id: "invoice-review",
+      payments: [
+        {
+          id: "payment-failed",
+          invoice_id: "invoice-review",
+          provider: "stripe",
+          provider_payment_id: "pi_failed",
+          status: "failed",
+          amount_cents: 12500,
+          currency: "usd",
+          paid_at: null,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+    };
+
+    expect(getInvoiceReconciliationGuidance(needsReviewInvoice)).toEqual({
+      label: "Needs review",
+      markPaidConfirmation:
+        "Confirm the customer paid outside provider sync before marking paid. This does not create a provider charge.",
+      nextStep:
+        "Review the payment record or confirm a manual status after office verification.",
+      summary:
+        "Failed payment activity needs review before this invoice is reconciled.",
+      voidConfirmation:
+        "Void only if this invoice should leave active collection. Existing payment records remain audit history.",
+    });
+    expect(getInvoiceReconciliationGuidance(manualPaidInvoice).summary).toBe(
+      "Marked paid manually; no successful provider payment is attached.",
+    );
+    expect(
+      getBillingCloseoutHandoffSummary({
+        needsCaptures: 1,
+        needsReview: 1,
+        readyToBill: 1,
+      }),
+    ).toEqual({
+      label: "Closeout handoff ready",
+      nextStep: "1 invoice needs reconciliation review before demo handoff.",
+      summary: "1 ready to invoice from closeouts; 1 still needs field captures.",
     });
   });
 

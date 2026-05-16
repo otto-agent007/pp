@@ -381,6 +381,7 @@ export {
   createInvoicePaymentLink,
   filterCustomerPortalInvoices,
   filterInvoices,
+  getBillingCloseoutHandoffSummary,
   getCustomerPortalInvoiceStatusLabel,
   getInvoiceBalanceCents,
   getInvoiceHandoffHref,
@@ -388,6 +389,7 @@ export {
   getInvoiceJobIds,
   getInvoicePaidCents,
   getInvoiceReconciliation,
+  getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
   listInvoices,
@@ -398,8 +400,10 @@ export {
   voidInvoice,
 } from "./payments";
 export type {
+  BillingCloseoutHandoffSummary,
   CustomerPortalInvoiceStatusFilter,
   InvoiceReconciliation,
+  InvoiceReconciliationGuidance,
   InvoiceReconciliationStatus,
   InvoiceReconciliationSummary,
   InvoiceStatusFilter,
