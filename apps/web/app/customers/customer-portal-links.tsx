@@ -305,6 +305,8 @@ export function CustomerPortalLinks({
     : true;
   const expiresInputRef = useRef<HTMLInputElement | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyAgainRef = useRef<HTMLButtonElement | null>(null);
+  const focusCopyAgainAfterSendRef = useRef(false);
   const cancelRevokeRef = useRef<HTMLButtonElement | null>(null);
   const revokeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const historyButtonRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -324,6 +326,11 @@ export function CustomerPortalLinks({
   const [freshSendRequestedId, setFreshSendRequestedId] = useState<string | null>(
     null,
   );
+  const [freshManualLink, setFreshManualLink] = useState<{
+    copied: boolean;
+    portalUrl: string;
+    tokenId: string;
+  } | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(
@@ -344,6 +351,13 @@ export function CustomerPortalLinks({
       setExpandedHistoryId(null);
     }
   }, [expandedHistoryId, sortedTokens]);
+
+  useEffect(() => {
+    if (sendRequested && focusCopyAgainAfterSendRef.current) {
+      copyAgainRef.current?.focus();
+      focusCopyAgainAfterSendRef.current = false;
+    }
+  }, [sendRequested]);
 
   useEffect(() => {
     if (confirmingId) {
@@ -374,6 +388,7 @@ export function CustomerPortalLinks({
     setMessage(null);
     setSendError(null);
     setSendRequested(false);
+    setFreshManualLink(null);
     setCopyUnavailable(false);
 
     const grant = await createToken
@@ -418,6 +433,7 @@ export function CustomerPortalLinks({
       return;
     }
 
+    focusCopyAgainAfterSendRef.current = true;
     setSendRequested(true);
   }
 
@@ -430,9 +446,8 @@ export function CustomerPortalLinks({
     setFreshSendRequestedId(null);
     setFreshSendError(null);
     setFreshSendErrorId(null);
+    setFreshManualLink(null);
     setSendError(null);
-    setSendRequested(false);
-    setCopyUnavailable(false);
 
     const grant = await createToken
       .mutateAsync({
@@ -448,16 +463,18 @@ export function CustomerPortalLinks({
       return;
     }
 
-    setLatestLink(grant.portal_url);
-    setLatestTokenId(grant.token_id);
-
+    let copied = false;
     try {
       await copyText(grant.portal_url);
-      setMessage("✓ Fresh link copied to clipboard.");
+      copied = true;
     } catch {
-      setCopyUnavailable(true);
-      setMessage(null);
+      copied = false;
     }
+    setFreshManualLink({
+      copied,
+      portalUrl: grant.portal_url,
+      tokenId: token.id,
+    });
 
     const result = await sendToken
       .mutateAsync({
@@ -477,9 +494,27 @@ export function CustomerPortalLinks({
       return;
     }
 
-    setSendRequested(true);
     setFreshSendRequestedId(token.id);
     setFreshSendErrorId(null);
+  }
+
+  async function copyFreshManualLink() {
+    if (!freshManualLink) {
+      return;
+    }
+
+    try {
+      await copyText(freshManualLink.portalUrl);
+      setFreshManualLink({
+        ...freshManualLink,
+        copied: true,
+      });
+    } catch {
+      setFreshManualLink({
+        ...freshManualLink,
+        copied: false,
+      });
+    }
   }
 
   async function copyLatestLink() {
@@ -507,6 +542,7 @@ export function CustomerPortalLinks({
     setMessage(null);
     setSendError(null);
     setSendRequested(false);
+    setFreshManualLink(null);
     expiresInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     expiresInputRef.current?.focus();
   }
@@ -514,7 +550,7 @@ export function CustomerPortalLinks({
   const providerReady = providerStatus.data?.provider === "webhook";
   const providerCopy = (() => {
     if (providerStatus.isLoading) {
-      return "Checking portal delivery provider...";
+      return "Checking portal delivery provider…";
     }
 
     if (providerStatus.error) {
@@ -547,7 +583,7 @@ export function CustomerPortalLinks({
         }
         type="button"
       >
-        {sendToken.isPending ? "Sending..." : "Send link ▶"}
+        {sendToken.isPending ? "Sending…" : "Send link ▶"}
       </button>
     )
   ) : null;
@@ -676,7 +712,7 @@ export function CustomerPortalLinks({
               <p className="mt-0.5 text-xs text-gray-600">{readinessCard.body}</p>
             ) : null}
             {showProviderCopy ? (
-              <p className="mt-1 text-xs font-medium text-gray-500">
+              <p className="mt-1 text-xs font-medium text-gray-400">
                 {providerCopy}
               </p>
             ) : null}
@@ -711,7 +747,7 @@ export function CustomerPortalLinks({
           onClick={() => void generateLink()}
           type="button"
         >
-          {createToken.isPending ? "Generating..." : "Generate link"}
+          {createToken.isPending ? "Generating…" : "Generate link"}
         </button>
         {createToken.error ? (
           <p className="text-xs font-semibold text-red-700">
@@ -745,7 +781,7 @@ export function CustomerPortalLinks({
               <p className="text-xs text-gray-500">
                 Paste this into an email or text to share with the customer.
               </p>
-              <div>{sendButton}</div>
+              <div className="mt-1">{sendButton}</div>
             </div>
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -759,6 +795,7 @@ export function CustomerPortalLinks({
                 <button
                   className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
                   onClick={() => void copyLatestLink()}
+                  ref={copyAgainRef}
                   type="button"
                 >
                   {copyFlash ? "Copied!" : "Copy again"}
@@ -886,7 +923,7 @@ export function CustomerPortalLinks({
                             disabled
                             type="button"
                           >
-                            Revoking...
+                            Revoking…
                           </button>
                         ) : isConfirming ? null : (
                           <button
@@ -911,8 +948,39 @@ export function CustomerPortalLinks({
                   </div>
                   {freshSendRequestedId === token.id ? (
                     <p className="mt-2 text-xs font-semibold text-accent">
-                      ✓ Send requested.
+                      ✓ Send requested for the fresh link.
                     </p>
+                  ) : null}
+                  {freshManualLink?.tokenId === token.id ? (
+                    <div className="mt-2 rounded-md border border-gray-200 bg-white px-3 py-2">
+                      <p className="text-xs font-semibold text-neutralDark">
+                        Fresh active link created. Older active links remain available until revoked.
+                      </p>
+                      {freshManualLink.copied ? (
+                        <p className="mt-1 text-xs font-semibold text-accent">
+                          ✓ Fresh link copied to clipboard.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Copy the fresh link manually:
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                        <input
+                          className="min-h-9 flex-1 rounded-md border border-gray-300 bg-white px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
+                          onFocus={(event) => event.currentTarget.select()}
+                          readOnly
+                          value={freshManualLink.portalUrl}
+                        />
+                        <button
+                          className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                          onClick={() => void copyFreshManualLink()}
+                          type="button"
+                        >
+                          Copy fresh link
+                        </button>
+                      </div>
+                    </div>
                   ) : null}
                   {freshSendError && freshSendErrorId === token.id ? (
                     <p className="mt-2 text-xs font-semibold text-red-700" role="alert">

@@ -212,6 +212,42 @@ describe("CustomerPortalLinks", () => {
     expect(screen.queryByText("Opened by customer")).not.toBeInTheDocument();
   });
 
+  it("renders provider send audit events in the token history drawer", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomerPortalAccessTokenEvents).mockReturnValue({
+      data: {
+        events: [
+          {
+            id: "event-send-requested",
+            token_id: "token-1",
+            customer_id: "customer-1",
+            kind: "send_requested",
+            occurred_at: "2026-05-07T10:00:00.000Z",
+          },
+          {
+            id: "event-send-failed",
+            token_id: "token-1",
+            customer_id: "customer-1",
+            kind: "send_failed",
+            occurred_at: "2026-05-07T10:05:00.000Z",
+          },
+        ],
+        truncated_before: null,
+      },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+
+    render(<CustomerPortalLinks customerId="customer-1" />);
+
+    await user.click(screen.getByRole("button", { name: "History" }));
+
+    expect(screen.getByText("Send requested")).toBeInTheDocument();
+    expect(screen.getByText("Send failed")).toBeInTheDocument();
+    expect(screen.getAllByText("by an admin")).toHaveLength(2);
+  });
+
   it("shows empty, loading, and error readiness states", () => {
     vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
       data: [],
@@ -376,7 +412,7 @@ describe("CustomerPortalLinks", () => {
     expect(screen.getByRole("button", { name: "Copied!" })).toBeInTheDocument();
   });
 
-  it("requests provider send only for the freshly generated session link", async () => {
+  it("requests provider send only for the freshly generated session link and returns focus", async () => {
     const user = userEvent.setup();
 
     render(
@@ -398,7 +434,9 @@ describe("CustomerPortalLinks", () => {
         "http://localhost:3000/portal/customer-1?access_token=raw-token",
     });
     expect(screen.getByText("✓ Send requested.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Copy again" })).toHaveFocus(),
+    );
     expect(screen.queryByRole("button", { name: "Resend" })).not.toBeInTheDocument();
   });
 
@@ -457,7 +495,7 @@ describe("CustomerPortalLinks", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("sends a fresh token from an active row and keeps manual fallback available", async () => {
+  it("sends a fresh token from an active row with row-scoped feedback", async () => {
     const user = userEvent.setup();
     createMutateAsync.mockResolvedValueOnce({
       customer_id: "customer-1",
@@ -491,9 +529,19 @@ describe("CustomerPortalLinks", () => {
       portal_url:
         "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
     });
+    expect(
+      screen.getByText(
+        "Fresh active link created. Older active links remain available until revoked.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("✓ Fresh link copied to clipboard.")).toBeInTheDocument();
-    expect(screen.getAllByText("✓ Send requested.").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(
+      screen.getByText("✓ Send requested for the fresh link."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy fresh link" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy again" })).not.toBeInTheDocument();
   });
 
   it("preserves the freshly generated manual fallback when row send fails", async () => {
@@ -521,11 +569,15 @@ describe("CustomerPortalLinks", () => {
       }),
     );
 
-    expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy again" })).not.toBeInTheDocument();
     expect(
       screen.getByText(
         "Couldn't request send. Copy the newly generated link manually or try again.",
       ),
+    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/access_token=fresh-raw-token/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy fresh link" }),
     ).toBeInTheDocument();
   });
 
@@ -776,7 +828,7 @@ describe("CustomerPortalLinks", () => {
 
     render(<CustomerPortalLinks customerId="customer-1" />);
 
-    expect(screen.getByRole("button", { name: "Generating..." })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Revoking..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Generating…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Revoking…" })).toBeDisabled();
   });
 });
