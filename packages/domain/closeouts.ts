@@ -68,6 +68,17 @@ export interface CloseoutReviewReadiness {
   summary: string;
 }
 
+export interface CloseoutProofHandoffSummary {
+  exact_coordinates_disclosed: false;
+  gps_items: string[];
+  gps_label: string;
+  missing_capture_guidance: string | null;
+  portal_handoff_label: string;
+  portal_handoff_summary: string;
+  proof_label: string;
+  proof_summary: string;
+}
+
 export interface AdminCloseoutProofReview {
   billing_label: string;
   completion_label: "Missing evidence" | "Needs review" | "Ready";
@@ -96,6 +107,8 @@ export interface CustomerPortalProofHandoff {
   job_id: string;
   location_label: string;
   missing_labels: string[];
+  next_step_label: string;
+  privacy_label: string;
   service_date_label: string;
   summary_label: string;
 }
@@ -248,6 +261,73 @@ export function getCloseoutReviewReadiness(
     label: "Needs field captures",
     missing,
     summary: `${prefix}Missing ${formatMissingCaptureList(missing)} before billing.`,
+  };
+}
+
+function getGpsEvidenceItem(
+  label: "Arrival" | "Departure",
+  synced: boolean,
+) {
+  return synced
+    ? `${label} GPS synced for service-radius review.`
+    : `${label} GPS still needs a synced capture.`;
+}
+
+function getGpsEvidenceLabel(evidence?: DispatchLocationEvidence | null) {
+  const hasArrival = Boolean(evidence?.latest_arrival);
+  const hasDeparture = Boolean(evidence?.latest_departure);
+
+  if (hasArrival && hasDeparture) {
+    return "Arrival and departure GPS synced for office review";
+  }
+
+  if (hasArrival) {
+    return "Arrival GPS synced; departure GPS missing";
+  }
+
+  if (hasDeparture) {
+    return "Departure GPS synced; arrival GPS missing";
+  }
+
+  return "Arrival and departure GPS missing";
+}
+
+export function getCloseoutProofHandoffSummary({
+  evidence,
+  readiness,
+}: {
+  evidence?: DispatchLocationEvidence | null;
+  readiness: CloseoutReviewReadiness;
+}): CloseoutProofHandoffSummary {
+  const hasArrival = Boolean(evidence?.latest_arrival);
+  const hasDeparture = Boolean(evidence?.latest_departure);
+  const missingCaptureGuidance =
+    readiness.missing.length === 0
+      ? null
+      : `Ask the technician to sync ${formatMissingCaptureList(
+          readiness.missing,
+        )} before billing or portal handoff.`;
+
+  return {
+    exact_coordinates_disclosed: false,
+    gps_items: [
+      getGpsEvidenceItem("Arrival", hasArrival),
+      getGpsEvidenceItem("Departure", hasDeparture),
+    ],
+    gps_label: getGpsEvidenceLabel(evidence),
+    missing_capture_guidance: missingCaptureGuidance,
+    portal_handoff_label: readiness.billingReady
+      ? "Portal handoff ready after office review"
+      : "Portal proof remains in progress",
+    portal_handoff_summary: readiness.billingReady
+      ? "Customer portal can show reviewed service forms, photos, signatures, service date, and location; exact technician GPS stays private."
+      : "Customer portal proof can be shared after required captures are reviewed; exact technician GPS stays private.",
+    proof_label: readiness.billingReady
+      ? "Ready for office proof review"
+      : "Needs proof review",
+    proof_summary: readiness.billingReady
+      ? "Treatment form, chemical log, photo, and signature are synced for billing review."
+      : readiness.summary,
   };
 }
 
@@ -750,10 +830,17 @@ export function getCustomerPortalProofHandoff(
       closeout.job.location?.address ??
       "Service location",
     missing_labels: missingLabels,
+    next_step_label: complete
+      ? "Available for your records."
+      : "Our office is finishing proof review.",
+    privacy_label:
+      "Technician GPS details stay private and are not shown in this portal.",
     service_date_label: formatServiceDate(closeout.job.scheduled_start),
     summary_label: complete
-      ? "Service form, photo, and signature are available."
-      : `Missing ${formatMissingCaptureList(missingLabels)}.`,
+      ? "Proof of service is ready: service form, photo, and signature are available."
+      : `Proof of service is in progress. Missing ${formatMissingCaptureList(
+          missingLabels,
+        )}.`,
   };
 }
 

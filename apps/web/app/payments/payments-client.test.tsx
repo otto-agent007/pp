@@ -262,8 +262,13 @@ describe("PaymentsClient", () => {
 
     render(<PaymentsClient />);
 
-    expect(screen.getByText("From closeouts")).toBeInTheDocument();
-    expect(screen.getByText("1 ready to bill · 1 need captures")).toBeInTheDocument();
+    expect(screen.getByText("Closeout handoff ready")).toBeInTheDocument();
+    expect(
+      screen.getByText("1 ready to invoice from closeouts; 1 still needs field captures."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Create invoices for ready closeouts or review the queue."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "Use closeouts to confirm proof handoff, GPS evidence, and customer-safe portal readiness before invoicing.",
@@ -289,6 +294,22 @@ describe("PaymentsClient", () => {
     expect(screen.getAllByText("Reconciled paid").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Manually marked paid").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Failed payment activity needs review before this invoice is reconciled.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Review the payment record or confirm a manual status after office verification.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Successful payment records cover this invoice balance."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Marked paid manually; no successful provider payment is attached."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Paid $200.00")).toBeInTheDocument();
     expect(screen.getAllByText("Balance $125.00")).toHaveLength(2);
     expect(screen.getAllByText("Balance $0.00").length).toBeGreaterThanOrEqual(2);
@@ -398,6 +419,11 @@ describe("PaymentsClient", () => {
     expect(
       screen.getByText("Apex Homes · invoice invoice-1 · $125.00"),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Confirm the customer paid outside provider sync before marking paid. This does not create a provider charge.",
+      ),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cancel mark paid" }));
 
@@ -415,6 +441,11 @@ describe("PaymentsClient", () => {
     expect(screen.getByText("Void this invoice?")).toBeInTheDocument();
     expect(
       screen.getByText("Apex Homes · invoice invoice-1 · $125.00"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Void only if this invoice should leave active collection. Existing payment records remain audit history.",
+      ),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cancel void" }));

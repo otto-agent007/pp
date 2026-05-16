@@ -5,9 +5,11 @@ import {
   buildBillingQueue,
   buildInvoiceInputFromJob,
   filterInvoices,
+  getBillingCloseoutHandoffSummary,
   getBillingQueueCounts,
   getInvoiceJobIds,
   getInvoiceReconciliation,
+  getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
   type InvoiceReconciliationStatus,
@@ -224,6 +226,19 @@ export function PaymentsClient() {
     () => getInvoiceReconciliationSummary(invoices),
     [invoices],
   );
+  const closeoutHandoff = useMemo(
+    () =>
+      getBillingCloseoutHandoffSummary({
+        needsCaptures: billingQueueCounts.needsCaptures,
+        needsReview: reconciliationSummary.needsReviewCount,
+        readyToBill: billingQueueCounts.ready,
+      }),
+    [
+      billingQueueCounts.needsCaptures,
+      billingQueueCounts.ready,
+      reconciliationSummary.needsReviewCount,
+    ],
+  );
   const selectedJob =
     completedJobs.find((job) => job.id === form.job_id) ?? completedJobs[0] ?? null;
   const closeoutHandoffJob =
@@ -325,10 +340,12 @@ export function PaymentsClient() {
 
       <section className="flex flex-col gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-semibold text-neutralDark">From closeouts</p>
+          <p className="font-semibold text-neutralDark">{closeoutHandoff.label}</p>
           <p className="mt-1 text-gray-600">
-            {billingQueueCounts.ready} ready to bill ·{" "}
-            {billingQueueCounts.needsCaptures} need captures
+            {closeoutHandoff.summary}
+          </p>
+          <p className="mt-1 text-xs font-semibold text-gray-500">
+            {closeoutHandoff.nextStep}
           </p>
           <p className="mt-1 text-xs font-medium text-gray-500">
             Use closeouts to confirm proof handoff, GPS evidence, and customer-safe
@@ -417,6 +434,7 @@ export function PaymentsClient() {
           ) : (
             visibleInvoices.map((invoice) => {
               const reconciliation = getInvoiceReconciliation(invoice);
+              const guidance = getInvoiceReconciliationGuidance(invoice);
               const latestPaidAt = formatPaymentDate(reconciliation.latestPaidAt);
               const invoiceJob =
                 invoice.job ?? jobs.find((job) => job.id === invoice.job_id) ?? null;
@@ -457,6 +475,12 @@ export function PaymentsClient() {
                           {reconciliation.reviewLabel}
                         </p>
                       ) : null}
+                      <p className="mt-2 text-sm text-gray-700">
+                        {guidance.summary}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {guidance.nextStep}
+                      </p>
                       {latestPaidAt ? (
                         <p className="mt-2 text-sm text-gray-600">
                           Latest payment {latestPaidAt}
@@ -556,6 +580,11 @@ export function PaymentsClient() {
                           </p>
                           <p className="mt-1 text-xs text-gray-600">
                             {confirmationContext}
+                          </p>
+                          <p className="mt-2 text-xs text-gray-600">
+                            {confirmingAction === "mark_paid"
+                              ? guidance.markPaidConfirmation
+                              : guidance.voidConfirmation}
                           </p>
                           <div className="mt-3 flex flex-wrap justify-end gap-2">
                             <button

@@ -66,10 +66,25 @@ describe("demo readiness domain", () => {
       }),
     ).toEqual({
       assignedJobsLabel: "3 jobs assigned today",
-      demoNextLabel: "Demo next",
-      demoNextSummary: "Open the first assigned job, capture treatment notes, then explain queued sync.",
+      routeFocusLabel: "Route ready",
+      routeFocusSummary: "Start with the first stop, capture field work, then sync before closeout.",
       identityLabel: "Signed in as technician-demo",
       title: "Technician ready",
+    });
+  });
+
+  it("builds no-route mobile technician readiness copy", () => {
+    expect(
+      buildMobileTechnicianReadinessPanel({
+        assignedJobCount: 0,
+        profileId: "technician-demo-123456",
+      }),
+    ).toEqual({
+      assignedJobsLabel: "No stops assigned",
+      routeFocusLabel: "No route today",
+      routeFocusSummary: "Check with dispatch if you expected scheduled stops.",
+      identityLabel: "Signed in as technician-demo",
+      title: "No route today",
     });
   });
 

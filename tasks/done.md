@@ -1,5 +1,71 @@
 # Done
 
+## Billing Readiness Reconciliation Polish V1
+
+- Added shared billing handoff and invoice reconciliation guidance for `/payments`
+- Clarified closeout-to-invoice state, needs-review explanations, manual paid confirmation, and void confirmation copy
+- Kept Stripe provider setup, webhooks, refunds, new schemas, production payment actions, and provider mutations out of scope
+- Verified with focused payments domain/UI tests, focused typechecks, and `git diff --check`
+
+## Closeout Proof Handoff Polish V1
+
+- Added a shared office proof-handoff summary for readiness, missing-capture guidance, and sanitized GPS evidence
+- Updated `/closeouts` to show proof-review state, arrival/departure evidence, and portal handoff copy from domain helpers
+- Strengthened customer portal proof copy while keeping exact GPS, storage paths, chemical internals, technician details, provider payloads, and admin notes out of customer surfaces
+- Verified with focused domain and closeout/portal UI tests, focused typechecks, and `git diff --check`
+
+## Mobile Capture-Control Tokenization V1
+
+- Added shared route-shell capture-control token styles for mobile form sections, inputs, feedback text, previews, and buttons
+- Applied the token style to status, geofence, treatment, chemical, photo, and signature controls
+- Preserved existing mobile stores, validation, foreground capture behavior, and queue-first writes
+- Verified with focused mobile style/control tests, mobile field-flow tests, mobile typecheck, and `git diff --check`
+
+## Provider-Free Dispatch Grouping V1
+
+- Added domain-backed route intelligence aggregation across selected dispatch days
+- Added provider-free route group summaries by technician, day, status, location readiness, unassigned count, and GPS evidence
+- Rendered grouped dispatch summaries without adding map SDKs, provider keys, routing optimization, background tracking, migrations, or production mutations
+- Verified with focused domain and dispatch UI tests
+
+## Authenticated Preview Smoke Resume V1
+
+- Reran local and protected-preview demo smoke preflights without seed/reset writes
+- Recorded sanitized smoke findings for the missing env/setup and operator-access blockers
+- Kept credentials, protected preview access values, portal raw tokens, provider payloads, migrations, dashboard mutations, and production data actions out of scope
+
+## Brand Asset Intake V1
+
+- Added shared asset buckets under `packages/assets/` for brand, icons, status, map, and empty-state assets
+- Added three advisory Pest Patrol logo candidates without wiring them into app surfaces
+- Documented logo roles, minimum rendered sizes, dark-surface risk, and accessibility guidance
+- Cleaned the compact-header logo candidate so its root title is product-facing and path-level labels stay out of the accessible name
+- Kept app wiring, Figma writes, provider setup, migrations, environment changes, and production mutations out of scope
+
+## Portal Send Feedback Critique Cleanup V1
+
+- Processed the portal send/resend provider-boundary critique through durable Claude relay notes
+- Kept provider-safe send audit events visible in token history without exposing provider payloads or raw portal material
+- Isolated fresh active-row link feedback so row sends do not update the top generated-link area
+- Preserved manual copy fallback and focus recovery after successful top-level sends
+
+## Mobile Route Shell Critique Cleanup V1
+
+- Processed the mobile route-shell token-pilot critique through durable Claude relay notes
+- Removed the duplicate technician-header refresh action and kept the scroll-area refresh/retry path canonical
+- Renamed mobile readiness copy from demo wording to route-focused production wording
+- Tightened sync status copy, hid zero-value sync chips, and added an assigned-jobs error retry action
+
+## Design System Foundation + Mobile Route Shell Pilot V1
+
+- Finalized the Pest Patrol design-token foundation with expanded primitive palette steps, light/dark semantic roles, border/text/action paths, visual status tokens, motion tokens, and Figma variable names
+- Added durable design-system and asset-pipeline docs plus the Claude relay brief for mobile route-shell design guidance
+- Wired Tailwind to consume the shared token package for web semantic colors, spacing, radius, typography, and shadows
+- Added an app-local Expo route-shell style layer that consumes `@pest-patrol/ui-tokens`
+- Applied the token pilot to the signed-in technician route shell: technician header, sync confidence panel, route timeline, assigned job card, and visit-flow wrapper
+- Kept individual capture controls, login/loading screens, Figma canvas writes, provider setup, schema changes, Vercel/env mutation, and production data changes out of scope
+- Verified with focused token/mobile tests and focused token/mobile typechecks; full repo verification followed before PR handoff
+
 ## Demo Smoke Preflight V1
 
 - Added a domain-backed demo smoke preflight helper with target, ready/blocked state, missing env names, demo seed summary, safe next commands, and sanitized evidence prompts

@@ -1,10 +1,21 @@
 # Implementation Plan
 
-## Current Priority: Provider-Free Operations Readiness
+## Current Priority: Design-System Pilot Verification
 
-The latest completed batch made dispatch, mobile field work, and closeout proof more useful without adding Google Maps, Mapbox, background tracking, provider keys, environment changes, migrations, or production mutations.
+The latest completed slice finished the Pest Patrol design-token foundation and
+proved it on the signed-in mobile technician route shell without adding Google
+Maps, Mapbox, background tracking, provider keys, environment changes,
+migrations, Figma canvas writes, Vercel mutations, or production mutations.
 
-Completed in this batch:
+Completed most recently:
+
+1. Finalized `@pest-patrol/ui-tokens` primitives, semantic light/dark roles, visual status tokens, motion tokens, Tailwind wiring, docs, tests, and the Figma variable contract.
+2. Added `.claude/design/010-mobile-route-shell-token-pilot/brief.md` so Claude can advise on the route-shell hierarchy, states, density, and copy without owning implementation.
+3. Added a mobile-local route-shell style layer that consumes shared tokens directly.
+4. Applied the token pilot to the signed-in technician header, sync confidence panel, route timeline, assigned job card, and visit-flow wrapper while leaving individual capture controls for a later slice.
+
+The prior provider-free operations readiness batch remains the product smoke
+handoff baseline:
 
 1. Packaged prior completed work into separate commits for agent guidance, Web Home Command Center V1, and GPS Arrival Proof + Dispatch Evidence V1.
 2. Added provider-free dispatch route intelligence for scheduled-order stops, technician filtering, location readiness, status counts, and service-coordinate external links.
@@ -26,5 +37,5 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 2. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`.
 3. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
 4. Run local/browser smoke on `/`, `/dispatch`, `/closeouts`, mobile route flow, and tokened portal when credentials/demo data are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
-5. Decide whether provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next.
+5. Decide whether provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next after authenticated preview evidence is available.
 6. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.

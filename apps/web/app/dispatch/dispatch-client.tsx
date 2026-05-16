@@ -2,7 +2,8 @@
 
 import {
   buildDispatchLocationEvidenceByJob,
-  buildDispatchRouteIntelligence,
+  buildDispatchRouteGroupSummaries,
+  buildDispatchRouteIntelligenceForDays,
   buildDispatchWeek,
   filterDispatchRouteStops,
   getTechnicianLabel,
@@ -13,6 +14,7 @@ import {
 import type {
   DispatchLocationEvidence,
   DispatchLocationEvidenceEvent,
+  DispatchRouteGroupSummary,
   DispatchRouteIntelligence,
   DispatchRouteStop,
   DispatchRouteTriageFilter,
@@ -290,53 +292,94 @@ function RouteIntelligencePanel({
   );
 }
 
-function summarizeRouteStops(
-  stops: DispatchRouteStop[],
-): DispatchRouteIntelligence["summary"] {
-  return {
-    active_stops: stops.filter((stop) => stop.status_state === "active").length,
-    at_risk_stops: stops.filter((stop) => stop.risk_state === "at_risk").length,
-    canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
-    completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
-    missing_coordinates_count: stops.filter(
-      (stop) => stop.location_state === "missing_coordinates",
-    ).length,
-    missing_evidence_count: stops.filter(
-      (stop) => stop.evidence_state !== "complete",
-    ).length,
-    missing_location_count: stops.filter(
-      (stop) => stop.location_state === "missing_location",
-    ).length,
-    provider_label: "Provider-free scheduled order",
-    total_stops: stops.length,
-    unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
-  };
+function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) {
+  return (
+    <article className="rounded-md border border-gray-200 bg-white p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-neutralDark">{group.label}</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            {plural(group.total_stops, "stop")} across {plural(group.days.length, "day")}
+          </p>
+        </div>
+        <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-900">
+          {plural(group.gps_evidence_count, "GPS captured", "GPS captured")}
+        </span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-gray-700">
+        <span className="rounded-md bg-gray-50 px-2 py-1">
+          {plural(group.active_stops, "active", "active")}
+        </span>
+        <span className="rounded-md bg-gray-50 px-2 py-1">
+          {plural(group.completed_stops, "completed", "completed")}
+        </span>
+        {group.unassigned_stops > 0 ? (
+          <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-800">
+            {plural(group.unassigned_stops, "unassigned", "unassigned")}
+          </span>
+        ) : null}
+        {group.missing_coordinates_count > 0 ? (
+          <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-800">
+            {plural(
+              group.missing_coordinates_count,
+              "missing coordinates",
+              "missing coordinates",
+            )}
+          </span>
+        ) : null}
+        {group.missing_location_count > 0 ? (
+          <span className="rounded-md bg-red-50 px-2 py-1 text-red-800">
+            {plural(group.missing_location_count, "missing location")}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-3 space-y-1">
+        {group.days.map((day) => (
+          <p className="text-xs text-gray-600" key={`${group.id}-${day.date}`}>
+            <span className="font-semibold text-neutralDark">{day.label}</span>
+            {": "}
+            {plural(day.total_stops, "stop")}, {plural(day.active_stops, "active", "active")},{" "}
+            {plural(day.completed_stops, "completed", "completed")}
+          </p>
+        ))}
+      </div>
+    </article>
+  );
 }
 
-function mergeRouteIntelligenceByWeek(
-  days: ReturnType<typeof buildDispatchWeek>,
-  technician: TechnicianFilter,
-  evidenceByJob: ReturnType<typeof buildDispatchLocationEvidenceByJob>,
-): DispatchRouteIntelligence {
-  const stops = days
-    .flatMap((day) =>
-      buildDispatchRouteIntelligence(day.jobs, day.date, technician, {
-        evidenceByJob,
-        now: new Date(),
-      }).stops,
-    )
-    .map((stop, index, allStops) => ({
-      ...stop,
-      next_stop_job_id: allStops[index + 1]?.job.id ?? null,
-      sequence: index + 1,
-    }));
-
-  return {
-    date: days[0]?.date ?? "",
-    stops,
-    summary: summarizeRouteStops(stops),
-    technician_id: technician,
-  };
+function RouteGroupsPanel({
+  groups,
+}: {
+  groups: DispatchRouteGroupSummary[];
+}) {
+  return (
+    <section className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-neutralDark">
+            Route groups by technician
+          </h2>
+          <p className="text-xs text-gray-600">
+            Weekly stop load, status mix, GPS evidence, and location readiness.
+          </p>
+        </div>
+        <p className="text-xs font-semibold text-gray-500">
+          {plural(groups.length, "group")}
+        </p>
+      </div>
+      {groups.length === 0 ? (
+        <p className="mt-3 rounded-md border border-dashed border-gray-200 bg-white p-3 text-sm text-gray-500">
+          No route groups for the current filters.
+        </p>
+      ) : (
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          {groups.map((group) => (
+            <RouteGroupSummaryCard group={group} key={group.id} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 export function DispatchClient() {
@@ -393,7 +436,11 @@ export function DispatchClient() {
     [decoratedJobs, geofenceEventsQuery.data],
   );
   const routeIntelligence = useMemo(
-    () => mergeRouteIntelligenceByWeek(calendarDays, technician, locationEvidenceByJob),
+    () =>
+      buildDispatchRouteIntelligenceForDays(calendarDays, technician, {
+        evidenceByJob: locationEvidenceByJob,
+        now: new Date(),
+      }),
     [calendarDays, locationEvidenceByJob, technician],
   );
   const visibleRouteStops = useMemo(
@@ -413,19 +460,34 @@ export function DispatchClient() {
     [calendarDays, visibleRouteJobIds],
   );
   const visibleRouteIntelligence = useMemo(
-    () => ({
-      ...routeIntelligence,
-      stops: visibleRouteStops,
-      summary: summarizeRouteStops(visibleRouteStops),
-    }),
-    [routeIntelligence, visibleRouteStops],
+    () =>
+      buildDispatchRouteIntelligenceForDays(visibleCalendarDays, technician, {
+        evidenceByJob: locationEvidenceByJob,
+        now: new Date(),
+      }),
+    [locationEvidenceByJob, technician, visibleCalendarDays],
+  );
+  const technicianLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        technicians.map((item) => [item.id, getTechnicianLabel(item)]),
+      ),
+    [technicians],
+  );
+  const routeGroups = useMemo(
+    () =>
+      buildDispatchRouteGroupSummaries(visibleCalendarDays, {
+        evidenceByJob: locationEvidenceByJob,
+        technicianLabels,
+      }),
+    [locationEvidenceByJob, technicianLabels, visibleCalendarDays],
   );
   const routeStopsByJobId = useMemo(
     () =>
       Object.fromEntries(
-        routeIntelligence.stops.map((stop) => [stop.job.id, stop]),
+        visibleRouteIntelligence.stops.map((stop) => [stop.job.id, stop]),
       ),
-    [routeIntelligence.stops],
+    [visibleRouteIntelligence.stops],
   );
   const isUpdating = changeStatus.isPending || assignTechnician.isPending;
 
@@ -547,6 +609,7 @@ export function DispatchClient() {
           intelligence={visibleRouteIntelligence}
           triage={triage}
         />
+        <RouteGroupsPanel groups={routeGroups} />
       </header>
 
       {jobsQuery.isLoading ? (

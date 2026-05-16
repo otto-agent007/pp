@@ -34,6 +34,11 @@ import { useLanguage } from "../src/store/useLanguage";
 import { useOfflineQueue } from "../src/store/useOfflineQueue";
 import { useQueueSync } from "../src/store/useQueueSync";
 import { useSyncStatus } from "../src/store/useSyncStatus";
+import {
+  mobileRouteShellPalette,
+  mobileRouteShellStyles,
+  mobileRouteShellTone,
+} from "../src/styles/routeShellStyles";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -225,18 +230,10 @@ export default function MobileHomeScreen() {
   }
 
   return (
-    <View
-      style={{
-        backgroundColor: "#F9FAFB",
-        flex: 1,
-        padding: 24,
-        paddingTop: 56,
-      }}
-    >
+    <View style={mobileRouteShellStyles.screen}>
       <MobileTechnicianHeader
         assignedJobCount={routeJobCount}
         error={error}
-        onRefreshJobs={() => void load()}
         onSignOut={() => void handleSignOut()}
         profileId={profile?.id}
       />
@@ -252,26 +249,40 @@ export default function MobileHomeScreen() {
           }}
         >
           <View>
-            <Text style={{ color: "#111827", fontSize: 22, fontWeight: "800" }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.primaryText,
+                fontSize: 22,
+                fontWeight: "800",
+              }}
+            >
               Today's route
             </Text>
-            <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 2 }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.mutedText,
+                fontSize: 13,
+                marginTop: 2,
+              }}
+            >
               {routeTimeline.date}
             </Text>
           </View>
           <Pressable
             onPress={() => void load()}
             style={{
-              alignItems: "center",
-              borderColor: "#D1D5DB",
-              borderRadius: 8,
+              ...mobileRouteShellStyles.control,
+              borderColor: mobileRouteShellPalette.border,
               borderWidth: 1,
-              justifyContent: "center",
-              minHeight: 40,
-              paddingHorizontal: 14,
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 14, fontWeight: "700" }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.primaryText,
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
               Refresh
             </Text>
           </Pressable>
@@ -281,15 +292,17 @@ export default function MobileHomeScreen() {
           <View
             style={{
               alignItems: "center",
-              backgroundColor: "#FFFFFF",
-              borderColor: "#E5E7EB",
-              borderRadius: 10,
-              borderWidth: 1,
-              padding: 20,
+              ...mobileRouteShellStyles.card,
             }}
           >
-            <ActivityIndicator color="#1E3A8A" />
-            <Text style={{ color: "#4B5563", fontSize: 14, marginTop: 10 }}>
+            <ActivityIndicator color={mobileRouteShellPalette.accentText} />
+            <Text
+              style={{
+                color: mobileRouteShellPalette.secondaryText,
+                fontSize: 14,
+                marginTop: 10,
+              }}
+            >
               Loading assigned jobs
             </Text>
           </View>
@@ -298,36 +311,74 @@ export default function MobileHomeScreen() {
         {jobsStatus === "error" ? (
           <View
             style={{
-              backgroundColor: "#FEF2F2",
-              borderColor: "#FECACA",
-              borderRadius: 10,
+              backgroundColor: mobileRouteShellTone.sync.failed.backgroundColor,
+              borderColor: mobileRouteShellTone.sync.failed.borderColor,
+              borderRadius: mobileRouteShellStyles.card.borderRadius,
               borderWidth: 1,
               padding: 16,
             }}
           >
-            <Text style={{ color: "#991B1B", fontSize: 14, fontWeight: "700" }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.signalDanger,
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
               Unable to load assigned jobs
             </Text>
-            <Text style={{ color: "#B91C1C", fontSize: 14, marginTop: 6 }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.signalDanger,
+                fontSize: 14,
+                marginTop: 6,
+              }}
+            >
               {jobsError}
             </Text>
+            <Pressable
+              onPress={() => void load()}
+              style={{
+                ...mobileRouteShellStyles.control,
+                backgroundColor: mobileRouteShellPalette.rail,
+                marginTop: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color: mobileRouteShellPalette.inverseText,
+                  fontSize: 13,
+                  fontWeight: "800",
+                }}
+              >
+                Retry
+              </Text>
+            </Pressable>
           </View>
         ) : null}
 
         {jobsStatus === "ready" && routeJobCount === 0 ? (
           <View
             style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#E5E7EB",
-              borderRadius: 10,
-              borderWidth: 1,
-              padding: 18,
+              ...mobileRouteShellStyles.card,
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 16, fontWeight: "700" }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.primaryText,
+                fontSize: 16,
+                fontWeight: "700",
+              }}
+            >
               No jobs assigned today
             </Text>
-            <Text style={{ color: "#6B7280", fontSize: 14, marginTop: 6 }}>
+            <Text
+              style={{
+                color: mobileRouteShellPalette.mutedText,
+                fontSize: 14,
+                marginTop: 6,
+              }}
+            >
               Pull to refresh later or check with dispatch if your route is missing.
             </Text>
           </View>
@@ -344,7 +395,7 @@ export default function MobileHomeScreen() {
         ) : null}
 
         {lastLoadedAt ? (
-          <Text style={{ color: "#9CA3AF", fontSize: 12 }}>
+          <Text style={{ color: mobileRouteShellPalette.mutedText, fontSize: 12 }}>
             Last refreshed {formatTime(lastLoadedAt)}
           </Text>
         ) : null}

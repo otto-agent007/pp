@@ -212,8 +212,8 @@ describe("DispatchClient", () => {
     expect(screen.getByText("Provider-free scheduled order")).toBeInTheDocument();
     expect(screen.getByText("3 stops")).toBeInTheDocument();
     expect(screen.getByText("2 active")).toBeInTheDocument();
-    expect(screen.getByText("1 completed")).toBeInTheDocument();
-    expect(screen.getByText("1 missing coordinates")).toBeInTheDocument();
+    expect(screen.getAllByText("1 completed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1 missing coordinates").length).toBeGreaterThan(0);
     expect(screen.getByText("2 missing GPS evidence")).toBeInTheDocument();
     expect(screen.getByText("0 at risk")).toBeInTheDocument();
     expect(screen.getByText("Stop 1")).toBeInTheDocument();
@@ -225,6 +225,10 @@ describe("DispatchClient", () => {
       .toBeGreaterThan(0);
     expect(screen.getAllByText("No synced GPS evidence").length)
       .toBeGreaterThan(0);
+    expect(screen.getByText("Route groups by technician")).toBeInTheDocument();
+    expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Unassigned").length).toBeGreaterThan(0);
+    expect(screen.getByText("1 GPS captured")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open service map for job-1" }))
       .toHaveAttribute(
         "href",

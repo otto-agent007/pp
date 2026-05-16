@@ -6,6 +6,11 @@ import {
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
 
+import {
+  getMobileSyncTone,
+  mobileRouteShellPalette,
+  mobileRouteShellStyles,
+} from "../styles/routeShellStyles";
 import { useOfflineQueue } from "../store/useOfflineQueue";
 import { useQueueSync } from "../store/useQueueSync";
 import { useSyncStatus } from "../store/useSyncStatus";
@@ -56,13 +61,17 @@ export function SyncStatusIndicator() {
     hasReadyItems && networkStatus === "online" && activity !== "syncing";
   const syncDisabled = !canSync;
   const nextRetryLabel = formatNextRetry(summary.nextRetryAt);
-  const statusColor = isOffline ? "#B45309" : hasFailures ? "#B91C1C" : "#047857";
-  const statusBackground = isOffline
-    ? "#FFFBEB"
-    : hasFailures
-      ? "#FEF2F2"
-      : "#ECFDF5";
-  const statusBorder = isOffline ? "#FDE68A" : hasFailures ? "#FECACA" : "#A7F3D0";
+  const tone = getMobileSyncTone({
+    hasFailures,
+    hasPendingItems,
+    hasSyncHistory,
+    isOffline,
+  });
+  const statusColor = hasFailures
+    ? mobileRouteShellPalette.signalDanger
+    : isOffline || hasPendingItems
+      ? mobileRouteShellPalette.signalQueued
+      : mobileRouteShellPalette.signalSynced;
   const statusLabel =
     activity === "syncing"
       ? "Syncing now"
@@ -77,16 +86,16 @@ export function SyncStatusIndicator() {
               : "No local changes";
   const detailLabel =
     activity === "syncing"
-      ? "Sending queued updates. Keep the app open until this finishes."
+      ? "Sending saved work to the server. Stay in the app."
       : isOffline
-        ? "Work is saved on this device and will stay pending until the connection returns."
+        ? "Work is saved here. Will sync when back online."
         : hasFailures
-          ? "Failed items remain visible for review. Use sync after fixing the issue."
+          ? "Some items failed. Review and try sync again."
           : hasPendingItems
-            ? "Queued updates are ready for manual sync."
+            ? "Saved work is ready to sync."
             : hasSyncedItems
-              ? "All visible completed updates are synced. Clear synced when acknowledged."
-              : "No local work is waiting to sync.";
+              ? "All work synced. Tap Clear when done reviewing."
+              : "Nothing waiting to sync.";
   const manualSyncLabel =
     activity === "syncing"
       ? "Sync in progress"
@@ -99,9 +108,9 @@ export function SyncStatusIndicator() {
   return (
     <View
       style={{
-        backgroundColor: statusBackground,
-        borderColor: statusBorder,
-        borderRadius: 8,
+        backgroundColor: tone.backgroundColor,
+        borderColor: tone.borderColor,
+        borderRadius: mobileRouteShellStyles.card.borderRadius,
         borderWidth: 1,
         gap: 8,
         marginTop: 18,
@@ -113,40 +122,69 @@ export function SyncStatusIndicator() {
         <Text style={{ color: statusColor, fontSize: 13, fontWeight: "800" }}>
           {statusLabel}
         </Text>
-        <Text style={{ color: "#374151", fontSize: 13, lineHeight: 18 }}>
+        <Text
+          style={{
+            color: mobileRouteShellPalette.secondaryText,
+            fontSize: 13,
+            lineHeight: 18,
+          }}
+        >
           {detailLabel}
         </Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <Text style={{ color: "#374151", fontSize: 13 }}>
-          {summary.pending} pending
-        </Text>
-        <Text
-          style={{ color: hasFailures ? "#B91C1C" : "#374151", fontSize: 13 }}
-        >
-          {summary.failed} failed
-        </Text>
-        <Text style={{ color: "#374151", fontSize: 13 }}>
-          {summary.synced} synced
-        </Text>
-        <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        {summary.pending > 0 ? (
+          <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
+            {summary.pending} pending
+          </Text>
+        ) : null}
+        {summary.failed > 0 ? (
+          <Text
+            style={{
+              color: hasFailures
+                ? mobileRouteShellPalette.signalDanger
+                : mobileRouteShellPalette.secondaryText,
+              fontSize: 13,
+            }}
+          >
+            {summary.failed} failed
+          </Text>
+        ) : null}
+        {summary.synced > 0 ? (
+          <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
+            {summary.synced} synced
+          </Text>
+        ) : null}
+        <Text style={{ color: mobileRouteShellPalette.mutedText, fontSize: 13 }}>
           {formatLastSync(lastSyncAt)}
         </Text>
         {nextRetryLabel ? (
-          <Text style={{ color: "#6B7280", fontSize: 13 }}>
+          <Text style={{ color: mobileRouteShellPalette.mutedText, fontSize: 13 }}>
             {nextRetryLabel}
           </Text>
         ) : null}
       </View>
       {lastError ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13, fontWeight: "700" }}>
+        <Text
+          style={{
+            color: mobileRouteShellPalette.signalDanger,
+            fontSize: 13,
+            fontWeight: "700",
+          }}
+        >
           {lastError}
         </Text>
       ) : null}
       {pendingLabels.length > 0 ? (
         <View style={{ gap: 3 }}>
           {pendingLabels.map((label) => (
-            <Text key={label} style={{ color: "#374151", fontSize: 12 }}>
+            <Text
+              key={label}
+              style={{
+                color: mobileRouteShellPalette.secondaryText,
+                fontSize: 12,
+              }}
+            >
               {label}
             </Text>
           ))}
@@ -157,17 +195,17 @@ export function SyncStatusIndicator() {
           disabled={syncDisabled}
           onPress={() => void syncNow()}
           style={{
-            alignItems: "center",
-            backgroundColor: syncDisabled ? "#E5E7EB" : "#111827",
-            borderRadius: 6,
-            justifyContent: "center",
-            minHeight: 36,
-            paddingHorizontal: 12,
+            ...mobileRouteShellStyles.control,
+            backgroundColor: syncDisabled
+              ? mobileRouteShellPalette.border
+              : mobileRouteShellPalette.rail,
           }}
         >
           <Text
             style={{
-              color: syncDisabled ? "#6B7280" : "#FFFFFF",
+              color: syncDisabled
+                ? mobileRouteShellPalette.mutedText
+                : mobileRouteShellPalette.inverseText,
               fontSize: 12,
               fontWeight: "800",
             }}
@@ -180,17 +218,19 @@ export function SyncStatusIndicator() {
         <Pressable
           onPress={clearSynced}
           style={{
-            alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderColor: "#D1D5DB",
-            borderRadius: 6,
+            ...mobileRouteShellStyles.control,
+            backgroundColor: mobileRouteShellPalette.surface,
+            borderColor: mobileRouteShellPalette.border,
             borderWidth: 1,
-            justifyContent: "center",
-            minHeight: 36,
-            paddingHorizontal: 12,
           }}
         >
-          <Text style={{ color: "#111827", fontSize: 12, fontWeight: "800" }}>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.primaryText,
+              fontSize: 12,
+              fontWeight: "800",
+            }}
+          >
             Clear synced
           </Text>
         </Pressable>

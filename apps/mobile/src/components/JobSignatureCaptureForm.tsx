@@ -4,6 +4,10 @@ import SignatureCanvas from "react-native-signature-canvas";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobSignatures } from "../store/useJobSignatures";
+import {
+  mobileCaptureControlStyles,
+  mobileRouteShellPalette,
+} from "../styles/routeShellStyles";
 
 const SignatureCanvasComponent = SignatureCanvas as unknown as (
   props: Record<string, unknown>,
@@ -20,7 +24,7 @@ interface JobSignatureCaptureFormProps {
 
 const signatureWebStyle = `
   .m-signature-pad {
-    border: 1px solid #D1D5DB;
+    border: 1px solid ${mobileRouteShellPalette.borderStrong};
     box-shadow: none;
   }
   .m-signature-pad--body {
@@ -32,9 +36,9 @@ const signatureWebStyle = `
     justify-content: space-between;
   }
   .button {
-    background-color: #111827;
+    background-color: ${mobileRouteShellPalette.rail};
     border-radius: 8px;
-    color: #FFFFFF;
+    color: ${mobileRouteShellPalette.inverseText};
     font-family: Arial, sans-serif;
     font-size: 14px;
     font-weight: 700;
@@ -71,19 +75,11 @@ export function JobSignatureCaptureForm({
   }
 
   return (
-    <View
-      style={{
-        borderColor: "#E5E7EB",
-        borderTopWidth: 1,
-        gap: 10,
-        marginTop: 14,
-        paddingTop: 14,
-      }}
-    >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+    <View style={mobileCaptureControlStyles.section}>
+      <Text style={mobileCaptureControlStyles.title}>
         {copy.signature.title}
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={mobileCaptureControlStyles.warningBody}>
         {copy.signature.description}
       </Text>
 
@@ -93,21 +89,13 @@ export function JobSignatureCaptureForm({
           setError(null);
         }}
         placeholder={copy.signature.signerPlaceholder}
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
-          borderRadius: 8,
-          borderWidth: 1,
-          color: "#111827",
-          minHeight: 44,
-          paddingHorizontal: 12,
-        }}
+        style={mobileCaptureControlStyles.input}
         value={draft.signerName}
       />
 
       <View
         style={{
-          backgroundColor: "#FFFFFF",
+          ...mobileCaptureControlStyles.preview,
           height: 220,
           overflow: "hidden",
         }}
@@ -121,17 +109,17 @@ export function JobSignatureCaptureForm({
             setError(copy.signature.requiredError);
           }}
           onOK={handleSignature}
-          penColor="#111827"
+          penColor={mobileRouteShellPalette.primaryText}
           ref={signatureRef as never}
           webStyle={signatureWebStyle}
         />
       </View>
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
       ) : null}
       {draft.queuedAt ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={mobileCaptureControlStyles.successText}>
           {copy.signature.queuedForSync}
         </Text>
       ) : null}

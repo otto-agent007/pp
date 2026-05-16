@@ -5,6 +5,10 @@ import type { Job, JobGeofenceEventType } from "@pest-patrol/types";
 
 import { useJobGeofencing } from "../store/useJobGeofencing";
 import { useLanguage } from "../store/useLanguage";
+import {
+  mobileCaptureControlStyles,
+  mobileRouteShellPalette,
+} from "../styles/routeShellStyles";
 
 interface JobGeofenceControlsProps {
   job: Job;
@@ -104,35 +108,27 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
   }
 
   return (
-    <View
-      style={{
-        borderColor: "#E5E7EB",
-        borderTopWidth: 1,
-        gap: 10,
-        marginTop: 14,
-        paddingTop: 14,
-      }}
-    >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+    <View style={mobileCaptureControlStyles.section}>
+      <Text style={mobileCaptureControlStyles.title}>
         {copy.title}
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={mobileCaptureControlStyles.warningBody}>
         {copy.description}
       </Text>
       {serviceLatitude === null ||
       serviceLatitude === undefined ||
       serviceLongitude === null ||
       serviceLongitude === undefined ? (
-        <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        <Text style={mobileCaptureControlStyles.warningBody}>
           {copy.missingCoordinates}
         </Text>
       ) : null}
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
       ) : null}
       {draft.lastEvent ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={mobileCaptureControlStyles.successText}>
           {resultMessage(draft.lastEvent.event_type, draft.lastEvent, copy)}
         </Text>
       ) : null}
@@ -144,28 +140,28 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
             key={eventType}
             onPress={() => void captureEvent(eventType)}
             style={{
-              alignItems: "center",
-              backgroundColor: eventType === "arrival" ? "#1E3A8A" : "#FFFFFF",
-              borderColor: eventType === "arrival" ? "#1E3A8A" : "#D1D5DB",
-              borderRadius: 8,
-              borderWidth: 1,
+              ...(eventType === "arrival"
+                ? mobileCaptureControlStyles.primaryButton
+                : mobileCaptureControlStyles.secondaryButton),
               flex: 1,
-              justifyContent: "center",
-              minHeight: 44,
               opacity: activeEvent ? 0.7 : 1,
             }}
           >
             {activeEvent === eventType ? (
               <ActivityIndicator
-                color={eventType === "arrival" ? "#FFFFFF" : "#1E3A8A"}
+                color={
+                  eventType === "arrival"
+                    ? mobileRouteShellPalette.inverseText
+                    : mobileRouteShellPalette.accentText
+                }
               />
             ) : (
               <Text
-                style={{
-                  color: eventType === "arrival" ? "#FFFFFF" : "#111827",
-                  fontSize: 14,
-                  fontWeight: "800",
-                }}
+                style={
+                  eventType === "arrival"
+                    ? mobileCaptureControlStyles.primaryButtonText
+                    : mobileCaptureControlStyles.secondaryButtonText
+                }
               >
                 {eventLabel(eventType, copy)}
               </Text>

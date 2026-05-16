@@ -192,6 +192,7 @@ export {
   getBillingQueueCounts,
   getBillingQueueItemSummary,
   getAdminCloseoutProofReview,
+  getCloseoutProofHandoffSummary,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenEventLabel,
   getCustomerPortalAccessTokenReadiness,
@@ -223,6 +224,7 @@ export type {
   BillingQueueItem,
   BillingQueueState,
   CloseoutCounts,
+  CloseoutProofHandoffSummary,
   CloseoutReviewReadiness,
   CloseoutStatusFilter,
   AdminCloseoutProofReview,
@@ -245,7 +247,9 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
+  buildDispatchRouteIntelligenceForDays,
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
@@ -268,9 +272,12 @@ export {
   validateJobInput,
 } from "./jobs";
 export type {
+  DispatchRouteEvidenceState,
+  DispatchRouteGroupDaySummary,
+  DispatchRouteGroupSummary,
+  DispatchRouteGroupSummaryOptions,
   DispatchRouteIntelligence,
   DispatchRouteIntelligenceSummary,
-  DispatchRouteEvidenceState,
   DispatchRouteRiskState,
   DispatchRouteLocationState,
   DispatchRouteStop,
@@ -379,6 +386,7 @@ export {
   createInvoicePaymentLink,
   filterCustomerPortalInvoices,
   filterInvoices,
+  getBillingCloseoutHandoffSummary,
   getCustomerPortalInvoiceStatusLabel,
   getInvoiceBalanceCents,
   getInvoiceHandoffHref,
@@ -386,6 +394,7 @@ export {
   getInvoiceJobIds,
   getInvoicePaidCents,
   getInvoiceReconciliation,
+  getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
   listInvoices,
@@ -396,8 +405,10 @@ export {
   voidInvoice,
 } from "./payments";
 export type {
+  BillingCloseoutHandoffSummary,
   CustomerPortalInvoiceStatusFilter,
   InvoiceReconciliation,
+  InvoiceReconciliationGuidance,
   InvoiceReconciliationStatus,
   InvoiceReconciliationSummary,
   InvoiceStatusFilter,

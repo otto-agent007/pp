@@ -42,10 +42,24 @@ export interface InvoiceReconciliation {
   status: InvoiceReconciliationStatus;
 }
 
+export interface InvoiceReconciliationGuidance {
+  label: string;
+  markPaidConfirmation: string;
+  nextStep: string;
+  summary: string;
+  voidConfirmation: string;
+}
+
 export interface InvoiceReconciliationSummary {
   needsReviewCount: number;
   paidCents: number;
   remainingCents: number;
+}
+
+export interface BillingCloseoutHandoffSummary {
+  label: string;
+  nextStep: string;
+  summary: string;
 }
 
 function normalizeOptional(value?: string | null) {
@@ -351,6 +365,79 @@ export function getInvoiceReconciliation(
   };
 }
 
+const markPaidConfirmation =
+  "Confirm the customer paid outside provider sync before marking paid. This does not create a provider charge.";
+const voidConfirmation =
+  "Void only if this invoice should leave active collection. Existing payment records remain audit history.";
+
+export function getInvoiceReconciliationGuidance(
+  invoice: Invoice,
+): InvoiceReconciliationGuidance {
+  const reconciliation = getInvoiceReconciliation(invoice);
+  const base = {
+    label: reconciliation.label,
+    markPaidConfirmation,
+    voidConfirmation,
+  };
+
+  if (reconciliation.status === "needs_review") {
+    return {
+      ...base,
+      nextStep:
+        "Review the payment record or confirm a manual status after office verification.",
+      summary: `${
+        reconciliation.reviewLabel ?? "Payment activity"
+      } needs review before this invoice is reconciled.`,
+    };
+  }
+
+  if (reconciliation.status === "manual_paid") {
+    return {
+      ...base,
+      nextStep: "Keep the manual confirmation visible for office audit.",
+      summary: "Marked paid manually; no successful provider payment is attached.",
+    };
+  }
+
+  if (reconciliation.status === "reconciled_paid") {
+    return {
+      ...base,
+      nextStep: "Ready for customer ledger and portal handoff.",
+      summary: "Successful payment records cover this invoice balance.",
+    };
+  }
+
+  if (reconciliation.status === "partially_paid") {
+    return {
+      ...base,
+      nextStep: "Collect or reconcile the remaining balance before marking paid.",
+      summary: "Successful payment records cover part of this invoice.",
+    };
+  }
+
+  if (reconciliation.status === "draft") {
+    return {
+      ...base,
+      nextStep: "Create a payment link or leave draft until billing is ready.",
+      summary: "Invoice is still draft and has not been sent.",
+    };
+  }
+
+  if (reconciliation.status === "void") {
+    return {
+      ...base,
+      nextStep: "Reissue from the closeout if billing should restart.",
+      summary: "Invoice is void and excluded from active collection.",
+    };
+  }
+
+  return {
+    ...base,
+    nextStep: "Send a payment link or mark paid after verified offline payment.",
+    summary: "No successful payment is recorded yet.",
+  };
+}
+
 export function getInvoiceReconciliationSummary(
   invoices: Invoice[],
 ): InvoiceReconciliationSummary {
@@ -375,6 +462,56 @@ export function getInvoiceReconciliationSummary(
       remainingCents: 0,
     },
   );
+}
+
+function countLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+export function getBillingCloseoutHandoffSummary({
+  needsCaptures,
+  needsReview,
+  readyToBill,
+}: {
+  needsCaptures: number;
+  needsReview: number;
+  readyToBill: number;
+}): BillingCloseoutHandoffSummary {
+  const reviewStep =
+    needsReview > 0
+      ? `${countLabel(needsReview, "invoice")} ${
+          needsReview === 1 ? "needs" : "need"
+        } reconciliation review before demo handoff.`
+      : "Create invoices for ready closeouts or review the queue.";
+
+  if (readyToBill > 0) {
+    return {
+      label: "Closeout handoff ready",
+      nextStep: reviewStep,
+      summary: `${readyToBill} ready to invoice from closeouts; ${needsCaptures} still ${
+        needsCaptures === 1 ? "needs" : "need"
+      } field captures.`,
+    };
+  }
+
+  if (needsCaptures > 0) {
+    return {
+      label: "Closeout handoff waiting on captures",
+      nextStep: "Review missing captures before invoice creation.",
+      summary: `No closeouts are ready to invoice; ${needsCaptures} still ${
+        needsCaptures === 1 ? "needs" : "need"
+      } field captures.`,
+    };
+  }
+
+  return {
+    label: "Closeout handoff clear",
+    nextStep:
+      needsReview > 0
+        ? reviewStep
+        : "Completed jobs will appear here after proof review.",
+    summary: "No completed closeouts are waiting for invoice creation.",
+  };
 }
 
 function toCustomerPortalLineItem(

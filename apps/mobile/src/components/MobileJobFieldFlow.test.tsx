@@ -2,6 +2,7 @@ import React from "react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { mobileRouteShellTone } from "../styles/routeShellStyles";
 import { MobileJobFieldFlow } from "./MobileJobFieldFlow";
 
 vi.mock("react-native", async () => {
@@ -11,10 +12,15 @@ vi.mock("react-native", async () => {
     StyleSheet: {
       create: <T,>(styles: T) => styles,
     },
-    Text: ({ children }: { children?: ReactNode }) =>
-      ReactModule.createElement("Text", null, children),
-    View: ({ children }: { children?: ReactNode }) =>
-      ReactModule.createElement("View", null, children),
+    Text: ({
+      children,
+      style,
+    }: {
+      children?: ReactNode;
+      style?: unknown;
+    }) => ReactModule.createElement("Text", { style }, children),
+    View: ({ children, style }: { children?: ReactNode; style?: unknown }) =>
+      ReactModule.createElement("View", { style }, children),
   };
 });
 
@@ -41,6 +47,57 @@ function collectText(node: ReactNode): string[] {
     }
 
     return collectText(element.props.children);
+  }
+
+  return [];
+}
+
+function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return [];
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return [];
+  }
+
+  if (Array.isArray(node)) {
+    return node.flatMap((child) => collectElementsByType(child, type));
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement;
+    const rendered =
+      typeof element.type === "function"
+        ? collectElementsByType(
+            (element.type as (props: typeof element.props) => ReactNode)(
+              element.props,
+            ),
+            type,
+          )
+        : [];
+
+    return [
+      ...(element.type === type ? [element] : []),
+      ...collectElementsByType(element.props.children, type),
+      ...rendered,
+    ];
+  }
+
+  return [];
+}
+
+function flattenStyles(style: unknown): Record<string, unknown>[] {
+  if (!style) {
+    return [];
+  }
+
+  if (Array.isArray(style)) {
+    return style.flatMap(flattenStyles);
+  }
+
+  if (typeof style === "object") {
+    return [style as Record<string, unknown>];
   }
 
   return [];
@@ -106,5 +163,51 @@ describe("MobileJobFieldFlow", () => {
     expect(text).toContain("Photo control");
     expect(text).toContain("Signature");
     expect(text).toContain("Signature control");
+  });
+
+  it("uses shared visual tones for done, queued, and needed visit states", () => {
+    const element = (
+      <MobileJobFieldFlow
+        chemicalLog="Chemical log control"
+        geofenceControls="Geofence control"
+        jobStatusControls="Status control"
+        photoUpload="Photo control"
+        signatureCapture="Signature control"
+        treatmentForm="Treatment form control"
+        workPlan={[
+          {
+            id: "status",
+            label: "Start or complete job",
+            state: "done",
+            summary: "Job is in progress.",
+          },
+          {
+            id: "geofence",
+            label: "Capture arrival/departure",
+            state: "pending",
+            summary: "Geofence event is queued for sync.",
+          },
+          {
+            id: "form",
+            label: "Submit treatment form",
+            state: "missing",
+            summary: "No treatment form queued yet.",
+          },
+        ]}
+      />
+    );
+    const styles = collectElementsByType(element, "View").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+
+    expect(styles).toContainEqual(
+      expect.objectContaining(mobileRouteShellTone.visit.done),
+    );
+    expect(styles).toContainEqual(
+      expect.objectContaining(mobileRouteShellTone.visit.pending),
+    );
+    expect(styles).toContainEqual(
+      expect.objectContaining(mobileRouteShellTone.visit.missing),
+    );
   });
 });

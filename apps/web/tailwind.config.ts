@@ -1,7 +1,11 @@
 import type { Config } from "tailwindcss";
 import {
   brand,
-  semantic,
+  darkTheme,
+  lightTheme,
+  primitive,
+  semanticStatus,
+  status,
   spacing,
   radius,
   fontSize,
@@ -27,12 +31,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        primitive,
         primary: brand.primary,
         secondary: brand.secondary,
         accent: brand.accent,
-        neutralDark: semantic.text.primary,
-        neutralLight: semantic.background.canvas,
-        semantic,
+        neutralDark: lightTheme.text.primary,
+        neutralLight: lightTheme.background.canvas,
+        theme: lightTheme,
+        semantic: {
+          ...lightTheme,
+          light: lightTheme,
+          dark: darkTheme,
+          status: semanticStatus,
+        },
+        status,
       },
       spacing: toPx(spacing),
       borderRadius: toPx(radius),

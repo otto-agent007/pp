@@ -5,6 +5,7 @@ import type { ChemicalInventoryItem } from "@pest-patrol/types";
 import { useChemicalInventory } from "../store/useChemicalInventory";
 import { useChemicalLogs } from "../store/useChemicalLogs";
 import { useLanguage } from "../store/useLanguage";
+import { mobileCaptureControlStyles } from "../styles/routeShellStyles";
 
 interface JobChemicalLogFormProps {
   jobId: string;
@@ -53,37 +54,29 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
   }
 
   return (
-    <View
-      style={{
-        borderColor: "#E5E7EB",
-        borderTopWidth: 1,
-        gap: 10,
-        marginTop: 14,
-        paddingTop: 14,
-      }}
-    >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+    <View style={mobileCaptureControlStyles.section}>
+      <Text style={mobileCaptureControlStyles.title}>
         {copy.chemical.title}
       </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+      <Text style={mobileCaptureControlStyles.warningBody}>
         {copy.chemical.description}
       </Text>
 
       {status === "loading" ? (
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <ActivityIndicator color="#1E3A8A" />
-          <Text style={{ color: "#6B7280", fontSize: 13 }}>
+          <ActivityIndicator color={mobileCaptureControlStyles.title.color} />
+          <Text style={mobileCaptureControlStyles.warningBody}>
             {copy.chemical.loading}
           </Text>
         </View>
       ) : null}
 
       {status === "error" ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{inventoryError}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>{inventoryError}</Text>
       ) : null}
 
       {status === "ready" && items.length === 0 ? (
-        <Text style={{ color: "#6B7280", fontSize: 13 }}>
+        <Text style={mobileCaptureControlStyles.warningBody}>
           {copy.chemical.empty}
         </Text>
       ) : null}
@@ -101,21 +94,18 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
                   setError(null);
                 }}
                 style={{
-                  backgroundColor: isActive ? "#1E3A8A" : "#FFFFFF",
-                  borderColor: isActive ? "#1E3A8A" : "#D1D5DB",
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  justifyContent: "center",
+                  ...(isActive
+                    ? mobileCaptureControlStyles.primaryButton
+                    : mobileCaptureControlStyles.secondaryButton),
                   minHeight: 40,
-                  paddingHorizontal: 10,
                 }}
               >
                 <Text
-                  style={{
-                    color: isActive ? "#FFFFFF" : "#111827",
-                    fontSize: 12,
-                    fontWeight: "800",
-                  }}
+                  style={
+                    isActive
+                      ? mobileCaptureControlStyles.primaryButtonText
+                      : mobileCaptureControlStyles.secondaryButtonText
+                  }
                 >
                   {chemicalLabel(item)}
                 </Text>
@@ -132,15 +122,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
           setError(null);
         }}
         placeholder={copy.chemical.amountPlaceholder}
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
-          borderRadius: 8,
-          borderWidth: 1,
-          color: "#111827",
-          minHeight: 44,
-          paddingHorizontal: 12,
-        }}
+        style={mobileCaptureControlStyles.input}
         value={draft.amount}
       />
       <TextInput
@@ -151,24 +133,18 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         }}
         placeholder={copy.chemical.notesPlaceholder}
         style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
-          borderRadius: 8,
-          borderWidth: 1,
-          color: "#111827",
+          ...mobileCaptureControlStyles.input,
+          ...mobileCaptureControlStyles.inputMultiline,
           minHeight: 64,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          textAlignVertical: "top",
         }}
         value={draft.notes}
       />
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
       ) : null}
       {draft.queuedAt ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={mobileCaptureControlStyles.successText}>
           {copy.common.queuedForSync}
         </Text>
       ) : null}
@@ -176,15 +152,13 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       <Pressable
         disabled={items.length === 0}
         onPress={handleQueue}
-        style={{
-          alignItems: "center",
-          backgroundColor: items.length === 0 ? "#9CA3AF" : "#111827",
-          borderRadius: 8,
-          justifyContent: "center",
-          minHeight: 44,
-        }}
+        style={
+          items.length === 0
+            ? mobileCaptureControlStyles.disabledButton
+            : mobileCaptureControlStyles.primaryButton
+        }
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+        <Text style={mobileCaptureControlStyles.primaryButtonText}>
           {copy.chemical.queueButton}
         </Text>
       </Pressable>

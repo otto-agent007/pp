@@ -9,12 +9,14 @@ import {
   getAdminCloseoutProofReview,
   getBillingQueueCounts,
   getBillingQueueItemSummary,
+  getCloseoutProofHandoffSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
   getInvoiceBalanceCents,
   type BillingQueueGroup,
   type BillingQueueItem,
   type CloseoutStatusFilter,
+  type CloseoutProofHandoffSummary,
 } from "@pest-patrol/domain";
 import type {
   FormValue,
@@ -368,7 +370,7 @@ function NextActionCard({
       <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
         <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
         <p className="mt-1 text-sm text-gray-700">
-          Forms, chemicals, photos, and signatures captured.
+          {item.readiness.summary}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {actions.map((action) => (
@@ -457,16 +459,18 @@ function NextActionCard({
 
 function ProofHandoffCard({
   evidence,
+  handoff,
   invoice,
   review,
-  readinessLabel,
 }: {
   evidence?: ReturnType<typeof buildDispatchLocationEvidenceByJob>[string];
+  handoff: CloseoutProofHandoffSummary;
   invoice?: Invoice | null;
   review: ReturnType<typeof getAdminCloseoutProofReview> | null;
-  readinessLabel: string;
 }) {
-  const arrivalLabel = evidence?.latest_arrival ? "Arrival GPS captured" : "Arrival GPS missing";
+  const arrivalLabel = evidence?.latest_arrival
+    ? "Arrival GPS captured"
+    : "Arrival GPS missing";
   const departureLabel = evidence?.latest_departure
     ? "Departure GPS captured"
     : "Departure GPS missing";
@@ -479,9 +483,10 @@ function ProofHandoffCard({
           <p className="text-sm font-semibold text-neutralDark">
             Proof handoff readiness
           </p>
-          <p className="mt-1 text-sm text-gray-700">
-            {proof?.summary ?? readinessLabel}
+          <p className="mt-2 text-sm font-semibold text-neutralDark">
+            {handoff.proof_label}
           </p>
+          <p className="mt-1 text-sm text-gray-700">{handoff.proof_summary}</p>
         </div>
         <span className="w-fit rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
           {proof?.completion_label ?? "Needs review"}
@@ -495,7 +500,10 @@ function ProofHandoffCard({
           {departureLabel}
         </span>
         <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
-          {proof?.billing_label ?? readinessLabel}
+          {handoff.gps_label}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {proof?.billing_label ?? handoff.proof_label}
         </span>
         <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
           {proof?.invoice_label ?? (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
@@ -504,8 +512,21 @@ function ProofHandoffCard({
           {proof?.sync_confidence_label ?? "Review synced field evidence"}
         </span>
       </div>
+      <ul className="mt-3 grid gap-1 text-xs font-medium text-gray-600 sm:grid-cols-2">
+        {handoff.gps_items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+      {handoff.missing_capture_guidance ? (
+        <p className="mt-3 text-sm text-gray-700">
+          {handoff.missing_capture_guidance}
+        </p>
+      ) : null}
+      <p className="mt-3 text-sm font-semibold text-neutralDark">
+        {handoff.portal_handoff_label}
+      </p>
       <p className="mt-3 text-xs font-medium text-gray-600">
-        Customer portal proof stays sanitized and does not expose exact technician GPS.
+        {handoff.portal_handoff_summary}
       </p>
     </div>
   );
@@ -582,6 +603,12 @@ export function CloseoutsClient() {
   const selectedEvidence = selectedJob
     ? locationEvidenceByJob[selectedJob.id]
     : undefined;
+  const proofHandoff = readiness
+    ? getCloseoutProofHandoffSummary({
+        evidence: selectedEvidence,
+        readiness,
+      })
+    : null;
   const adminProofReview = closeout.review
     ? getAdminCloseoutProofReview({
         evidence: selectedEvidence,
@@ -748,16 +775,14 @@ export function CloseoutsClient() {
             <>
               <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <NextActionCard item={selectedQueueItem} />
-                <ProofHandoffCard
-                  evidence={selectedEvidence}
-                  invoice={selectedQueueItem?.invoice ?? null}
-                  review={adminProofReview}
-                  readinessLabel={
-                    readiness?.billingReady
-                      ? "Field captures are ready for admin billing review."
-                      : readiness?.label ?? "Select a completed job to review proof."
-                  }
-                />
+                {proofHandoff ? (
+                  <ProofHandoffCard
+                    evidence={selectedEvidence}
+                    handoff={proofHandoff}
+                    invoice={selectedQueueItem?.invoice ?? null}
+                    review={adminProofReview}
+                  />
+                ) : null}
                 <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-secondary">

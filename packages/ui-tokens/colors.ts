@@ -1,95 +1,76 @@
-export const palette = {
-  blue: {
-    50: "#EFF6FF",
-    200: "#BFDBFE",
-    900: "#1E3A8A",
+export const primitive = {
+  navy: {
+    950: "#071A3D",
+    900: "#0A234F",
+    800: "#102F66",
   },
-  emerald: {
-    50: "#ECFDF5",
-    200: "#A7F3D0",
-    500: "#10B981",
-    700: "#047857",
-  },
-  amber: {
-    50: "#FFFBEB",
-    200: "#FDE68A",
-    500: "#F59E0B",
-    700: "#B45309",
+  sky: {
+    50: "#E0F2FE",
+    100: "#BAE6FD",
+    200: "#7DD3FC",
+    500: "#0EA5E9",
+    600: "#0284C7",
   },
   red: {
-    50: "#FEF2F2",
-    200: "#FECACA",
-    700: "#B91C1C",
-    800: "#991B1B",
+    50: "#FEE2E2",
+    100: "#FECACA",
+    200: "#FCA5A5",
+    500: "#E11D2E",
+    600: "#C51628",
   },
-  gray: {
-    0: "#FFFFFF",
-    50: "#F9FAFB",
-    100: "#F3F4F6",
-    200: "#E5E7EB",
-    300: "#D1D5DB",
-    400: "#9CA3AF",
-    500: "#6B7280",
-    600: "#4B5563",
-    700: "#374151",
-    900: "#111827",
+  yellow: {
+    50: "#FEF9C3",
+    100: "#FEF3C7",
+    200: "#FDE68A",
+    400: "#FACC15",
+    500: "#EAB308",
   },
+  green: {
+    50: "#DCFCE7",
+    100: "#BBF7D0",
+    200: "#86EFAC",
+    500: "#16A34A",
+    600: "#15803D",
+  },
+  cream: {
+    50: "#F6F2EA",
+  },
+  slate: {
+    50: "#F8FAFC",
+    100: "#F1F5F9",
+    200: "#E2E8F0",
+    300: "#CBD5E1",
+    500: "#64748B",
+    700: "#334155",
+    800: "#1E293B",
+    950: "#0F172A",
+  },
+  white: "#FFFFFF",
 } as const;
+
+export const palette = primitive;
 
 export const brand = {
-  primary: palette.blue[900],
-  secondary: palette.amber[500],
-  accent: palette.emerald[500],
-} as const;
-
-export const semantic = {
-  text: {
-    primary: palette.gray[900],
-    secondary: palette.gray[700],
-    muted: palette.gray[500],
-    subtle: palette.gray[400],
-    inverse: palette.gray[0],
-    link: brand.primary,
-  },
-  background: {
-    canvas: palette.gray[50],
-    surface: palette.gray[0],
-    subtle: palette.gray[100],
-    inverse: palette.gray[900],
-  },
-  border: {
-    subtle: palette.gray[200],
-    default: palette.gray[300],
-    strong: palette.gray[500],
-  },
-  status: {
-    danger: {
-      fg: palette.red[700],
-      fgStrong: palette.red[800],
-      bg: palette.red[50],
-      border: palette.red[200],
-    },
-    success: {
-      fg: palette.emerald[700],
-      bg: palette.emerald[50],
-      border: palette.emerald[200],
-      solid: palette.emerald[500],
-    },
-    warning: {
-      fg: palette.amber[700],
-      bg: palette.amber[50],
-      border: palette.amber[200],
-    },
-    info: {
-      fg: brand.primary,
-      bg: palette.blue[50],
-      border: palette.blue[200],
-    },
-  },
+  primary: primitive.sky[500],
+  primaryHover: primitive.sky[600],
+  secondary: primitive.yellow[400],
+  secondaryHover: primitive.yellow[500],
+  accent: primitive.green[500],
+  accentHover: primitive.green[600],
+  danger: primitive.red[500],
+  dangerHover: primitive.red[600],
+  inverse: primitive.navy[950],
 } as const;
 
 export const colors = {
-  ...brand,
-  neutralDark: palette.gray[900],
-  neutralLight: palette.gray[50],
+  primary: brand.primary,
+  secondary: brand.secondary,
+  accent: brand.accent,
+  neutralDark: primitive.navy[950],
+  neutralLight: primitive.cream[50],
 } as const;
+
+export type PrimitivePaletteFamily = keyof typeof primitive;
+export type PaletteFamily = keyof typeof palette;
+export type BrandColorToken = keyof typeof brand;
+export type LegacyColorToken = keyof typeof colors;

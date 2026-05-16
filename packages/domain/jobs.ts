@@ -82,6 +82,32 @@ export interface DispatchRouteIntelligenceOptions {
   now?: Date | string;
 }
 
+export interface DispatchRouteGroupDaySummary {
+  active_stops: number;
+  canceled_stops: number;
+  completed_stops: number;
+  date: string;
+  gps_evidence_count: number;
+  label: string;
+  missing_coordinates_count: number;
+  missing_location_count: number;
+  total_stops: number;
+  unassigned_stops: number;
+}
+
+export interface DispatchRouteGroupSummary
+  extends Omit<DispatchRouteGroupDaySummary, "date" | "label"> {
+  days: DispatchRouteGroupDaySummary[];
+  id: string;
+  label: string;
+  technician_id: string | null;
+}
+
+export interface DispatchRouteGroupSummaryOptions {
+  evidenceByJob?: DispatchLocationEvidenceByJob;
+  technicianLabels?: Record<string, string>;
+}
+
 export interface MobileDailyJobs {
   date: string;
   jobs: Job[];
@@ -387,6 +413,29 @@ function getLocationMapUrl(job: Job) {
   });
 }
 
+function summarizeDispatchRouteStops(
+  stops: DispatchRouteStop[],
+): DispatchRouteIntelligenceSummary {
+  return {
+    active_stops: stops.filter((stop) => stop.status_state === "active").length,
+    at_risk_stops: stops.filter((stop) => stop.risk_state === "at_risk").length,
+    canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
+    completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
+    missing_coordinates_count: stops.filter(
+      (stop) => stop.location_state === "missing_coordinates",
+    ).length,
+    missing_evidence_count: stops.filter(
+      (stop) => stop.evidence_state !== "complete",
+    ).length,
+    missing_location_count: stops.filter(
+      (stop) => stop.location_state === "missing_location",
+    ).length,
+    provider_label: "Provider-free scheduled order",
+    total_stops: stops.length,
+    unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
+  };
+}
+
 function getDispatchRouteEvidenceState(
   job: Job,
   evidenceByJob: DispatchLocationEvidenceByJob,
@@ -481,26 +530,177 @@ export function buildDispatchRouteIntelligence(
   return {
     date,
     stops,
-    summary: {
-      active_stops: stops.filter((stop) => stop.status_state === "active").length,
-      at_risk_stops: stops.filter((stop) => stop.risk_state === "at_risk").length,
-      canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
-      completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
-      missing_coordinates_count: stops.filter(
-        (stop) => stop.location_state === "missing_coordinates",
-      ).length,
-      missing_evidence_count: stops.filter(
-        (stop) => stop.evidence_state !== "complete",
-      ).length,
-      missing_location_count: stops.filter(
-        (stop) => stop.location_state === "missing_location",
-      ).length,
-      provider_label: "Provider-free scheduled order",
-      total_stops: stops.length,
-      unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
-    },
+    summary: summarizeDispatchRouteStops(stops),
     technician_id: technician,
   };
+}
+
+export function buildDispatchRouteIntelligenceForDays(
+  days: DispatchCalendarDay[],
+  technician: TechnicianFilter = "all",
+  options: DispatchRouteIntelligenceOptions = {},
+): DispatchRouteIntelligence {
+  const stops = days
+    .flatMap((day) =>
+      buildDispatchRouteIntelligence(day.jobs, day.date, technician, options).stops,
+    )
+    .map((stop, index, allStops) => ({
+      ...stop,
+      next_stop_job_id: allStops[index + 1]?.job.id ?? null,
+      sequence: index + 1,
+    }));
+
+  return {
+    date: days[0]?.date ?? "",
+    stops,
+    summary: summarizeDispatchRouteStops(stops),
+    technician_id: technician,
+  };
+}
+
+function emptyDispatchRouteGroupDaySummary(
+  day: Pick<DispatchCalendarDay, "date" | "label">,
+): DispatchRouteGroupDaySummary {
+  return {
+    active_stops: 0,
+    canceled_stops: 0,
+    completed_stops: 0,
+    date: day.date,
+    gps_evidence_count: 0,
+    label: day.label,
+    missing_coordinates_count: 0,
+    missing_location_count: 0,
+    total_stops: 0,
+    unassigned_stops: 0,
+  };
+}
+
+function emptyDispatchRouteGroupSummary(
+  id: string,
+  label: string,
+  technicianId: string | null,
+): DispatchRouteGroupSummary {
+  return {
+    active_stops: 0,
+    canceled_stops: 0,
+    completed_stops: 0,
+    days: [],
+    gps_evidence_count: 0,
+    id,
+    label,
+    missing_coordinates_count: 0,
+    missing_location_count: 0,
+    technician_id: technicianId,
+    total_stops: 0,
+    unassigned_stops: 0,
+  };
+}
+
+function addJobToDispatchRouteGroupSummary(
+  summary: DispatchRouteGroupDaySummary,
+  job: Job,
+  evidenceByJob: DispatchLocationEvidenceByJob,
+) {
+  const statusState = getDispatchRouteStatusState(job.status);
+  const locationState = getDispatchRouteLocationState(job);
+
+  summary.total_stops += 1;
+
+  if (statusState === "active") {
+    summary.active_stops += 1;
+  } else if (statusState === "completed") {
+    summary.completed_stops += 1;
+  } else {
+    summary.canceled_stops += 1;
+  }
+
+  if (locationState === "missing_coordinates") {
+    summary.missing_coordinates_count += 1;
+  } else if (locationState === "missing_location") {
+    summary.missing_location_count += 1;
+  }
+
+  if (!job.assigned_tech_id) {
+    summary.unassigned_stops += 1;
+  }
+
+  if (evidenceByJob[job.id]?.state === "captured") {
+    summary.gps_evidence_count += 1;
+  }
+}
+
+function addDayToDispatchRouteGroupSummary(
+  group: DispatchRouteGroupSummary,
+  day: DispatchRouteGroupDaySummary,
+) {
+  group.days.push(day);
+  group.active_stops += day.active_stops;
+  group.canceled_stops += day.canceled_stops;
+  group.completed_stops += day.completed_stops;
+  group.gps_evidence_count += day.gps_evidence_count;
+  group.missing_coordinates_count += day.missing_coordinates_count;
+  group.missing_location_count += day.missing_location_count;
+  group.total_stops += day.total_stops;
+  group.unassigned_stops += day.unassigned_stops;
+}
+
+function dispatchRouteGroupLabel(
+  technicianId: string | null,
+  labels: Record<string, string>,
+) {
+  if (!technicianId) {
+    return "Unassigned";
+  }
+
+  return labels[technicianId] ?? `Technician ${technicianId}`;
+}
+
+export function buildDispatchRouteGroupSummaries(
+  days: DispatchCalendarDay[],
+  options: DispatchRouteGroupSummaryOptions = {},
+): DispatchRouteGroupSummary[] {
+  const evidenceByJob = options.evidenceByJob ?? {};
+  const groups = new Map<string, DispatchRouteGroupSummary>();
+
+  for (const day of days) {
+    const jobsByTechnician = new Map<string, Job[]>();
+
+    for (const job of day.jobs) {
+      const groupId = job.assigned_tech_id ?? "unassigned";
+      jobsByTechnician.set(groupId, [...(jobsByTechnician.get(groupId) ?? []), job]);
+    }
+
+    for (const [groupId, jobs] of jobsByTechnician.entries()) {
+      const technicianId = groupId === "unassigned" ? null : groupId;
+      const group =
+        groups.get(groupId) ??
+        emptyDispatchRouteGroupSummary(
+          groupId,
+          dispatchRouteGroupLabel(technicianId, options.technicianLabels ?? {}),
+          technicianId,
+        );
+      const daySummary = emptyDispatchRouteGroupDaySummary(day);
+
+      for (const job of jobs) {
+        addJobToDispatchRouteGroupSummary(daySummary, job, evidenceByJob);
+      }
+
+      addDayToDispatchRouteGroupSummary(group, daySummary);
+      groups.set(groupId, group);
+    }
+  }
+
+  return [...groups.values()].sort((left, right) => {
+    if (left.technician_id === null && right.technician_id !== null) {
+      return 1;
+    }
+
+    if (left.technician_id !== null && right.technician_id === null) {
+      return -1;
+    }
+
+    return left.label.localeCompare(right.label);
+  });
 }
 
 export function filterDispatchRouteStops(

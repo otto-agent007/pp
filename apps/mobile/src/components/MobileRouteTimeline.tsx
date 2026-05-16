@@ -3,6 +3,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MobileDailyRouteTimeline, MobileRouteTimelineJob } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
 
+import {
+  mobileRouteShellPalette,
+  mobileRouteShellStyles,
+} from "../styles/routeShellStyles";
 import { AssignedJobCard } from "./AssignedJobCard";
 
 interface MobileRouteTimelineProps {
@@ -151,7 +155,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   laterAddress: {
-    color: "#6B7280",
+    color: mobileRouteShellPalette.mutedText,
     fontSize: 12,
     lineHeight: 16,
   },
@@ -160,44 +164,40 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   laterCustomer: {
-    color: "#111827",
+    color: mobileRouteShellPalette.primaryText,
     fontSize: 14,
     fontWeight: "800",
   },
   laterReadiness: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 12,
     fontWeight: "700",
     marginTop: 2,
   },
   laterSync: {
-    color: "#6B7280",
+    color: mobileRouteShellPalette.mutedText,
     fontSize: 11,
     fontWeight: "700",
   },
   laterRow: {
     alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
-    borderWidth: 1,
+    ...mobileRouteShellStyles.compactCard,
     flexDirection: "row",
     gap: 10,
-    padding: 12,
   },
   laterSection: {
     gap: 8,
   },
   laterStatus: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#BFDBFE",
+    backgroundColor: mobileRouteShellPalette.routeSoft,
+    borderColor: mobileRouteShellPalette.border,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   laterStatusText: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 11,
     fontWeight: "800",
   },
@@ -205,12 +205,12 @@ const styles = StyleSheet.create({
     minWidth: 58,
   },
   laterTimeText: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 13,
     fontWeight: "800",
   },
   readinessLabel: {
-    color: "#4B5563",
+    color: mobileRouteShellPalette.secondaryText,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionLabel: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.accentText,
     fontSize: 13,
     fontWeight: "800",
     textTransform: "uppercase",
@@ -234,30 +234,30 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   stopSyncLabel: {
-    color: "#6B7280",
+    color: mobileRouteShellPalette.mutedText,
     fontSize: 11,
     fontWeight: "700",
   },
   summary: {
-    backgroundColor: "#EEF2FF",
-    borderColor: "#C7D2FE",
+    backgroundColor: mobileRouteShellPalette.rail,
+    borderColor: mobileRouteShellPalette.borderStrong,
     borderRadius: 8,
     borderWidth: 1,
     gap: 4,
     padding: 14,
   },
   summaryLabel: {
-    color: "#111827",
+    color: mobileRouteShellPalette.inverseText,
     fontSize: 15,
     fontWeight: "800",
   },
   syncLabel: {
-    color: "#4B5563",
+    color: mobileRouteShellPalette.inverseText,
     fontSize: 13,
     lineHeight: 18,
   },
   title: {
-    color: "#1E3A8A",
+    color: mobileRouteShellPalette.inverseText,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",

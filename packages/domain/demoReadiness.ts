@@ -17,9 +17,9 @@ export interface MobileTechnicianReadinessInput {
 
 export interface MobileTechnicianReadinessPanel {
   assignedJobsLabel: string;
-  demoNextLabel: string;
-  demoNextSummary: string;
   identityLabel: string;
+  routeFocusLabel: string;
+  routeFocusSummary: string;
   title: string;
 }
 
@@ -104,12 +104,22 @@ export function buildMobileTechnicianReadinessPanel(
   const jobNoun = assignedJobCount === 1 ? "job" : "jobs";
   const technicianLabel = input.profileId?.trim().slice(0, 15) || "technician";
 
+  if (assignedJobCount === 0) {
+    return {
+      assignedJobsLabel: "No stops assigned",
+      identityLabel: `Signed in as ${technicianLabel}`,
+      routeFocusLabel: "No route today",
+      routeFocusSummary: "Check with dispatch if you expected scheduled stops.",
+      title: "No route today",
+    };
+  }
+
   return {
     assignedJobsLabel: `${assignedJobCount} ${jobNoun} assigned today`,
-    demoNextLabel: "Demo next",
-    demoNextSummary:
-      "Open the first assigned job, capture treatment notes, then explain queued sync.",
     identityLabel: `Signed in as ${technicianLabel}`,
+    routeFocusLabel: "Route ready",
+    routeFocusSummary:
+      "Start with the first stop, capture field work, then sync before closeout.",
     title: "Technician ready",
   };
 }
