@@ -88,7 +88,7 @@ Current priority is the provider-free demo reliability batch while protected-pre
 - `/closeouts` now summarizes proof handoff readiness, admin proof review, GPS evidence, invoice state, billing handoff confidence, and review-queue filters while keeping customer portal proof sanitized
 - `/payments` now includes closeout-to-invoice handoff states, reconciliation summaries, needs-review explanations, and manual paid/void confirmation feedback without Stripe provider setup
 - preview launch readiness has a Ready Vercel preview baseline, aligned Supabase migrations, dispatch technician query-param preselection, and demo seed/smoke tooling
-- current status: the next demo reliability slices are implemented locally; protected-preview smoke still needs approved Supabase env names, protected-preview access, and admin/dispatcher sign-in
+- current status: no active implementation slice is open after the demo reliability slices; protected-preview smoke still needs approved Supabase env names, protected-preview access, and admin/dispatcher sign-in
 - next candidates: operator reruns local or protected-preview smoke with approved env/access, provider delivery receipts after webhook-backed evidence, production launch checklist work, or later map-provider planning
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
