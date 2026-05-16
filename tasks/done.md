@@ -1,5 +1,27 @@
 # Done
 
+## Brand Asset Intake V1
+
+- Added shared asset buckets under `packages/assets/` for brand, icons, status, map, and empty-state assets
+- Added three advisory Pest Patrol logo candidates without wiring them into app surfaces
+- Documented logo roles, minimum rendered sizes, dark-surface risk, and accessibility guidance
+- Cleaned the compact-header logo candidate so its root title is product-facing and path-level labels stay out of the accessible name
+- Kept app wiring, Figma writes, provider setup, migrations, environment changes, and production mutations out of scope
+
+## Portal Send Feedback Critique Cleanup V1
+
+- Processed the portal send/resend provider-boundary critique through durable Claude relay notes
+- Kept provider-safe send audit events visible in token history without exposing provider payloads or raw portal material
+- Isolated fresh active-row link feedback so row sends do not update the top generated-link area
+- Preserved manual copy fallback and focus recovery after successful top-level sends
+
+## Mobile Route Shell Critique Cleanup V1
+
+- Processed the mobile route-shell token-pilot critique through durable Claude relay notes
+- Removed the duplicate technician-header refresh action and kept the scroll-area refresh/retry path canonical
+- Renamed mobile readiness copy from demo wording to route-focused production wording
+- Tightened sync status copy, hid zero-value sync chips, and added an assigned-jobs error retry action
+
 ## Design System Foundation + Mobile Route Shell Pilot V1
 
 - Finalized the Pest Patrol design-token foundation with expanded primitive palette steps, light/dark semantic roles, border/text/action paths, visual status tokens, motion tokens, and Figma variable names

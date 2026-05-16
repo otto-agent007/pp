@@ -35,8 +35,9 @@ Use Lottie for:
 - Do not commit large image assets in foundation slices.
 - Prefer UI icons from the app's icon library before adding custom SVGs.
 - Keep asset names descriptive, lowercase, and hyphenated.
-- Store durable assets near the surface that owns them until a shared asset
-  package exists.
+- Store durable shared assets in `packages/assets/` using the `brand/`,
+  `icons/`, `status/`, `map/`, and `empty-states/` buckets. Surface-specific
+  temporary assets may still live near the owning app until promoted.
 - Provide alt text or accessible labels for meaningful imagery.
 - Mark decorative images as decorative in the rendering layer.
 
