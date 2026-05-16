@@ -61,6 +61,20 @@ export interface BillingQueueCounts {
   totalCompleted: number;
 }
 
+export type CloseoutReviewQueueFilterId =
+  | "billing_ready"
+  | "gps_review"
+  | "missing_capture"
+  | "needs_invoice"
+  | "proof_ready";
+
+export interface CloseoutReviewQueueFilter {
+  count: number;
+  id: CloseoutReviewQueueFilterId;
+  label: string;
+  summary: string;
+}
+
 export interface CloseoutReviewReadiness {
   billingReady: boolean;
   label: string;
@@ -472,6 +486,45 @@ export function getBillingQueueCounts(
     totalCompleted:
       queue.ready.length + queue.needsCaptures.length + queue.invoiced.length,
   };
+}
+
+export function getCloseoutReviewQueueFilters(
+  queue: BillingQueueGroup,
+): CloseoutReviewQueueFilter[] {
+  const proofReadyCount = queue.ready.length + queue.invoiced.length;
+
+  return [
+    {
+      count: proofReadyCount,
+      id: "proof_ready",
+      label: "Proof ready",
+      summary: "Field proof is complete and ready for office review.",
+    },
+    {
+      count: queue.needsCaptures.length,
+      id: "missing_capture",
+      label: "Missing captures",
+      summary: "Completed jobs still need field evidence before billing.",
+    },
+    {
+      count: queue.ready.length,
+      id: "gps_review",
+      label: "GPS review",
+      summary: "Review synced arrival and departure proof before invoicing.",
+    },
+    {
+      count: queue.ready.length,
+      id: "needs_invoice",
+      label: "Needs invoice",
+      summary: "Proof-ready jobs without an invoice.",
+    },
+    {
+      count: queue.invoiced.length,
+      id: "billing_ready",
+      label: "Billing ready",
+      summary: "Jobs with invoice handoff already started.",
+    },
+  ];
 }
 
 export function getBillingQueueItemSummary(item: BillingQueueItem) {

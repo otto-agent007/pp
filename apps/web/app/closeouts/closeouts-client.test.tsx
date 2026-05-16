@@ -421,7 +421,12 @@ describe("CloseoutsClient", () => {
     const user = userEvent.setup();
     render(<CloseoutsClient />);
 
-    await user.click(screen.getByRole("button", { name: /Needs captures 1/i }));
+    expect(screen.getByRole("button", { name: /Proof ready 2/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /GPS review 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Needs invoice 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Billing ready 1/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Missing captures 1/i }));
 
     expect(screen.getByText("Needs photo and signature")).toBeInTheDocument();
     expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();

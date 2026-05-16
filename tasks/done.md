@@ -1,5 +1,14 @@
 # Done
 
+## Provider-Free Demo Reliability Batch V1
+
+- Added dispatch exception review for at-risk, unassigned, missing-coordinate, and missing-GPS-evidence stops
+- Added mobile route next actions for queued, failed, missing, and office-review-ready capture states
+- Added closeout review queue filters for proof-ready, missing-capture, GPS-review, needs-invoice, and billing-ready working sets
+- Added customer portal handoff review across active-link, contact, service/proof, invoice/balance, and manual/provider send mode context
+- Aligned smoke-readiness docs and task tracking while preserving the blocked env/access state
+- Kept migrations, map SDKs, background tracking, provider setup, Vercel/Supabase mutations, API-client changes, and production data actions out of scope
+
 ## Billing Readiness Reconciliation Polish V1
 
 - Added shared billing handoff and invoice reconciliation guidance for `/payments`

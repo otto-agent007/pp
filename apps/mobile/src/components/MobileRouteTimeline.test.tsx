@@ -166,6 +166,10 @@ const timeline = {
         updated_at: now,
       },
     },
+    nextAction: {
+      label: "Submit treatment form",
+      severity: "queued",
+    },
     readinessLabel: "2 done, 1 pending, 3 missing",
     sectionLabel: "Current job",
     syncTriage: syncTriage("1 queued sync item"),
@@ -208,6 +212,10 @@ const timeline = {
           updated_at: now,
         },
       },
+      nextAction: {
+        label: "Capture arrival/departure",
+        severity: "needed",
+      },
       readinessLabel: "1 done, 0 pending, 5 missing",
       sectionLabel: "Later today",
       syncTriage: syncTriage("No local sync work"),
@@ -249,6 +257,10 @@ const timeline = {
         updated_at: now,
       },
     },
+    nextAction: {
+      label: "Retry photo sync",
+      severity: "failed",
+    },
     readinessLabel: "1 done, 1 pending, 4 missing",
     sectionLabel: "Next job",
     syncTriage: syncTriage("1 pending sync, 0 synced"),
@@ -284,14 +296,17 @@ describe("MobileRouteTimeline", () => {
     expect(text).toContain("Current job");
     expect(text).toContain("Apex Homes");
     expect(text).toContain("1 queued sync item");
+    expect(text).toContain("Submit treatment form");
     expect(text).toContain("Controls for job-current");
     expect(text).toContain("Next job");
     expect(text).toContain("Lopez Residence");
     expect(text).toContain("1 pending sync, 0 synced");
+    expect(text).toContain("Retry photo sync");
     expect(text).toContain("Controls for job-next");
     expect(text).toContain("Later today");
     expect(text).toContain("Green Market");
     expect(text).toContain("1 done, 0 pending, 5 missing");
+    expect(text).toContain("Capture arrival/departure");
     expect(text).toContain("No local sync work");
     expect(text).not.toContain("Controls for job-later");
   });

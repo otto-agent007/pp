@@ -4,6 +4,7 @@ import type { Customer, Invoice, Job } from "@pest-patrol/types";
 import {
   buildBillingPortalNextActions,
   buildCustomerLedger,
+  getCustomerPortalHandoffReview,
   getCustomerLedgerSummary,
 } from "./customerLedger";
 
@@ -175,6 +176,47 @@ describe("customer ledger domain", () => {
       openBalanceCents: 0,
       paidCents: 0,
       reviewCount: 0,
+    });
+  });
+
+  it("builds a portal handoff review from ledger, contact, token, and provider state", () => {
+    expect(
+      getCustomerPortalHandoffReview({
+        hasActivePortalLink: true,
+        hasContact: true,
+        ledgerSummary: {
+          latestInvoiceAt: "2026-05-06T09:00:00Z",
+          latestServiceAt: "2026-05-05T09:00:00Z",
+          openBalanceCents: 12500,
+          paidCents: 0,
+          reviewCount: 0,
+        },
+        providerConfigured: false,
+      }),
+    ).toEqual({
+      label: "Portal handoff ready",
+      mode_label: "Manual sharing",
+      summary:
+        "Service proof and billing context are ready to share; open balance is visible in the customer portal.",
+    });
+
+    expect(
+      getCustomerPortalHandoffReview({
+        hasActivePortalLink: false,
+        hasContact: false,
+        ledgerSummary: {
+          latestInvoiceAt: null,
+          latestServiceAt: null,
+          openBalanceCents: 0,
+          paidCents: 0,
+          reviewCount: 1,
+        },
+        providerConfigured: true,
+      }),
+    ).toMatchObject({
+      label: "Review before portal handoff",
+      mode_label: "Webhook send available",
+      summary: "Add customer contact and finish service proof before sharing.",
     });
   });
 

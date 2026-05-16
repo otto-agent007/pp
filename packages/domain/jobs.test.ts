@@ -5,6 +5,7 @@ import {
   buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
   buildDispatchRouteIntelligenceForDays,
+  buildDispatchRouteExceptionSummary,
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
@@ -647,6 +648,95 @@ describe("job domain", () => {
       .toEqual(["job-missing-evidence"]);
   });
 
+  it("summarizes dispatch exceptions for the selected route stops", () => {
+    const jobs = [
+      {
+        id: "job-at-risk",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "10 Pine Street",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 33.8121,
+          longitude: -117.919,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-unassigned",
+        customer_id: "customer-1",
+        location_id: "location-2",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T11:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-2",
+          customer_id: "customer-1",
+          address: "20 Oak Avenue",
+          nickname: null,
+          service_notes: null,
+          is_primary: false,
+          latitude: null,
+          longitude: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+    ] satisfies Job[];
+
+    const intelligence = buildDispatchRouteIntelligence(jobs, "2026-05-06", "all", {
+      now: "2026-05-06T09:30:00",
+    });
+
+    expect(buildDispatchRouteExceptionSummary(intelligence.stops)).toMatchObject({
+      label: "2 stops need review",
+      items: [
+        {
+          count: 1,
+          filter: "at_risk",
+          job_ids: ["job-at-risk"],
+          label: "At risk",
+        },
+        {
+          count: 1,
+          filter: "unassigned",
+          job_ids: ["job-unassigned"],
+          label: "Unassigned",
+        },
+        {
+          count: 1,
+          filter: "missing_coordinates",
+          job_ids: ["job-unassigned"],
+          label: "Missing coordinates",
+        },
+        {
+          count: 2,
+          filter: "missing_evidence",
+          job_ids: ["job-at-risk", "job-unassigned"],
+          label: "Missing GPS evidence",
+        },
+      ],
+    });
+  });
+
   it("builds the mobile daily job list for assigned jobs", () => {
     const jobs = [
       {
@@ -856,6 +946,10 @@ describe("job domain", () => {
     );
 
     expect(timeline.current?.readinessLabel).toBe("1 done, 1 pending, 4 missing");
+    expect(timeline.current?.nextAction).toEqual({
+      label: "Submit treatment form",
+      severity: "queued",
+    });
     expect(timeline.current?.syncTriage).toMatchObject({
       label: "1 queued sync item",
       state: "queued",
@@ -863,6 +957,72 @@ describe("job domain", () => {
     expect(timeline.current?.workPlan.find((item) => item.id === "form")).toMatchObject({
       state: "pending",
       summary: "Treatment form is queued for sync.",
+    });
+  });
+
+  it("builds mobile next actions from failed, missing, and ready captures", () => {
+    const jobs = [
+      {
+        id: "job-failed",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "in_progress",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: "job-ready",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+    const queueItems = [
+      {
+        id: "queue-failed-photo",
+        action: "photo_upload",
+        attempts: 1,
+        created_at: now,
+        last_error: "Upload failed",
+        next_retry_at: null,
+        payload: { job_id: "job-failed", path: "photo.jpg" },
+        status: "failed" as const,
+        updated_at: now,
+      },
+      ...(["geofence_event_create", "chemical_log_create", "photo_upload", "signature_capture", "form_submission_create"] as const).map(
+        (action, index) => ({
+          id: `queue-ready-${index}`,
+          action,
+          attempts: 0,
+          created_at: now,
+          last_error: null,
+          next_retry_at: null,
+          payload: { job_id: "job-ready" },
+          status: "synced" as const,
+          updated_at: now,
+        }),
+      ),
+    ] satisfies OfflineQueueItem[];
+
+    const timeline = buildMobileDailyRouteTimeline(jobs, "2026-05-06", queueItems);
+
+    expect(timeline.current?.nextAction).toEqual({
+      label: "Retry photo sync",
+      severity: "failed",
+    });
+    expect(timeline.later[0]?.nextAction).toEqual({
+      label: "Ready for office review",
+      severity: "ready",
     });
   });
 });

@@ -70,6 +70,20 @@ export interface DispatchRouteIntelligenceSummary {
   unassigned_stops: number;
 }
 
+export interface DispatchRouteExceptionSummaryItem {
+  count: number;
+  filter: Exclude<DispatchRouteTriageFilter, "all">;
+  job_ids: string[];
+  label: string;
+  summary: string;
+}
+
+export interface DispatchRouteExceptionSummary {
+  items: DispatchRouteExceptionSummaryItem[];
+  label: string;
+  total_exception_stops: number;
+}
+
 export interface DispatchRouteIntelligence {
   date: string;
   stops: DispatchRouteStop[];
@@ -121,10 +135,22 @@ export interface MobileRouteTimelineSummary {
 
 export interface MobileRouteTimelineJob {
   job: Job;
+  nextAction: MobileRouteTimelineNextAction;
   readinessLabel: string;
   sectionLabel: "Current job" | "Later today" | "Next job";
   syncTriage: OfflineQueueJobTriage;
   workPlan: MobileJobWorkPlanItem[];
+}
+
+export type MobileRouteTimelineNextActionSeverity =
+  | "failed"
+  | "needed"
+  | "queued"
+  | "ready";
+
+export interface MobileRouteTimelineNextAction {
+  label: string;
+  severity: MobileRouteTimelineNextActionSeverity;
 }
 
 export interface MobileDailyRouteTimeline {
@@ -433,6 +459,70 @@ function summarizeDispatchRouteStops(
     provider_label: "Provider-free scheduled order",
     total_stops: stops.length,
     unassigned_stops: stops.filter((stop) => !stop.technician_id).length,
+  };
+}
+
+function exceptionItem(
+  stops: DispatchRouteStop[],
+  filter: Exclude<DispatchRouteTriageFilter, "all">,
+  label: string,
+  summary: string,
+): DispatchRouteExceptionSummaryItem | null {
+  const filteredStops = filterDispatchRouteStops(stops, filter);
+
+  if (filteredStops.length === 0) {
+    return null;
+  }
+
+  return {
+    count: filteredStops.length,
+    filter,
+    job_ids: filteredStops.map((stop) => stop.job.id),
+    label,
+    summary,
+  };
+}
+
+export function buildDispatchRouteExceptionSummary(
+  stops: DispatchRouteStop[],
+): DispatchRouteExceptionSummary {
+  const items = [
+    exceptionItem(
+      stops,
+      "at_risk",
+      "At risk",
+      "Scheduled stop is behind the current dispatch clock.",
+    ),
+    exceptionItem(
+      stops,
+      "unassigned",
+      "Unassigned",
+      "Assign a technician before field work starts.",
+    ),
+    exceptionItem(
+      stops,
+      "missing_coordinates",
+      "Missing coordinates",
+      "Add service coordinates or a service location before route review.",
+    ),
+    exceptionItem(
+      stops,
+      "missing_evidence",
+      "Missing GPS evidence",
+      "Confirm arrival and departure evidence after mobile sync.",
+    ),
+  ].filter((item): item is DispatchRouteExceptionSummaryItem => Boolean(item));
+  const totalExceptionStops = new Set(
+    items.flatMap((item) => item.job_ids),
+  ).size;
+
+  return {
+    items,
+    label:
+      totalExceptionStops === 0
+        ? "No route exceptions"
+        : `${totalExceptionStops} ${totalExceptionStops === 1 ? "stop needs" : "stops need"} review`,
+    total_exception_stops: totalExceptionStops,
   };
 }
 
@@ -778,6 +868,59 @@ function getReadinessLabel(workPlan: MobileJobWorkPlanItem[]) {
   return `${done} done, ${pending} pending, ${missing} missing`;
 }
 
+function workPlanActionLabel(item: MobileJobWorkPlanItem) {
+  if (item.state === "failed") {
+    const labels: Record<MobileJobWorkPlanItem["id"], string> = {
+      chemical: "Retry chemical log sync",
+      form: "Retry treatment form sync",
+      geofence: "Retry arrival/departure sync",
+      photo: "Retry photo sync",
+      signature: "Retry signature sync",
+      status: "Retry job status sync",
+    };
+
+    return labels[item.id];
+  }
+
+  return item.label;
+}
+
+function getMobileRouteNextAction(
+  workPlan: MobileJobWorkPlanItem[],
+): MobileRouteTimelineNextAction {
+  const failed = workPlan.find((item) => item.state === "failed");
+
+  if (failed) {
+    return {
+      label: workPlanActionLabel(failed),
+      severity: "failed",
+    };
+  }
+
+  const pending = workPlan.find((item) => item.state === "pending");
+
+  if (pending) {
+    return {
+      label: pending.label,
+      severity: "queued",
+    };
+  }
+
+  const missing = workPlan.find((item) => item.state === "missing");
+
+  if (missing) {
+    return {
+      label: missing.label,
+      severity: "needed",
+    };
+  }
+
+  return {
+    label: "Ready for office review",
+    severity: "ready",
+  };
+}
+
 function toTimelineJob(
   job: Job,
   queueItems: OfflineQueueItem[],
@@ -787,6 +930,7 @@ function toTimelineJob(
 
   return {
     job,
+    nextAction: getMobileRouteNextAction(workPlan),
     readinessLabel: getReadinessLabel(workPlan),
     sectionLabel,
     syncTriage: getOfflineQueueJobTriage(queueItems, job.id),

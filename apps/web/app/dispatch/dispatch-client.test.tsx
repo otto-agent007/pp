@@ -216,6 +216,8 @@ describe("DispatchClient", () => {
     expect(screen.getAllByText("1 missing coordinates").length).toBeGreaterThan(0);
     expect(screen.getByText("2 missing GPS evidence")).toBeInTheDocument();
     expect(screen.getByText("0 at risk")).toBeInTheDocument();
+    expect(screen.getByText("3 stops need review")).toBeInTheDocument();
+    expect(screen.getAllByText("Missing GPS evidence").length).toBeGreaterThan(0);
     expect(screen.getByText("Stop 1")).toBeInTheDocument();
     expect(screen.getByText("Stop 2")).toBeInTheDocument();
     expect(screen.getAllByText("Service coordinates ready").length).toBeGreaterThan(0);
@@ -248,7 +250,7 @@ describe("DispatchClient", () => {
 
     render(<DispatchClient />);
 
-    expect(screen.getByText("2 stops")).toBeInTheDocument();
+    expect(screen.getAllByText("2 stops").length).toBeGreaterThan(0);
 
     await user.selectOptions(screen.getByLabelText("Dispatch technician"), "technician-1");
 
@@ -269,7 +271,8 @@ describe("DispatchClient", () => {
       "missing_evidence",
     );
 
-    expect(screen.getByText("2 stops")).toBeInTheDocument();
+    expect(screen.getAllByText("2 stops").length).toBeGreaterThan(0);
+    expect(screen.getByText("2 stops need review")).toBeInTheDocument();
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
     expect(
       screen.getByLabelText("Status for job-missing-coordinates"),

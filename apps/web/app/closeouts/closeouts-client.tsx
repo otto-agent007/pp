@@ -12,9 +12,11 @@ import {
   getCloseoutProofHandoffSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
+  getCloseoutReviewQueueFilters,
   getInvoiceBalanceCents,
   type BillingQueueGroup,
   type BillingQueueItem,
+  type CloseoutReviewQueueFilterId,
   type CloseoutStatusFilter,
   type CloseoutProofHandoffSummary,
 } from "@pest-patrol/domain";
@@ -35,7 +37,12 @@ import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 
-type QueueFilter = "all" | "invoiced" | "needsCaptures" | "ready";
+type QueueFilter =
+  | "all"
+  | "invoiced"
+  | "needsCaptures"
+  | "ready"
+  | CloseoutReviewQueueFilterId;
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
 
@@ -102,15 +109,19 @@ function getPaidInvoiceDate(invoice: Invoice) {
 }
 
 function latestQueueItems(queue: BillingQueueGroup, filter: QueueFilter) {
-  if (filter === "ready") {
+  if (filter === "proof_ready") {
+    return { ...queue, needsCaptures: [] };
+  }
+
+  if (filter === "ready" || filter === "gps_review" || filter === "needs_invoice") {
     return { ...queue, invoiced: [], needsCaptures: [] };
   }
 
-  if (filter === "needsCaptures") {
+  if (filter === "needsCaptures" || filter === "missing_capture") {
     return { ...queue, invoiced: [], ready: [] };
   }
 
-  if (filter === "invoiced") {
+  if (filter === "invoiced" || filter === "billing_ready") {
     return { ...queue, needsCaptures: [], ready: [] };
   }
 
@@ -545,7 +556,14 @@ export function CloseoutsClient() {
 
     const filter = new URLSearchParams(window.location.search).get("queue");
 
-    return filter === "ready" || filter === "needsCaptures" || filter === "invoiced"
+    return filter === "ready" ||
+      filter === "needsCaptures" ||
+      filter === "invoiced" ||
+      filter === "proof_ready" ||
+      filter === "missing_capture" ||
+      filter === "gps_review" ||
+      filter === "needs_invoice" ||
+      filter === "billing_ready"
       ? filter
       : "all";
   });
@@ -579,6 +597,10 @@ export function CloseoutsClient() {
     [invoices, summariesQuery.data, visibleJobs],
   );
   const counts = useMemo(() => getBillingQueueCounts(queue), [queue]);
+  const reviewFilters = useMemo(
+    () => getCloseoutReviewQueueFilters(queue),
+    [queue],
+  );
   const filteredQueue = latestQueueItems(queue, queueFilter);
   const queueItems = [
     ...filteredQueue.ready,
@@ -677,25 +699,16 @@ export function CloseoutsClient() {
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-4">
-        <CountTile
-          active={queueFilter === "ready"}
-          label="Ready to bill"
-          onClick={() => setFilter("ready")}
-          value={counts.ready}
-        />
-        <CountTile
-          active={queueFilter === "needsCaptures"}
-          label="Needs captures"
-          onClick={() => setFilter("needsCaptures")}
-          value={counts.needsCaptures}
-        />
-        <CountTile
-          active={queueFilter === "invoiced"}
-          label="Invoiced"
-          onClick={() => setFilter("invoiced")}
-          value={counts.invoiced}
-        />
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        {reviewFilters.map((filter) => (
+          <CountTile
+            active={queueFilter === filter.id}
+            key={filter.id}
+            label={filter.label}
+            onClick={() => setFilter(filter.id)}
+            value={filter.count}
+          />
+        ))}
         <CountTile
           active={queueFilter === "all"}
           label="Total completed"

@@ -84,7 +84,7 @@ Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
 For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
-Latest local preflight note: the May 15, 2026 read-only local preflight is blocked until the operator loads approved local Supabase env names in their shell. No seed/reset or browser login was attempted during that blocked pass.
+Latest local preflight note: the May 16, 2026 read-only local and preview preflights are blocked until the operator loads approved Supabase env names and provides protected-preview access/sign-in. No seed/reset or browser login was attempted during those blocked passes.
 
 Run these in order after the preview deployment has the approved environment variables:
 
@@ -92,24 +92,27 @@ Run these in order after the preview deployment has the approved environment var
 2. Create a customer and active location.
 3. Invite a technician and complete technician password setup through `/technician-login`.
 4. Create a scheduled job, assign the technician, and confirm `/dispatch` and `/technicians` show the assignment.
-5. Use the Expo app to queue status, geofence, form, chemical, photo, and signature captures while offline or simulated offline.
-6. Return online and confirm queued mobile writes sync.
-7. Review the completed job in `/closeouts` and confirm billing readiness.
-8. Create an invoice in `/payments`, create a Stripe payment link when test Stripe is configured, and confirm manual `Mark paid` and `Void` require confirmation.
-9. Expand the customer ledger and confirm service, invoice, open-balance, and review filters do not expose provider internals.
-10. Generate a portal token, copy the session link, and open `/portal/<customer-id>?access_token=<token>`.
-11. Confirm portal provider readiness shows webhook-backed or manual-only mode without exposing env values.
-12. If portal webhook is configured, use `Send link ▶` and active-row `Send new link`; confirm the UI says `Send requested` without claiming delivery and the history drawer shows provider-safe send attempt events.
-13. If portal webhook is not configured, confirm manual copy remains available and provider send controls do not invite a send.
-14. Revoke an active portal link and confirm the old tokened portal URL no longer loads.
-15. Create an automation template/rule, preview scheduler output, run the scheduler manually, and confirm generated notifications.
-16. If notification webhook is configured, send one notification and bulk-send visible pending notifications; otherwise confirm manual delivery fallback.
-17. Trigger the cron route only with an approved `CRON_SECRET` or `AUTOMATION_CRON_SECRET`.
-18. Confirm browser-visible screens do not expose service-role keys, cron secrets, Stripe secrets, webhook secrets, token hashes, raw stored tokens, provider payloads, or provider message internals.
+5. Confirm `/dispatch` exception review calls out at-risk, unassigned, missing-coordinate, and missing-GPS-evidence stops without exposing exact technician GPS outside admin/dispatch.
+6. Use the Expo app to queue status, geofence, form, chemical, photo, and signature captures while offline or simulated offline, and confirm per-stop next actions stay field-friendly.
+7. Return online and confirm queued mobile writes sync.
+8. Review the completed job in `/closeouts` and confirm proof-ready, missing-capture, GPS-review, needs-invoice, and billing-ready filters match the seeded story.
+9. Create an invoice in `/payments`, create a Stripe payment link when test Stripe is configured, and confirm manual `Mark paid` and `Void` require confirmation.
+10. Expand the customer ledger and confirm service, invoice, open-balance, and review filters do not expose provider internals.
+11. Confirm `/customers` portal handoff review reflects contact readiness, active link state, recent service/proof, invoice/balance state, and manual/provider send mode without raw portal tokens, token hashes, provider payloads, exact GPS, storage paths, or internal notes.
+12. Generate a portal token, copy the session link, and open `/portal/<customer-id>?access_token=<token>`.
+13. Confirm portal provider readiness shows webhook-backed or manual-only mode without exposing env values.
+14. If portal webhook is configured, use `Send link ▶` and active-row `Send new link`; confirm the UI says `Send requested` without claiming delivery and the history drawer shows provider-safe send attempt events.
+15. If portal webhook is not configured, confirm manual copy remains available and provider send controls do not invite a send.
+16. Revoke an active portal link and confirm the old tokened portal URL no longer loads.
+17. Create an automation template/rule, preview scheduler output, run the scheduler manually, and confirm generated notifications.
+18. If notification webhook is configured, send one notification and bulk-send visible pending notifications; otherwise confirm manual delivery fallback.
+19. Trigger the cron route only with an approved `CRON_SECRET` or `AUTOMATION_CRON_SECRET`.
+20. Confirm browser-visible screens do not expose service-role keys, cron secrets, Stripe secrets, webhook secrets, token hashes, raw stored tokens, provider payloads, or provider message internals.
 
 ## Deferred Follow-Ups
 
 - Durable provider delivery receipts for portal sends.
 - Richer provider failure classification in portal send UI.
 - Supabase leaked password protection if the project moves to Supabase Pro.
+- Map-provider planning after token, cost, privacy, env, and provider-dashboard setup decisions are approved.
 - Production launch checklist after preview smoke passes.
