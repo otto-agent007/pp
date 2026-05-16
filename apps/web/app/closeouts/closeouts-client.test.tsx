@@ -276,6 +276,11 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByText("Portal handoff ready after office review"),
     ).toBeInTheDocument();
+    expect(screen.getByText("Arrival GPS captured")).toBeInTheDocument();
+    expect(screen.getByText("Departure GPS captured")).toBeInTheDocument();
+    expect(screen.getAllByText("Ready").length).toBeGreaterThan(0);
+    expect(screen.getByText("High sync confidence")).toBeInTheDocument();
+    expect(screen.getByText("No invoice yet")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Customer portal can show reviewed service forms, photos, signatures, service date, and location; exact technician GPS stays private.",

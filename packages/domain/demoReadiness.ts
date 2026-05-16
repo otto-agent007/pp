@@ -23,7 +23,7 @@ export interface MobileTechnicianReadinessPanel {
   title: string;
 }
 
-export type MobileJobWorkPlanState = "done" | "missing" | "pending";
+export type MobileJobWorkPlanState = "done" | "failed" | "missing" | "pending";
 
 export interface MobileJobWorkPlanItem {
   id: "chemical" | "form" | "geofence" | "photo" | "signature" | "status";
@@ -33,6 +33,7 @@ export interface MobileJobWorkPlanItem {
 }
 
 export interface MobileCompletionReadinessGuard {
+  failedLabels: string[];
   label: string;
   missingLabels: string[];
   pendingLabels: string[];
@@ -144,12 +145,16 @@ function queueCaptureState(
     return "done";
   }
 
+  if (matchingItems.some((item) => item.status === "failed")) {
+    return "failed";
+  }
+
   return matchingItems.length > 0 ? "pending" : "missing";
 }
 
 function captureSummary(
   state: MobileJobWorkPlanState,
-  labels: { done: string; missing: string; pending: string },
+  labels: { done: string; failed: string; missing: string; pending: string },
 ) {
   return labels[state];
 }
@@ -213,6 +218,7 @@ export function buildMobileJobWorkPlan(
       state: geofenceState,
       summary: captureSummary(geofenceState, {
         done: "Geofence event has synced.",
+        failed: "Geofence event needs retry.",
         missing: "No geofence event queued yet.",
         pending: "Geofence event is queued for sync.",
       }),
@@ -223,6 +229,7 @@ export function buildMobileJobWorkPlan(
       state: chemicalState,
       summary: captureSummary(chemicalState, {
         done: "Chemical log has synced.",
+        failed: "Chemical log needs retry.",
         missing: "No chemical log queued yet.",
         pending: "Chemical log is queued for sync.",
       }),
@@ -233,6 +240,7 @@ export function buildMobileJobWorkPlan(
       state: photoState,
       summary: captureSummary(photoState, {
         done: "Photo capture has synced.",
+        failed: "Photo capture needs retry.",
         missing: "No photo queued yet.",
         pending: "Photo capture is queued for sync.",
       }),
@@ -243,6 +251,7 @@ export function buildMobileJobWorkPlan(
       state: signatureState,
       summary: captureSummary(signatureState, {
         done: "Signature has synced.",
+        failed: "Signature needs retry.",
         missing: "No signature queued yet.",
         pending: "Signature is queued for sync.",
       }),
@@ -253,6 +262,7 @@ export function buildMobileJobWorkPlan(
       state: formState,
       summary: captureSummary(formState, {
         done: "Treatment form has synced.",
+        failed: "Treatment form needs retry.",
         missing: "No treatment form queued yet.",
         pending: "Treatment form is queued for sync.",
       }),
@@ -267,14 +277,21 @@ export function getMobileCompletionReadinessGuard(
   const missingLabels = captureItems
     .filter((item) => item.state === "missing")
     .map((item) => item.label);
+  const failedLabels = captureItems
+    .filter((item) => item.state === "failed")
+    .map((item) => item.label);
   const pendingLabels = captureItems
     .filter((item) => item.state === "pending")
     .map((item) => item.label);
-  const ready = missingLabels.length === 0 && pendingLabels.length === 0;
+  const ready =
+    missingLabels.length === 0 &&
+    failedLabels.length === 0 &&
+    pendingLabels.length === 0;
 
   if (ready) {
     return {
       label: "Ready to complete",
+      failedLabels,
       missingLabels,
       pendingLabels,
       ready,
@@ -284,6 +301,7 @@ export function getMobileCompletionReadinessGuard(
 
   return {
     label: "Review before completing",
+    failedLabels,
     missingLabels,
     pendingLabels,
     ready,
@@ -293,6 +311,9 @@ export function getMobileCompletionReadinessGuard(
         : null,
       pendingLabels.length > 0
         ? `Pending sync for ${joinLowerLabels(pendingLabels)}.`
+        : null,
+      failedLabels.length > 0
+        ? `Retry failed ${joinLowerLabels(failedLabels)} before closeout.`
         : null,
     ]
       .filter(Boolean)

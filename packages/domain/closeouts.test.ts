@@ -10,6 +10,7 @@ import {
   formatMissingCaptureList,
   getBillingQueueCounts,
   getBillingQueueItemSummary,
+  getAdminCloseoutProofReview,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenEventLabel,
   getCustomerPortalAccessTokenReadiness,
@@ -332,6 +333,83 @@ describe("closeouts domain", () => {
     expect(serialized).not.toContain("33.8121");
     expect(serialized).not.toContain("-117.919");
     expect(serialized).not.toContain("maps.example");
+  });
+
+  it("builds admin proof review with GPS and invoice readiness", () => {
+    const review = buildJobCloseoutReview({
+      job: completedJob,
+      formSubmissions: [
+        {
+          id: "submission-1",
+          job_id: "job-1",
+          template_id: "template-1",
+          form_data: { target_pests: "Ants" },
+          submitted_by: "tech-1",
+          submitted_at: now,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      chemicalLogs: [
+        {
+          id: "log-1",
+          job_id: "job-1",
+          chemical_id: "chemical-1",
+          amount_used: 1,
+          notes: null,
+          created_at: now,
+        },
+      ],
+      media: [
+        {
+          id: "media-1",
+          job_id: "job-1",
+          media_type: "photo",
+          storage_bucket: "job-media",
+          storage_path: "job-1/photo.jpg",
+          description: "Kitchen",
+          uploaded_by: "tech-1",
+          captured_at: now,
+          created_at: now,
+          updated_at: now,
+        },
+        {
+          id: "media-2",
+          job_id: "job-1",
+          media_type: "signature",
+          storage_bucket: "job-media",
+          storage_path: "job-1/signature.png",
+          description: "Signed by Jamie",
+          uploaded_by: "tech-1",
+          captured_at: now,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+    });
+
+    expect(
+      getAdminCloseoutProofReview({
+        evidence: {
+          job_id: "job-1",
+          latest_arrival: null,
+          latest_departure: null,
+          latest_event: null,
+          state: "missing",
+          summary_label: "No synced GPS evidence yet",
+        },
+        invoice: null,
+        review,
+      }),
+    ).toEqual({
+      billing_label: "Billing captures ready",
+      completion_label: "Needs review",
+      gps_label: "GPS evidence missing",
+      invoice_label: "No invoice yet",
+      missing_labels: ["arrival GPS", "departure GPS"],
+      summary: "Review arrival gps and departure gps before billing handoff.",
+      sync_confidence_label: "Review synced field evidence",
+    });
   });
 
   it("builds customer portal closeouts without admin-only data", () => {

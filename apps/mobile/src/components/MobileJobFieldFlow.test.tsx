@@ -132,13 +132,21 @@ describe("MobileJobFieldFlow", () => {
             state: "missing",
             summary: "No treatment form queued yet.",
           },
+          {
+            id: "photo",
+            label: "Capture photos",
+            state: "failed",
+            summary: "Photo capture needs retry.",
+          },
         ]}
       />
     );
 
     const text = collectText(element);
+    const renderedText = text.join("");
 
     expect(text).toContain("Visit flow");
+    expect(renderedText).toContain("1 done - 1 queued - 1 retry - 1 needed");
     expect(text).toContain("Start visit");
     expect(text).toContain("Done");
     expect(text).toContain("Status control");
@@ -151,6 +159,7 @@ describe("MobileJobFieldFlow", () => {
     expect(text).toContain("Chemical use");
     expect(text).toContain("Chemical log control");
     expect(text).toContain("Photos");
+    expect(text).toContain("Retry");
     expect(text).toContain("Photo control");
     expect(text).toContain("Signature");
     expect(text).toContain("Signature control");

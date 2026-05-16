@@ -347,6 +347,10 @@ export function PaymentsClient() {
           <p className="mt-1 text-xs font-semibold text-gray-500">
             {closeoutHandoff.nextStep}
           </p>
+          <p className="mt-1 text-xs font-medium text-gray-500">
+            Use closeouts to confirm proof handoff, GPS evidence, and customer-safe
+            portal readiness before invoicing.
+          </p>
         </div>
         <a className="font-semibold text-primary hover:underline" href="/closeouts">
           View queue

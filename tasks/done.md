@@ -888,3 +888,12 @@
 - Added customer-safe proof-of-service summaries in the portal
 - Kept exact technician GPS, map URLs, chemical internals, storage paths, and provider internals out of customer portal payloads
 - Verified with focused domain, admin, portal UI, and portal API tests
+
+## Provider-Free Workflow Triage Polish V1
+
+- Ran the read-only local demo smoke preflight and recorded sanitized blocked evidence
+- Added dispatch triage for missing GPS evidence, missing coordinates/location, unassigned work, and late/at-risk stops
+- Added mobile field-flow readiness for failed capture retries plus done/queued/needed counts
+- Added admin closeout proof review labels for GPS, billing readiness, invoice state, and sync confidence
+- Kept Google Maps/Mapbox SDKs, background GPS, provider setup, env changes, migrations, and production mutations deferred
+- Verified with focused tests plus `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`

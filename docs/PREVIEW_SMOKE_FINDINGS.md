@@ -24,6 +24,24 @@ Launch gate:
 Next action:
 - Continue with provider-free product slices that reduce demo risk while operator access remains unavailable.
 
+## 2026-05-15 Provider-Free Workflow Local Preflight
+
+Status: local smoke preflight ran read-only and is blocked on missing local Supabase environment names.
+
+Findings:
+- Route: local preflight
+- Action: ran `corepack pnpm demo:smoke -- --target local`.
+- Result: blocked; shell seed readiness and browser smoke readiness are blocked because local Supabase env names are not loaded.
+- Blocker category: missing env/setup.
+- Next action: operator loads approved local Supabase values outside docs/chat, reruns the preflight, then seeds or browser-smokes only after the preflight is ready.
+
+Missing env names reported by the preflight:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+No seed/reset command, migration, provider setup, Vercel env mutation, Supabase dashboard mutation, production data mutation, browser login, credential capture, raw portal token, or protected preview URL was used in this pass.
+
 ## 2026-05-14 Preview Launch Baseline And Preflight
 
 Status: latest preview is Ready and app-shell reachable; authenticated workflow smoke remains operator-blocked.

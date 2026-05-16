@@ -82,13 +82,14 @@ Current priority is provider-free operations readiness after the preview smoke h
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, provider status, fresh-token send, and send-attempt history
 - tokened `/portal` routes now include a customer-safe service, billing timeline, and proof-of-service summary
-- `/dispatch` includes provider-free scheduled route intelligence, GPS evidence after mobile sync, and external map links without embedded map SDKs
-- the design-token foundation now feeds Tailwind, Figma variable names, and the Expo mobile route shell
-- the signed-in mobile technician route shell uses shared tokens for the technician header, sync confidence, route timeline, assigned job card, and visit-flow wrapper
-- the mobile technician route flow still preserves existing offline-first field controls and queue behavior
+- `/dispatch` includes provider-free scheduled route intelligence, triage filters, route groups by technician/day/status, GPS evidence after mobile sync, and external map links without embedded map SDKs
+- the design-token foundation now feeds Tailwind, Figma variable names, the Expo mobile route shell, and tokenized mobile capture controls while preserving offline-first field stores and queue behavior
+- the mobile technician route flow groups existing offline-first field controls into a clearer visit sequence with done, queued, retry, and needed readiness
+- `/closeouts` now summarizes proof handoff readiness, admin proof review, GPS evidence, invoice state, and billing handoff confidence while keeping customer portal proof sanitized
+- `/payments` now includes closeout-to-invoice handoff states, reconciliation summaries, needs-review explanations, and manual paid/void confirmation feedback without Stripe provider setup
 - preview launch readiness has a Ready Vercel preview baseline, aligned Supabase migrations, dispatch technician query-param preselection, and demo seed/smoke tooling
-- current status: no active implementation slice is open after the design-system foundation and mobile route-shell pilot
-- next candidates: operator runs local or protected-preview smoke against the seeded story, richer provider-free dispatch grouping, mobile capture-control tokenization, deeper billing readiness, or later map-provider planning
+- current status: no active implementation slice is open after dirty repo cleanup and the preview-first launch-risk product batch
+- next candidates: operator reruns local or protected-preview smoke with approved env/access, provider delivery receipts after webhook-backed evidence, production launch checklist work, or later map-provider planning
 - use Claude as optional external UI design input for UI-heavy polish while Codex owns implementation and verification
 - use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the Codex-Claude-GitHub handoff and stewardship loop
 - keep mobile writes offline-safe and shared logic in packages

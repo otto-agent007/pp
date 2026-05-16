@@ -185,6 +185,7 @@ export const mobileRouteShellTone = {
   },
   visit: {
     done: toneStyle(status.sync.synced),
+    failed: toneStyle(status.sync.failed),
     missing: toneStyle(status.alert.neutral),
     pending: toneStyle(status.sync.retrying),
   },
@@ -218,9 +219,15 @@ export function getMobileSyncTone({
     : mobileRouteShellTone.sync.idle;
 }
 
-export function getVisitFlowTone(state?: "done" | "missing" | "pending") {
+export function getVisitFlowTone(
+  state?: "done" | "failed" | "missing" | "pending",
+) {
   if (state === "done") {
     return mobileRouteShellTone.visit.done;
+  }
+
+  if (state === "failed") {
+    return mobileRouteShellTone.visit.failed;
   }
 
   if (state === "pending") {

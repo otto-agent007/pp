@@ -6,6 +6,7 @@ import {
   buildBillingQueue,
   filterCloseoutJobs,
   formatMissingCaptureList,
+  getAdminCloseoutProofReview,
   getBillingQueueCounts,
   getBillingQueueItemSummary,
   getCloseoutProofHandoffSummary,
@@ -457,22 +458,58 @@ function NextActionCard({
 }
 
 function ProofHandoffCard({
+  evidence,
   handoff,
+  invoice,
+  review,
 }: {
+  evidence?: ReturnType<typeof buildDispatchLocationEvidenceByJob>[string];
   handoff: CloseoutProofHandoffSummary;
+  invoice?: Invoice | null;
+  review: ReturnType<typeof getAdminCloseoutProofReview> | null;
 }) {
+  const arrivalLabel = evidence?.latest_arrival
+    ? "Arrival GPS captured"
+    : "Arrival GPS missing";
+  const departureLabel = evidence?.latest_departure
+    ? "Departure GPS captured"
+    : "Departure GPS missing";
+  const proof = review;
+
   return (
     <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-      <p className="text-sm font-semibold text-neutralDark">
-        Proof handoff readiness
-      </p>
-      <p className="mt-2 text-sm font-semibold text-neutralDark">
-        {handoff.proof_label}
-      </p>
-      <p className="mt-1 text-sm text-gray-700">{handoff.proof_summary}</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-neutralDark">
+            Proof handoff readiness
+          </p>
+          <p className="mt-2 text-sm font-semibold text-neutralDark">
+            {handoff.proof_label}
+          </p>
+          <p className="mt-1 text-sm text-gray-700">{handoff.proof_summary}</p>
+        </div>
+        <span className="w-fit rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {proof?.completion_label ?? "Needs review"}
+        </span>
+      </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {arrivalLabel}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {departureLabel}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
           {handoff.gps_label}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {proof?.billing_label ?? handoff.proof_label}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {proof?.invoice_label ?? (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
+        </span>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+          {proof?.sync_confidence_label ?? "Review synced field evidence"}
         </span>
       </div>
       <ul className="mt-3 grid gap-1 text-xs font-medium text-gray-600 sm:grid-cols-2">
@@ -563,10 +600,20 @@ export function CloseoutsClient() {
   const readiness = closeout.review
     ? getCloseoutReviewReadiness(closeout.review)
     : selectedQueueItem?.readiness ?? null;
+  const selectedEvidence = selectedJob
+    ? locationEvidenceByJob[selectedJob.id]
+    : undefined;
   const proofHandoff = readiness
     ? getCloseoutProofHandoffSummary({
-        evidence: selectedJob ? locationEvidenceByJob[selectedJob.id] : null,
+        evidence: selectedEvidence,
         readiness,
+      })
+    : null;
+  const adminProofReview = closeout.review
+    ? getAdminCloseoutProofReview({
+        evidence: selectedEvidence,
+        invoice: selectedQueueItem?.invoice ?? null,
+        review: closeout.review,
       })
     : null;
   const noQueueAction = search.trim()
@@ -728,7 +775,14 @@ export function CloseoutsClient() {
             <>
               <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <NextActionCard item={selectedQueueItem} />
-                {proofHandoff ? <ProofHandoffCard handoff={proofHandoff} /> : null}
+                {proofHandoff ? (
+                  <ProofHandoffCard
+                    evidence={selectedEvidence}
+                    handoff={proofHandoff}
+                    invoice={selectedQueueItem?.invoice ?? null}
+                    review={adminProofReview}
+                  />
+                ) : null}
                 <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-secondary">

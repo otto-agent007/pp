@@ -21,6 +21,7 @@ handoff baseline:
 2. Added provider-free dispatch route intelligence for scheduled-order stops, technician filtering, location readiness, status counts, and service-coordinate external links.
 3. Organized the mobile technician visit flow around existing offline-first controls and queue behavior.
 4. Added admin closeout proof handoff readiness and customer-safe portal proof summaries without exposing exact technician GPS.
+5. Added provider-free workflow triage polish for dispatch risk filters, mobile failed-capture readiness, admin proof review, and sanitized local preflight evidence.
 
 Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 
@@ -32,9 +33,9 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 
 ## Next Decision Points
 
-1. Run `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke.
+1. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke.
 2. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`.
 3. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
 4. Run local/browser smoke on `/`, `/dispatch`, `/closeouts`, mobile route flow, and tokened portal when credentials/demo data are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
-5. Decide whether provider delivery receipts, richer provider-free dispatch grouping, mobile capture-control tokenization, deeper billing readiness, or production launch checklist work should be next.
+5. Decide whether provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next after authenticated preview evidence is available.
 6. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.

@@ -35,6 +35,7 @@ describe("mobile route shell styles", () => {
     expect(mobileRouteShellTone.sync.ready.backgroundColor).toBe(status.sync.queued.bg);
     expect(mobileRouteShellTone.sync.failed.borderColor).toBe(status.sync.failed.border);
     expect(mobileRouteShellTone.visit.done.backgroundColor).toBe(status.sync.synced.bg);
+    expect(mobileRouteShellTone.visit.failed.backgroundColor).toBe(status.sync.failed.bg);
     expect(mobileRouteShellTone.visit.pending.backgroundColor).toBe(status.sync.retrying.bg);
     expect(mobileRouteShellTone.visit.missing.backgroundColor).toBe(status.alert.neutral.bg);
   });
