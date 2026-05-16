@@ -371,6 +371,36 @@ function CustomerLedgerSummary({
   );
 }
 
+function CustomerAccountFollowUp({
+  customer,
+  invoices,
+  jobs,
+}: {
+  customer: Customer;
+  invoices: Invoice[];
+  jobs: Job[];
+}) {
+  const entries = useMemo(
+    () => buildCustomerLedger({ customer, invoices, jobs }),
+    [customer, invoices, jobs],
+  );
+  const summary = useMemo(() => getCustomerLedgerSummary(entries), [entries]);
+
+  return (
+    <>
+      <CustomerLedgerSummary customer={customer} invoices={invoices} jobs={jobs} />
+      <CustomerPortalLinks
+        accountSummary={summary}
+        customerContact={{
+          email: customer.email,
+          phone: customer.phone,
+        }}
+        customerId={customer.id}
+      />
+    </>
+  );
+}
+
 function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
   const href = ledgerEntryHref(entry);
   const amountText =
@@ -601,19 +631,10 @@ export function CustomersClient() {
                   </div>
                 </div>
                 {customer.status === "active" ? (
-                  <CustomerLedgerSummary
+                  <CustomerAccountFollowUp
                     customer={customer}
                     invoices={invoicesQuery.data ?? []}
                     jobs={jobsQuery.data ?? []}
-                  />
-                ) : null}
-                {customer.status === "active" ? (
-                  <CustomerPortalLinks
-                    customerContact={{
-                      email: customer.email,
-                      phone: customer.phone,
-                    }}
-                    customerId={customer.id}
                   />
                 ) : null}
               </article>

@@ -42,6 +42,7 @@ function RouteSection({
         <Text style={styles.sectionLabel}>{item.sectionLabel}</Text>
         <View style={styles.sectionMeta}>
           <Text style={styles.readinessLabel}>{item.readinessLabel}</Text>
+          <Text style={styles.nextActionLabel}>{item.nextAction.label}</Text>
           <Text style={styles.stopSyncLabel}>{item.syncTriage.label}</Text>
         </View>
       </View>
@@ -84,6 +85,7 @@ function LaterRouteRow({
           {item.job.location?.address ?? "No location saved"}
         </Text>
         <Text style={styles.laterReadiness}>{item.readinessLabel}</Text>
+        <Text style={styles.laterNextAction}>{item.nextAction.label}</Text>
         <Text style={styles.laterSync}>{item.syncTriage.label}</Text>
       </View>
       <View style={styles.laterStatus}>
@@ -174,6 +176,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 2,
   },
+  laterNextAction: {
+    color: mobileRouteShellPalette.primaryText,
+    fontSize: 12,
+    fontWeight: "800",
+  },
   laterSync: {
     color: mobileRouteShellPalette.mutedText,
     fontSize: 11,
@@ -213,6 +220,11 @@ const styles = StyleSheet.create({
     color: mobileRouteShellPalette.secondaryText,
     fontSize: 12,
     fontWeight: "700",
+  },
+  nextActionLabel: {
+    color: mobileRouteShellPalette.accentText,
+    fontSize: 12,
+    fontWeight: "800",
   },
   routeSection: {
     gap: 8,

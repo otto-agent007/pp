@@ -2,6 +2,28 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-16 Provider-Free Demo Reliability Batch
+
+Status: local implementation and focused verification are in progress; local and protected-preview smoke remain blocked on approved environment and operator access inputs.
+
+Repo updates ready for smoke once access is available:
+- Route: `/dispatch`
+- Result: added provider-free exception review for at-risk, unassigned, missing-coordinate, and missing-GPS-evidence stops.
+- Route: mobile route flow
+- Result: added per-stop next-action labels for queued, failed, missing, and office-review-ready capture states.
+- Route: `/closeouts`
+- Result: added proof-ready, missing-capture, GPS-review, needs-invoice, and billing-ready review filters.
+- Route: `/customers`
+- Result: added portal handoff review across active-link, contact, proof/service, billing, balance, and manual/provider send mode context.
+
+Launch gate:
+- Local smoke still needs approved local Supabase env names loaded before seed/reset or browser workflow checks.
+- Protected-preview smoke still needs approved preview Supabase env names, an operator-approved protected-preview browser access path, and an admin or dispatcher sign-in path.
+- Manual-fallback provider smoke remains valid when portal, notification, or Stripe webhook env names are intentionally unset.
+- Webhook-backed provider smoke remains deferred until provider env/access is explicitly approved.
+
+No seed/reset writes, provider dashboard mutations, environment mutations, migrations, raw portal URLs, credentials, protected-preview access values, or production data actions were performed.
+
 ## 2026-05-16 Authenticated Preview Smoke Resume
 
 Status: read-only smoke preflight resumed; local and preview workflow smoke remain blocked on approved environment and operator access inputs.

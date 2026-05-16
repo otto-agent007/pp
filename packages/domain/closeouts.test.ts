@@ -10,6 +10,7 @@ import {
   formatMissingCaptureList,
   getBillingQueueCounts,
   getBillingQueueItemSummary,
+  getCloseoutReviewQueueFilters,
   getAdminCloseoutProofReview,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenEventLabel,
@@ -177,6 +178,38 @@ describe("closeouts domain", () => {
       "Needs photo and signature before billing.",
     );
     expect(getBillingQueueItemSummary(queue.ready[0])).toBe("Ready to bill.");
+    expect(getCloseoutReviewQueueFilters(queue)).toEqual([
+      {
+        count: 3,
+        id: "proof_ready",
+        label: "Proof ready",
+        summary: "Field proof is complete and ready for office review.",
+      },
+      {
+        count: 1,
+        id: "missing_capture",
+        label: "Missing captures",
+        summary: "Completed jobs still need field evidence before billing.",
+      },
+      {
+        count: 2,
+        id: "gps_review",
+        label: "GPS review",
+        summary: "Review synced arrival and departure proof before invoicing.",
+      },
+      {
+        count: 2,
+        id: "needs_invoice",
+        label: "Needs invoice",
+        summary: "Proof-ready jobs without an invoice.",
+      },
+      {
+        count: 1,
+        id: "billing_ready",
+        label: "Billing ready",
+        summary: "Jobs with invoice handoff already started.",
+      },
+    ]);
   });
 
   it("formats missing capture lists for billing queue copy", () => {

@@ -4,6 +4,8 @@ import {
   getCustomerPortalAccessTokenEventLabel,
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
+  getCustomerPortalHandoffReview,
+  type CustomerLedgerSummary,
 } from "@pest-patrol/domain";
 import type {
   CustomerPortalAccessTokenEventSummary,
@@ -286,9 +288,11 @@ function CustomerPortalTokenHistory({
 }
 
 export function CustomerPortalLinks({
+  accountSummary,
   customerContact,
   customerId,
 }: {
+  accountSummary?: CustomerLedgerSummary;
   customerContact?: { email: string | null; phone: string | null };
   customerId: string;
 }) {
@@ -303,6 +307,14 @@ export function CustomerPortalLinks({
   const hasContact = customerContact
     ? Boolean(customerContact.email || customerContact.phone)
     : true;
+  const portalHandoff = accountSummary
+    ? getCustomerPortalHandoffReview({
+        hasActivePortalLink: active.length > 0,
+        hasContact,
+        ledgerSummary: accountSummary,
+        providerConfigured: Boolean(providerStatus.data?.webhook_configured),
+      })
+    : null;
   const expiresInputRef = useRef<HTMLInputElement | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyAgainRef = useRef<HTMLButtonElement | null>(null);
@@ -701,6 +713,27 @@ export function CustomerPortalLinks({
           Generate links to share with this customer.
         </p>
       </div>
+
+      {portalHandoff ? (
+        <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Portal handoff review
+              </p>
+              <p className="mt-1 font-semibold text-neutralDark">
+                {portalHandoff.label}
+              </p>
+              <p className="mt-1 text-xs text-gray-600">
+                {portalHandoff.summary}
+              </p>
+            </div>
+            <p className="text-xs font-semibold text-gray-500">
+              {portalHandoff.mode_label}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div
         className={`mt-3 rounded-md border border-l-4 border-gray-200 bg-white p-3 text-sm ${readinessCard.tone}`}

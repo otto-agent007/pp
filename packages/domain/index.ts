@@ -191,6 +191,7 @@ export {
   filterCustomerPortalCloseouts,
   getBillingQueueCounts,
   getBillingQueueItemSummary,
+  getCloseoutReviewQueueFilters,
   getAdminCloseoutProofReview,
   getCloseoutProofHandoffSummary,
   getCustomerPortalAccessTokenLabel,
@@ -225,6 +226,8 @@ export type {
   BillingQueueState,
   CloseoutCounts,
   CloseoutProofHandoffSummary,
+  CloseoutReviewQueueFilter,
+  CloseoutReviewQueueFilterId,
   CloseoutReviewReadiness,
   CloseoutStatusFilter,
   AdminCloseoutProofReview,
@@ -247,6 +250,7 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildDispatchRouteExceptionSummary,
   buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
   buildDispatchRouteIntelligenceForDays,
@@ -273,6 +277,8 @@ export {
 } from "./jobs";
 export type {
   DispatchRouteEvidenceState,
+  DispatchRouteExceptionSummary,
+  DispatchRouteExceptionSummaryItem,
   DispatchRouteGroupDaySummary,
   DispatchRouteGroupSummary,
   DispatchRouteGroupSummaryOptions,
@@ -285,6 +291,8 @@ export type {
   DispatchRouteTriageFilter,
   TechnicianFilter,
   MobileDailyRouteTimeline,
+  MobileRouteTimelineNextAction,
+  MobileRouteTimelineNextActionSeverity,
   MobileRouteTimelineJob,
   MobileRouteTimelineSummary,
 } from "./jobs";
@@ -417,12 +425,15 @@ export type {
 export {
   buildBillingPortalNextActions,
   buildCustomerLedger,
+  getCustomerPortalHandoffReview,
   getCustomerLedgerSummary,
 } from "./customerLedger";
 export type {
   BillingPortalNextAction,
   BillingPortalNextActionId,
   BillingPortalNextActionInput,
+  CustomerPortalHandoffReview,
+  CustomerPortalHandoffReviewInput,
   CustomerLedgerEntry,
   CustomerLedgerEntryType,
   CustomerLedgerInput,

@@ -2,6 +2,7 @@
 
 import {
   buildDispatchLocationEvidenceByJob,
+  buildDispatchRouteExceptionSummary,
   buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligenceForDays,
   buildDispatchWeek,
@@ -227,6 +228,7 @@ function RouteIntelligencePanel({
   triage: DispatchRouteTriageFilter;
 }) {
   const summary = intelligence.summary;
+  const exceptionSummary = buildDispatchRouteExceptionSummary(intelligence.stops);
 
   return (
     <section className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
@@ -269,6 +271,32 @@ function RouteIntelligencePanel({
       <p className="mt-3 text-xs font-semibold text-blue-900">
         Showing {triageLabels[triage].toLowerCase()}.
       </p>
+      <div className="mt-3 rounded-md border border-blue-100 bg-white p-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-blue-900">
+          Exception review
+        </p>
+        <p className="mt-1 text-sm font-semibold text-blue-950">
+          {exceptionSummary.label}
+        </p>
+        {exceptionSummary.items.length > 0 ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {exceptionSummary.items.map((item) => (
+              <div
+                className="rounded-md border border-blue-100 bg-blue-50 p-2"
+                key={item.filter}
+              >
+                <p className="text-xs font-semibold text-blue-950">
+                  {item.label}
+                </p>
+                <p className="text-xs text-blue-900">
+                  {plural(item.count, "stop")}
+                </p>
+                <p className="mt-1 text-xs text-blue-800">{item.summary}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
       {summary.missing_location_count > 0 ||
       summary.unassigned_stops > 0 ||
       summary.missing_evidence_count > 0 ||

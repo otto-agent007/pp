@@ -44,6 +44,19 @@ export interface CustomerLedgerSummary {
   reviewCount: number;
 }
 
+export interface CustomerPortalHandoffReviewInput {
+  hasActivePortalLink: boolean;
+  hasContact: boolean;
+  ledgerSummary: CustomerLedgerSummary;
+  providerConfigured: boolean;
+}
+
+export interface CustomerPortalHandoffReview {
+  label: string;
+  mode_label: "Manual sharing" | "Webhook send available";
+  summary: string;
+}
+
 export type BillingPortalNextActionId =
   | "create_invoice"
   | "open_customer_ledger"
@@ -203,6 +216,55 @@ export function getCustomerLedgerSummary(
       reviewCount: 0,
     },
   );
+}
+
+export function getCustomerPortalHandoffReview(
+  input: CustomerPortalHandoffReviewInput,
+): CustomerPortalHandoffReview {
+  const missingContact = !input.hasContact;
+  const missingServiceProof = !input.ledgerSummary.latestServiceAt;
+  const needsAccountReview = input.ledgerSummary.reviewCount > 0;
+  const mode_label = input.providerConfigured
+    ? "Webhook send available"
+    : "Manual sharing";
+
+  if (missingContact || missingServiceProof) {
+    return {
+      label: "Review before portal handoff",
+      mode_label,
+      summary: [
+        missingContact ? "Add customer contact" : null,
+        missingServiceProof ? "finish service proof" : null,
+      ]
+        .filter(Boolean)
+        .join(" and ") + " before sharing.",
+    };
+  }
+
+  if (needsAccountReview) {
+    return {
+      label: "Review account before sharing",
+      mode_label,
+      summary: "Payment or invoice activity needs office review before portal handoff.",
+    };
+  }
+
+  if (!input.hasActivePortalLink) {
+    return {
+      label: "Generate portal link",
+      mode_label,
+      summary: "Service proof is ready; generate a portal link when the account is ready to share.",
+    };
+  }
+
+  return {
+    label: "Portal handoff ready",
+    mode_label,
+    summary:
+      input.ledgerSummary.openBalanceCents > 0
+        ? "Service proof and billing context are ready to share; open balance is visible in the customer portal."
+        : "Service proof and billing context are ready to share.",
+  };
 }
 
 export function buildBillingPortalNextActions(

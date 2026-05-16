@@ -495,6 +495,37 @@ describe("CustomerPortalLinks", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows portal handoff review with account context", () => {
+    vi.mocked(useCustomerPortalAccessTokens).mockReturnValue({
+      data: [token],
+      error: null,
+      isLoading: false,
+    } as never);
+
+    render(
+      <CustomerPortalLinks
+        accountSummary={{
+          latestInvoiceAt: "2026-05-06T09:00:00Z",
+          latestServiceAt: "2026-05-05T09:00:00Z",
+          openBalanceCents: 12500,
+          paidCents: 0,
+          reviewCount: 0,
+        }}
+        customerContact={{ email: "owner@example.com", phone: null }}
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByText("Portal handoff review")).toBeInTheDocument();
+    expect(screen.getByText("Portal handoff ready")).toBeInTheDocument();
+    expect(screen.getByText("Webhook send available")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Service proof and billing context are ready to share; open balance is visible in the customer portal.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("sends a fresh token from an active row with row-scoped feedback", async () => {
     const user = userEvent.setup();
     createMutateAsync.mockResolvedValueOnce({
