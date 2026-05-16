@@ -2,7 +2,9 @@ import type { Job } from "@pest-patrol/types";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
+  buildDispatchRouteIntelligenceForDays,
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
@@ -368,6 +370,117 @@ describe("job domain", () => {
         (stop) => stop.job.id,
       ),
     ).toEqual(["job-unassigned"]);
+  });
+
+  it("builds provider-free route group summaries by technician, day, status, and GPS evidence", () => {
+    const jobs = [
+      {
+        id: "job-ready",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "10 Pine Street",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 33.8121,
+          longitude: -117.919,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-unassigned-missing-coordinates",
+        customer_id: "customer-1",
+        location_id: "location-2",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-2",
+          customer_id: "customer-1",
+          address: "20 Oak Avenue",
+          nickname: null,
+          service_notes: null,
+          is_primary: false,
+          latitude: null,
+          longitude: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-missing-location",
+        customer_id: "customer-1",
+        location_id: "location-missing",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-07T10:00:00",
+        scheduled_end: null,
+        status: "in_progress",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] satisfies Job[];
+    const days = buildDispatchWeek(jobs, "2026-05-06");
+
+    const intelligence = buildDispatchRouteIntelligenceForDays(days, "all");
+    const groups = buildDispatchRouteGroupSummaries(days, {
+      evidenceByJob: {
+        "job-ready": { state: "captured" },
+      },
+      technicianLabels: {
+        "technician-1": "Testnician",
+      },
+    });
+
+    expect(intelligence.stops.map((stop) => stop.sequence)).toEqual([1, 2, 3]);
+    expect(intelligence.stops.map((stop) => stop.next_stop_job_id)).toEqual([
+      "job-unassigned-missing-coordinates",
+      "job-missing-location",
+      null,
+    ]);
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({
+      active_stops: 1,
+      completed_stops: 1,
+      gps_evidence_count: 1,
+      label: "Testnician",
+      missing_coordinates_count: 0,
+      missing_location_count: 1,
+      technician_id: "technician-1",
+      total_stops: 2,
+      unassigned_stops: 0,
+    });
+    expect(groups[0].days.map((day) => day.date)).toEqual([
+      "2026-05-06",
+      "2026-05-07",
+    ]);
+    expect(groups[1]).toMatchObject({
+      active_stops: 1,
+      gps_evidence_count: 0,
+      label: "Unassigned",
+      missing_coordinates_count: 1,
+      missing_location_count: 0,
+      technician_id: null,
+      total_stops: 1,
+      unassigned_stops: 1,
+    });
   });
 
   it("builds the mobile daily job list for assigned jobs", () => {

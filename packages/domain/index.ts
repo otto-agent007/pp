@@ -243,7 +243,9 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
+  buildDispatchRouteIntelligenceForDays,
   buildMobileDailyRouteTimeline,
   buildMobileDailyJobs,
   buildDispatchWeek,
@@ -265,6 +267,10 @@ export {
   validateJobInput,
 } from "./jobs";
 export type {
+  DispatchRouteEvidenceIndex,
+  DispatchRouteGroupDaySummary,
+  DispatchRouteGroupSummary,
+  DispatchRouteGroupSummaryOptions,
   DispatchRouteIntelligence,
   DispatchRouteIntelligenceSummary,
   DispatchRouteLocationState,

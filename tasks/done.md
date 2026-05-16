@@ -1,5 +1,12 @@
 # Done
 
+## Provider-Free Dispatch Grouping V1
+
+- Added domain-backed route intelligence aggregation across selected dispatch days
+- Added provider-free route group summaries by technician, day, status, location readiness, unassigned count, and GPS evidence
+- Rendered grouped dispatch summaries without adding map SDKs, provider keys, routing optimization, background tracking, migrations, or production mutations
+- Verified with focused domain and dispatch UI tests
+
 ## Authenticated Preview Smoke Resume V1
 
 - Reran local and protected-preview demo smoke preflights without seed/reset writes
