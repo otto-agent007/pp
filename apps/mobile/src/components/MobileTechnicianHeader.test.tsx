@@ -92,6 +92,36 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   return [];
 }
 
+function collectText(node: ReactNode): string[] {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return [];
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return [String(node)];
+  }
+
+  if (Array.isArray(node)) {
+    return node.flatMap(collectText);
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement;
+    const rendered =
+      typeof element.type === "function"
+        ? collectText(
+            (element.type as (props: typeof element.props) => ReactNode)(
+              element.props,
+            ),
+          )
+        : [];
+
+    return [...collectText(element.props.children), ...rendered];
+  }
+
+  return [];
+}
+
 function flattenStyles(style: unknown): Record<string, unknown>[] {
   if (!style) {
     return [];
@@ -113,7 +143,6 @@ describe("MobileTechnicianHeader", () => {
     const element = (
       <MobileTechnicianHeader
         assignedJobCount={3}
-        onRefreshJobs={() => undefined}
         onSignOut={() => undefined}
         profileId="technician-1"
       />
@@ -136,5 +165,25 @@ describe("MobileTechnicianHeader", () => {
         color: mobileRouteShellPalette.accentText,
       }),
     );
+  });
+
+  it("uses production readiness copy without a duplicate refresh action", () => {
+    const element = (
+      <MobileTechnicianHeader
+        assignedJobCount={0}
+        onSignOut={() => undefined}
+        profileId="technician-1"
+      />
+    );
+    const text = collectText(element);
+
+    expect(text).toContain("No route today");
+    expect(text).toContain("No stops assigned");
+    expect(text).toContain("Check with dispatch if you expected scheduled stops.");
+    expect(text).not.toContain("Demo next");
+    expect(text).not.toContain(
+      "Open the first assigned job, capture treatment notes, then explain queued sync.",
+    );
+    expect(text.filter((value) => value === "Refresh")).toHaveLength(0);
   });
 });

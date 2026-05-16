@@ -12,7 +12,6 @@ import { useLanguage } from "../store/useLanguage";
 interface MobileTechnicianHeaderProps {
   assignedJobCount: number;
   error?: string | null;
-  onRefreshJobs?: () => void;
   onSignOut?: () => void;
   profileId?: string | null;
 }
@@ -20,7 +19,6 @@ interface MobileTechnicianHeaderProps {
 export function MobileTechnicianHeader({
   assignedJobCount,
   error,
-  onRefreshJobs,
   onSignOut,
   profileId,
 }: MobileTechnicianHeaderProps) {
@@ -152,25 +150,6 @@ export function MobileTechnicianHeader({
           >
             {readiness.assignedJobsLabel}
           </Text>
-          {onRefreshJobs ? (
-            <Pressable
-              onPress={onRefreshJobs}
-              style={{
-                ...mobileRouteShellStyles.control,
-                backgroundColor: mobileRouteShellPalette.rail,
-              }}
-            >
-              <Text
-                style={{
-                  color: mobileRouteShellPalette.inverseText,
-                  fontSize: 13,
-                  fontWeight: "800",
-                }}
-              >
-                Refresh
-              </Text>
-            </Pressable>
-          ) : null}
         </View>
 
         <Text
@@ -181,7 +160,7 @@ export function MobileTechnicianHeader({
             marginTop: 12,
           }}
         >
-          {readiness.demoNextLabel}
+          {readiness.routeFocusLabel}
         </Text>
         <Text
           style={{
@@ -191,7 +170,7 @@ export function MobileTechnicianHeader({
             marginTop: 4,
           }}
         >
-          {readiness.demoNextSummary}
+          {readiness.routeFocusSummary}
         </Text>
       </View>
 

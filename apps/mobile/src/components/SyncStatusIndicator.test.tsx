@@ -109,6 +109,36 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   return [];
 }
 
+function collectText(node: ReactNode): string[] {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return [];
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return [String(node)];
+  }
+
+  if (Array.isArray(node)) {
+    return node.flatMap(collectText);
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement;
+    const rendered =
+      typeof element.type === "function"
+        ? collectText(
+            (element.type as (props: typeof element.props) => ReactNode)(
+              element.props,
+            ),
+          )
+        : [];
+
+    return [...collectText(element.props.children), ...rendered];
+  }
+
+  return [];
+}
+
 function flattenStyles(style: unknown): Record<string, unknown>[] {
   if (!style) {
     return [];
@@ -126,6 +156,51 @@ function flattenStyles(style: unknown): Record<string, unknown>[] {
 }
 
 describe("SyncStatusIndicator", () => {
+  it("uses compact sync detail copy and suppresses zero-value counts", () => {
+    offlineQueueState.items = [];
+    syncStatusState.activity = "idle";
+    syncStatusState.lastError = null;
+    syncStatusState.lastSyncAt = null;
+    syncStatusState.networkStatus = "online";
+
+    const text = collectText(<SyncStatusIndicator />).join("");
+
+    expect(text).toContain("No local changes");
+    expect(text).toContain("Nothing waiting to sync.");
+    expect(text).toContain("Not synced");
+    expect(text).not.toContain("0 pending");
+    expect(text).not.toContain("0 failed");
+    expect(text).not.toContain("0 synced");
+  });
+
+  it("shows only non-zero sync summary counts", () => {
+    offlineQueueState.items = [
+      {
+        action: "job_status_update",
+        attempts: 0,
+        created_at: "2026-05-07T10:00:00.000Z",
+        id: "queue-1",
+        last_error: null,
+        next_retry_at: null,
+        payload: { job_id: "job-1", status: "completed" },
+        status: "queued",
+        updated_at: "2026-05-07T10:00:00.000Z",
+      },
+    ];
+    syncStatusState.activity = "idle";
+    syncStatusState.lastError = null;
+    syncStatusState.lastSyncAt = null;
+    syncStatusState.networkStatus = "online";
+
+    const text = collectText(<SyncStatusIndicator />).join("");
+
+    expect(text).toContain("1 pending");
+    expect(text).not.toContain("0 failed");
+    expect(text).not.toContain("0 synced");
+
+    offlineQueueState.items = [];
+  });
+
   it("uses shared sync-failure tone when the route shell needs attention", () => {
     syncStatusState.lastError = "Network failed";
 

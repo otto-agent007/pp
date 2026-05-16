@@ -86,16 +86,16 @@ export function SyncStatusIndicator() {
               : "No local changes";
   const detailLabel =
     activity === "syncing"
-      ? "Sending queued updates. Keep the app open until this finishes."
+      ? "Sending saved work to the server. Stay in the app."
       : isOffline
-        ? "Work is saved on this device and will stay pending until the connection returns."
+        ? "Work is saved here. Will sync when back online."
         : hasFailures
-          ? "Failed items remain visible for review. Use sync after fixing the issue."
+          ? "Some items failed. Review and try sync again."
           : hasPendingItems
-            ? "Queued updates are ready for manual sync."
+            ? "Saved work is ready to sync."
             : hasSyncedItems
-              ? "All visible completed updates are synced. Clear synced when acknowledged."
-              : "No local work is waiting to sync.";
+              ? "All work synced. Tap Clear when done reviewing."
+              : "Nothing waiting to sync.";
   const manualSyncLabel =
     activity === "syncing"
       ? "Sync in progress"
@@ -133,22 +133,28 @@ export function SyncStatusIndicator() {
         </Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
-          {summary.pending} pending
-        </Text>
-        <Text
-          style={{
-            color: hasFailures
-              ? mobileRouteShellPalette.signalDanger
-              : mobileRouteShellPalette.secondaryText,
-            fontSize: 13,
-          }}
-        >
-          {summary.failed} failed
-        </Text>
-        <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
-          {summary.synced} synced
-        </Text>
+        {summary.pending > 0 ? (
+          <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
+            {summary.pending} pending
+          </Text>
+        ) : null}
+        {summary.failed > 0 ? (
+          <Text
+            style={{
+              color: hasFailures
+                ? mobileRouteShellPalette.signalDanger
+                : mobileRouteShellPalette.secondaryText,
+              fontSize: 13,
+            }}
+          >
+            {summary.failed} failed
+          </Text>
+        ) : null}
+        {summary.synced > 0 ? (
+          <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
+            {summary.synced} synced
+          </Text>
+        ) : null}
         <Text style={{ color: mobileRouteShellPalette.mutedText, fontSize: 13 }}>
           {formatLastSync(lastSyncAt)}
         </Text>

@@ -234,7 +234,6 @@ export default function MobileHomeScreen() {
       <MobileTechnicianHeader
         assignedJobCount={routeJobCount}
         error={error}
-        onRefreshJobs={() => void load()}
         onSignOut={() => void handleSignOut()}
         profileId={profile?.id}
       />
@@ -337,6 +336,24 @@ export default function MobileHomeScreen() {
             >
               {jobsError}
             </Text>
+            <Pressable
+              onPress={() => void load()}
+              style={{
+                ...mobileRouteShellStyles.control,
+                backgroundColor: mobileRouteShellPalette.rail,
+                marginTop: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color: mobileRouteShellPalette.inverseText,
+                  fontSize: 13,
+                  fontWeight: "800",
+                }}
+              >
+                Retry
+              </Text>
+            </Pressable>
           </View>
         ) : null}
 
