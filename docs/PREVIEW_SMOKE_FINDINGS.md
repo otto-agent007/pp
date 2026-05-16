@@ -2,6 +2,28 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-16 Authenticated Preview Smoke Resume
+
+Status: read-only smoke preflight resumed; local and preview workflow smoke remain blocked on approved environment and operator access inputs.
+
+Read-only checks:
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url <latest-preview-url>`
+- Result: blocked safely before seed/reset or browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Launch gate:
+- Local smoke needs approved local Supabase env names loaded before any seed/reset or browser workflow check.
+- Preview smoke needs approved preview Supabase env names, an operator-approved protected-preview browser access path, and an admin or dispatcher sign-in path.
+- No seed/reset writes, provider dashboard mutations, environment mutations, migrations, raw portal URLs, credentials, or production data actions were performed.
+
+Next action:
+- Continue with provider-free product slices that reduce demo risk while operator access remains unavailable.
+
 ## 2026-05-14 Preview Launch Baseline And Preflight
 
 Status: latest preview is Ready and app-shell reachable; authenticated workflow smoke remains operator-blocked.

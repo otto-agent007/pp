@@ -1,5 +1,11 @@
 # Done
 
+## Authenticated Preview Smoke Resume V1
+
+- Reran local and protected-preview demo smoke preflights without seed/reset writes
+- Recorded sanitized smoke findings for the missing env/setup and operator-access blockers
+- Kept credentials, protected preview access values, portal raw tokens, provider payloads, migrations, dashboard mutations, and production data actions out of scope
+
 ## Brand Asset Intake V1
 
 - Added shared asset buckets under `packages/assets/` for brand, icons, status, map, and empty-state assets
