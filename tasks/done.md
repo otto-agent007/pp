@@ -1,5 +1,12 @@
 # Done
 
+## Mobile Capture-Control Tokenization V1
+
+- Added shared route-shell capture-control token styles for mobile form sections, inputs, feedback text, previews, and buttons
+- Applied the token style to status, geofence, treatment, chemical, photo, and signature controls
+- Preserved existing mobile stores, validation, foreground capture behavior, and queue-first writes
+- Verified with focused mobile style/control tests, mobile field-flow tests, mobile typecheck, and `git diff --check`
+
 ## Provider-Free Dispatch Grouping V1
 
 - Added domain-backed route intelligence aggregation across selected dispatch days

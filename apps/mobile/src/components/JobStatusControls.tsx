@@ -8,6 +8,11 @@ import type { Job, JobStatus } from "@pest-patrol/types";
 import { useAssignedJobs } from "../store/useAssignedJobs";
 import { useLanguage } from "../store/useLanguage";
 import { useOfflineQueue } from "../store/useOfflineQueue";
+import {
+  mobileCaptureControlStyles,
+  mobileRouteShellPalette,
+  mobileRouteShellTone,
+} from "../styles/routeShellStyles";
 
 interface JobStatusControlsProps {
   job: Job;
@@ -37,13 +42,9 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
   return (
     <View
       style={{
-        borderColor: "#E5E7EB",
-        borderTopWidth: 1,
+        ...mobileCaptureControlStyles.section,
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 8,
-        marginTop: 14,
-        paddingTop: 14,
       }}
     >
       {mobileStatuses.map((status) => {
@@ -60,22 +61,22 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
               }
             }}
             style={{
-              alignItems: "center",
-              backgroundColor: isActive ? "#1E3A8A" : "#FFFFFF",
-              borderColor: isActive ? "#1E3A8A" : "#D1D5DB",
-              borderRadius: 8,
+              ...(isActive
+                ? mobileCaptureControlStyles.primaryButton
+                : mobileCaptureControlStyles.secondaryButton),
+              borderColor: isActive
+                ? mobileRouteShellPalette.rail
+                : mobileRouteShellPalette.borderStrong,
               borderWidth: 1,
-              justifyContent: "center",
               minHeight: 40,
-              paddingHorizontal: 10,
             }}
           >
             <Text
-              style={{
-                color: isActive ? "#FFFFFF" : "#111827",
-                fontSize: 12,
-                fontWeight: "800",
-              }}
+              style={
+                isActive
+                  ? mobileCaptureControlStyles.primaryButtonText
+                  : mobileCaptureControlStyles.secondaryButtonText
+              }
             >
               {isGuardedCompletion
                 ? copy.fieldStatus.reviewCompletion
@@ -88,34 +89,21 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
       {shouldWarnBeforeCompletion ? (
         <View
           style={{
-            backgroundColor: "#FFFBEB",
-            borderColor: "#FDE68A",
-            borderRadius: 8,
-            borderWidth: 1,
-            flexBasis: "100%",
-            gap: 8,
-            padding: 12,
+            ...mobileCaptureControlStyles.warningCard,
+            ...mobileRouteShellTone.visit.pending,
           }}
         >
-          <Text style={{ color: "#92400E", fontSize: 13, fontWeight: "800" }}>
+          <Text style={mobileCaptureControlStyles.warningTitle}>
             {copy.fieldStatus.reviewBeforeCompleting}
           </Text>
-          <Text style={{ color: "#78350F", fontSize: 13, lineHeight: 18 }}>
+          <Text style={mobileCaptureControlStyles.warningBody}>
             {completionGuard.summary}
           </Text>
           <Pressable
             onPress={() => queueStatusUpdate(job.id, "completed")}
-            style={{
-              alignItems: "center",
-              alignSelf: "flex-start",
-              backgroundColor: "#92400E",
-              borderRadius: 8,
-              justifyContent: "center",
-              minHeight: 38,
-              paddingHorizontal: 12,
-            }}
+            style={mobileCaptureControlStyles.warningButton}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
+            <Text style={mobileCaptureControlStyles.primaryButtonText}>
               {copy.fieldStatus.completeAnyway}
             </Text>
           </Pressable>

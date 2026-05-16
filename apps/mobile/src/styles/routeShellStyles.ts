@@ -72,6 +72,109 @@ export const mobileRouteShellStyles = {
   transitionMs: duration.base,
 } as const;
 
+export const mobileCaptureControlStyles = {
+  disabledButton: {
+    alignItems: "center",
+    backgroundColor: mobileRouteShellPalette.borderStrong,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing[3],
+  },
+  errorText: {
+    color: mobileRouteShellPalette.signalDanger,
+    fontSize: fontSize.sm,
+  },
+  fieldLabel: {
+    color: mobileRouteShellPalette.secondaryText,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  input: {
+    backgroundColor: mobileRouteShellPalette.surface,
+    borderColor: mobileRouteShellPalette.borderStrong,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    color: mobileRouteShellPalette.primaryText,
+    minHeight: 44,
+    paddingHorizontal: spacing[3],
+  },
+  inputMultiline: {
+    minHeight: 72,
+    paddingVertical: spacing[3],
+    textAlignVertical: "top",
+  },
+  primaryButton: {
+    ...mobileRouteShellStyles.control,
+    backgroundColor: mobileRouteShellPalette.rail,
+  },
+  primaryButtonText: {
+    color: mobileRouteShellPalette.inverseText,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  preview: {
+    backgroundColor: mobileRouteShellPalette.surfaceSubtle,
+    borderColor: mobileRouteShellPalette.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  secondaryButton: {
+    ...mobileRouteShellStyles.control,
+    backgroundColor: mobileRouteShellPalette.surface,
+    borderColor: mobileRouteShellPalette.borderStrong,
+    borderWidth: 1,
+  },
+  secondaryButtonText: {
+    color: mobileRouteShellPalette.primaryText,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  section: {
+    borderColor: mobileRouteShellPalette.border,
+    borderTopWidth: 1,
+    gap: spacing[3],
+    marginTop: spacing[3],
+    paddingTop: spacing[3],
+  },
+  successText: {
+    color: mobileRouteShellPalette.signalSynced,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  title: {
+    color: mobileRouteShellPalette.primaryText,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+  },
+  warningBody: {
+    color: mobileRouteShellPalette.secondaryText,
+    fontSize: fontSize.sm,
+    lineHeight: 18,
+  },
+  warningButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: mobileRouteShellPalette.rail,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 38,
+    paddingHorizontal: spacing[3],
+  },
+  warningCard: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexBasis: "100%",
+    gap: spacing[2],
+    padding: spacing[3],
+  },
+  warningTitle: {
+    color: mobileRouteShellPalette.primaryText,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+} as const;
+
 export const mobileRouteShellTone = {
   sync: {
     failed: toneStyle(status.sync.failed),

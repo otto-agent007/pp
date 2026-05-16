@@ -5,6 +5,10 @@ import type { FormField, FormValue } from "@pest-patrol/types";
 
 import { useFormDrafts } from "../store/useFormDrafts";
 import { useLanguage } from "../store/useLanguage";
+import {
+  mobileCaptureControlStyles,
+  mobileRouteShellPalette,
+} from "../styles/routeShellStyles";
 
 interface JobTreatmentFormProps {
   jobId: string;
@@ -30,21 +34,25 @@ function FieldInput({
       <Pressable
         onPress={() => onChange(!checked)}
         style={{
+          ...mobileCaptureControlStyles.secondaryButton,
           alignItems: "center",
-          borderColor: checked ? "#1E3A8A" : "#D1D5DB",
-          borderRadius: 8,
-          borderWidth: 1,
+          borderColor: checked
+            ? mobileRouteShellPalette.rail
+            : mobileRouteShellPalette.borderStrong,
           flexDirection: "row",
           gap: 10,
-          minHeight: 44,
-          paddingHorizontal: 12,
+          justifyContent: "flex-start",
         }}
       >
         <View
           style={{
             alignItems: "center",
-            backgroundColor: checked ? "#1E3A8A" : "#FFFFFF",
-            borderColor: checked ? "#1E3A8A" : "#9CA3AF",
+            backgroundColor: checked
+              ? mobileRouteShellPalette.rail
+              : mobileRouteShellPalette.surface,
+            borderColor: checked
+              ? mobileRouteShellPalette.rail
+              : mobileRouteShellPalette.borderStrong,
             borderRadius: 4,
             borderWidth: 1,
             height: 20,
@@ -55,7 +63,7 @@ function FieldInput({
           {checked ? (
             <View
               style={{
-                backgroundColor: "#FFFFFF",
+                backgroundColor: mobileRouteShellPalette.inverseText,
                 borderRadius: 3,
                 height: 10,
                 width: 10,
@@ -63,7 +71,7 @@ function FieldInput({
             />
           ) : null}
         </View>
-        <Text style={{ color: "#111827", fontSize: 14, fontWeight: "700" }}>
+        <Text style={mobileCaptureControlStyles.secondaryButtonText}>
           {field.label}
         </Text>
       </Pressable>
@@ -77,15 +85,10 @@ function FieldInput({
       onChangeText={(nextValue) => onChange(nextValue)}
       placeholder={field.placeholder ?? field.label}
       style={{
-        backgroundColor: "#FFFFFF",
-        borderColor: "#D1D5DB",
-        borderRadius: 8,
-        borderWidth: 1,
-        color: "#111827",
-        minHeight: field.type === "textarea" ? 72 : 44,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        textAlignVertical: "top",
+        ...mobileCaptureControlStyles.input,
+        ...(field.type === "textarea"
+          ? mobileCaptureControlStyles.inputMultiline
+          : {}),
       }}
       value={fieldValueToText(value)}
     />
@@ -117,20 +120,12 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
   }
 
   return (
-    <View
-      style={{
-        borderColor: "#E5E7EB",
-        borderTopWidth: 1,
-        gap: 10,
-        marginTop: 14,
-        paddingTop: 14,
-      }}
-    >
+    <View style={mobileCaptureControlStyles.section}>
       <View>
-        <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
+        <Text style={mobileCaptureControlStyles.title}>
           {copy.treatment.title}
         </Text>
-        <Text style={{ color: "#6B7280", fontSize: 13, marginTop: 4 }}>
+        <Text style={mobileCaptureControlStyles.warningBody}>
           {copy.treatment.description}
         </Text>
       </View>
@@ -138,7 +133,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       {template.schema.fields.map((field) => (
         <View key={field.id} style={{ gap: 6 }}>
           {field.type === "boolean" ? null : (
-            <Text style={{ color: "#374151", fontSize: 13, fontWeight: "700" }}>
+            <Text style={mobileCaptureControlStyles.fieldLabel}>
               {field.label}
               {field.required ? " *" : ""}
             </Text>
@@ -155,25 +150,19 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       ))}
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
       ) : null}
       {draft.queued_at ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={mobileCaptureControlStyles.successText}>
           {copy.common.queuedForSync}
         </Text>
       ) : null}
 
       <Pressable
         onPress={handleSubmit}
-        style={{
-          alignItems: "center",
-          backgroundColor: "#111827",
-          borderRadius: 8,
-          justifyContent: "center",
-          minHeight: 44,
-        }}
+        style={mobileCaptureControlStyles.primaryButton}
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+        <Text style={mobileCaptureControlStyles.primaryButtonText}>
           {copy.treatment.queueButton}
         </Text>
       </Pressable>

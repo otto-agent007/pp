@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobPhotos } from "../store/useJobPhotos";
+import { mobileCaptureControlStyles } from "../styles/routeShellStyles";
 
 interface JobPhotoUploadFormProps {
   jobId: string;
@@ -75,19 +76,9 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
   }
 
   return (
-    <View
-      style={{
-        borderColor: "#E5E7EB",
-        borderTopWidth: 1,
-        gap: 10,
-        marginTop: 14,
-        paddingTop: 14,
-      }}
-    >
-      <Text style={{ color: "#111827", fontSize: 15, fontWeight: "800" }}>
-        {copy.photos.title}
-      </Text>
-      <Text style={{ color: "#6B7280", fontSize: 13 }}>
+    <View style={mobileCaptureControlStyles.section}>
+      <Text style={mobileCaptureControlStyles.title}>{copy.photos.title}</Text>
+      <Text style={mobileCaptureControlStyles.warningBody}>
         {copy.photos.description}
       </Text>
 
@@ -95,8 +86,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
         <Image
           source={{ uri: lastPhoto.local_uri }}
           style={{
-            backgroundColor: "#F3F4F6",
-            borderRadius: 8,
+            ...mobileCaptureControlStyles.preview,
             height: 140,
             width: "100%",
           }}
@@ -109,23 +99,15 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
           setError(null);
         }}
         placeholder={copy.photos.descriptionPlaceholder}
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#D1D5DB",
-          borderRadius: 8,
-          borderWidth: 1,
-          color: "#111827",
-          minHeight: 44,
-          paddingHorizontal: 12,
-        }}
+        style={mobileCaptureControlStyles.input}
         value={draft.description}
       />
 
       {error ? (
-        <Text style={{ color: "#B91C1C", fontSize: 13 }}>{error}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
       ) : null}
       {draft.queuedAt ? (
-        <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "700" }}>
+        <Text style={mobileCaptureControlStyles.successText}>
           {copy.common.queuedForSync}
         </Text>
       ) : null}
@@ -134,31 +116,22 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
         <Pressable
           onPress={() => void handleCamera()}
           style={{
-            alignItems: "center",
-            backgroundColor: "#111827",
-            borderRadius: 8,
+            ...mobileCaptureControlStyles.primaryButton,
             flex: 1,
-            justifyContent: "center",
-            minHeight: 44,
           }}
         >
-          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+          <Text style={mobileCaptureControlStyles.primaryButtonText}>
             {copy.photos.camera}
           </Text>
         </Pressable>
         <Pressable
           onPress={() => void handleLibrary()}
           style={{
-            alignItems: "center",
-            borderColor: "#D1D5DB",
-            borderRadius: 8,
-            borderWidth: 1,
+            ...mobileCaptureControlStyles.secondaryButton,
             flex: 1,
-            justifyContent: "center",
-            minHeight: 44,
           }}
         >
-          <Text style={{ color: "#111827", fontSize: 14, fontWeight: "800" }}>
+          <Text style={mobileCaptureControlStyles.secondaryButtonText}>
             {copy.photos.library}
           </Text>
         </Pressable>

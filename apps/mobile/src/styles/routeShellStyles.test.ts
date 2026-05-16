@@ -8,6 +8,7 @@ import {
 } from "@pest-patrol/ui-tokens";
 
 import {
+  mobileCaptureControlStyles,
   mobileRouteShellPalette,
   mobileRouteShellStyles,
   mobileRouteShellTone,
@@ -36,5 +37,23 @@ describe("mobile route shell styles", () => {
     expect(mobileRouteShellTone.visit.done.backgroundColor).toBe(status.sync.synced.bg);
     expect(mobileRouteShellTone.visit.pending.backgroundColor).toBe(status.sync.retrying.bg);
     expect(mobileRouteShellTone.visit.missing.backgroundColor).toBe(status.alert.neutral.bg);
+  });
+
+  it("exposes shared capture-control styles for mobile field controls", () => {
+    expect(mobileCaptureControlStyles.section.borderColor).toBe(
+      mobileRouteShellPalette.border,
+    );
+    expect(mobileCaptureControlStyles.input.borderColor).toBe(
+      mobileRouteShellPalette.borderStrong,
+    );
+    expect(mobileCaptureControlStyles.primaryButton.backgroundColor).toBe(
+      mobileRouteShellPalette.rail,
+    );
+    expect(mobileCaptureControlStyles.secondaryButton.borderColor).toBe(
+      mobileRouteShellPalette.borderStrong,
+    );
+    expect(mobileCaptureControlStyles.successText.color).toBe(
+      mobileRouteShellPalette.signalSynced,
+    );
   });
 });

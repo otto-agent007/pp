@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Job, OfflineQueueItem } from "@pest-patrol/types";
 
+import {
+  mobileCaptureControlStyles,
+  mobileRouteShellPalette,
+  mobileRouteShellTone,
+} from "../styles/routeShellStyles";
 import { JobStatusControls } from "./JobStatusControls";
 
 const queueStatusUpdate = vi.hoisted(() => vi.fn());
@@ -49,14 +54,16 @@ vi.mock("react-native", async () => {
     Pressable: ({
       children,
       onPress,
+      style,
     }: {
       children?: ReactNode;
       onPress?: () => void;
-    }) => ReactModule.createElement("Pressable", { onPress }, children),
-    Text: ({ children }: { children?: ReactNode }) =>
-      ReactModule.createElement("Text", null, children),
-    View: ({ children }: { children?: ReactNode }) =>
-      ReactModule.createElement("View", null, children),
+      style?: unknown;
+    }) => ReactModule.createElement("Pressable", { onPress, style }, children),
+    Text: ({ children, style }: { children?: ReactNode; style?: unknown }) =>
+      ReactModule.createElement("Text", { style }, children),
+    View: ({ children, style }: { children?: ReactNode; style?: unknown }) =>
+      ReactModule.createElement("View", { style }, children),
   };
 });
 
@@ -135,6 +142,57 @@ function collectPressables(node: ReactNode): React.ReactElement[] {
   return [];
 }
 
+function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return [];
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return [];
+  }
+
+  if (Array.isArray(node)) {
+    return node.flatMap((child) => collectElementsByType(child, type));
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement;
+    const rendered =
+      typeof element.type === "function"
+        ? collectElementsByType(
+            (element.type as (props: typeof element.props) => ReactNode)(
+              element.props,
+            ),
+            type,
+          )
+        : [];
+
+    return [
+      ...(element.type === type ? [element] : []),
+      ...collectElementsByType(element.props.children, type),
+      ...rendered,
+    ];
+  }
+
+  return [];
+}
+
+function flattenStyles(style: unknown): Record<string, unknown>[] {
+  if (!style) {
+    return [];
+  }
+
+  if (Array.isArray(style)) {
+    return style.flatMap(flattenStyles);
+  }
+
+  if (typeof style === "object") {
+    return [style as Record<string, unknown>];
+  }
+
+  return [];
+}
+
 describe("JobStatusControls", () => {
   afterEach(() => {
     language.value = "en";
@@ -198,6 +256,37 @@ describe("JobStatusControls", () => {
     expect(text).toContain("En camino");
     expect(text).toContain("Revisar antes de completar");
     expect(text).toContain("Completar de todos modos");
+  });
+
+  it("uses shared route-shell capture control tokens", () => {
+    queueStatusUpdate.mockReset();
+    queueItems.value = [];
+
+    const element = <JobStatusControls job={job} />;
+    const viewStyles = collectElementsByType(element, "View").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+    const pressableStyles = collectElementsByType(element, "Pressable").flatMap(
+      (item) => flattenStyles(item.props.style),
+    );
+    const textStyles = collectElementsByType(element, "Text").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+
+    expect(viewStyles).toContainEqual(
+      expect.objectContaining(mobileCaptureControlStyles.section),
+    );
+    expect(viewStyles).toContainEqual(
+      expect.objectContaining(mobileRouteShellTone.visit.pending),
+    );
+    expect(pressableStyles).toContainEqual(
+      expect.objectContaining({
+        backgroundColor: mobileRouteShellPalette.rail,
+      }),
+    );
+    expect(textStyles).toContainEqual(
+      expect.objectContaining(mobileCaptureControlStyles.warningTitle),
+    );
   });
 });
 
