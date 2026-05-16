@@ -1,5 +1,12 @@
 # Done
 
+## Closeout Proof Handoff Polish V1
+
+- Added a shared office proof-handoff summary for readiness, missing-capture guidance, and sanitized GPS evidence
+- Updated `/closeouts` to show proof-review state, arrival/departure evidence, and portal handoff copy from domain helpers
+- Strengthened customer portal proof copy while keeping exact GPS, storage paths, chemical internals, technician details, provider payloads, and admin notes out of customer surfaces
+- Verified with focused domain and closeout/portal UI tests, focused typechecks, and `git diff --check`
+
 ## Mobile Capture-Control Tokenization V1
 
 - Added shared route-shell capture-control token styles for mobile form sections, inputs, feedback text, previews, and buttons

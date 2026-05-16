@@ -269,11 +269,16 @@ describe("CloseoutsClient", () => {
     expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
     expect(screen.getByText("Total completed")).toBeInTheDocument();
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
-    expect(screen.getByText("Arrival GPS captured")).toBeInTheDocument();
-    expect(screen.getByText("Departure GPS captured")).toBeInTheDocument();
+    expect(screen.getByText("Ready for office proof review")).toBeInTheDocument();
+    expect(
+      screen.getByText("Arrival and departure GPS synced for office review"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Portal handoff ready after office review"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Customer portal proof stays sanitized and does not expose exact technician GPS.",
+        "Customer portal can show reviewed service forms, photos, signatures, service date, and location; exact technician GPS stays private.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -287,9 +292,7 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
     expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
     expect(
-      screen.getByText(
-        "Forms, chemicals, photos, and signatures captured.",
-      ),
+      screen.getByText("Treatment form, chemical log, photo, and signature are captured."),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create invoice" })).toHaveAttribute(
       "href",
@@ -392,8 +395,13 @@ describe("CloseoutsClient", () => {
 
     expect(screen.getAllByText("Needs field captures").length).toBeGreaterThan(0);
     expect(
-      screen.getByText(
+      screen.getAllByText(
         "Missing treatment form, chemical log, photo, and signature before billing.",
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        "Ask the technician to sync treatment form, chemical log, photo, and signature before billing or portal handoff.",
       ),
     ).toBeInTheDocument();
     expect(

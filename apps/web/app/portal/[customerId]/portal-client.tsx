@@ -400,7 +400,10 @@ function CloseoutCard({
             </p>
             <p className="mt-1 text-sm text-gray-700">{proof.summary_label}</p>
             <p className="mt-1 text-xs font-medium text-gray-600">
-              Exact technician GPS is not shown in the customer portal.
+              {proof.privacy_label}
+            </p>
+            <p className="mt-2 text-sm font-semibold text-gray-800">
+              {proof.next_step_label}
             </p>
           </div>
           <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold uppercase text-emerald-800">

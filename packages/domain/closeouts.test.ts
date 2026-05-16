@@ -16,6 +16,7 @@ import {
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
   getCustomerPortalProofHandoff,
+  getCloseoutProofHandoffSummary,
   buildCustomerPortalTimeline,
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
@@ -280,6 +281,59 @@ describe("closeouts domain", () => {
     });
   });
 
+  it("summarizes office proof handoff with sanitized GPS evidence", () => {
+    const readiness = {
+      billingReady: false,
+      label: "Needs field captures",
+      missing: ["Treatment form", "Chemical log", "Signature"],
+      summary:
+        "Photo captured. Missing treatment form, chemical log, and signature before billing.",
+    };
+    const handoff = getCloseoutProofHandoffSummary({
+      evidence: {
+        job_id: "job-1",
+        latest_arrival: {
+          accuracy_m: 12,
+          captured_at: "2026-05-06T09:05:00.000Z",
+          distance_m: 80,
+          event_type: "arrival",
+          latitude: 33.8121,
+          longitude: -117.919,
+          map_url: "https://maps.example/private",
+          radius_label: "Within service radius (80 m)",
+          radius_state: "inside",
+          within_radius: true,
+        },
+        latest_departure: null,
+        latest_event: null,
+        state: "captured",
+        summary_label: "Latest GPS: Arrival",
+      },
+      readiness,
+    });
+    const serialized = JSON.stringify(handoff);
+
+    expect(handoff).toEqual({
+      exact_coordinates_disclosed: false,
+      gps_items: [
+        "Arrival GPS synced for service-radius review.",
+        "Departure GPS still needs a synced capture.",
+      ],
+      gps_label: "Arrival GPS synced; departure GPS missing",
+      missing_capture_guidance:
+        "Ask the technician to sync treatment form, chemical log, and signature before billing or portal handoff.",
+      portal_handoff_label: "Portal proof remains in progress",
+      portal_handoff_summary:
+        "Customer portal proof can be shared after required captures are reviewed; exact technician GPS stays private.",
+      proof_label: "Needs proof review",
+      proof_summary:
+        "Photo captured. Missing treatment form, chemical log, and signature before billing.",
+    });
+    expect(serialized).not.toContain("33.8121");
+    expect(serialized).not.toContain("-117.919");
+    expect(serialized).not.toContain("maps.example");
+  });
+
   it("builds customer portal closeouts without admin-only data", () => {
     const closeouts = buildCustomerPortalCloseouts({
       jobs: [
@@ -386,8 +440,12 @@ describe("closeouts domain", () => {
       job_id: "job-1",
       location_label: "Main house",
       missing_labels: ["service form", "signature"],
+      next_step_label: "Our office is finishing proof review.",
+      privacy_label:
+        "Technician GPS details stay private and are not shown in this portal.",
       service_date_label: "May 6, 2026",
-      summary_label: "Missing service form and signature.",
+      summary_label:
+        "Proof of service is in progress. Missing service form and signature.",
     });
     expect(serialized).not.toContain("latitude");
     expect(serialized).not.toContain("longitude");

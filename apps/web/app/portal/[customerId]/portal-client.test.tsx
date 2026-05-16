@@ -150,11 +150,16 @@ describe("CustomerPortalClient", () => {
     expect(screen.getByText("Invoice open")).toBeInTheDocument();
     expect(screen.getByText("Proof of service")).toBeInTheDocument();
     expect(
-      screen.getByText("Service form, photo, and signature are available."),
+      screen.getByText(
+        "Proof of service is ready: service form, photo, and signature are available.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Exact technician GPS is not shown in the customer portal."),
+      screen.getByText(
+        "Technician GPS details stay private and are not shown in this portal.",
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Available for your records.")).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();
