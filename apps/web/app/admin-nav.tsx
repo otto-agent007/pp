@@ -14,6 +14,7 @@ const adminRoutes = [
   { href: "/closeouts", label: "Closeouts" },
   { href: "/payments", label: "Payments" },
   { href: "/automation", label: "Automation" },
+  { href: "/compliance", label: "Compliance" },
 ];
 
 function isActive(pathname: string, href: string) {

@@ -2,6 +2,62 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-17 Production-Readiness Slice Execution
+
+Status: compliance closeout verification passed locally; local and protected-preview smoke remain blocked before any seed/reset, browser smoke, blocker-fix, or provider-receipt work.
+
+Read-only checks:
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Command: `corepack pnpm exec vitest run tooling/compliance-ingest.test.ts packages/domain/compliance.test.ts packages/api-client/compliance.test.ts apps/web/app/api/compliance/advisories/route.test.ts apps/web/app/compliance/compliance-client.test.tsx`
+- Result: pass; 5 files and 21 tests passed.
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: latest Ready preview found at `https://pest-patrol-axms2ozg8-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel build --yes` after clearing ignored generated output.
+- Result: blocked after `next build` completed and route output was generated.
+- Blocker category: local Vercel CLI packaging blocker.
+- Exact failure: `Unable to find lambda for route: /auth/update-password`; Vercel CLI also reported tracing entries due to missing build traces while creating serverless functions.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-axms2ozg8-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Slice outcomes:
+- Compliance RAG Closeout and Migration Approval Package V1: locally verified through dry-run/no-embed and focused tests; the migration remains proposal-only and was not applied.
+- Local Demo Smoke Unlock V1: blocked before seed/reset and Browser smoke.
+- Protected Preview Authenticated Smoke V1: blocked before seed/reset and authenticated Browser smoke.
+- Smoke-Proven Blocker Fixes V1: no smoke-proven app bug was available to fix.
+- Production Launch Gate and Provider Mode Decision V1: preview-first remains the route to production readiness; manual fallback stays the accepted provider mode until webhook-backed evidence exists.
+
+No seed/reset writes, browser login, provider dashboard mutations, environment mutations, migration application, raw portal URLs, credentials, protected-preview access values, webhook payloads, or production data actions were performed.
+
+## 2026-05-16 Next Five Slice Smoke Gate
+
+Status: the planned local and protected-preview smoke unlock slices were attempted read-only; seed/reset, browser smoke, blocker fixes, manual-fallback closure, and portal delivery receipts remain gated on setup evidence.
+
+Read-only checks:
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url <latest-preview-url>`
+- Result: blocked safely before seed/reset or browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Slice outcomes:
+- Local Demo Smoke Unlock V1: blocked before seed/reset and Browser smoke.
+- Protected Preview Authenticated Smoke V1: blocked before seed/reset and authenticated Browser smoke.
+- Smoke-Proven Blocker Fixes V1: no smoke-proven app bug was available to fix.
+- Manual-Fallback Provider Smoke Closure V1: deferred until an authenticated local or preview browser smoke path is available.
+- Portal Delivery Receipts V1: deferred until webhook-backed portal send evidence exists and any required migration proposal is explicitly approved.
+
+No seed/reset writes, browser login, provider dashboard mutations, environment mutations, migrations, raw portal URLs, credentials, protected-preview access values, webhook payloads, or production data actions were performed.
+
 ## 2026-05-16 Provider-Free Demo Reliability Batch
 
 Status: local implementation and focused verification are in progress; local and protected-preview smoke remain blocked on approved environment and operator access inputs.

@@ -21,6 +21,8 @@ Web app:
 | `PORTAL_DELIVERY_WEBHOOK_SECRET` | Server only | Optional bearer secret sent only from the server portal-send route to the portal delivery webhook. |
 | `CRON_SECRET` | Server only | Vercel Cron secret sent as a Bearer token to `apps/web/app/api/automation/scheduler/route.ts`. |
 | `AUTOMATION_CRON_SECRET` | Server only | Optional project-specific secret for manual or non-Vercel scheduler calls. |
+| `OPENAI_API_KEY` | Server only | Optional key for California Compliance RAG advisory retrieval. If omitted, `/compliance` reports RAG disabled instead of failing. Never expose as `NEXT_PUBLIC_*`. |
+| `OPENAI_COMPLIANCE_EMBEDDING_MODEL` | Server only | Optional embedding-model override for compliance retrieval; defaults to the code-level baseline when unset. |
 
 Mobile app:
 
@@ -92,6 +94,8 @@ Latest hardening status:
    - `PORTAL_DELIVERY_WEBHOOK_SECRET`
    - `CRON_SECRET`
    - `AUTOMATION_CRON_SECRET`
+   - `OPENAI_API_KEY` (optional, server-only compliance RAG)
+   - `OPENAI_COMPLIANCE_EMBEDDING_MODEL` (optional compliance RAG model override)
 4. Keep `apps/web/vercel.json` with the deployed web app so `/api/automation/scheduler` runs daily at 05:00 UTC.
 5. Use Node 20.x.
 6. Build command: `corepack pnpm build`.
@@ -102,7 +106,8 @@ Latest hardening status:
 
 - Provider setup is operator-assisted: Codex may verify names and smoke-test behavior, but it must not mutate Vercel, Supabase, Stripe, notification, or portal provider dashboards without explicit approval.
 - For preview, optional `NOTIFICATION_DELIVERY_*` and `PORTAL_DELIVERY_*` webhook variables may be omitted. When omitted, smoke tests should confirm manual fallback behavior instead of provider delivery.
-- Migration application is operator-approved only. A new preview database should apply every file in `supabase/migrations` in timestamp order, ending with `20260513120000_portal_send_audit_events_v1.sql`.
+- Migration application is operator-approved only. A new preview database should apply every approved file in `supabase/migrations` in timestamp order. The compliance RAG migration `20260516175724_california_compliance_rag_v1.sql` remains proposal-only until the operator explicitly approves the target environment.
+- Local deployment packaging verification should include `corepack pnpm dlx vercel build --yes` after ignored generated output is cleared. If it fails while `corepack pnpm build` and Git-integrated Vercel deployments stay green, record the exact local Vercel CLI packaging blocker instead of changing provider settings.
 - Never paste secrets, recovery links, portal URLs with raw tokens, provider payloads, or production records into docs, commits, task files, or chat.
 
 ## Smoke Tests
@@ -125,6 +130,7 @@ created during the check.
 | Revoke portal access | `/customers` | Active portal links require confirmation before revoke and revoked links stop loading customer portal data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
 | Check billing path | `/payments` | Invoice or payment setup state is visible without secret exposure. |
+| Review compliance RAG | `/compliance` | Source counts, source-readiness workflow cards, and advisory audit state render; when `OPENAI_API_KEY` is absent the page reports RAG disabled without exposing secrets, and when `20260516175724_california_compliance_rag_v1.sql` is not applied the page reports setup required without raw Supabase errors. |
 
 Admin web:
 

@@ -35,6 +35,24 @@ export {
   listCloseoutCaptureSummaryRecords,
 } from "./closeouts";
 export {
+  createComplianceAdvisoryAuditRecord,
+  isComplianceSchemaUnavailableError,
+  listComplianceAdvisoryAuditRecords,
+  listComplianceChunkRecords,
+  listComplianceDocumentRecords,
+  listComplianceSourceRecords,
+  searchComplianceChunkRecords,
+  upsertComplianceChunkRecords,
+  upsertComplianceDocumentRecord,
+  upsertComplianceSourceRecord,
+} from "./compliance";
+export type {
+  ComplianceChunkUpsertInput,
+  ComplianceClient,
+  ComplianceDocumentUpsertInput,
+  ComplianceSourceUpsertInput,
+} from "./compliance";
+export {
   archiveCustomerRecord,
   createCustomerRecord,
   listCustomerRecords,
