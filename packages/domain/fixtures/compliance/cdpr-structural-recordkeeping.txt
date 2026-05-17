@@ -1,0 +1,1 @@
+California structural pesticide use records should identify the application date and time, pesticide product, EPA or California registration number, amount used, site treated, and license or supervision details when required by the regulated workflow.

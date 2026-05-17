@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildComplianceAdvisory,
   buildDispatchLocationEvidenceByJob,
   buildBillingPortalNextActions,
   buildBillingQueue,
@@ -638,6 +639,15 @@ export function CloseoutsClient() {
         review: closeout.review,
       })
     : null;
+  const branchCompliancePreview = useMemo(
+    () =>
+      buildComplianceAdvisory({
+        chunks: [],
+        job: selectedJob ?? null,
+        workflow: "wdo_branch3",
+      }),
+    [selectedJob],
+  );
   const noQueueAction = search.trim()
     ? "Clear the search, show all jobs, or wait for completed jobs to reach the queue."
     : "No completed jobs yet. As technicians finish jobs in dispatch, they will appear here.";
@@ -715,6 +725,31 @@ export function CloseoutsClient() {
           onClick={() => setFilter("all")}
           value={counts.totalCompleted}
         />
+      </section>
+
+      <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+              Closeout compliance audit
+            </p>
+            <p className="mt-1 text-sm text-emerald-900">
+              Branch 3 and multi-unit evidence stays advisory in V1.{" "}
+              {
+                branchCompliancePreview.required_fields.filter(
+                  (field) => field.status !== "present",
+                ).length
+              } WDO report fields are ready for cited review once source chunks
+              are ingested.
+            </p>
+          </div>
+          <a
+            className="inline-flex min-h-10 items-center justify-center rounded-md border border-emerald-300 bg-white px-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-100"
+            href="/compliance"
+          >
+            Open compliance
+          </a>
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">

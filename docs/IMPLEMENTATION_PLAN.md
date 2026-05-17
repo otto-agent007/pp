@@ -1,21 +1,23 @@
 # Implementation Plan
 
-## Current Priority: Provider-Free Demo Reliability Batch
+## Current Priority: Provider-Free Demo Reliability + California Compliance RAG
 
-The latest local batch strengthens the demo handoff path across dispatch,
-mobile capture, closeout review, customer portal handoff, and smoke docs while
-protected-preview smoke remains gated on operator env/access. It does not add
-Google Maps, Mapbox, background tracking, provider keys, environment changes,
-migrations, Figma canvas writes, Vercel mutations, Supabase mutations, or
-production mutations.
+The latest local batch adds an advisory-only California Compliance RAG baseline
+and source-ingestion tooling alongside the provider-free demo handoff path. It
+keeps protected-preview smoke gated on operator env/access and does not apply
+migrations, mutate preview or production data, configure providers, add Google
+Maps/Mapbox, add background tracking, or expose server-only keys to
+browser/mobile clients.
 
 Completed in this batch:
 
-1. Added a domain-built dispatch exception review summary for at-risk, unassigned, missing-coordinate, and missing-GPS-evidence stops, then rendered it alongside existing provider-free route intelligence.
-2. Added mobile route next-action labels derived from existing capture/readiness state so technicians can see when to capture arrival, retry photo sync, finish queued proof, or send a stop to office review.
-3. Added closeout review queue filters for proof-ready, missing-capture, GPS-review, needs-invoice, and billing-ready working sets without changing customer portal payloads.
-4. Added customer portal handoff review that combines active-link, contact, service/proof, invoice/balance, and manual/provider mode context while keeping tokens, hashes, provider payloads, exact GPS, storage paths, and internal notes hidden.
-5. Aligned smoke-readiness docs and task ledgers around local preflight, local seed/reset, protected-preview smoke, manual-fallback provider smoke, and deferred webhook-backed provider smoke.
+1. Added shared compliance contracts for official source metadata, documents, chunks, advisory citations/findings, advisory audit records, location units, and per-unit audit items.
+2. Added a Supabase migration proposal for `pgvector`, compliance source/document/chunk/audit tables, multi-unit audit tables, RLS policies, explicit authenticated/service-role Data API grants, and a vector match RPC; Codex did not apply it to any database.
+3. Added domain/API-client compliance helpers for source filtering, fixture-based chunking, advisory building, missing-field checks, runtime status, multi-unit summaries, and audit persistence.
+4. Added a server-only `/api/compliance/advisories` route that uses OpenAI embeddings only when `OPENAI_API_KEY` is present, keeps browser/mobile clients away from provider calls, and returns explicit disabled/insufficient-source states, including a sanitized setup-required state when the compliance schema is not applied.
+5. Added `/compliance` plus advisory surfaces in inventory, dispatch, and closeouts for chemical EPA/DPR review, recurring-route review, WDO/Branch 3 evidence, and multi-unit audit readiness.
+6. Added `corepack pnpm compliance:ingest` with a reviewed EPA/DPR/SPCB manifest, deterministic local chunk planning, Supabase upsert helpers, dry-run/no-embed modes, optional workflow/authority filters, and source-readiness UI.
+7. Added a monorepo `outputFileTracingRoot` in `apps/web/next.config.ts` so local Vercel packaging can trace shared workspace dependencies from the repo root.
 
 The prior provider-free operations readiness baseline still matters:
 
@@ -35,11 +37,13 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 
 ## Next Decision Points
 
-1. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke.
-2. Run local seed/reset only after the local preflight is ready, then smoke `/`, `/dispatch`, `/closeouts`, `/customers`, the mobile route flow, and tokened portal surfaces with sanitized notes.
-3. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`.
-4. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
-5. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
-6. Confirm manual-fallback provider smoke when webhook env names are intentionally unset; defer webhook-backed provider delivery receipts until provider evidence exists.
-7. Decide whether provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next after authenticated preview evidence is available.
-8. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.
+1. After explicit migration approval, run `corepack pnpm compliance:ingest` against an approved local or preview Supabase environment before treating `/compliance` as source-backed; the May 17, 2026 dry-run/no-embed preflight already passed locally without Supabase writes or OpenAI calls.
+2. Investigate the remaining local Vercel CLI packaging blocker if local `vercel build` remains required; after the tracing-root fix and cleared generated output, `corepack pnpm dlx vercel build --yes` still completes `next build` and then fails while creating serverless functions with `Unable to find lambda for route: /auth/update-password`.
+3. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke; the May 17, 2026 read-only pass is still blocked on the required env names.
+4. Run local seed/reset only after the local preflight is ready, then smoke `/`, `/dispatch`, `/closeouts`, `/customers`, `/compliance`, the mobile route flow, and tokened portal surfaces with sanitized notes.
+5. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`; the May 17, 2026 read-only pass against the latest Ready preview is still blocked on the required env names and operator-approved protected-preview access.
+6. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
+7. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
+8. Confirm manual-fallback provider smoke when webhook env names are intentionally unset; defer webhook-backed provider delivery receipts until provider evidence exists.
+9. Decide whether reviewed compliance advisory evaluation, provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next only after authenticated preview evidence is available.
+10. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.

@@ -29,8 +29,8 @@ const jobSelect =
 const customerPortalJobSelect =
   "id, customer_id, location_id, status, scheduled_start, scheduled_end, customer:customers(id, name), location:locations(id, address, nickname)";
 
-export async function listJobRecords() {
-  const { data, error } = await supabase
+export async function listJobRecords(client: JobsClient = supabase) {
+  const { data, error } = await client
     .from("jobs")
     .select(jobSelect)
     .order("scheduled_start", { ascending: true });

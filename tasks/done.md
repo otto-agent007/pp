@@ -1,5 +1,41 @@
 # Done
 
+## Repo-Only Deployment Risk Fix V1
+
+- Added monorepo `outputFileTracingRoot` for the web app while keeping existing workspace package transpilation
+- Added compliance schema-unavailable classification and sanitized setup-required readiness for `/api/compliance/advisories` and `/compliance`
+- Kept the compliance migration operator-approved only and did not mutate Supabase, Vercel, provider settings, environment variables, preview data, or production data
+- Added focused API-client, route, UI, and domain coverage for missing compliance schema behavior
+- Verified `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+- Reran `corepack pnpm dlx vercel build --yes` after clearing ignored generated output; local Vercel CLI still fails after `next build` with `Unable to find lambda for route: /auth/update-password`
+
+## Compliance Source Ingestion + Review V1
+
+- Added `compliance:ingest` tooling with dry-run, no-embed, workflow, and authority filters for checked-in EPA/DPR/SPCB normalized source fixtures
+- Added compliance manifest validation, deterministic ingestion planning, source-readiness summaries, and source/document/chunk upsert helpers through `packages/domain` and `packages/api-client`
+- Added `/compliance` source-readiness workflow cards showing reviewed/draft source counts, documents, chunks, and latest retrieval date
+- Confirmed `corepack pnpm compliance:ingest -- --dry-run --no-embed` validates the manifest without Supabase writes or OpenAI calls
+- Kept migration application, preview/production data mutation, provider dashboard changes, and env mutation out of scope
+
+## California Compliance RAG V1
+
+- Added shared compliance contracts for official source metadata, documents, chunks, citations, findings, advisory audits, location units, and per-unit audit items
+- Added a Supabase migration proposal for `pgvector`, compliance source/document/chunk/audit tables, multi-unit audit tables, RLS policies, and vector matching without applying it to any environment
+- Hardened the migration proposal with explicit authenticated/service-role Data API grants while keeping RLS policies as the row-level boundary
+- Added domain and API-client compliance helpers for source filtering, fixture chunking, advisory construction, missing-evidence flags, runtime status, and audit persistence
+- Added server-only `/api/compliance/advisories` retrieval with explicit `OPENAI_API_KEY` disabled state and audit recording when RAG is available
+- Added `/compliance` plus advisory panels in inventory, dispatch, and closeouts for chemical EPA/DPR, recurring route, WDO/Branch 3, and multi-unit readiness
+- Added focused domain, API-client, route, and UI coverage
+- Verified with `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`
+
+## Next Five Smoke Gate Execution Attempt V1
+
+- Reran read-only local and protected-preview demo smoke preflights for the next five-slice plan on May 17, 2026
+- Confirmed the latest Ready preview through Vercel CLI before the preview smoke preflight
+- Recorded that both local and preview smoke remain blocked before seed/reset or browser smoke on missing approved Supabase env names
+- Preserved protected-preview access/sign-in, manual-fallback provider smoke, smoke-proven blocker fixes, and portal delivery receipts as gated follow-ups
+- Performed no seed/reset writes, browser login, provider dashboard mutation, environment mutation, migration, webhook-backed delivery receipt work, or production data action
+
 ## Provider-Free Demo Reliability Batch V1
 
 - Added dispatch exception review for at-risk, unassigned, missing-coordinate, and missing-GPS-evidence stops

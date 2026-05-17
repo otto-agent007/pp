@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildComplianceAdvisory,
   filterChemicalInventory,
   getInventorySummary,
   validateChemicalInventoryInput,
@@ -93,6 +94,15 @@ export function InventoryClient() {
     [inventoryItems, search, status],
   );
   const summary = useMemo(() => getInventorySummary(inventoryItems), [inventoryItems]);
+  const chemicalCompliancePreview = useMemo(
+    () =>
+      buildComplianceAdvisory({
+        chemicalLog: logsQuery.data?.[0] ?? null,
+        chunks: [],
+        workflow: "chemical_application",
+      }),
+    [logsQuery.data],
+  );
   const isSavingInventory = createInventory.isPending || updateInventory.isPending;
 
   function resetInventoryForm() {
@@ -197,6 +207,40 @@ export function InventoryClient() {
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {summary.totalStock}
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+              EPA/DPR compliance review
+            </p>
+            <p className="mt-1 text-sm text-amber-900">
+              Chemical logs now feed the California Compliance RAG lane. V1 keeps
+              this advisory-only and flags missing evidence before closeout.
+            </p>
+          </div>
+          <a
+            className="inline-flex min-h-10 items-center justify-center rounded-md border border-amber-300 bg-white px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+            href="/compliance"
+          >
+            Open compliance
+          </a>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {chemicalCompliancePreview.required_fields
+            .filter((field) => field.status !== "present")
+            .slice(0, 3)
+            .map((field) => (
+              <div
+                className="rounded-md border border-amber-200 bg-white/80 p-3 text-sm"
+                key={field.field}
+              >
+                <p className="font-semibold text-neutralDark">{field.label}</p>
+                <p className="mt-1 text-amber-900">{field.reason}</p>
+              </div>
+            ))}
         </div>
       </section>
 

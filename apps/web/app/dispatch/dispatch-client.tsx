@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildComplianceAdvisory,
   buildDispatchLocationEvidenceByJob,
   buildDispatchRouteExceptionSummary,
   buildDispatchRouteGroupSummaries,
@@ -510,6 +511,18 @@ export function DispatchClient() {
       }),
     [locationEvidenceByJob, technicianLabels, visibleCalendarDays],
   );
+  const recurringCompliancePreview = useMemo(
+    () =>
+      buildComplianceAdvisory({
+        chunks: [],
+        job:
+          decoratedJobs.find((job) => job.status === "completed") ??
+          decoratedJobs[0] ??
+          null,
+        workflow: "recurring_route",
+      }),
+    [decoratedJobs],
+  );
   const routeStopsByJobId = useMemo(
     () =>
       Object.fromEntries(
@@ -638,6 +651,29 @@ export function DispatchClient() {
           triage={triage}
         />
         <RouteGroupsPanel groups={routeGroups} />
+        <section className="rounded-lg border border-sky-200 bg-sky-50 p-4 shadow-sm">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
+                Recurring-route compliance
+              </p>
+              <p className="mt-1 text-sm text-sky-900">
+                {
+                  recurringCompliancePreview.required_fields.filter(
+                    (field) => field.status === "missing",
+                  ).length
+                } route evidence fields need review before a cited
+                recurring-service advisory.
+              </p>
+            </div>
+            <a
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-sky-300 bg-white px-3 text-sm font-semibold text-sky-900 hover:bg-sky-100"
+              href="/compliance"
+            >
+              Review rules
+            </a>
+          </div>
+        </section>
       </header>
 
       {jobsQuery.isLoading ? (

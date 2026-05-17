@@ -9,11 +9,12 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "compliance:ingest": "tsx tooling/compliance-ingest.ts",
     "demo:reset": "tsx tooling/demo-seed.ts reset",
     "demo:seed": "tsx tooling/demo-seed.ts seed",
     "demo:smoke": "tsx tooling/demo-smoke-preflight.ts",
     "lint": "turbo lint",
-    "test": "turbo test",
+    "test": "vitest run tooling/compliance-ingest.test.ts && turbo test",
     "typecheck": "turbo typecheck",
     "format": "prettier --write ."
   },
