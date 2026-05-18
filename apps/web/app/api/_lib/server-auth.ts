@@ -101,9 +101,3 @@ export async function getAdminAccess(request: Request): Promise<
     };
   }
 }
-
-export async function requireAdminAccess(request: Request) {
-  const result = await getAdminAccess(request);
-
-  return result.response;
-}

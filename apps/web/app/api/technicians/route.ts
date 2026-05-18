@@ -7,13 +7,13 @@ import { NextResponse } from "next/server";
 
 import {
   createServiceRoleSupabaseClient,
-  requireAdminAccess,
+  getAdminAccess,
 } from "../_lib/server-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const authError = await requireAdminAccess(request);
+  const { response: authError } = await getAdminAccess(request);
 
   if (authError) {
     return authError;
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdminAccess(request);
+  const { response: authError } = await getAdminAccess(request);
 
   if (authError) {
     return authError;

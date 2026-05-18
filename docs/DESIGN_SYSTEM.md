@@ -106,6 +106,47 @@ const card = {
 };
 ```
 
+## Consuming Tokens
+
+Use semantic tokens at app callsites. Reach for primitives only when extending
+the token system itself or building an intentionally raw asset preview.
+
+Web surfaces should prefer Tailwind token utilities from
+`apps/web/tailwind.config.ts`:
+
+```tsx
+<article className="border-theme-border-subtle bg-theme-background-surface text-theme-text-primary">
+  <p className="text-theme-text-muted">Route notes sync after the visit.</p>
+</article>
+```
+
+Mobile surfaces should import token values from `@pest-patrol/ui-tokens` and
+compose them in shared style helpers before passing them to components:
+
+```ts
+import { lightTheme, spacing } from "@pest-patrol/ui-tokens";
+
+export const routeCard = {
+  backgroundColor: lightTheme.background.surface,
+  borderColor: lightTheme.border.subtle,
+  padding: spacing[4],
+};
+```
+
+Status tokens are for visual treatment only. Keep labels, ordering, permission
+checks, and readiness rules in shared domain code, then map the resulting state
+to a status token in the consuming UI.
+
+Do not add app-level hex values, arbitrary hex Tailwind classes, or generic
+palette utilities such as `bg-blue-500`, `text-gray-600`, or `border-amber-200`.
+If a needed color is missing, add or extend a semantic token in
+`packages/ui-tokens` first, then consume that token from web or mobile.
+
+The root lint command runs `tooling/no-hardcoded-hex.ts` before package linting.
+That guard scans app code for one-off hex values and generic palette utilities;
+keep new token consumption inside the established token paths so the guard stays
+green.
+
 ## Mobile Route Shell Pilot
 
 The first token pilot is the Expo technician route shell. Route-specific style

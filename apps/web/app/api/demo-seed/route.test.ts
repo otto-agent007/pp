@@ -17,7 +17,12 @@ vi.mock("@pest-patrol/api-client", async (importOriginal) => ({
 
 vi.mock("../_lib/server-auth", () => ({
   createServiceRoleSupabaseClient: () => serviceClient,
-  requireAdminAccess: () => Promise.resolve(adminError),
+  getAdminAccess: () =>
+    Promise.resolve(
+      adminError
+        ? { access: null, response: adminError }
+        : { access: { userId: "admin-user" }, response: null },
+    ),
 }));
 
 function request(body?: unknown) {

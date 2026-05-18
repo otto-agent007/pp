@@ -5,7 +5,7 @@ import { GET, POST } from "./route";
 
 vi.mock("../_lib/server-auth", () => ({
   createServiceRoleSupabaseClient: vi.fn(() => ({ id: "service-client" })),
-  requireAdminAccess: vi.fn(),
+  getAdminAccess: vi.fn(),
 }));
 
 vi.mock("@pest-patrol/api-client", async (importOriginal) => {
@@ -22,7 +22,7 @@ import {
   inviteTechnicianWithAdminClientRecord,
   listTechnicianProfileRecords,
 } from "@pest-patrol/api-client";
-import { requireAdminAccess } from "../_lib/server-auth";
+import { getAdminAccess } from "../_lib/server-auth";
 
 const now = "2026-05-07T00:00:00.000Z";
 const technician = {
@@ -37,19 +37,23 @@ const technician = {
 
 describe("technicians route", () => {
   beforeEach(() => {
-    vi.mocked(requireAdminAccess).mockReset();
+    vi.mocked(getAdminAccess).mockReset();
     vi.mocked(listTechnicianProfileRecords).mockReset();
     vi.mocked(inviteTechnicianWithAdminClientRecord).mockReset();
-    vi.mocked(requireAdminAccess).mockResolvedValue(null);
+    vi.mocked(getAdminAccess).mockResolvedValue({
+      access: { userId: "admin-user" },
+      response: null,
+    });
   });
 
   it("requires admin authentication", async () => {
-    vi.mocked(requireAdminAccess).mockResolvedValue(
-      NextResponse.json(
+    vi.mocked(getAdminAccess).mockResolvedValue({
+      access: null,
+      response: NextResponse.json(
         { error: "Authentication is required" },
         { status: 401 },
       ),
-    );
+    });
 
     const response = await POST(
       new Request("http://localhost/api/technicians", {

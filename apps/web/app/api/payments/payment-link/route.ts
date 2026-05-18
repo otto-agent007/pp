@@ -1,6 +1,6 @@
 import type { Invoice } from "@pest-patrol/types";
 import { NextResponse } from "next/server";
-import { requireAdminAccess } from "../../_lib/server-auth";
+import { getAdminAccess } from "../../_lib/server-auth";
 
 interface PaymentLinkRequest {
   invoice?: Invoice;
@@ -29,7 +29,7 @@ function appendLineItem(
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdminAccess(request);
+  const { response: authError } = await getAdminAccess(request);
 
   if (authError) {
     return authError;

@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 
 import {
   createServiceRoleSupabaseClient,
-  requireAdminAccess,
+  getAdminAccess,
 } from "../../../../_lib/server-auth";
 
 export const runtime = "nodejs";
@@ -108,7 +108,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ notificationId: string }> },
 ) {
-  const authError = await requireAdminAccess(request);
+  const { response: authError } = await getAdminAccess(request);
 
   if (authError) {
     return authError;
