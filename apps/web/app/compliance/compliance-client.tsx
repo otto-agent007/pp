@@ -62,19 +62,19 @@ function formatOptionalDate(value: string | null) {
 
 function statusTone(status: ComplianceAdvisory["status"]) {
   if (status === "advisory_ready") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    return "border-status-alert-success-border bg-status-alert-success-bg text-status-alert-success-fg";
   }
 
   if (status === "rag_disabled") {
-    return "border-amber-200 bg-amber-50 text-amber-800";
+    return "border-status-alert-warning-border bg-status-alert-warning-bg text-status-alert-warning-fg";
   }
 
-  return "border-red-200 bg-red-50 text-red-800";
+  return "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg";
 }
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <p className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+    <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
   );
@@ -184,7 +184,7 @@ export function ComplianceClient() {
           <h1 className="text-3xl font-bold text-neutralDark">
             Compliance RAG
           </h1>
-          <p className="mt-2 max-w-3xl text-sm text-gray-600">
+          <p className="mt-2 max-w-3xl text-sm text-theme-text-secondary">
             Advisory review for EPA labels, DPR structural-use records, WDO
             Branch 3 evidence, recurring route prompts, and multi-unit audits.
           </p>
@@ -192,12 +192,12 @@ export function ComplianceClient() {
       </header>
 
       {setupReadiness ? (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
-          <h2 className="text-base font-semibold text-amber-950">
+        <section className="rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg p-4 text-sm text-status-alert-warning-fgStrong shadow-sm">
+          <h2 className="text-base font-semibold text-status-alert-warning-fgStrong">
             Compliance setup required
           </h2>
           <p className="mt-1">{setupReadiness.reason}</p>
-          <p className="mt-2 text-amber-800">
+          <p className="mt-2 text-status-alert-warning-fg">
             Source-backed advisories stay disabled until the operator-approved
             migration is applied; no raw Supabase error details are shown here.
           </p>
@@ -205,32 +205,32 @@ export function ComplianceClient() {
       ) : null}
 
       <section className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Reviewed sources
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {reviewedSources.length}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Documents
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {documents.length}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Chunks
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {chunks.length}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Advisory audits
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
@@ -239,40 +239,40 @@ export function ComplianceClient() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-neutralDark">
               Source readiness
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-theme-text-secondary">
               Reviewed sources are the only source lane intended for cited
               advisories; draft and archived material stays visible for review.
             </p>
           </div>
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
+          <div className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
             Ready workflows: {knowledgeBaseReadiness.readyWorkflowCount}
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {knowledgeBaseReadiness.workflows.map((item) => (
             <article
-              className="rounded-md border border-gray-200 p-3 text-sm"
+              className="rounded-md border border-theme-border-subtle p-3 text-sm"
               key={item.workflow}
             >
               <p className="font-semibold text-neutralDark">
                 {formatWorkflow(item.workflow)}
               </p>
-              <p className="mt-1 text-xs uppercase tracking-wide text-gray-500">
+              <p className="mt-1 text-xs uppercase tracking-wide text-theme-text-muted">
                 {item.status.replace(/_/g, " ")}
               </p>
-              <p className="mt-2 text-gray-700">
+              <p className="mt-2 text-theme-text-secondary">
                 {item.reviewedSources} reviewed, {item.draftSources} draft
               </p>
-              <p className="mt-1 text-gray-600">
+              <p className="mt-1 text-theme-text-secondary">
                 {item.documents} documents, {item.chunks} chunks
               </p>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-theme-text-muted">
                 {formatOptionalDate(item.lastRetrievedAt)}
               </p>
             </article>
@@ -281,8 +281,8 @@ export function ComplianceClient() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-4">
-        <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Chemical review
           </p>
           <p className="mt-2 text-sm font-semibold text-neutralDark">
@@ -290,43 +290,43 @@ export function ComplianceClient() {
               ? "Citations available"
               : "Needs reviewed citations"}
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-theme-text-secondary">
             {chemicalReadiness.required_fields.filter((field) => field.status === "missing").length} missing fields from {logs.length} chemical logs.
           </p>
         </article>
-        <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Recurring routes
           </p>
           <p className="mt-2 text-sm font-semibold text-neutralDark">
             {jobs.filter((job) => job.status === "completed").length} completed jobs
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-theme-text-secondary">
             {recurringReadiness.status === "advisory_ready"
               ? "Ready for cited prompt review."
               : "Awaiting cited route rules."}
           </p>
         </article>
-        <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             WDO / Branch 3
           </p>
           <p className="mt-2 text-sm font-semibold text-neutralDark">
             SPCB source lane
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-theme-text-secondary">
             Inspection reports and damaged-member evidence stay advisory until
             reviewed source chunks are ingested.
           </p>
         </article>
-        <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Multi-unit audits
           </p>
           <p className="mt-2 text-sm font-semibold text-neutralDark">
             {multiUnitSummary.totalUnits} units modeled
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-theme-text-secondary">
             {setupReadiness
               ? "Schema setup is pending for unit roster and per-unit treatment evidence."
               : "Schema is ready for unit roster and per-unit treatment evidence."}
@@ -336,7 +336,7 @@ export function ComplianceClient() {
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <form
-          className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           onSubmit={submitAdvisory}
         >
           <div className="flex flex-col gap-4">
@@ -344,7 +344,7 @@ export function ComplianceClient() {
               <h2 className="text-lg font-semibold text-neutralDark">
                 Create advisory
               </h2>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-theme-text-secondary">
                 Uses server-side retrieval only. If no key or reviewed source is
                 available, the response stays explicit about that blocker.
               </p>
@@ -352,7 +352,7 @@ export function ComplianceClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Workflow
               <select
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setWorkflow(event.target.value as ComplianceWorkflow)
                 }
@@ -368,18 +368,18 @@ export function ComplianceClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Review prompt
               <textarea
-                className="min-h-28 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-28 rounded-md border border-theme-border-default bg-theme-background-surface px-3 py-2 text-sm outline-none focus:border-primary"
                 onChange={(event) => setPrompt(event.target.value)}
                 value={prompt}
               />
             </label>
             {error ? (
-              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                 {error}
               </p>
             ) : null}
             <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primaryDark disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primaryDark disabled:cursor-not-allowed disabled:bg-theme-border-default"
               disabled={createAdvisory.isPending || Boolean(setupReadiness)}
               type="submit"
             >
@@ -392,14 +392,14 @@ export function ComplianceClient() {
           </div>
         </form>
 
-        <aside className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <aside className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-neutralDark">
             Source anchors
           </h2>
           <div className="mt-4 flex flex-col gap-3">
             {complianceSourceAnchors.map((anchor) => (
               <a
-                className="rounded-md border border-gray-200 p-3 text-sm hover:bg-gray-50"
+                className="rounded-md border border-theme-border-subtle p-3 text-sm hover:bg-theme-background-subtle"
                 href={anchor.url}
                 key={anchor.url}
                 rel="noreferrer"
@@ -408,7 +408,7 @@ export function ComplianceClient() {
                 <span className="block font-semibold text-neutralDark">
                   {anchor.title}
                 </span>
-                <span className="mt-1 block text-xs uppercase tracking-wide text-gray-500">
+                <span className="mt-1 block text-xs uppercase tracking-wide text-theme-text-muted">
                   {anchor.authority} | {formatWorkflow(anchor.workflow)}
                 </span>
               </a>
@@ -418,7 +418,7 @@ export function ComplianceClient() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-neutralDark">
             Latest advisory
           </h2>
@@ -431,9 +431,9 @@ export function ComplianceClient() {
               >
                 {advisory.status.replace(/_/g, " ")}
               </p>
-              <p className="text-sm text-gray-700">{advisory.summary}</p>
+              <p className="text-sm text-theme-text-secondary">{advisory.summary}</p>
               {advisory.review_task ? (
-                <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                <p className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3 text-sm text-status-alert-warning-fg">
                   {advisory.review_task}
                 </p>
               ) : null}
@@ -444,16 +444,16 @@ export function ComplianceClient() {
                 <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                   {advisory.required_fields.map((field) => (
                     <li
-                      className="rounded-md border border-gray-200 p-3 text-sm"
+                      className="rounded-md border border-theme-border-subtle p-3 text-sm"
                       key={field.field}
                     >
                       <span className="font-semibold text-neutralDark">
                         {field.label}
                       </span>
-                      <span className="ml-2 text-xs uppercase tracking-wide text-gray-500">
+                      <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
                         {field.status}
                       </span>
-                      <p className="mt-1 text-gray-600">{field.reason}</p>
+                      <p className="mt-1 text-theme-text-secondary">{field.reason}</p>
                     </li>
                   ))}
                 </ul>
@@ -466,16 +466,16 @@ export function ComplianceClient() {
                   <ul className="mt-2 flex flex-col gap-2">
                     {advisory.findings.map((finding) => (
                       <li
-                        className="rounded-md border border-gray-200 p-3 text-sm"
+                        className="rounded-md border border-theme-border-subtle p-3 text-sm"
                         key={`${finding.title}-${finding.message}`}
                       >
                         <span className="font-semibold text-neutralDark">
                           {finding.title}
                         </span>
-                        <span className="ml-2 text-xs uppercase tracking-wide text-gray-500">
+                        <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
                           {finding.severity}
                         </span>
-                        <p className="mt-1 text-gray-600">{finding.message}</p>
+                        <p className="mt-1 text-theme-text-secondary">{finding.message}</p>
                       </li>
                     ))}
                   </ul>
@@ -489,7 +489,7 @@ export function ComplianceClient() {
                   <ul className="mt-2 flex flex-col gap-2">
                     {advisory.citations.map((citation) => (
                       <li
-                        className="rounded-md border border-gray-200 p-3 text-sm"
+                        className="rounded-md border border-theme-border-subtle p-3 text-sm"
                         key={citation.chunk_id}
                       >
                         <a
@@ -500,7 +500,7 @@ export function ComplianceClient() {
                         >
                           {citation.source_title}
                         </a>
-                        <p className="mt-1 text-gray-600">{citation.excerpt}</p>
+                        <p className="mt-1 text-theme-text-secondary">{citation.excerpt}</p>
                       </li>
                     ))}
                   </ul>
@@ -510,7 +510,7 @@ export function ComplianceClient() {
           )}
         </article>
 
-        <aside className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <aside className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-neutralDark">
             Audit trail
           </h2>
@@ -520,17 +520,17 @@ export function ComplianceClient() {
             ) : (
               audits.slice(0, 6).map((audit) => (
                 <article
-                  className="rounded-md border border-gray-200 p-3 text-sm"
+                  className="rounded-md border border-theme-border-subtle p-3 text-sm"
                   key={audit.id}
                 >
                   <p className="font-semibold text-neutralDark">
                     {formatWorkflow(audit.workflow)}
                   </p>
-                  <p className="mt-1 text-gray-600">
+                  <p className="mt-1 text-theme-text-secondary">
                     {audit.status.replace(/_/g, " ")} |{" "}
                     {formatDate(audit.created_at)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-theme-text-muted">
                     {audit.citation_chunk_ids.length} cited chunks
                   </p>
                 </article>

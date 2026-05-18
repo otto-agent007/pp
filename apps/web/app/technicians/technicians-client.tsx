@@ -97,7 +97,7 @@ export function TechniciansClient() {
         </div>
         <input
           aria-label="Search technicians"
-          className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search technicians"
           value={search}
@@ -107,11 +107,11 @@ export function TechniciansClient() {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {techniciansQuery.isLoading ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               Loading technicians
             </p>
           ) : visibleTechnicians.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               No technicians found
             </p>
           ) : (
@@ -120,7 +120,7 @@ export function TechniciansClient() {
 
               return (
                 <article
-                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                  className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                   key={technician.id}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -128,20 +128,20 @@ export function TechniciansClient() {
                       <h2 className="text-lg font-semibold text-neutralDark">
                         {getTechnicianLabel(technician)}
                       </h2>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-theme-text-secondary">
                         {technician.email ?? "No email saved"}
                       </p>
-                      <p className="mt-2 text-xs text-gray-500">
+                      <p className="mt-2 text-xs text-theme-text-muted">
                         ID {technician.id}
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-neutralDark">
-                        <span className="rounded-md bg-blue-50 px-2 py-1 text-blue-700">
+                        <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-status-alert-info-fg">
                           {routeLoad?.today_assigned_job_count ?? 0} today
                         </span>
-                        <span className="rounded-md bg-gray-100 px-2 py-1 text-gray-700">
+                        <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-theme-text-secondary">
                           {routeLoad?.upcoming_assigned_job_count ?? 0} upcoming
                         </span>
-                        <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-700">
+                        <span className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg">
                           {routeLoad?.route_status_label ?? "No route today"}
                         </span>
                       </div>
@@ -150,14 +150,14 @@ export function TechniciansClient() {
                       <span
                         className={`w-fit rounded-md px-2 py-1 text-xs font-semibold capitalize ${
                           technician.status === "active"
-                            ? "bg-green-50 text-green-700"
-                            : "bg-gray-100 text-gray-600"
+                            ? "bg-status-alert-success-bg text-status-alert-success-fg"
+                            : "bg-primitive-slate-100 text-theme-text-secondary"
                         }`}
                       >
                         {technician.status}
                       </span>
                       <a
-                        className="min-h-10 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                        className="min-h-10 rounded-md border border-theme-border-default px-3 py-2 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                         href={`/dispatch?technician=${encodeURIComponent(technician.id)}`}
                       >
                         Open in dispatch
@@ -171,27 +171,27 @@ export function TechniciansClient() {
         </div>
 
         <form
-          className="flex h-fit flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           onSubmit={submitTechnician}
         >
           <div>
             <h2 className="text-xl font-semibold text-neutralDark">
               Invite technician
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-theme-text-secondary">
               Supabase will send a setup email so the technician can choose
               their own password.
             </p>
           </div>
 
           {formError ? (
-            <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
               {formError}
             </p>
           ) : null}
 
           {inviteSent ? (
-            <p className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+            <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-3 text-sm text-status-alert-success-fg">
               {inviteSent}
             </p>
           ) : null}
@@ -199,7 +199,7 @@ export function TechniciansClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Display name
             <input
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) =>
                 updateForm({ display_name: event.target.value })
               }
@@ -211,7 +211,7 @@ export function TechniciansClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Email
             <input
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) => updateForm({ email: event.target.value })}
               placeholder="testnician@example.com"
               type="email"
@@ -220,7 +220,7 @@ export function TechniciansClient() {
           </label>
 
           <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={inviteTechnician.isPending}
             type="submit"
           >

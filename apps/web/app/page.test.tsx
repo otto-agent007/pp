@@ -137,4 +137,21 @@ describe("HomePage", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/seed fake production data/i)).not.toBeInTheDocument();
   });
+
+  it("renders provider-free launch gate guidance without secret values", () => {
+    render(<HomePage />);
+
+    expect(
+      screen.getByRole("heading", { name: "Smoke readiness" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Local smoke preflight")).toBeInTheDocument();
+    expect(screen.getByText("Protected preview smoke")).toBeInTheDocument();
+    expect(screen.getByText("Compliance source setup")).toBeInTheDocument();
+    expect(screen.getByText("Manual fallback accepted")).toBeInTheDocument();
+    expect(
+      screen.getByText("corepack pnpm compliance:ingest -- --dry-run --no-embed"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/service-role key/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/webhook secret/i)).not.toBeInTheDocument();
+  });
 });

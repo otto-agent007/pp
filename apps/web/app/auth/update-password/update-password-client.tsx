@@ -170,14 +170,14 @@ export function UpdatePasswordClient() {
         </div>
 
         {!linkChecked ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-gray-600">
+          <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-6 shadow-sm">
+            <p className="text-sm font-semibold text-theme-text-secondary">
               Checking password reset link...
             </p>
           </div>
         ) : linkError || !passwordSessionReady ? (
-          <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-red-700">
+          <div className="rounded-lg border border-status-alert-danger-border bg-theme-background-surface p-6 shadow-sm">
+            <p className="text-sm font-semibold text-status-alert-danger-fg">
               {linkError ??
                 "This password setup link is missing or expired. Request a new password reset link."}
             </p>
@@ -190,7 +190,7 @@ export function UpdatePasswordClient() {
           </div>
         ) : (
           <form
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-6 shadow-sm"
             onSubmit={handleSubmit}
           >
             <div className="space-y-5">
@@ -203,7 +203,7 @@ export function UpdatePasswordClient() {
                 </label>
                 <input
                   autoComplete="new-password"
-                  className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   id="new-password"
                   onChange={(event) => setPassword(event.target.value)}
                   type="password"
@@ -220,7 +220,7 @@ export function UpdatePasswordClient() {
                 </label>
                 <input
                   autoComplete="new-password"
-                  className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   id="confirm-password"
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   type="password"
@@ -229,19 +229,19 @@ export function UpdatePasswordClient() {
               </div>
 
               {error ? (
-                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg px-3 py-2 text-sm font-semibold text-status-alert-danger-fg">
                   {error}
                 </p>
               ) : null}
 
               {updated ? (
-                <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+                <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
                   Password updated. You can now sign in.
                 </p>
               ) : null}
 
               <button
-                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-theme-text-inverse transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={submitting}
                 type="submit"
               >

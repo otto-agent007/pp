@@ -137,7 +137,7 @@ function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+    <div className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
       <p>{children}</p>
       {description ? <p className="mt-2">{description}</p> : null}
     </div>
@@ -158,13 +158,13 @@ function CountTile({
   return (
     <button
       aria-pressed={active}
-      className={`rounded-lg border bg-white p-4 text-left shadow-sm transition hover:border-primary ${
-        active ? "border-primary" : "border-gray-200"
+      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
+        active ? "border-primary" : "border-theme-border-subtle"
       }`}
       onClick={onClick}
       type="button"
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
         {label}
       </p>
       <p className="mt-2 text-2xl font-bold text-neutralDark">{value}</p>
@@ -174,9 +174,9 @@ function CountTile({
 
 function ReviewMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4">
       <p className="text-2xl font-bold text-neutralDark">{value}</p>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
         {label}
       </p>
     </div>
@@ -191,10 +191,10 @@ function StatusPill({
   children: string;
 }) {
   const tones = {
-    info: "border-blue-200 bg-blue-50 text-blue-700",
-    neutral: "border-gray-200 bg-gray-50 text-gray-700",
-    success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    warning: "border-amber-200 bg-amber-50 text-amber-700",
+    info: "border-status-alert-info-border bg-status-alert-info-bg text-status-alert-info-fg",
+    neutral: "border-theme-border-subtle bg-theme-background-subtle text-theme-text-secondary",
+    success: "border-status-alert-success-border bg-status-alert-success-bg text-status-alert-success-fg",
+    warning: "border-status-alert-warning-border bg-status-alert-warning-bg text-status-alert-warning-fg",
   };
 
   return (
@@ -230,8 +230,8 @@ function QueueRow({
 
   return (
     <button
-      className={`rounded-lg border bg-white p-4 text-left shadow-sm transition hover:border-primary ${
-        isSelected ? "border-primary" : "border-gray-200"
+      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
+        isSelected ? "border-primary" : "border-theme-border-subtle"
       }`}
       onClick={onSelect}
       type="button"
@@ -241,13 +241,13 @@ function QueueRow({
           <p className="text-sm font-semibold text-neutralDark">
             {jobTitle(item.job)}
           </p>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-theme-text-secondary">
             {item.job.location?.address ?? "No location saved"}
           </p>
-          <p className="mt-2 text-xs font-medium text-gray-500">
+          <p className="mt-2 text-xs font-medium text-theme-text-muted">
             {formatDateTime(item.job.scheduled_start)}
           </p>
-          <p className="mt-2 line-clamp-2 text-xs text-gray-500">
+          <p className="mt-2 line-clamp-2 text-xs text-theme-text-muted">
             {item.state === "needsCaptures"
               ? getBillingQueueItemSummary(item)
               : item.job.service_notes}
@@ -277,11 +277,11 @@ function QueueSection({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutralDark">
           {title}{" "}
-          <span className="font-medium text-gray-500">({items.length})</span>
+          <span className="font-medium text-theme-text-muted">({items.length})</span>
         </h2>
       </div>
       {items.length === 0 ? (
-        <p className="rounded-md border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-500">
+        <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-subtle p-3 text-sm text-theme-text-muted">
           {emptyCopy}
         </p>
       ) : (
@@ -302,12 +302,12 @@ function FormSubmissionCard({ submission }: { submission: JobFormSubmission }) {
   const fields = submission.template?.schema.fields ?? [];
 
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-4">
+    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <h3 className="text-base font-semibold text-neutralDark">
           {submission.template?.name ?? "Treatment form"}
         </h3>
-        <p className="text-xs font-medium text-gray-500">
+        <p className="text-xs font-medium text-theme-text-muted">
           {formatDateTime(submission.submitted_at)}
         </p>
       </div>
@@ -315,20 +315,20 @@ function FormSubmissionCard({ submission }: { submission: JobFormSubmission }) {
         {fields.length > 0
           ? fields.map((field) => (
               <div key={field.id}>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   {field.label}
                 </dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                <dd className="mt-1 whitespace-pre-wrap text-sm text-theme-text-primary">
                   {formatValue(submission.form_data[field.id])}
                 </dd>
               </div>
             ))
           : Object.entries(submission.form_data).map(([key, value]) => (
               <div key={key}>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   {key}
                 </dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                <dd className="mt-1 whitespace-pre-wrap text-sm text-theme-text-primary">
                   {formatValue(value)}
                 </dd>
               </div>
@@ -340,16 +340,16 @@ function FormSubmissionCard({ submission }: { submission: JobFormSubmission }) {
 
 function MediaTile({ media }: { media: JobMedia }) {
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-3">
+    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-3">
       {media.signed_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           alt={media.description ?? media.media_type}
-          className="h-44 w-full rounded-md bg-gray-100 object-cover"
+          className="h-44 w-full rounded-md bg-primitive-slate-100 object-cover"
           src={media.signed_url}
         />
       ) : (
-        <div className="flex h-44 items-center justify-center rounded-md bg-gray-100 px-4 text-center text-sm text-gray-500">
+        <div className="flex h-44 items-center justify-center rounded-md bg-primitive-slate-100 px-4 text-center text-sm text-theme-text-muted">
           Media preview unavailable
         </div>
       )}
@@ -357,8 +357,8 @@ function MediaTile({ media }: { media: JobMedia }) {
         <p className="text-sm font-semibold text-neutralDark">
           {media.description ?? media.storage_path}
         </p>
-        <p className="mt-1 break-all text-xs text-gray-500">{media.storage_path}</p>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 break-all text-xs text-theme-text-muted">{media.storage_path}</p>
+        <p className="mt-1 text-xs text-theme-text-muted">
           Captured {formatDateTime(media.captured_at)}
         </p>
       </div>
@@ -379,15 +379,15 @@ function NextActionCard({
     const actions = buildBillingPortalNextActions({ job: item.job });
 
     return (
-      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
+      <div className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
         <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
-        <p className="mt-1 text-sm text-gray-700">
+        <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {actions.map((action) => (
             <a
-              className="inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90"
+              className="inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90"
               href={action.href}
               key={action.id}
             >
@@ -401,11 +401,11 @@ function NextActionCard({
 
   if (!item.invoice) {
     return (
-      <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+      <div className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-4">
         <p className="text-sm font-semibold text-neutralDark">
           {item.readiness.label}
         </p>
-        <p className="mt-1 text-sm text-gray-700">{item.readiness.summary}</p>
+        <p className="mt-1 text-sm text-theme-text-secondary">{item.readiness.summary}</p>
       </div>
     );
   }
@@ -433,13 +433,13 @@ function NextActionCard({
   };
 
   return (
-    <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+    <div className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-4">
       <p className="text-sm font-semibold text-neutralDark">
         {titleByStatus[invoice.status]}
       </p>
-      <p className="mt-1 text-sm text-gray-700">{bodyByStatus[invoice.status]}</p>
+      <p className="mt-1 text-sm text-theme-text-secondary">{bodyByStatus[invoice.status]}</p>
       <a
-        className="mt-4 inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90"
+        className="mt-4 inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90"
         href={
           invoice.status === "sent" && invoice.payment_url
             ? invoice.payment_url
@@ -457,7 +457,7 @@ function NextActionCard({
           .filter((action) => action.id !== "review_payment")
           .map((action) => (
             <a
-              className="rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-primary hover:bg-blue-50"
+              className="rounded-md border border-status-alert-info-border bg-theme-background-surface px-3 py-2 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
               href={action.href}
               key={action.id}
             >
@@ -489,7 +489,7 @@ function ProofHandoffCard({
   const proof = review;
 
   return (
-    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
+    <div className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-neutralDark">
@@ -498,46 +498,46 @@ function ProofHandoffCard({
           <p className="mt-2 text-sm font-semibold text-neutralDark">
             {handoff.proof_label}
           </p>
-          <p className="mt-1 text-sm text-gray-700">{handoff.proof_summary}</p>
+          <p className="mt-1 text-sm text-theme-text-secondary">{handoff.proof_summary}</p>
         </div>
-        <span className="w-fit rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="w-fit rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.completion_label ?? "Needs review"}
         </span>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {arrivalLabel}
         </span>
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {departureLabel}
         </span>
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {handoff.gps_label}
         </span>
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.billing_label ?? handoff.proof_label}
         </span>
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.invoice_label ?? (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
         </span>
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.sync_confidence_label ?? "Review synced field evidence"}
         </span>
       </div>
-      <ul className="mt-3 grid gap-1 text-xs font-medium text-gray-600 sm:grid-cols-2">
+      <ul className="mt-3 grid gap-1 text-xs font-medium text-theme-text-secondary sm:grid-cols-2">
         {handoff.gps_items.map((item) => (
           <li key={item}>{item}</li>
         ))}
       </ul>
       {handoff.missing_capture_guidance ? (
-        <p className="mt-3 text-sm text-gray-700">
+        <p className="mt-3 text-sm text-theme-text-secondary">
           {handoff.missing_capture_guidance}
         </p>
       ) : null}
       <p className="mt-3 text-sm font-semibold text-neutralDark">
         {handoff.portal_handoff_label}
       </p>
-      <p className="mt-3 text-xs font-medium text-gray-600">
+      <p className="mt-3 text-xs font-medium text-theme-text-secondary">
         {handoff.portal_handoff_summary}
       </p>
     </div>
@@ -682,7 +682,7 @@ export function CloseoutsClient() {
           <h1 className="text-3xl font-bold text-neutralDark">
             Billing work queue
           </h1>
-          <p className="mt-3 max-w-3xl text-sm text-gray-600">
+          <p className="mt-3 max-w-3xl text-sm text-theme-text-secondary">
             Completed jobs grouped by billing readiness. Open one to review captures
             or create an invoice.
           </p>
@@ -690,14 +690,14 @@ export function CloseoutsClient() {
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             aria-label="Search closeouts"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Queue status"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) =>
               setStatus(event.target.value as CloseoutStatusFilter)
             }
@@ -727,13 +727,13 @@ export function CloseoutsClient() {
         />
       </section>
 
-      <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+      <section className="rounded-lg border border-status-alert-success-border bg-status-alert-success-bg p-4 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-success-fg">
               Closeout compliance audit
             </p>
-            <p className="mt-1 text-sm text-emerald-900">
+            <p className="mt-1 text-sm text-status-alert-success-fgStrong">
               Branch 3 and multi-unit evidence stays advisory in V1.{" "}
               {
                 branchCompliancePreview.required_fields.filter(
@@ -744,7 +744,7 @@ export function CloseoutsClient() {
             </p>
           </div>
           <a
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-emerald-300 bg-white px-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-100"
+            className="inline-flex min-h-10 items-center justify-center rounded-md border border-status-alert-success-border bg-theme-background-surface px-3 text-sm font-semibold text-status-alert-success-fgStrong hover:bg-status-alert-success-bg"
             href="/compliance"
           >
             Open compliance
@@ -788,12 +788,12 @@ export function CloseoutsClient() {
               {otherJobs.length > 0 ? (
                 <section className="flex flex-col gap-2">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-neutralDark">
-                    Other jobs <span className="font-medium text-gray-500">({otherJobs.length})</span>
+                    Other jobs <span className="font-medium text-theme-text-muted">({otherJobs.length})</span>
                   </h2>
                   {otherJobs.map((job) => (
                     <button
-                      className={`rounded-lg border bg-white p-4 text-left shadow-sm transition hover:border-primary ${
-                        selectedJob?.id === job.id ? "border-primary" : "border-gray-200"
+                      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
+                        selectedJob?.id === job.id ? "border-primary" : "border-theme-border-subtle"
                       }`}
                       key={job.id}
                       onClick={() => setSelectedJobId(job.id)}
@@ -802,10 +802,10 @@ export function CloseoutsClient() {
                       <p className="text-sm font-semibold text-neutralDark">
                         {jobTitle(job)}
                       </p>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-theme-text-secondary">
                         {job.location?.address ?? "No location saved"}
                       </p>
-                      <p className="mt-2 text-xs text-gray-500">
+                      <p className="mt-2 text-xs text-theme-text-muted">
                         {job.service_notes}
                       </p>
                     </button>
@@ -821,7 +821,7 @@ export function CloseoutsClient() {
             <EmptyState>Select a completed job to review its closeout.</EmptyState>
           ) : (
             <>
-              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+              <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
                 <NextActionCard item={selectedQueueItem} />
                 {proofHandoff ? (
                   <ProofHandoffCard
@@ -839,10 +839,10 @@ export function CloseoutsClient() {
                     <h2 className="mt-1 text-2xl font-bold text-neutralDark">
                       {jobTitle(selectedJob)}
                     </h2>
-                    <p className="mt-2 text-sm text-gray-700">
+                    <p className="mt-2 text-sm text-theme-text-secondary">
                       {selectedJob.location?.address ?? "No location saved"}
                     </p>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-theme-text-secondary">
                       Scheduled {formatDateTime(selectedJob.scheduled_start)}
                     </p>
                   </div>
@@ -862,7 +862,7 @@ export function CloseoutsClient() {
                   ) : null}
                 </div>
                 {selectedJob.service_notes ? (
-                  <p className="mt-5 rounded-md bg-gray-50 p-4 text-sm text-gray-700">
+                  <p className="mt-5 rounded-md bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
                     {selectedJob.service_notes}
                   </p>
                 ) : null}
@@ -870,14 +870,14 @@ export function CloseoutsClient() {
                   <div
                     className={`mt-5 rounded-md border p-4 ${
                       readiness.billingReady
-                        ? "border-emerald-200 bg-emerald-50"
-                        : "border-amber-200 bg-amber-50"
+                        ? "border-status-alert-success-border bg-status-alert-success-bg"
+                        : "border-status-alert-warning-border bg-status-alert-warning-bg"
                     }`}
                   >
                     <p className="text-sm font-semibold text-neutralDark">
                       {readiness.label}
                     </p>
-                    <p className="mt-1 text-sm text-gray-700">
+                    <p className="mt-1 text-sm text-theme-text-secondary">
                       {readiness.summary}
                     </p>
                   </div>
@@ -918,17 +918,17 @@ export function CloseoutsClient() {
                       <div className="grid gap-3 md:grid-cols-2">
                         {closeout.review.chemical_logs.map((log) => (
                           <article
-                            className="rounded-lg border border-gray-200 bg-white p-4"
+                            className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4"
                             key={log.id}
                           >
                             <p className="font-semibold text-neutralDark">
                               {log.chemical?.name ?? "Unknown chemical"}
                             </p>
-                            <p className="mt-1 text-sm text-gray-700">
+                            <p className="mt-1 text-sm text-theme-text-secondary">
                               {log.amount_used} {log.chemical?.unit ?? ""}
                             </p>
                             {log.notes ? (
-                              <p className="mt-2 text-sm text-gray-600">{log.notes}</p>
+                              <p className="mt-2 text-sm text-theme-text-secondary">{log.notes}</p>
                             ) : null}
                           </article>
                         ))}

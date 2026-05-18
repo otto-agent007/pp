@@ -1,0 +1,71 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" width="420" height="96" fill="none">
+  <defs>
+    <linearGradient id="wd-plate" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FF4359"></stop>
+      <stop offset="0.5" stop-color="#E11D2E"></stop>
+      <stop offset="1" stop-color="#A00C1E"></stop>
+    </linearGradient>
+    <linearGradient id="wd-spec" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.6"></stop>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"></stop>
+    </linearGradient>
+    <linearGradient id="wd-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFCC8"></stop>
+      <stop offset="0.5" stop-color="#FFD300"></stop>
+      <stop offset="1" stop-color="#FFA700"></stop>
+    </linearGradient>
+    <linearGradient id="wd-chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"></stop>
+      <stop offset="0.42" stop-color="#D6DDE8"></stop>
+      <stop offset="0.55" stop-color="#6F7889"></stop>
+      <stop offset="1" stop-color="#23283A"></stop>
+    </linearGradient>
+    <linearGradient id="wd-spark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFE0"></stop>
+      <stop offset="0.4" stop-color="#FFE65A"></stop>
+      <stop offset="1" stop-color="#E8A100"></stop>
+    </linearGradient>
+    <radialGradient id="wd-burst" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFAA8" stop-opacity="0.95"></stop>
+      <stop offset="0.5" stop-color="#FFC727" stop-opacity="0.55"></stop>
+      <stop offset="1" stop-color="#FFC727" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="wd-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#1FB8FF" stop-opacity="0.7"></stop>
+      <stop offset="1" stop-color="#1FB8FF" stop-opacity="0"></stop>
+    </radialGradient>
+    <filter id="wd-neon" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"></feGaussianBlur>
+      <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+    </filter>
+  </defs>
+
+
+
+  <ellipse cx="50" cy="50" rx="48" ry="44" fill="url(#wd-glow)"></ellipse>
+
+  <g transform="translate(50 50) skewX(-7) translate(-50 -50)">
+    <path d="M50 14 L80 24 V46 C80 64 67 76 50 82 C33 76 20 64 20 46 V24 Z" fill="url(#wd-plate)"></path>
+    <path d="M50 14 L80 24 V32 Q62 25 50 25 Q38 25 20 32 V24 Z" fill="url(#wd-spec)"></path>
+    <path d="M50 14 L80 24 V46 C80 64 67 76 50 82 C33 76 20 64 20 46 V24 Z" fill="none" stroke="url(#wd-gold)" stroke-width="2.6" stroke-linejoin="round" filter="url(#wd-neon)"></path>
+    <path d="M50 17 L77.5 26 V46 C77.5 62.5 65.5 73.5 50 79 C34.5 73.5 22.5 62.5 22.5 46 V26 Z" fill="none" stroke="#FFF6A0" stroke-width="0.7" stroke-linejoin="round" opacity="0.95"></path>
+
+    <g transform="translate(50 47)">
+      <g class="anim-burst"><circle cx="0" cy="0" r="22" fill="url(#wd-burst)"></circle></g>
+    </g>
+    <g transform="translate(50 47) rotate(16)">
+      <g class="anim-spark">
+        <path d="M0 -22 L4.94 -6.8 L20.92 -6.8 L7.99 2.6 L12.93 17.8 L0 8.4 L-12.93 17.8 L-7.99 2.6 L-20.92 -6.8 L-4.94 -6.8 Z" fill="url(#wd-spark)" stroke="url(#wd-chrome)" stroke-width="2.2" stroke-linejoin="round"></path>
+        <path d="M0 -9 L2.02 -2.78 L8.56 -2.78 L3.27 1.06 L5.29 7.28 L0 3.44 L-5.29 7.28 L-3.27 1.06 L-8.56 -2.78 L-2.02 -2.78 Z" fill="#FFFFFF" opacity="0.95"></path>
+      </g>
+    </g>
+  </g>
+
+  <text x="108" y="50" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="36" font-style="italic" fill="#FFFFFF" letter-spacing="-0.5" transform="skewX(-8)">PEST PATROL</text>
+
+  <g transform="skewX(-8)">
+    <rect x="109" y="60" width="26" height="3" fill="#1FB8FF" rx="1.5"></rect>
+    <text x="140" y="67" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="11.5" font-style="italic" fill="#1FB8FF" letter-spacing="3">SAN DIEGO · EST. 1982</text>
+  </g>
+</svg>

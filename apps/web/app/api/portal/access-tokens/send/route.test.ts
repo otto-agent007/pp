@@ -310,7 +310,7 @@ describe("customer portal send route", () => {
         {
           actor_profile_id: "admin-1",
           customer_id: "customer-1",
-          kind: "send_requested",
+          kind: "send_succeeded",
           token_id: "token-1",
         },
       ],

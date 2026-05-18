@@ -96,7 +96,7 @@ function invoiceTitle(invoice: Invoice) {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <p className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+    <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
   );
@@ -124,12 +124,12 @@ function InvoiceHandoff({
   }
 
   return (
-    <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-3">
+    <div className="mt-4 rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-3">
       <p className="text-sm font-semibold text-neutralDark">Customer handoff</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {actions.map((action) => (
           <a
-            className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary hover:bg-blue-100"
+            className="rounded-md bg-theme-background-surface px-3 py-2 text-sm font-semibold text-primary hover:bg-primitive-sky-100"
             href={action.href}
             key={action.id}
           >
@@ -299,14 +299,14 @@ export function PaymentsClient() {
         <div className="grid gap-3 sm:grid-cols-3">
           <input
             aria-label="Search invoices"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search invoices"
             value={search}
           />
           <select
             aria-label="Invoice status"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) =>
               setStatus(event.target.value as InvoiceStatusFilter)
             }
@@ -320,7 +320,7 @@ export function PaymentsClient() {
           </select>
           <select
             aria-label="Reconciliation status"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) =>
               setReconciliationStatus(event.target.value as ReconciliationFilter)
             }
@@ -338,16 +338,16 @@ export function PaymentsClient() {
         </div>
       </header>
 
-      <section className="flex flex-col gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <section className="flex flex-col gap-3 rounded-md border border-theme-border-subtle bg-theme-background-surface px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-semibold text-neutralDark">{closeoutHandoff.label}</p>
-          <p className="mt-1 text-gray-600">
+          <p className="mt-1 text-theme-text-secondary">
             {closeoutHandoff.summary}
           </p>
-          <p className="mt-1 text-xs font-semibold text-gray-500">
+          <p className="mt-1 text-xs font-semibold text-theme-text-muted">
             {closeoutHandoff.nextStep}
           </p>
-          <p className="mt-1 text-xs font-medium text-gray-500">
+          <p className="mt-1 text-xs font-medium text-theme-text-muted">
             Use closeouts to confirm proof handoff, GPS evidence, and customer-safe
             portal readiness before invoicing.
           </p>
@@ -357,67 +357,67 @@ export function PaymentsClient() {
         </a>
       </section>
 
-      <section className="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
+      <section className="rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg p-5 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
           Setup
         </p>
         <h2 className="mt-1 text-xl font-semibold text-neutralDark">
           Stripe test-mode readiness
         </h2>
-        <p className="mt-2 text-sm text-gray-700">
+        <p className="mt-2 text-sm text-theme-text-secondary">
           Payment links need server-only STRIPE_SECRET_KEY. Stripe webhooks need
           STRIPE_WEBHOOK_SECRET.
         </p>
-        <p className="mt-2 text-sm text-gray-700">
+        <p className="mt-2 text-sm text-theme-text-secondary">
           Stripe can stay unset for customer, job, closeout, and portal demos.
         </p>
-        <p className="mt-2 text-sm text-gray-700">
+        <p className="mt-2 text-sm text-theme-text-secondary">
           Invoices and manual paid status still work for non-payment demos
           without Stripe.
         </p>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-5">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Draft
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {summary.draftCount}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Sent
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {summary.sentCount}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Open
           </p>
           <p className="mt-2 text-2xl font-bold text-primary">
             {formatMoney(summary.openCents)}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Paid
           </p>
           <p className="mt-2 text-2xl font-bold text-accent">
             {formatMoney(summary.paidCents)}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Needs review
           </p>
-          <p className="mt-2 text-2xl font-bold text-red-700">
+          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">
             {reconciliationSummary.needsReviewCount}
           </p>
-          <p className="mt-1 text-xs font-medium text-gray-500">
+          <p className="mt-1 text-xs font-medium text-theme-text-muted">
             {reconciliationSummary.needsReviewCount === 1
               ? "1 invoice"
               : `${reconciliationSummary.needsReviewCount} invoices`}
@@ -448,7 +448,7 @@ export function PaymentsClient() {
 
               return (
                 <article
-                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                  className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                   key={invoice.id}
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -457,37 +457,37 @@ export function PaymentsClient() {
                         <h2 className="text-lg font-semibold text-neutralDark">
                           {invoiceTitle(invoice)}
                         </h2>
-                        <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
+                        <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
                           {invoice.status}
                         </span>
-                        <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold uppercase text-primary">
+                        <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold uppercase text-primary">
                           {reconciliation.label}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm text-gray-700">
+                      <p className="mt-2 text-sm text-theme-text-secondary">
                         {invoice.job?.location?.address ?? "No location"}
                       </p>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-theme-text-secondary">
                         Due {formatDate(invoice.due_date)}
                       </p>
                       {reconciliation.reviewLabel ? (
-                        <p className="mt-2 text-sm font-semibold text-red-700">
+                        <p className="mt-2 text-sm font-semibold text-status-alert-danger-fg">
                           {reconciliation.reviewLabel}
                         </p>
                       ) : null}
-                      <p className="mt-2 text-sm text-gray-700">
+                      <p className="mt-2 text-sm text-theme-text-secondary">
                         {guidance.summary}
                       </p>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-theme-text-secondary">
                         {guidance.nextStep}
                       </p>
                       {latestPaidAt ? (
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-theme-text-secondary">
                           Latest payment {latestPaidAt}
                         </p>
                       ) : null}
                       {invoice.notes ? (
-                        <p className="mt-2 text-sm text-gray-600">{invoice.notes}</p>
+                        <p className="mt-2 text-sm text-theme-text-secondary">{invoice.notes}</p>
                       ) : null}
                       {invoice.payment_url ? (
                         <a
@@ -505,7 +505,7 @@ export function PaymentsClient() {
                       <p className="text-right text-2xl font-bold text-neutralDark">
                         {formatMoney(invoice.total_cents, invoice.currency)}
                       </p>
-                      <div className="text-right text-xs font-medium text-gray-500">
+                      <div className="text-right text-xs font-medium text-theme-text-muted">
                         <p>
                           Paid{" "}
                           {formatMoney(
@@ -524,7 +524,7 @@ export function PaymentsClient() {
                       <div className="flex flex-wrap justify-end gap-2">
                         {invoice.status === "draft" ? (
                           <button
-                            className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
+                            className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:opacity-60"
                             disabled={createPaymentLink.isPending}
                             onClick={() => createPaymentLink.mutate(invoice)}
                             type="button"
@@ -534,7 +534,7 @@ export function PaymentsClient() {
                         ) : null}
                         {invoice.status !== "paid" && invoice.status !== "void" ? (
                           <button
-                            className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                            className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
                             disabled={markPaid.isPending}
                             onClick={() =>
                               setActionConfirmation({
@@ -549,7 +549,7 @@ export function PaymentsClient() {
                         ) : null}
                         {invoice.status !== "void" && invoice.status !== "paid" ? (
                           <button
-                            className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+                            className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                             disabled={voidInvoice.isPending}
                             onClick={() =>
                               setActionConfirmation({
@@ -570,7 +570,7 @@ export function PaymentsClient() {
                               ? `Confirm mark paid for ${invoiceTitle(invoice)}`
                               : `Confirm void for ${invoiceTitle(invoice)}`
                           }
-                          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-left"
+                          className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg px-3 py-2 text-left"
                           role="group"
                         >
                           <p className="text-sm font-semibold text-neutralDark">
@@ -578,10 +578,10 @@ export function PaymentsClient() {
                               ? "Mark this invoice paid?"
                               : "Void this invoice?"}
                           </p>
-                          <p className="mt-1 text-xs text-gray-600">
+                          <p className="mt-1 text-xs text-theme-text-secondary">
                             {confirmationContext}
                           </p>
-                          <p className="mt-2 text-xs text-gray-600">
+                          <p className="mt-2 text-xs text-theme-text-secondary">
                             {confirmingAction === "mark_paid"
                               ? guidance.markPaidConfirmation
                               : guidance.voidConfirmation}
@@ -593,7 +593,7 @@ export function PaymentsClient() {
                                   ? "Cancel mark paid"
                                   : "Cancel void"
                               }
-                              className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                              className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
                               onClick={() => setActionConfirmation(null)}
                               type="button"
                             >
@@ -602,8 +602,8 @@ export function PaymentsClient() {
                             <button
                               className={
                                 confirmingAction === "mark_paid"
-                                  ? "min-h-8 rounded-md bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                                  : "min-h-8 rounded-md bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-60"
+                                  ? "min-h-8 rounded-md bg-status-alert-success-solid px-3 text-xs font-semibold text-theme-text-inverse hover:bg-status-alert-success-fg disabled:opacity-60"
+                                  : "min-h-8 rounded-md bg-status-alert-danger-solid px-3 text-xs font-semibold text-theme-text-inverse hover:bg-primitive-red-600 disabled:opacity-60"
                               }
                               disabled={
                                 confirmingAction === "mark_paid"
@@ -631,18 +631,18 @@ export function PaymentsClient() {
         </div>
 
         <form
-          className="flex h-fit flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           onSubmit={submitInvoice}
         >
           <h2 className="text-xl font-semibold text-neutralDark">Create invoice</h2>
           {closeoutHandoffJob ? (
-            <p className="rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+            <p className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-3 text-sm text-status-alert-info-fg">
               From closeout: {closeoutHandoffJob.customer?.name ?? "Unknown customer"} @{" "}
               {closeoutHandoffJob.location?.address ?? "No location"}
             </p>
           ) : null}
           {formError ? (
-            <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
               {formError}
             </p>
           ) : null}
@@ -651,7 +651,7 @@ export function PaymentsClient() {
             Completed job
             <select
               aria-label="Completed job"
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) => {
                 setCloseoutHandoffJobId("");
                 setForm((current) => ({ ...current, job_id: event.target.value }));
@@ -670,7 +670,7 @@ export function PaymentsClient() {
             Amount
             <input
               aria-label="Invoice amount"
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               min="0"
               onChange={(event) =>
                 setForm((current) => ({ ...current, amount: event.target.value }))
@@ -684,7 +684,7 @@ export function PaymentsClient() {
             Description
             <input
               aria-label="Line item description"
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -698,7 +698,7 @@ export function PaymentsClient() {
             Due date
             <input
               aria-label="Due date"
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) =>
                 setForm((current) => ({ ...current, due_date: event.target.value }))
               }
@@ -710,7 +710,7 @@ export function PaymentsClient() {
             Notes
             <textarea
               aria-label="Invoice notes"
-              className="min-h-24 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
+              className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
               onChange={(event) =>
                 setForm((current) => ({ ...current, notes: event.target.value }))
               }
@@ -718,7 +718,7 @@ export function PaymentsClient() {
             />
           </label>
           <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={createInvoice.isPending}
             type="submit"
           >

@@ -18,5 +18,20 @@ module.exports = {
   ],
   rules: {
     "@typescript-eslint/no-explicit-any": "warn",
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector: "TSAsExpression[typeAnnotation.type='TSNeverKeyword']",
+        message: "Avoid `as never` in production code; fix the type boundary instead.",
+      },
+    ],
   },
+  overrides: [
+    {
+      files: ["**/*.test.ts", "**/*.test.tsx"],
+      rules: {
+        "no-restricted-syntax": "off",
+      },
+    },
+  ],
 };

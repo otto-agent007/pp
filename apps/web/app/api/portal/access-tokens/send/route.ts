@@ -209,7 +209,7 @@ export async function POST(request: Request) {
     await recordCustomerPortalAccessTokenEvent(client, {
       actorProfileId: auth.access.userId,
       customerId: data.customer_id,
-      kind: "send_requested",
+      kind: "send_succeeded",
       tokenId: data.id,
     });
 

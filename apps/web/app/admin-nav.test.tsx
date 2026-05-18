@@ -50,6 +50,9 @@ describe("AdminNav", () => {
 
     render(<AdminNav />);
 
+    expect(
+      screen.getByRole("link", { name: "Pest Patrol OS — Home" }),
+    ).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Customers" })).toHaveAttribute(
       "href",
       "/customers",
@@ -64,6 +67,22 @@ describe("AdminNav", () => {
     );
     expect(screen.getByText("Field command")).toBeInTheDocument();
     expect(screen.getByText("admin")).toBeInTheDocument();
+  });
+
+  it("renders the Wordmark inside the home link", () => {
+    usePathname.mockReturnValue("/");
+
+    const { container } = render(<AdminNav />);
+
+    const homeLink = screen.getByRole("link", {
+      name: "Pest Patrol OS — Home",
+    });
+    // The wordmark is decorative inside the labelled link, so we look for the
+    // inlined SVG rather than another role="img".
+    expect(homeLink.querySelector("svg")).not.toBeNull();
+    expect(container.querySelector("svg")?.getAttribute("viewBox")).toBe(
+      "0 0 420 96",
+    );
   });
 
   it("signs out from the admin shell", async () => {

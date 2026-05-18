@@ -225,6 +225,13 @@ describe("CustomerPortalLinks", () => {
             occurred_at: "2026-05-07T10:00:00.000Z",
           },
           {
+            id: "event-send-succeeded",
+            token_id: "token-1",
+            customer_id: "customer-1",
+            kind: "send_succeeded",
+            occurred_at: "2026-05-07T10:03:00.000Z",
+          },
+          {
             id: "event-send-failed",
             token_id: "token-1",
             customer_id: "customer-1",
@@ -244,8 +251,9 @@ describe("CustomerPortalLinks", () => {
     await user.click(screen.getByRole("button", { name: "History" }));
 
     expect(screen.getByText("Send requested")).toBeInTheDocument();
+    expect(screen.getByText("Send succeeded")).toBeInTheDocument();
     expect(screen.getByText("Send failed")).toBeInTheDocument();
-    expect(screen.getAllByText("by an admin")).toHaveLength(2);
+    expect(screen.getAllByText("by an admin")).toHaveLength(3);
   });
 
   it("shows empty, loading, and error readiness states", () => {

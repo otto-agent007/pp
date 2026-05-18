@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   summary: {
-    color: "#4B5563",
+    color: mobileRouteShellPalette.secondaryText,
     fontSize: 12,
     fontWeight: "700",
   },

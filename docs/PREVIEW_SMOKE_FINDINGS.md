@@ -2,6 +2,43 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-18 Next Five Launch Gate Batch
+
+Status: brand app-shell intake and provider-free launch-gate guidance are implemented locally; compliance dry-run passed; local and protected-preview smoke remain blocked before any seed/reset, browser smoke, live compliance ingestion, provider-receipt work, or production action.
+
+Read-only checks:
+- Command: `corepack pnpm vitest run packages/domain/auth.test.ts packages/domain/closeouts.test.ts packages/domain/homeCommandCenter.test.ts apps/web/app/admin-nav.test.tsx apps/web/app/page.test.tsx apps/web/app/brand/wordmark.test.tsx apps/web/app/api/portal/access-tokens/send/route.test.ts apps/web/app/api/portal/access-tokens/[tokenId]/events/route.test.ts apps/web/app/customers/customer-portal-links.test.tsx`
+- Result: pass; 9 files and 80 tests passed.
+- Command: Browser DOM/console smoke on `http://localhost:3000`, then home `Open dispatch`.
+- Result: pass; home rendered smoke-readiness launch gates, dispatch navigation rendered `Dispatch Calendar`, no framework overlay was present, and no relevant warning/error console logs were reported. Browser screenshot capture timed out, so no screenshot artifact was recorded.
+- Command: `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+- Result: pass; full repo verification passed. Build printed the existing Expo `NO_COLOR`/`FORCE_COLOR` warning.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: latest Ready preview found at `https://pest-patrol-rhujvtkqx-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel build --yes`
+- Result: the prior `/auth/update-password` lambda-mapping blocker is fixed; local Vercel CLI now emits `/auth/update-password` as dynamic and reaches serverless-function output.
+- Blocker category: local Windows Vercel CLI packaging blocker.
+- Exact remaining failure: `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-rhujvtkqx-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Slice outcomes:
+- Brand Asset App-Shell Intake V1: locally implemented with brand wrappers, admin shell wordmark, ID suffixing coverage, and asset docs.
+- Local Vercel Packaging Blocker Fix V1: repo-side `/auth/update-password` lambda mapping fixed; remaining failure is local Windows symlink creation during Vercel output assembly.
+- Provider-Free Smoke Readiness Polish V1: dashboard launch gates now surface local smoke, protected-preview smoke, compliance setup, and portal delivery mode next actions without secret values.
+- Compliance Source-Backed Local Ingestion V1: dry-run/no-embed passed; live migration/application and source ingestion remain gated on explicit approved local target.
+- Authenticated Preview Smoke + Launch Gate V1: latest Ready preview was discovered, but preflight remains blocked before seed/reset and browser smoke.
+
+No seed/reset writes, browser login, provider dashboard mutations, environment mutations, migration application, live compliance ingestion, raw portal URLs, credentials, protected-preview access values, webhook payloads, preview data mutation, or production data actions were performed.
+
 ## 2026-05-17 Production-Readiness Slice Execution
 
 Status: compliance closeout verification passed locally; local and protected-preview smoke remain blocked before any seed/reset, browser smoke, blocker-fix, or provider-receipt work.

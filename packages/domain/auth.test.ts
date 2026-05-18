@@ -5,6 +5,7 @@ import {
   requestPasswordReset,
   updateCurrentUserPassword,
   validateAdminAccess,
+  validateAdminProfile,
   validateLoginInput,
   validatePasswordRecoverySessionInput,
   validatePasswordResetRequestInput,
@@ -112,6 +113,30 @@ describe("auth domain", () => {
 
   it("accepts admin and dispatcher profiles for admin web access", () => {
     expect(
+      validateAdminProfile({
+        id: "user-0",
+        role: "admin",
+        created_at: now,
+        updated_at: now,
+      }),
+    ).toMatchObject({
+      id: "user-0",
+      role: "admin",
+    });
+
+    expect(
+      validateAdminProfile({
+        id: "user-dispatch",
+        role: "dispatcher",
+        created_at: now,
+        updated_at: now,
+      }),
+    ).toMatchObject({
+      id: "user-dispatch",
+      role: "dispatcher",
+    });
+
+    expect(
       validateAdminAccess({
         session,
         profile: {
@@ -137,6 +162,15 @@ describe("auth domain", () => {
   });
 
   it("rejects technician profiles for admin web access", () => {
+    expect(() =>
+      validateAdminProfile({
+        id: "user-0",
+        role: "technician",
+        created_at: now,
+        updated_at: now,
+      }),
+    ).toThrow("Admin or dispatcher access is required");
+
     expect(() =>
       validateAdminAccess({
         session,

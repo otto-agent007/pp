@@ -1,0 +1,262 @@
+/* ============================================================
+   Patrol UI — colors_and_type.css
+   Design tokens for Pest Patrol OS.
+   Import this file before any UI kit stylesheet.
+   ============================================================ */
+
+/* --- Inter from Google Fonts (variable, weights 400-800) --- */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  /* ----------------------------------------------------------
+     BRAND COLORS
+     ---------------------------------------------------------- */
+  --patrol-navy:        #071A3D;  /* primary chrome, dark surfaces */
+  --patrol-navy-700:    #0B2454;  /* hover / lifted navy */
+  --patrol-navy-300:    #5B6D90;  /* navy text on light */
+  --patrol-blue:        #0EA5E9;  /* primary action */
+  --patrol-blue-700:    #0284C7;  /* hover */
+  --patrol-blue-100:    #E0F2FE;  /* tinted bg */
+  --patrol-red:         #E11D2E;  /* urgency, destructive */
+  --patrol-red-700:     #B91320;
+  --patrol-red-100:     #FEE2E2;
+  --patrol-yellow:      #FACC15;  /* highlights, follow-up */
+  --patrol-yellow-100:  #FEF3C7;
+  --patrol-green:       #16A34A;  /* completion */
+  --patrol-green-100:   #DCFCE7;
+  --patrol-orange:      #F97316;  /* in-progress / warning */
+  --patrol-orange-100:  #FFEDD5;
+
+  /* ----------------------------------------------------------
+     NEUTRALS
+     ---------------------------------------------------------- */
+  --sand:               #F8FAFC;  /* page canvas — was warm sand, dropped per brand iteration */
+  --sand-200:           #EEF2F7;  /* legacy divider tone */
+  --surface:            #FFFFFF;  /* card / surface */
+  --surface-2:          #F8FAFC;  /* subtle inset */
+  --ink:                #0F172A;  /* primary text */
+  --ink-2:              #1E293B;  /* secondary heading */
+  --muted:              #64748B;  /* muted text, helper */
+  --muted-2:            #94A3B8;  /* placeholder, subtle */
+  --border:             #E2E8F0;  /* default hairline */
+  --border-strong:      #CBD5E1;
+
+  /* ----------------------------------------------------------
+     STATUS — semantic, job-state alphabet
+     Each has fg / bg / border for pills + solid for dots/bars.
+     ---------------------------------------------------------- */
+  --status-scheduled-fg:     #475569;
+  --status-scheduled-bg:     #F1F5F9;
+  --status-scheduled-border: #CBD5E1;
+  --status-scheduled-solid:  #64748B;
+
+  --status-enroute-fg:       #0369A1;
+  --status-enroute-bg:       #E0F2FE;
+  --status-enroute-border:   #7DD3FC;
+  --status-enroute-solid:    #0EA5E9;
+
+  --status-progress-fg:      #C2410C;
+  --status-progress-bg:      #FFEDD5;
+  --status-progress-border:  #FDBA74;
+  --status-progress-solid:   #F97316;
+
+  --status-complete-fg:      #15803D;
+  --status-complete-bg:      #DCFCE7;
+  --status-complete-border:  #86EFAC;
+  --status-complete-solid:   #16A34A;
+
+  --status-followup-fg:      #854D0E;
+  --status-followup-bg:      #FEF3C7;
+  --status-followup-border:  #FDE68A;
+  --status-followup-solid:   #EAB308;
+
+  --status-urgent-fg:        #B91320;
+  --status-urgent-bg:        #FEE2E2;
+  --status-urgent-border:    #FECACA;
+  --status-urgent-solid:     #E11D2E;
+
+  /* ----------------------------------------------------------
+     SYNC STATES (technician app)
+     ---------------------------------------------------------- */
+  --sync-synced:    var(--patrol-green);
+  --sync-queued:    var(--muted);
+  --sync-syncing:   var(--patrol-blue);
+  --sync-failed:    var(--patrol-red);
+  --sync-conflict:  var(--patrol-orange);
+
+  /* ----------------------------------------------------------
+     TYPOGRAPHY — base
+     ---------------------------------------------------------- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --fs-xs:    12px;
+  --fs-sm:    14px;
+  --fs-base:  16px;
+  --fs-lg:    18px;
+  --fs-xl:    20px;
+  --fs-2xl:   24px;
+  --fs-3xl:   30px;
+  --fs-4xl:   36px;
+  --fs-5xl:   48px;
+
+  --lh-tight: 1.1;
+  --lh-snug:  1.25;
+  --lh-base:  1.5;
+  --lh-loose: 1.625;
+
+  --fw-regular:   400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+  --fw-extrabold: 800;
+
+  --tracking-tight:   -0.02em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.04em;
+  --tracking-wider:   0.08em;
+
+  /* ----------------------------------------------------------
+     SPACING (4px base)
+     ---------------------------------------------------------- */
+  --space-0:   0;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+
+  /* ----------------------------------------------------------
+     RADII
+     ---------------------------------------------------------- */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-pill: 9999px;
+
+  /* ----------------------------------------------------------
+     SHADOWS
+     ---------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.10);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+
+  /* ----------------------------------------------------------
+     MOTION
+     ---------------------------------------------------------- */
+  --ease-out:    cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:    120ms;
+  --dur-base:    180ms;
+  --dur-slow:    260ms;
+}
+
+/* ============================================================
+   SEMANTIC TYPE STYLES — apply directly with class names or
+   wire your component CSS to these vars.
+   ============================================================ */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--ink);
+  background: var(--sand);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.t-display {
+  font-size: var(--fs-5xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+.t-h1 {
+  font-size: var(--fs-4xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+.t-h2 {
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+.t-h3 {
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+.t-h4 {
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+.t-h5 {
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+.t-body {
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  font-weight: var(--fw-regular);
+  color: var(--ink-2);
+}
+.t-body-sm {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  font-weight: var(--fw-regular);
+  color: var(--ink-2);
+}
+.t-muted {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  color: var(--muted);
+}
+.t-eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.t-stat {
+  font-size: var(--fs-4xl);
+  line-height: 1;
+  font-weight: var(--fw-extrabold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+/* Utility surface */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}

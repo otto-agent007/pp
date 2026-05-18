@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Wordmark } from "./brand";
 import { useAdminAuth } from "./admin-auth-context";
 
 const adminRoutes = [
@@ -34,20 +35,25 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-2 shadow-sm backdrop-blur sm:px-6">
+    <nav className="sticky top-0 z-30 border-b border-theme-border-subtle bg-theme-background-surface/95 px-4 py-2 shadow-sm backdrop-blur sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            className="rounded-md bg-[#071A3D] px-3 py-2 text-sm font-bold text-white"
+            aria-label="Pest Patrol OS — Home"
+            className="inline-flex items-center rounded-md bg-primitive-navy-950 px-3 py-1.5"
             href="/"
           >
-            Pest Patrol OS
+            <Wordmark
+              label="decorative"
+              variant="dark"
+              width={156}
+            />
           </Link>
-          <span className="rounded-md bg-[#FACC15]/30 px-2 py-1 text-xs font-bold uppercase text-[#071A3D]">
+          <span className="rounded-md bg-primitive-yellow-400/30 px-2 py-1 text-xs font-bold uppercase text-primitive-navy-950">
             Field command
           </span>
           {profile ? (
-            <span className="text-xs font-bold uppercase text-slate-500">
+            <span className="text-xs font-bold uppercase text-theme-text-muted">
               {profile.role}
             </span>
           ) : null}
@@ -61,8 +67,8 @@ export function AdminNav() {
                 aria-current={active ? "page" : undefined}
                 className={`whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-bold transition ${
                   active
-                    ? "bg-[#0EA5E9] text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-[#071A3D]"
+                    ? "bg-primitive-sky-500 text-theme-text-inverse shadow-sm"
+                    : "text-theme-text-secondary hover:bg-primitive-slate-100 hover:text-primitive-navy-950"
                 }`}
                 href={route.href}
                 key={route.href}
@@ -72,7 +78,7 @@ export function AdminNav() {
             );
           })}
           <button
-            className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-[#071A3D]"
+            className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-bold text-theme-text-secondary transition hover:bg-primitive-slate-100 hover:text-primitive-navy-950"
             onClick={() => void signOut()}
             type="button"
           >

@@ -1,6 +1,8 @@
-import { useMemo, useRef, useState, type ReactElement } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import SignatureCanvas from "react-native-signature-canvas";
+import SignatureCanvas, {
+  type SignatureViewRef,
+} from "react-native-signature-canvas";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobSignatures } from "../store/useJobSignatures";
@@ -8,15 +10,6 @@ import {
   mobileCaptureControlStyles,
   mobileRouteShellPalette,
 } from "../styles/routeShellStyles";
-
-const SignatureCanvasComponent = SignatureCanvas as unknown as (
-  props: Record<string, unknown>,
-) => ReactElement | null;
-
-interface SignatureCanvasHandle {
-  clearSignature: () => void;
-  readSignature: () => void;
-}
 
 interface JobSignatureCaptureFormProps {
   jobId: string;
@@ -51,7 +44,7 @@ export function JobSignatureCaptureForm({
   jobId,
 }: JobSignatureCaptureFormProps) {
   const copy = useLanguage((state) => state.t.jobs.fieldCopy);
-  const signatureRef = useRef<SignatureCanvasHandle | null>(null);
+  const signatureRef = useRef<SignatureViewRef | null>(null);
   const { getDraft, queueSignature, setSignerName } = useJobSignatures();
   const drafts = useJobSignatures((state) => state.drafts);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +93,7 @@ export function JobSignatureCaptureForm({
           overflow: "hidden",
         }}
       >
-        <SignatureCanvasComponent
+        <SignatureCanvas
           autoClear={false}
           clearText={copy.signature.clear}
           confirmText={copy.signature.queue}
@@ -110,7 +103,7 @@ export function JobSignatureCaptureForm({
           }}
           onOK={handleSignature}
           penColor={mobileRouteShellPalette.primaryText}
-          ref={signatureRef as never}
+          ref={signatureRef}
           webStyle={signatureWebStyle}
         />
       </View>

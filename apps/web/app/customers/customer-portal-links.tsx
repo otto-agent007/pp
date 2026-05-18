@@ -203,7 +203,7 @@ function CustomerPortalTokenHistory({
     return (
       <div
         aria-label="Event history for portal link"
-        className="mt-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-500"
+        className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2 text-xs font-semibold text-theme-text-muted"
         id={regionId}
         onKeyDown={handleKeyDown}
         role="region"
@@ -217,16 +217,16 @@ function CustomerPortalTokenHistory({
     return (
       <div
         aria-label="Event history for portal link"
-        className="mt-2 flex items-center justify-between gap-3 rounded-md border border-red-100 bg-white px-3 py-2"
+        className="mt-2 flex items-center justify-between gap-3 rounded-md border border-status-alert-danger-border bg-theme-background-surface px-3 py-2"
         id={regionId}
         onKeyDown={handleKeyDown}
         role="region"
       >
-        <p className="text-xs font-semibold text-red-700">
+        <p className="text-xs font-semibold text-status-alert-danger-fg">
           {"Couldn't load portal history."}
         </p>
         <button
-          className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+          className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
           onClick={() => void eventsQuery.refetch()}
           type="button"
         >
@@ -240,14 +240,14 @@ function CustomerPortalTokenHistory({
     return (
       <div
         aria-label="Event history for portal link"
-        className="mt-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500"
+        className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2 text-xs text-theme-text-muted"
         id={regionId}
         onKeyDown={handleKeyDown}
         role="region"
       >
         <p>No history recorded for this link.</p>
         {truncatedBefore ? (
-          <p className="mt-2 text-xs italic text-gray-400">
+          <p className="mt-2 text-xs italic text-theme-text-muted/70">
             {`History before ${formatDate(truncatedBefore)} isn't recorded.`}
           </p>
         ) : null}
@@ -258,28 +258,28 @@ function CustomerPortalTokenHistory({
   return (
     <div
       aria-label="Event history for portal link"
-      className="mt-2 rounded-md border border-gray-200 bg-white"
+      className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface"
       id={regionId}
       onKeyDown={handleKeyDown}
       role="region"
     >
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-primitive-slate-100">
         {events.map((event) => (
           <li className="flex justify-between gap-3 px-3 py-2" key={event.id}>
             <div>
               <p className="text-xs font-semibold text-neutralDark">
                 {getCustomerPortalAccessTokenEventLabel(event)}
               </p>
-              <p className="text-xs text-gray-500">{eventDetail(event)}</p>
+              <p className="text-xs text-theme-text-muted">{eventDetail(event)}</p>
             </div>
-            <p className="shrink-0 text-right text-xs font-semibold text-gray-500">
+            <p className="shrink-0 text-right text-xs font-semibold text-theme-text-muted">
               {formatAccessTimestamp(event.occurred_at)}
             </p>
           </li>
         ))}
       </ul>
       {truncatedBefore ? (
-        <p className="border-t border-gray-100 px-3 py-2 text-xs italic text-gray-400">
+        <p className="border-t border-primitive-slate-100 px-3 py-2 text-xs italic text-theme-text-muted/70">
           {`History before ${formatDate(truncatedBefore)} isn't recorded.`}
         </p>
       ) : null}
@@ -585,7 +585,7 @@ export function CustomerPortalLinks({
         aria-busy={sendToken.isPending}
         aria-disabled={!hasContact || sendToken.isPending}
         aria-label="Send portal link via provider"
-        className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-9 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle disabled:cursor-not-allowed disabled:opacity-50"
         disabled={!hasContact || sendToken.isPending}
         onClick={() => void sendLatestLink()}
         title={
@@ -706,29 +706,29 @@ export function CustomerPortalLinks({
   })();
 
   return (
-    <section className="mt-4 border-t border-gray-100 pt-4">
+    <section className="mt-4 border-t border-primitive-slate-100 pt-4">
       <div>
         <h3 className="text-sm font-semibold text-neutralDark">Portal access</h3>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-theme-text-muted">
           Generate links to share with this customer.
         </p>
       </div>
 
       {portalHandoff ? (
-        <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+        <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Portal handoff review
               </p>
               <p className="mt-1 font-semibold text-neutralDark">
                 {portalHandoff.label}
               </p>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-1 text-xs text-theme-text-secondary">
                 {portalHandoff.summary}
               </p>
             </div>
-            <p className="text-xs font-semibold text-gray-500">
+            <p className="text-xs font-semibold text-theme-text-muted">
               {portalHandoff.mode_label}
             </p>
           </div>
@@ -736,23 +736,23 @@ export function CustomerPortalLinks({
       ) : null}
 
       <div
-        className={`mt-3 rounded-md border border-l-4 border-gray-200 bg-white p-3 text-sm ${readinessCard.tone}`}
+        className={`mt-3 rounded-md border border-l-4 border-theme-border-subtle bg-theme-background-surface p-3 text-sm ${readinessCard.tone}`}
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="font-semibold text-neutralDark">{readinessCard.label}</p>
             {readinessCard.body ? (
-              <p className="mt-0.5 text-xs text-gray-600">{readinessCard.body}</p>
+              <p className="mt-0.5 text-xs text-theme-text-secondary">{readinessCard.body}</p>
             ) : null}
             {showProviderCopy ? (
-              <p className="mt-1 text-xs font-medium text-gray-400">
+              <p className="mt-1 text-xs font-medium text-theme-text-muted/70">
                 {providerCopy}
               </p>
             ) : null}
           </div>
           {tokensQuery.error ? (
             <button
-              className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+              className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
               onClick={() => void tokensQuery.refetch()}
               type="button"
             >
@@ -763,10 +763,10 @@ export function CustomerPortalLinks({
       </div>
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-        <label className="flex flex-col gap-1 text-xs font-semibold text-gray-600">
+        <label className="flex flex-col gap-1 text-xs font-semibold text-theme-text-secondary">
           Expires
           <input
-            className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-normal text-neutralDark outline-none focus:border-primary"
+            className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-normal text-neutralDark outline-none focus:border-primary"
             disabled={createToken.isPending}
             onChange={(event) => setExpiresAt(event.target.value)}
             ref={expiresInputRef}
@@ -775,7 +775,7 @@ export function CustomerPortalLinks({
           />
         </label>
         <button
-          className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primitive-sky-600 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
           disabled={createToken.isPending}
           onClick={() => void generateLink()}
           type="button"
@@ -783,14 +783,14 @@ export function CustomerPortalLinks({
           {createToken.isPending ? "Generating…" : "Generate link"}
         </button>
         {createToken.error ? (
-          <p className="text-xs font-semibold text-red-700">
+          <p className="text-xs font-semibold text-status-alert-danger-fg">
             {"Couldn't generate portal link. Try again."}
           </p>
         ) : null}
       </div>
 
       {latestLink ? (
-        <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+        <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
           {copyUnavailable ? (
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-neutralDark">
@@ -798,20 +798,20 @@ export function CustomerPortalLinks({
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input
-                  className="min-h-10 flex-1 rounded-md border border-gray-300 bg-white px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
+                  className="min-h-10 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
                   onFocus={(event) => event.currentTarget.select()}
                   readOnly
                   value={latestLink}
                 />
                 <button
-                  className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                  className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                   onClick={() => void copyLatestLink()}
                   type="button"
                 >
                   {copyFlash ? "Copied!" : "Copy"}
                 </button>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-theme-text-muted">
                 Paste this into an email or text to share with the customer.
               </p>
               <div className="mt-1">{sendButton}</div>
@@ -826,7 +826,7 @@ export function CustomerPortalLinks({
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button
-                  className="min-h-9 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                  className="min-h-9 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                   onClick={() => void copyLatestLink()}
                   ref={copyAgainRef}
                   type="button"
@@ -845,11 +845,11 @@ export function CustomerPortalLinks({
             </div>
           )}
           {sendError ? (
-            <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
+            <p className="mt-2 text-xs font-semibold text-status-alert-danger-fg" role="alert">
               {sendError}
             </p>
           ) : null}
-          <p className="mt-2 text-xs italic text-gray-400">
+          <p className="mt-2 text-xs italic text-theme-text-muted/70">
             {
               "This link is only available during this session. Reload the page and it's gone — generate a new one to reshare."
             }
@@ -861,18 +861,18 @@ export function CustomerPortalLinks({
         {tokensQuery.isLoading ? (
           <>
             <div
-              className="h-12 animate-pulse rounded bg-gray-100"
+              className="h-12 animate-pulse rounded bg-primitive-slate-100"
               data-testid="portal-link-skeleton"
             />
             <div
-              className="h-12 animate-pulse rounded bg-gray-100"
+              className="h-12 animate-pulse rounded bg-primitive-slate-100"
               data-testid="portal-link-skeleton"
             />
           </>
         ) : tokensQuery.error || tokens.length === 0 ? (
           null
         ) : (
-          <div className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-gray-50">
+          <div className="divide-y divide-primitive-slate-100 rounded-md border border-theme-border-subtle bg-theme-background-subtle">
             {sortedTokens.map((token) => {
               const state = getCustomerPortalAccessTokenState(token);
               const isActive = state === "active";
@@ -889,24 +889,24 @@ export function CustomerPortalLinks({
                     <p className="min-w-0 text-xs font-semibold text-neutralDark">
                       <span
                         className={`mr-2 inline-block h-1.5 w-1.5 rounded-full align-middle ${
-                          isActive ? "bg-emerald-600" : "bg-gray-400"
+                          isActive ? "bg-status-alert-success-solid" : "bg-theme-text-muted/70"
                         }`}
                       />
                       {tokenRowLabel(token)}
                     </p>
-                    <p className="shrink-0 text-right text-xs font-semibold text-gray-500">
+                    <p className="shrink-0 text-right text-xs font-semibold text-theme-text-muted">
                       Created {formatDate(token.created_at)}
                     </p>
                   </div>
                   <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-theme-text-muted">
                       {tokenExpiryText(token)} · {formatOpened(token.last_used_at)}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <button
                         aria-controls={historyRegionId}
                         aria-expanded={isHistoryExpanded}
-                        className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                        className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
                         onClick={() =>
                           setExpandedHistoryId((current) =>
                             current === token.id ? null : token.id,
@@ -928,7 +928,7 @@ export function CustomerPortalLinks({
                           {freshSendingId === token.id ? (
                             <button
                               aria-busy="true"
-                              className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark disabled:cursor-not-allowed disabled:opacity-60"
+                              className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark disabled:cursor-not-allowed disabled:opacity-60"
                               disabled
                               type="button"
                             >
@@ -937,7 +937,7 @@ export function CustomerPortalLinks({
                           ) : freshSendRequestedId === token.id || !providerReady ? null : (
                             <button
                               aria-label={`Send new portal link for link created ${formatDate(token.created_at)}`}
-                              className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={!hasContact || Boolean(freshSendingId)}
                               onClick={() => void sendNewLink(token)}
                               title={
@@ -952,7 +952,7 @@ export function CustomerPortalLinks({
                           )}
                           {isRevoking ? (
                           <button
-                            className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="min-h-9 rounded-md border border-status-alert-danger-border px-3 text-xs font-semibold text-status-alert-danger-fg disabled:cursor-not-allowed disabled:opacity-60"
                             disabled
                             type="button"
                           >
@@ -961,7 +961,7 @@ export function CustomerPortalLinks({
                         ) : isConfirming ? null : (
                           <button
                             aria-label={`Revoke portal link created ${formatDate(token.created_at)}`}
-                            className="min-h-9 rounded-md border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="min-h-9 rounded-md border border-status-alert-danger-border px-3 text-xs font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg disabled:cursor-not-allowed disabled:opacity-60"
                             onClick={() => setConfirmingId(token.id)}
                             ref={(node) => {
                               if (node) {
@@ -985,7 +985,7 @@ export function CustomerPortalLinks({
                     </p>
                   ) : null}
                   {freshManualLink?.tokenId === token.id ? (
-                    <div className="mt-2 rounded-md border border-gray-200 bg-white px-3 py-2">
+                    <div className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2">
                       <p className="text-xs font-semibold text-neutralDark">
                         Fresh active link created. Older active links remain available until revoked.
                       </p>
@@ -994,19 +994,19 @@ export function CustomerPortalLinks({
                           ✓ Fresh link copied to clipboard.
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-theme-text-muted">
                           Copy the fresh link manually:
                         </p>
                       )}
                       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                         <input
-                          className="min-h-9 flex-1 rounded-md border border-gray-300 bg-white px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
+                          className="min-h-9 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
                           onFocus={(event) => event.currentTarget.select()}
                           readOnly
                           value={freshManualLink.portalUrl}
                         />
                         <button
-                          className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                          className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
                           onClick={() => void copyFreshManualLink()}
                           type="button"
                         >
@@ -1016,7 +1016,7 @@ export function CustomerPortalLinks({
                     </div>
                   ) : null}
                   {freshSendError && freshSendErrorId === token.id ? (
-                    <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
+                    <p className="mt-2 text-xs font-semibold text-status-alert-danger-fg" role="alert">
                       {freshSendError}
                     </p>
                   ) : null}
@@ -1030,20 +1030,20 @@ export function CustomerPortalLinks({
                   {isActive && isConfirming ? (
                     <div
                       aria-label={`Confirm revoke for ${tokenRowLabel(token)}`}
-                      className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2"
+                      className="mt-2 rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg px-3 py-2"
                       onKeyDown={(event) => handleConfirmKeyDown(event, token.id)}
                       role="group"
                     >
                       <p className="text-xs font-semibold text-neutralDark">
                         Revoke this link?
                       </p>
-                      <p className="mt-0.5 text-xs text-gray-600">
+                      <p className="mt-0.5 text-xs text-theme-text-secondary">
                         {revokeConfirmPrompt(token)}
                       </p>
                       <div className="mt-2 flex justify-end gap-2">
                         <button
                           aria-label="Cancel revoke"
-                          className="min-h-8 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+                          className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
                           onClick={() => cancelRevokeConfirmation(token.id)}
                           ref={cancelRevokeRef}
                           type="button"
@@ -1051,7 +1051,7 @@ export function CustomerPortalLinks({
                           Cancel
                         </button>
                         <button
-                          className="min-h-8 rounded-md bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800"
+                          className="min-h-8 rounded-md bg-status-alert-danger-solid px-3 text-xs font-semibold text-theme-text-inverse hover:bg-primitive-red-600"
                           onClick={() => confirmRevoke(token.id)}
                           type="button"
                         >
@@ -1067,7 +1067,7 @@ export function CustomerPortalLinks({
         )}
       </div>
       {revokeToken.error ? (
-        <p className="mt-2 text-xs font-semibold text-red-700">
+        <p className="mt-2 text-xs font-semibold text-status-alert-danger-fg">
           {"Couldn't revoke link. Try again."}
         </p>
       ) : null}

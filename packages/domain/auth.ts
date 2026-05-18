@@ -7,10 +7,10 @@ import {
   updatePasswordRecord,
 } from "@pest-patrol/api-client";
 import type {
-  AuthRecord,
   AuthSupabaseClient,
   TechnicianAuthRecord,
 } from "@pest-patrol/api-client";
+import type { UserProfile } from "@pest-patrol/types";
 
 export interface LoginInput {
   email: string;
@@ -101,14 +101,26 @@ export function validateTechnicianAccess(record: TechnicianAuthRecord | null) {
   return record;
 }
 
-export function validateAdminAccess(record: AuthRecord | null) {
+export function validateAdminProfile(profile: UserProfile | null) {
+  if (!profile) {
+    return null;
+  }
+
+  if (profile.role !== "admin" && profile.role !== "dispatcher") {
+    throw new Error("Admin or dispatcher access is required");
+  }
+
+  return profile;
+}
+
+export function validateAdminAccess<TRecord extends { profile: UserProfile }>(
+  record: TRecord | null,
+) {
   if (!record) {
     return null;
   }
 
-  if (record.profile.role !== "admin" && record.profile.role !== "dispatcher") {
-    throw new Error("Admin or dispatcher access is required");
-  }
+  validateAdminProfile(record.profile);
 
   return record;
 }
