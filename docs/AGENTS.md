@@ -40,6 +40,7 @@ Pest Patrol OS — pest control operations platform replacing PestPac.
 - Fast, minimal, field-friendly
 - Large tap targets (mobile)
 - No multi-step friction unless necessary
+- Use `docs/DESIGN_SYSTEM.md` for token consumption examples before adding app colors
 
 ## Forbidden
 - Do NOT duplicate logic across apps

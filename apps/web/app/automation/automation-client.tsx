@@ -180,7 +180,7 @@ function recipientLabel(notification: NotificationEvent) {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <p className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+    <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
   );
@@ -503,49 +503,49 @@ export function AutomationClient() {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Active rules
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {summary.activeRules}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Recurring
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {summary.recurringRules}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Pending
           </p>
           <p className="mt-2 text-2xl font-bold text-primary">
             {summary.pendingNotifications}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Overdue
           </p>
-          <p className="mt-2 text-2xl font-bold text-red-700">
+          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">
             {summary.overdueNotifications}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Failed delivery
           </p>
-          <p className="mt-2 text-2xl font-bold text-red-700">
+          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">
             {summary.failedDeliveries}
           </p>
         </div>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
@@ -555,11 +555,11 @@ export function AutomationClient() {
               Notification generation
             </h2>
             {schedulerRunsQuery.isLoading ? (
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-theme-text-secondary">
                 Loading scheduler status
               </p>
             ) : schedulerStatus.lastRun ? (
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-theme-text-secondary">
                 Last run {formatDateTime(schedulerStatus.lastRun.finished_at)} by{" "}
                 {formatSchedulerTrigger(schedulerStatus.lastRun)}
                 {schedulerStatus.lastRun.triggered_by_user_id
@@ -567,27 +567,27 @@ export function AutomationClient() {
                   : ""}
               </p>
             ) : (
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-theme-text-secondary">
                 Scheduler has not run yet
               </p>
             )}
             {schedulerStatus.lastRun?.error_message ? (
-              <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-sm font-semibold text-red-700">
+              <p className="mt-3 rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-2 text-sm font-semibold text-status-alert-danger-fg">
                 {schedulerStatus.lastRun.error_message}
               </p>
             ) : null}
             {runScheduler.isSuccess ? (
-              <p className="mt-3 rounded-md border border-green-200 bg-green-50 p-2 text-sm font-semibold text-green-700">
+              <p className="mt-3 rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-2 text-sm font-semibold text-status-alert-success-fg">
                 Scheduler run complete
               </p>
             ) : null}
             {runScheduler.isError ? (
-              <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-sm font-semibold text-red-700">
+              <p className="mt-3 rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-2 text-sm font-semibold text-status-alert-danger-fg">
                 Unable to run scheduler
               </p>
             ) : null}
             <button
-              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-theme-text-inverse shadow-sm hover:bg-primitive-sky-600 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
               disabled={runScheduler.isPending}
               onClick={() => runScheduler.mutate()}
               type="button"
@@ -595,7 +595,7 @@ export function AutomationClient() {
               {runScheduler.isPending ? "Running scheduler" : "Run scheduler"}
             </button>
             <button
-              className="ml-2 mt-4 rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-neutralDark shadow-sm hover:bg-gray-50"
+              className="ml-2 mt-4 rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-neutralDark shadow-sm hover:bg-theme-background-subtle"
               onClick={() => setSchedulerPreviewNow(new Date().toISOString())}
               type="button"
             >
@@ -603,48 +603,48 @@ export function AutomationClient() {
             </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
-            <div className="rounded-md bg-gray-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div className="rounded-md bg-theme-background-subtle p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Last status
               </p>
               <p className="mt-2 text-lg font-bold text-neutralDark">
                 {schedulerStatus.lastRunStatus}
               </p>
             </div>
-            <div className="rounded-md bg-gray-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div className="rounded-md bg-theme-background-subtle p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Created
               </p>
               <p className="mt-2 text-lg font-bold text-primary">
                 {schedulerStatus.lastRunGeneratedCount}
               </p>
             </div>
-            <div className="rounded-md bg-gray-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div className="rounded-md bg-theme-background-subtle p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Duplicates
               </p>
               <p className="mt-2 text-lg font-bold text-neutralDark">
                 {schedulerStatus.lastRunSkippedDuplicateCount}
               </p>
             </div>
-            <div className="rounded-md bg-gray-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div className="rounded-md bg-theme-background-subtle p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview due
               </p>
               <p className="mt-2 text-lg font-bold text-primary">
                 {schedulerPreview.items.length}
               </p>
             </div>
-            <div className="rounded-md bg-gray-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div className="rounded-md bg-theme-background-subtle p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview rules
               </p>
               <p className="mt-2 text-lg font-bold text-neutralDark">
                 {schedulerPreview.evaluated_rules}
               </p>
             </div>
-            <div className="rounded-md bg-gray-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div className="rounded-md bg-theme-background-subtle p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview duplicates
               </p>
               <p className="mt-2 text-lg font-bold text-neutralDark">
@@ -656,15 +656,15 @@ export function AutomationClient() {
         <div className="mt-5">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-theme-text-muted">
                 Due preview
               </h3>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-theme-text-secondary">
                 Evaluated {schedulerPreview.evaluated_jobs} completed jobs and{" "}
                 {schedulerPreview.evaluated_rules} active rules
               </p>
             </div>
-            <p className="text-xs font-medium text-gray-500">
+            <p className="text-xs font-medium text-theme-text-muted">
               Previewed {formatDateTime(schedulerPreviewNow)}
             </p>
           </div>
@@ -674,7 +674,7 @@ export function AutomationClient() {
             <div className="mt-3 grid gap-3 lg:grid-cols-3">
               {schedulerPreview.items.slice(0, 6).map((item) => (
                 <article
-                  className="rounded-md border border-gray-200 bg-gray-50 p-3"
+                  className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                   key={
                     item.notification.generated_key ??
                     `${item.notification.type}-${item.notification.due_at}`
@@ -687,25 +687,25 @@ export function AutomationClient() {
                     <span
                       className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
                         item.is_duplicate
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-green-100 text-green-800"
+                          ? "bg-status-alert-warning-bg text-status-alert-warning-fg"
+                          : "bg-status-alert-success-bg text-status-alert-success-fg"
                       }`}
                     >
                       {item.is_duplicate ? "Duplicate" : "New"}
                     </span>
                   </div>
                   {item.notification.message ? (
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-theme-text-secondary">
                       {item.notification.message}
                     </p>
                   ) : null}
                   <p className="mt-2 text-xs font-medium text-primary">
                     {formatType(item.notification.type)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-600">
+                  <p className="mt-1 text-xs text-theme-text-secondary">
                     Due {formatDateTime(item.notification.due_at)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-600">
+                  <p className="mt-1 text-xs text-theme-text-secondary">
                     {schedulerPreviewTarget(
                       item.notification,
                       jobs,
@@ -713,7 +713,7 @@ export function AutomationClient() {
                     )}
                   </p>
                   {item.notification.generated_key ? (
-                    <p className="mt-2 break-all text-xs text-gray-500">
+                    <p className="mt-2 break-all text-xs text-theme-text-muted">
                       {item.notification.generated_key}
                     </p>
                   ) : null}
@@ -723,7 +723,7 @@ export function AutomationClient() {
           )}
         </div>
         <div className="mt-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-theme-text-muted">
             Latest generated notifications
           </h3>
           {schedulerStatus.generatedNotifications.length === 0 ? (
@@ -732,7 +732,7 @@ export function AutomationClient() {
             <div className="mt-3 grid gap-3 lg:grid-cols-3">
               {schedulerStatus.generatedNotifications.slice(0, 3).map((item) => (
                 <article
-                  className="rounded-md border border-gray-200 bg-gray-50 p-3"
+                  className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                   key={item.id}
                 >
                   <p className="text-sm font-semibold text-neutralDark">
@@ -741,7 +741,7 @@ export function AutomationClient() {
                   <p className="mt-1 text-xs font-medium text-primary">
                     {formatType(item.type)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-600">
+                  <p className="mt-1 text-xs text-theme-text-secondary">
                     Generated {formatDateTime(item.created_at)}
                   </p>
                 </article>
@@ -757,14 +757,14 @@ export function AutomationClient() {
             <div className="grid gap-3 md:grid-cols-[1fr_180px_180px_190px]">
               <input
                 aria-label="Search notifications"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) => setNotificationSearch(event.target.value)}
                 placeholder="Search notifications"
                 value={notificationSearch}
               />
               <select
                 aria-label="Notification status"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationStatus(
                     event.target.value as NotificationEventStatusFilter,
@@ -779,7 +779,7 @@ export function AutomationClient() {
               </select>
               <select
                 aria-label="Notification delivery status"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationDeliveryStatus(
                     event.target.value as NotificationDeliveryStatusFilter,
@@ -796,7 +796,7 @@ export function AutomationClient() {
               </select>
               <select
                 aria-label="Notification recipient readiness"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationRecipientFilter(
                     event.target.value as NotificationRecipientReadinessFilter,
@@ -813,7 +813,7 @@ export function AutomationClient() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+                className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                 onClick={() => {
                   setNotificationStatus("all");
                   setNotificationDeliveryStatus("failed");
@@ -823,7 +823,7 @@ export function AutomationClient() {
                 Failed ({deliveryTriageSummary.failed})
               </button>
               <button
-                className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-blue-50"
+                className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
                 onClick={() => {
                   setNotificationStatus("pending");
                   setNotificationDeliveryStatus("retryable");
@@ -832,35 +832,35 @@ export function AutomationClient() {
               >
                 Retryable ({deliveryTriageSummary.retryable})
               </button>
-              <span className="rounded-md bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">
+              <span className="rounded-md bg-primitive-slate-100 px-3 py-2 text-sm font-semibold text-theme-text-secondary">
                 Not sent {deliveryTriageSummary.not_sent}
               </span>
-              <span className="rounded-md bg-green-100 px-3 py-2 text-sm font-semibold text-green-800">
+              <span className="rounded-md bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
                 Sent {deliveryTriageSummary.sent}
               </span>
-              <span className="rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
+              <span className="rounded-md bg-status-alert-warning-bg px-3 py-2 text-sm font-semibold text-status-alert-warning-fg">
                 Manual review {deliveryTriageSummary.manual_review}
               </span>
-              <span className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+              <span className="rounded-md bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
                 Reachable {recipientReadinessSummary.reachable}
               </span>
-              <span className="rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
+              <span className="rounded-md bg-status-alert-warning-bg px-3 py-2 text-sm font-semibold text-status-alert-warning-fg">
                 Missing contact {recipientReadinessSummary.missing}
               </span>
-              <span className="rounded-md bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">
+              <span className="rounded-md bg-primitive-slate-100 px-3 py-2 text-sm font-semibold text-theme-text-secondary">
                 Attempts {deliveryAttemptSummary.total_attempts}
               </span>
             </div>
-            <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-neutralDark">
                   Visible pending reminders
                 </p>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-theme-text-secondary">
                   {deliverableVisibleNotifications.length} ready to send from
                   the current list
                 </p>
-                <p className="mt-1 text-sm font-semibold text-gray-700">
+                <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
                   Provider:{" "}
                   {providerStatusQuery.isLoading
                     ? "Loading"
@@ -869,7 +869,7 @@ export function AutomationClient() {
                       : "Manual fallback"}
                 </p>
                 {providerStatus?.provider === "webhook" ? (
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-theme-text-muted">
                     Webhook secret{" "}
                     {providerStatus.webhook_secret_configured
                       ? "configured"
@@ -877,19 +877,19 @@ export function AutomationClient() {
                   </p>
                 ) : null}
                 {providerStatusQuery.isLoading ? null : (
-                  <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+                  <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
                     <p className="text-sm font-semibold text-neutralDark">
                       {providerStatus?.provider === "webhook"
                         ? "Webhook delivery is active"
                         : "Manual fallback is active"}
                     </p>
-                    <p className="mt-1 text-xs text-gray-600">
+                    <p className="mt-1 text-xs text-theme-text-secondary">
                       {providerStatus?.provider === "webhook"
                         ? "Uses server-only NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET."
                         : "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery."}
                     </p>
                     {providerStatus?.provider === "webhook" ? null : (
-                      <p className="mt-1 text-xs text-gray-600">
+                      <p className="mt-1 text-xs text-theme-text-secondary">
                         Manual scheduler runs and manual notification follow-up
                         stay available without browser-side cron or webhook
                         secrets.
@@ -898,19 +898,19 @@ export function AutomationClient() {
                   </div>
                 )}
                 {sendBulkNotifications.data ? (
-                  <p className="mt-2 text-sm font-semibold text-gray-700">
+                  <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
                     Bulk delivery sent {sendBulkNotifications.data.sent_count} and
                     failed {sendBulkNotifications.data.failed_count}
                   </p>
                 ) : null}
                 {sendBulkNotifications.isError ? (
-                  <p className="mt-2 text-sm font-semibold text-red-700">
+                  <p className="mt-2 text-sm font-semibold text-status-alert-danger-fg">
                     Unable to send visible reminders
                   </p>
                 ) : null}
               </div>
               <button
-                className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-gray-400"
+                className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
                 disabled={
                   deliverableVisibleNotifications.length === 0 ||
                   sendBulkNotifications.isPending
@@ -940,7 +940,7 @@ export function AutomationClient() {
 
                 return (
                   <article
-                    className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                    className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                     key={notification.id}
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -949,10 +949,10 @@ export function AutomationClient() {
                           <h2 className="text-lg font-semibold text-neutralDark">
                             {notification.title}
                           </h2>
-                          <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
+                          <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
                             {notification.status}
                           </span>
-                          <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold uppercase text-primary">
+                          <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold uppercase text-primary">
                             {getNotificationDeliveryLabel(
                               notification.delivery_status,
                             )}
@@ -961,8 +961,8 @@ export function AutomationClient() {
                             <span
                               className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
                                 retryPolicyState === "manual_review"
-                                  ? "bg-amber-50 text-amber-700"
-                                  : "bg-emerald-50 text-emerald-700"
+                                  ? "bg-status-alert-warning-bg text-status-alert-warning-fg"
+                                  : "bg-status-alert-success-bg text-status-alert-success-fg"
                               }`}
                             >
                               {getNotificationRetryPolicyLabel(
@@ -974,10 +974,10 @@ export function AutomationClient() {
                         <p className="mt-2 text-sm font-medium text-primary">
                           {formatType(notification.type)}
                         </p>
-                        <p className="mt-1 text-sm text-gray-700">
+                        <p className="mt-1 text-sm text-theme-text-secondary">
                           Due {formatDateTime(notification.due_at)}
                         </p>
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p className="mt-1 text-sm text-theme-text-secondary">
                           {notification.customer?.name ??
                             notification.job?.customer?.name ??
                             "No customer"}
@@ -986,15 +986,15 @@ export function AutomationClient() {
                             : ""}
                         </p>
                         {notification.message ? (
-                          <p className="mt-2 text-sm text-gray-600">
+                          <p className="mt-2 text-sm text-theme-text-secondary">
                             {notification.message}
                           </p>
                         ) : null}
-                        <p className="mt-2 text-xs font-semibold text-gray-500">
+                        <p className="mt-2 text-xs font-semibold text-theme-text-muted">
                           {recipientLabel(notification)}
                         </p>
                         {notification.delivery_attempts > 0 ? (
-                          <p className="mt-2 text-xs font-semibold text-gray-500">
+                          <p className="mt-2 text-xs font-semibold text-theme-text-muted">
                             Delivery attempts: {notification.delivery_attempts}
                             {notification.last_delivery_attempted_at
                               ? ` | Last attempt ${formatDateTime(notification.last_delivery_attempted_at)}`
@@ -1005,12 +1005,12 @@ export function AutomationClient() {
                           </p>
                         ) : null}
                         {notification.provider_message_id ? (
-                          <p className="mt-1 text-xs font-semibold text-gray-500">
+                          <p className="mt-1 text-xs font-semibold text-theme-text-muted">
                             Provider message: {notification.provider_message_id}
                           </p>
                         ) : null}
                         {notification.last_delivery_error ? (
-                          <p className="mt-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-semibold text-red-700">
+                          <p className="mt-2 rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-2 text-xs font-semibold text-status-alert-danger-fg">
                             {notification.last_delivery_error}
                           </p>
                         ) : null}
@@ -1019,7 +1019,7 @@ export function AutomationClient() {
                         <div className="flex flex-wrap gap-2">
                           {notification.delivery_status !== "sent" ? (
                             <button
-                              className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-blue-50"
+                              className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
                               disabled={
                                 sendNotification.isPending ||
                                 notification.delivery_status === "sending"
@@ -1035,7 +1035,7 @@ export function AutomationClient() {
                             </button>
                           ) : null}
                           <button
-                            className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                            className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
                             disabled={markHandled.isPending}
                             onClick={() => markHandled.mutate(notification.id)}
                             type="button"
@@ -1043,7 +1043,7 @@ export function AutomationClient() {
                             Mark handled
                           </button>
                           <button
-                            className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                            className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                             disabled={dismissNotification.isPending}
                             onClick={() =>
                               dismissNotification.mutate(notification.id)
@@ -1065,14 +1065,14 @@ export function AutomationClient() {
             <div className="grid gap-3 md:grid-cols-[1fr_180px]">
               <input
                 aria-label="Search automation rules"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) => setRuleSearch(event.target.value)}
                 placeholder="Search rules"
                 value={ruleSearch}
               />
               <select
                 aria-label="Automation rule status"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setRuleStatus(event.target.value as AutomationRuleStatusFilter)
                 }
@@ -1092,7 +1092,7 @@ export function AutomationClient() {
               <div className="grid gap-3 md:grid-cols-2">
                 {visibleRules.map((rule) => (
                   <article
-                    className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                    className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                     key={rule.id}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -1104,26 +1104,26 @@ export function AutomationClient() {
                           {formatType(rule.type)}
                         </p>
                       </div>
-                      <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase text-gray-700">
+                      <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
                         {rule.status}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm text-gray-600">
+                    <p className="mt-3 text-sm text-theme-text-secondary">
                       {rule.offset_days === null
                         ? "No offset"
                         : `${rule.offset_days} days after trigger`}
                     </p>
                     {rule.message ? (
-                      <p className="mt-2 text-sm text-gray-600">{rule.message}</p>
+                      <p className="mt-2 text-sm text-theme-text-secondary">{rule.message}</p>
                     ) : null}
                     {rule.template ? (
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                         Template: {rule.template.name}
                       </p>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button
-                        className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-blue-50"
+                        className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
                         onClick={() => editRule(rule)}
                         type="button"
                       >
@@ -1131,7 +1131,7 @@ export function AutomationClient() {
                       </button>
                       {rule.status === "active" ? (
                         <button
-                          className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                          className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                           onClick={() =>
                             updateRuleStatus.mutate({
                               id: rule.id,
@@ -1144,7 +1144,7 @@ export function AutomationClient() {
                         </button>
                       ) : rule.status === "paused" ? (
                         <button
-                          className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                          className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
                           onClick={() =>
                             updateRuleStatus.mutate({
                               id: rule.id,
@@ -1158,7 +1158,7 @@ export function AutomationClient() {
                       ) : null}
                       {rule.status !== "archived" ? (
                         <button
-                          className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+                          className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                           onClick={() =>
                             updateRuleStatus.mutate({
                               id: rule.id,
@@ -1179,7 +1179,7 @@ export function AutomationClient() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <section className="flex h-fit flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
                 Templates
@@ -1190,7 +1190,7 @@ export function AutomationClient() {
             </div>
             <form className="flex flex-col gap-3" onSubmit={submitTemplate}>
               {templateError ? (
-                <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                   {templateError}
                 </p>
               ) : null}
@@ -1198,7 +1198,7 @@ export function AutomationClient() {
                 Template name
                 <input
                   aria-label="Template name"
-                  className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1212,7 +1212,7 @@ export function AutomationClient() {
                 Template type
                 <select
                   aria-label="Template type"
-                  className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1231,7 +1231,7 @@ export function AutomationClient() {
                 Template title
                 <input
                   aria-label="Template title"
-                  className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1245,7 +1245,7 @@ export function AutomationClient() {
                 Template message
                 <textarea
                   aria-label="Template message"
-                  className="min-h-24 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1257,9 +1257,9 @@ export function AutomationClient() {
               </label>
               <div
                 aria-label="Template preview"
-                className="border-l-4 border-secondary bg-gray-50 p-3"
+                className="border-l-4 border-secondary bg-theme-background-subtle p-3"
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   Preview
                 </p>
                 <p
@@ -1270,14 +1270,14 @@ export function AutomationClient() {
                 </p>
                 <p
                   aria-label="Template preview message"
-                  className="mt-1 text-sm text-gray-600"
+                  className="mt-1 text-sm text-theme-text-secondary"
                 >
                   {templatePreview.message || "Message preview"}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
-                  className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={createTemplate.isPending || updateTemplate.isPending}
                   type="submit"
                 >
@@ -1285,7 +1285,7 @@ export function AutomationClient() {
                 </button>
                 {templateForm.id ? (
                   <button
-                    className="min-h-11 rounded-md border border-gray-300 px-4 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                    className="min-h-11 rounded-md border border-theme-border-default px-4 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                     onClick={() => setTemplateForm(emptyTemplateForm)}
                     type="button"
                   >
@@ -1297,14 +1297,14 @@ export function AutomationClient() {
             <div className="grid gap-3 md:grid-cols-[1fr_140px]">
               <input
                 aria-label="Search templates"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) => setTemplateSearch(event.target.value)}
                 placeholder="Search templates"
                 value={templateSearch}
               />
               <select
                 aria-label="Template status"
-                className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setTemplateStatus(
                     event.target.value as NotificationTemplateStatusFilter,
@@ -1325,7 +1325,7 @@ export function AutomationClient() {
               <div className="flex flex-col gap-3">
                 {visibleTemplates.map((template) => (
                   <article
-                    className="rounded-md border border-gray-200 bg-gray-50 p-3"
+                    className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                     key={template.id}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -1337,7 +1337,7 @@ export function AutomationClient() {
                           {formatType(template.type)}
                         </p>
                       </div>
-                      <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold uppercase text-gray-700">
+                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
                         {template.status}
                       </span>
                     </div>
@@ -1345,14 +1345,14 @@ export function AutomationClient() {
                       {template.title}
                     </p>
                     {template.message ? (
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-theme-text-secondary">
                         {template.message}
                       </p>
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                       {template.status === "active" ? (
                         <button
-                          className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-blue-50"
+                          className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
                           onClick={() => applyTemplate(template)}
                           type="button"
                         >
@@ -1360,7 +1360,7 @@ export function AutomationClient() {
                         </button>
                       ) : null}
                       <button
-                        className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                        className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                         onClick={() => editTemplate(template)}
                         type="button"
                       >
@@ -1368,7 +1368,7 @@ export function AutomationClient() {
                       </button>
                       {template.status === "active" ? (
                         <button
-                          className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+                          className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                           disabled={archiveTemplate.isPending}
                           onClick={() => archiveTemplate.mutate(template.id)}
                           type="button"
@@ -1377,7 +1377,7 @@ export function AutomationClient() {
                         </button>
                       ) : (
                         <button
-                          className="min-h-10 rounded-md border border-emerald-200 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                          className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
                           disabled={restoreTemplate.isPending}
                           onClick={() => restoreTemplate.mutate(template.id)}
                           type="button"
@@ -1393,12 +1393,12 @@ export function AutomationClient() {
           </section>
 
           <form
-            className="flex h-fit flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+            className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitNotification}
           >
             <h2 className="text-xl font-semibold text-neutralDark">Create reminder</h2>
             {notificationError ? (
-              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                 {notificationError}
               </p>
             ) : null}
@@ -1406,7 +1406,7 @@ export function AutomationClient() {
               Template
               <select
                 aria-label="Reminder template"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) => {
                   const template = activeTemplates.find(
                     (item) => item.id === event.target.value,
@@ -1435,7 +1435,7 @@ export function AutomationClient() {
               Rule
               <select
                 aria-label="Reminder rule"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1456,7 +1456,7 @@ export function AutomationClient() {
               Type
               <select
                 aria-label="Reminder type"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1475,7 +1475,7 @@ export function AutomationClient() {
               Customer
               <select
                 aria-label="Reminder customer"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1496,7 +1496,7 @@ export function AutomationClient() {
               Job
               <select
                 aria-label="Reminder job"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1517,7 +1517,7 @@ export function AutomationClient() {
               Title
               <input
                 aria-label="Reminder title"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1531,7 +1531,7 @@ export function AutomationClient() {
               Due
               <input
                 aria-label="Reminder due"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1546,7 +1546,7 @@ export function AutomationClient() {
               Message
               <textarea
                 aria-label="Reminder message"
-                className="min-h-24 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1558,9 +1558,9 @@ export function AutomationClient() {
             </label>
             <div
               aria-label="Reminder preview"
-              className="border-l-4 border-secondary bg-gray-50 p-3"
+              className="border-l-4 border-secondary bg-theme-background-subtle p-3"
             >
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview
               </p>
               <p
@@ -1571,13 +1571,13 @@ export function AutomationClient() {
               </p>
               <p
                 aria-label="Reminder preview message"
-                className="mt-1 text-sm text-gray-600"
+                className="mt-1 text-sm text-theme-text-secondary"
               >
                 {notificationPreview.message || "Message preview"}
               </p>
             </div>
             <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={createNotification.isPending}
               type="submit"
             >
@@ -1586,14 +1586,14 @@ export function AutomationClient() {
           </form>
 
           <form
-            className="flex h-fit flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+            className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitRule}
           >
             <h2 className="text-xl font-semibold text-neutralDark">
               {ruleForm.id ? "Edit rule" : "Create rule"}
             </h2>
             {ruleError ? (
-              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                 {ruleError}
               </p>
             ) : null}
@@ -1601,7 +1601,7 @@ export function AutomationClient() {
               Name
               <input
                 aria-label="Rule name"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1615,7 +1615,7 @@ export function AutomationClient() {
               Type
               <select
                 aria-label="Rule type"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1635,7 +1635,7 @@ export function AutomationClient() {
               Rule template
               <select
                 aria-label="Rule template"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1656,7 +1656,7 @@ export function AutomationClient() {
               Offset days
               <input
                 aria-label="Offset days"
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 min="0"
                 onChange={(event) =>
                   setRuleForm((current) => ({
@@ -1672,7 +1672,7 @@ export function AutomationClient() {
               Message
               <textarea
                 aria-label="Rule message"
-                className="min-h-24 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1683,7 +1683,7 @@ export function AutomationClient() {
               />
             </label>
             <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={createRule.isPending || updateRule.isPending}
               type="submit"
             >
@@ -1691,7 +1691,7 @@ export function AutomationClient() {
             </button>
             {ruleForm.id ? (
               <button
-                className="min-h-11 rounded-md border border-gray-300 px-4 text-sm font-semibold text-neutralDark hover:bg-gray-50"
+                className="min-h-11 rounded-md border border-theme-border-default px-4 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
                 onClick={() => setRuleForm(emptyRuleForm)}
                 type="button"
               >

@@ -185,14 +185,14 @@ export function JobsClient() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
             aria-label="Search jobs"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Job status"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setStatus(event.target.value as JobStatusFilter)}
             value={status}
           >
@@ -205,14 +205,14 @@ export function JobsClient() {
           </select>
           <input
             aria-label="Date from"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setDateFrom(event.target.value)}
             type="date"
             value={dateFrom}
           />
           <input
             aria-label="Date to"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setDateTo(event.target.value)}
             type="date"
             value={dateTo}
@@ -223,17 +223,17 @@ export function JobsClient() {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {jobsQuery.isLoading ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               Loading jobs
             </p>
           ) : visibleJobs.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               No jobs found
             </p>
           ) : (
             visibleJobs.map((job) => (
               <article
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                 key={job.id}
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -242,23 +242,23 @@ export function JobsClient() {
                       <h2 className="text-lg font-semibold text-neutralDark">
                         {job.customer?.name ?? "Unknown customer"}
                       </h2>
-                      <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                      <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-medium text-theme-text-secondary">
                         {statusLabels[job.status]}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-gray-700">
+                    <p className="mt-2 text-sm text-theme-text-secondary">
                       {formatSchedule(job.scheduled_start)}
                     </p>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-theme-text-secondary">
                       {job.location?.address ?? "No location saved"}
                     </p>
                     {job.service_notes ? (
-                      <p className="mt-3 text-sm text-gray-700">{job.service_notes}</p>
+                      <p className="mt-3 text-sm text-theme-text-secondary">{job.service_notes}</p>
                     ) : null}
                   </div>
                   <div className="flex gap-2">
                     <button
-                      className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                      className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                       onClick={() => editJob(job)}
                       type="button"
                     >
@@ -266,7 +266,7 @@ export function JobsClient() {
                     </button>
                     {job.status !== "canceled" ? (
                       <button
-                        className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 hover:bg-red-50"
+                        className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-medium text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                         disabled={cancelJob.isPending}
                         onClick={() => cancelJob.mutate(job.id)}
                         type="button"
@@ -282,7 +282,7 @@ export function JobsClient() {
         </div>
 
         <form
-          className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           onSubmit={submitJob}
         >
           <div className="flex items-center justify-between gap-3">
@@ -291,7 +291,7 @@ export function JobsClient() {
             </h2>
             {editingJob ? (
               <button
-                className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                 onClick={resetForm}
                 type="button"
               >
@@ -300,27 +300,27 @@ export function JobsClient() {
             ) : null}
           </div>
 
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-            <p className="text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3">
+            <p className="text-sm font-semibold text-status-alert-warning-fg">
               Job scheduling demo tip
             </p>
-            <p className="mt-1 text-sm text-amber-800">
+            <p className="mt-1 text-sm text-status-alert-warning-fg">
               Select a customer first so the location list only shows that
               customer active service addresses.
             </p>
-            <p className="mt-1 text-sm text-amber-800">
+            <p className="mt-1 text-sm text-status-alert-warning-fg">
               Technician assignment is optional; unassigned jobs can still move
               to dispatch review.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                className="inline-flex min-h-10 items-center rounded-md border border-amber-300 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                className="inline-flex min-h-10 items-center rounded-md border border-status-alert-warning-border px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
                 href="/customers"
               >
                 Add customer
               </Link>
               <Link
-                className="inline-flex min-h-10 items-center rounded-md border border-amber-300 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                className="inline-flex min-h-10 items-center rounded-md border border-status-alert-warning-border px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
                 href="/dispatch"
               >
                 Review dispatch
@@ -330,12 +330,12 @@ export function JobsClient() {
 
           {saveMessage ? (
             <div
-              className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+              className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-3 text-sm text-status-alert-success-fg"
               role="status"
             >
               <p>{saveMessage}</p>
               <Link
-                className="mt-3 inline-flex min-h-10 items-center rounded-md border border-green-300 px-3 text-sm font-semibold text-green-900 hover:bg-green-100"
+                className="mt-3 inline-flex min-h-10 items-center rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fgStrong hover:bg-status-alert-success-bg"
                 href="/dispatch"
               >
                 Open dispatch review
@@ -344,7 +344,7 @@ export function JobsClient() {
           ) : null}
 
           {formError ? (
-            <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
               {formError}
             </p>
           ) : null}
@@ -352,7 +352,7 @@ export function JobsClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Customer
             <select
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) => selectCustomer(event.target.value)}
               value={form.customer_id}
             >
@@ -368,7 +368,7 @@ export function JobsClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Location
             <select
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) => updateForm({ location_id: event.target.value })}
               value={form.location_id}
             >
@@ -385,7 +385,7 @@ export function JobsClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Technician
             <select
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) => updateForm({ assigned_tech_id: event.target.value })}
               value={form.assigned_tech_id ?? ""}
             >
@@ -402,7 +402,7 @@ export function JobsClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Start
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) => updateForm({ scheduled_start: event.target.value })}
                 type="datetime-local"
                 value={form.scheduled_start}
@@ -411,7 +411,7 @@ export function JobsClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               End
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) => updateForm({ scheduled_end: event.target.value })}
                 type="datetime-local"
                 value={form.scheduled_end ?? ""}
@@ -422,7 +422,7 @@ export function JobsClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Status
             <select
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
               onChange={(event) => updateForm({ status: event.target.value as JobStatus })}
               value={form.status ?? "scheduled"}
             >
@@ -437,14 +437,14 @@ export function JobsClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Service notes
             <textarea
-              className="min-h-28 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
+              className="min-h-28 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
               onChange={(event) => updateForm({ service_notes: event.target.value })}
               value={form.service_notes ?? ""}
             />
           </label>
 
           <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSaving}
             type="submit"
           >

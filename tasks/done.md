@@ -1,5 +1,17 @@
 # Done
 
+## Next Five Launch Gate Batch V1
+
+- Finished the brand app-shell intake with reusable `Wordmark` and `Logomark` wrappers, dark-surface admin-nav wordmark wiring, ID suffixing tests, and brand asset usage docs
+- Kept `docs/design-system/` as a reference export and did not merge its CSS token draft into `packages/ui-tokens`
+- Added domain-backed dashboard launch gates for local smoke, protected-preview smoke, compliance source setup, and portal delivery mode without exposing secret values
+- Fixed the repo-side Vercel lambda-mapping blocker for `/auth/update-password`; local Vercel packaging now emits the route as dynamic instead of failing with `Unable to find lambda for route: /auth/update-password`
+- Reran local Vercel packaging; the original lambda error is cleared, but local Windows packaging is still blocked by `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`
+- Reran `corepack pnpm compliance:ingest -- --dry-run --no-embed`; it planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls
+- Reran read-only local and protected-preview demo smoke preflights; both remain blocked before seed/reset or browser smoke on missing approved Supabase env names and preview operator access
+- Verified with focused brand/home/auth tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`; `corepack pnpm dlx vercel build --yes` remains blocked only on the Windows symlink `EPERM`
+- Performed no migration application, live compliance ingestion, seed/reset write, browser login, provider dashboard mutation, environment mutation, protected-preview mutation, or production data action
+
 ## Repo-Only Deployment Risk Fix V1
 
 - Added monorepo `outputFileTracingRoot` for the web app while keeping existing workspace package transpilation
@@ -942,3 +954,11 @@
 - Added admin closeout proof review labels for GPS, billing readiness, invoice state, and sync confidence
 - Kept Google Maps/Mapbox SDKs, background GPS, provider setup, env changes, migrations, and production mutations deferred
 - Verified with focused tests plus `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `git diff --check`
+
+## Critique Repo Audit Cleanup Slices V1
+
+- Added web tooling cleanup for `@pest-patrol/ui-tokens` transpilation, removed the dead `packages/ui` Tailwind glob, and linked token consumption guidance from `docs/AGENTS.md`
+- Removed production `as never` casts from admin auth, closeout readiness, and mobile signature capture while adding domain helpers for admin profile validation and closeout readiness counts
+- Tokenized web app color usage and mobile auth/field-flow palettes, then added a strict hardcoded app-color scanner to root lint
+- Added a local `send_succeeded` portal audit-event migration proposal and route/domain/UI test coverage while keeping legacy `send_requested` events readable
+- Verified with focused tests, Browser DOM/console QA on `/` and `/dispatch`, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build`

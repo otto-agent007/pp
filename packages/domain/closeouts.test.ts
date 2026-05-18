@@ -23,6 +23,7 @@ import {
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
+  getCloseoutReviewReadinessFromCounts,
   getCustomerPortalSendProviderStatusLabel,
   validateCustomerPortalAccessInput,
   validateCustomerPortalSendInput,
@@ -312,6 +313,37 @@ describe("closeouts domain", () => {
       missing: ["Treatment form", "Chemical log", "Signature"],
       summary:
         "Photo captured. Missing treatment form, chemical log, and signature before billing.",
+    });
+  });
+
+  it("summarizes closeout readiness directly from capture counts", () => {
+    expect(
+      getCloseoutReviewReadinessFromCounts({
+        chemicalLogs: 0,
+        forms: 1,
+        photos: 1,
+        signatures: 0,
+      }),
+    ).toEqual({
+      billingReady: false,
+      label: "Needs field captures",
+      missing: ["Chemical log", "Signature"],
+      summary:
+        "Treatment form captured. Photo captured. Missing chemical log and signature before billing.",
+    });
+
+    expect(
+      getCloseoutReviewReadinessFromCounts({
+        chemicalLogs: 1,
+        forms: 1,
+        photos: 1,
+        signatures: 1,
+      }),
+    ).toEqual({
+      billingReady: true,
+      label: "Ready for billing",
+      missing: [],
+      summary: "Treatment form, chemical log, photo, and signature are captured.",
     });
   });
 
@@ -792,8 +824,17 @@ describe("closeouts domain", () => {
         id: "event-5",
         token_id: "token-1",
         customer_id: "customer-1",
-        kind: "send_failed",
+        kind: "send_succeeded",
         occurred_at: "2026-05-06T04:00:00.000Z",
+      }),
+    ).toBe("Send succeeded");
+    expect(
+      getCustomerPortalAccessTokenEventLabel({
+        id: "event-6",
+        token_id: "token-1",
+        customer_id: "customer-1",
+        kind: "send_failed",
+        occurred_at: "2026-05-06T05:00:00.000Z",
       }),
     ).toBe("Send failed");
   });

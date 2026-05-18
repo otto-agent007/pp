@@ -161,14 +161,14 @@ export function InventoryClient() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             aria-label="Search inventory"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Inventory status"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setStatus(event.target.value as InventoryStatusFilter)}
             value={status}
           >
@@ -180,28 +180,28 @@ export function InventoryClient() {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Active
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">{summary.activeCount}</p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Low stock
           </p>
-          <p className="mt-2 text-2xl font-bold text-red-700">{summary.lowStockCount}</p>
+          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">{summary.lowStockCount}</p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Archived
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
             {summary.archivedCount}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Stock units
           </p>
           <p className="mt-2 text-2xl font-bold text-neutralDark">
@@ -210,19 +210,19 @@ export function InventoryClient() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+      <section className="rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg p-4 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+            <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-warning-fg">
               EPA/DPR compliance review
             </p>
-            <p className="mt-1 text-sm text-amber-900">
+            <p className="mt-1 text-sm text-status-alert-warning-fgStrong">
               Chemical logs now feed the California Compliance RAG lane. V1 keeps
               this advisory-only and flags missing evidence before closeout.
             </p>
           </div>
           <a
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-amber-300 bg-white px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+            className="inline-flex min-h-10 items-center justify-center rounded-md border border-status-alert-warning-border bg-theme-background-surface px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
             href="/compliance"
           >
             Open compliance
@@ -234,11 +234,11 @@ export function InventoryClient() {
             .slice(0, 3)
             .map((field) => (
               <div
-                className="rounded-md border border-amber-200 bg-white/80 p-3 text-sm"
+                className="rounded-md border border-status-alert-warning-border bg-theme-background-surface/80 p-3 text-sm"
                 key={field.field}
               >
                 <p className="font-semibold text-neutralDark">{field.label}</p>
-                <p className="mt-1 text-amber-900">{field.reason}</p>
+                <p className="mt-1 text-status-alert-warning-fgStrong">{field.reason}</p>
               </div>
             ))}
         </div>
@@ -247,11 +247,11 @@ export function InventoryClient() {
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {inventoryQuery.isLoading ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               Loading inventory
             </p>
           ) : visibleInventory.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               No inventory found
             </p>
           ) : (
@@ -263,7 +263,7 @@ export function InventoryClient() {
 
               return (
                 <article
-                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                  className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                   key={item.id}
                 >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -273,24 +273,24 @@ export function InventoryClient() {
                           {item.name}
                         </h2>
                         {isLowStock ? (
-                          <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
+                          <span className="rounded-md bg-status-alert-danger-bg px-2 py-1 text-xs font-medium text-status-alert-danger-fg">
                             Low stock
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-2 text-sm text-gray-600">
+                      <p className="mt-2 text-sm text-theme-text-secondary">
                         {item.current_stock} {item.unit}
                         {item.reorder_level !== null
                           ? ` | Reorder at ${item.reorder_level} ${item.unit}`
                           : ""}
                       </p>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-theme-text-secondary">
                         {item.epa_number ? `EPA ${item.epa_number}` : "No EPA number"}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                        className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                         onClick={() => editInventoryItem(item)}
                         type="button"
                       >
@@ -298,7 +298,7 @@ export function InventoryClient() {
                       </button>
                       {item.status === "active" ? (
                         <button
-                          className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 hover:bg-red-50"
+                          className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-medium text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                           disabled={archiveInventory.isPending}
                           onClick={() => archiveInventory.mutate(item.id)}
                           type="button"
@@ -316,7 +316,7 @@ export function InventoryClient() {
 
         <div className="flex flex-col gap-6">
           <form
-            className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+            className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitInventory}
           >
             <div className="flex items-center justify-between gap-3">
@@ -325,7 +325,7 @@ export function InventoryClient() {
               </h2>
               {editingItem ? (
                 <button
-                  className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                  className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                   onClick={resetInventoryForm}
                   type="button"
                 >
@@ -335,7 +335,7 @@ export function InventoryClient() {
             </div>
 
             {inventoryError ? (
-              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                 {inventoryError}
               </p>
             ) : null}
@@ -343,7 +343,7 @@ export function InventoryClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Name
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setInventoryForm((current) => ({ ...current, name: event.target.value }))
                 }
@@ -353,7 +353,7 @@ export function InventoryClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               EPA number
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setInventoryForm((current) => ({
                     ...current,
@@ -367,7 +367,7 @@ export function InventoryClient() {
               <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
                 Stock
                 <input
-                  className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                   min="0"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
@@ -382,7 +382,7 @@ export function InventoryClient() {
               <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
                 Unit
                 <select
-                  className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
                       ...current,
@@ -400,7 +400,7 @@ export function InventoryClient() {
               <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
                 Reorder
                 <input
-                  className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                   min="0"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
@@ -416,7 +416,7 @@ export function InventoryClient() {
             </div>
 
             <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSavingInventory}
               type="submit"
             >
@@ -425,12 +425,12 @@ export function InventoryClient() {
           </form>
 
           <form
-            className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+            className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitLog}
           >
             <h2 className="text-xl font-semibold text-neutralDark">Log usage</h2>
             {logError ? (
-              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                 {logError}
               </p>
             ) : null}
@@ -438,7 +438,7 @@ export function InventoryClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Job
               <select
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setLogForm((current) => ({ ...current, job_id: event.target.value }))
                 }
@@ -455,7 +455,7 @@ export function InventoryClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Chemical
               <select
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setLogForm((current) => ({
                     ...current,
@@ -475,7 +475,7 @@ export function InventoryClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Amount used
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
                 min="0"
                 onChange={(event) =>
                   setLogForm((current) => ({
@@ -490,7 +490,7 @@ export function InventoryClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Notes
               <textarea
-                className="min-h-24 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
                 onChange={(event) =>
                   setLogForm((current) => ({ ...current, notes: event.target.value }))
                 }
@@ -498,7 +498,7 @@ export function InventoryClient() {
               />
             </label>
             <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={createLog.isPending}
               type="submit"
             >
@@ -506,11 +506,11 @@ export function InventoryClient() {
             </button>
           </form>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
             <h2 className="text-xl font-semibold text-neutralDark">Recent usage</h2>
             <div className="mt-4 flex flex-col gap-3">
               {(logsQuery.data ?? []).slice(0, 5).map((log) => (
-                <article className="text-sm text-gray-700" key={log.id}>
+                <article className="text-sm text-theme-text-secondary" key={log.id}>
                   <p className="font-medium text-neutralDark">
                     {log.chemical?.name ?? "Unknown chemical"}
                   </p>
@@ -521,7 +521,7 @@ export function InventoryClient() {
                 </article>
               ))}
               {(logsQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-gray-500">No chemical use logged</p>
+                <p className="text-sm text-theme-text-muted">No chemical use logged</p>
               ) : null}
             </div>
           </section>

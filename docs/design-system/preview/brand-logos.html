@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Brand · Logo lockups</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-2); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .swatch {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    overflow: hidden;
+    position: relative;
+  }
+  .swatch.light { background: var(--surface); }
+  .swatch.tint  { background: var(--patrol-blue-100); }
+  .swatch.navy  { background: radial-gradient(120% 100% at 30% 30%, #0E2A5C 0%, #071A3D 60%, #04102A 100%); }
+  .swatch.solo  { background: radial-gradient(circle at 50% 45%, #0E2A5C 0%, #071A3D 70%); }
+
+  .swatch .holder { display: inline-flex; align-items: center; justify-content: center; }
+  .swatch.wm   .holder svg { width: 280px; height: 64px; display: block; }
+  .swatch.solo .holder svg { width: 140px; height: 140px; display: block; }
+
+  .label {
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+  <template id="__bundler_thumbnail" data-bg-color="#071A3D">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 8 L80 18 V40 C80 58 67 70 50 76 C33 70 20 58 20 40 V18 Z" fill="#E11D2E" stroke="#FFD300" stroke-width="3"/>
+      <path d="M50 24 L54 38 L68 38 L57 46 L62 60 L50 52 L38 60 L43 46 L32 38 L46 38 Z" fill="#FFD300" stroke="#FFF" stroke-width="1.5"/>
+    </svg>
+  </template>
+  <div class="grid">
+    <div>
+      <div class="swatch light wm">
+        <div class="holder" data-asset="wordmark"></div>
+      </div>
+      <div class="label">Wordmark · on white</div>
+    </div>
+    <div>
+      <div class="swatch tint wm">
+        <div class="holder" data-asset="wordmark"></div>
+      </div>
+      <div class="label">Wordmark · on patrol-blue tint</div>
+    </div>
+    <div>
+      <div class="swatch navy wm">
+        <div class="holder" data-asset="wordmark-on-dark"></div>
+      </div>
+      <div class="label">Wordmark · on navy</div>
+    </div>
+    <div>
+      <div class="swatch solo">
+        <div class="holder" data-asset="logomark"></div>
+      </div>
+      <div class="label">Logomark · armored shield</div>
+    </div>
+  </div>
+
+<script>
+  // Inline-inject each SVG so CSS animations actually run.
+  // Suffix all internal IDs per instance so multiple inlined copies don't collide on url(#...).
+  let __uid = 0;
+
+  async function loadSVG(name) {
+    const res = await fetch(`../assets/${name}.svg`);
+    return await res.text();
+  }
+
+  function rewriteIds(svgText, suffix) {
+    let out = svgText.replace(/(\s)id="([a-zA-Z0-9_-]+)"/g, (m, ws, id) => `${ws}id="${id}-${suffix}"`);
+    out = out.replace(/url\(#([a-zA-Z0-9_-]+)\)/g, (m, id) => `url(#${id}-${suffix})`);
+    return out;
+  }
+
+  function inject(holder, svgText) {
+    const suffix = "i" + (++__uid);
+    holder.innerHTML = rewriteIds(svgText, suffix);
+  }
+
+  (async () => {
+    const cache = {};
+    const holders = document.querySelectorAll(".holder[data-asset]");
+    for (const h of holders) {
+      const name = h.dataset.asset;
+      if (!cache[name]) cache[name] = await loadSVG(name);
+      inject(h, cache[name]);
+    }
+  })();
+</script>
+</body>
+</html>

@@ -13,6 +13,14 @@ import {
 } from "@pest-patrol/domain";
 import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
+import {
+  fontSize,
+  fontWeight,
+  lightTheme,
+  radius,
+  spacing,
+  status as statusTokens,
+} from "@pest-patrol/ui-tokens";
 
 import { JobChemicalLogForm } from "../src/components/JobChemicalLogForm";
 import { JobGeofenceControls } from "../src/components/JobGeofenceControls";
@@ -39,6 +47,77 @@ import {
   mobileRouteShellStyles,
   mobileRouteShellTone,
 } from "../src/styles/routeShellStyles";
+
+const mobileAuthShellPalette = {
+  border: lightTheme.border.default,
+  canvas: lightTheme.background.canvas,
+  errorText: statusTokens.alert.danger.fg,
+  inverseText: lightTheme.text.inverse,
+  primaryAction: lightTheme.background.inverse,
+  primaryText: lightTheme.text.primary,
+  secondaryText: lightTheme.text.secondary,
+  surface: lightTheme.background.surface,
+} as const;
+
+const mobileAuthShellStyles = {
+  button: {
+    alignItems: "center",
+    backgroundColor: mobileAuthShellPalette.primaryAction,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  buttonText: {
+    color: mobileAuthShellPalette.inverseText,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+  },
+  errorText: {
+    color: mobileAuthShellPalette.errorText,
+    fontSize: fontSize.sm,
+  },
+  form: {
+    gap: spacing[3],
+    marginTop: spacing[7],
+  },
+  input: {
+    backgroundColor: mobileAuthShellPalette.surface,
+    borderColor: mobileAuthShellPalette.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    color: mobileAuthShellPalette.primaryText,
+    minHeight: 48,
+    paddingHorizontal: spacing[3],
+  },
+  loadingScreen: {
+    alignItems: "center",
+    backgroundColor: mobileAuthShellPalette.canvas,
+    flex: 1,
+    justifyContent: "center",
+    padding: spacing[6],
+  },
+  loadingText: {
+    color: mobileAuthShellPalette.secondaryText,
+    fontSize: fontSize.base,
+    marginTop: spacing[3],
+  },
+  screen: {
+    backgroundColor: mobileAuthShellPalette.canvas,
+    flex: 1,
+    justifyContent: "center",
+    padding: spacing[6],
+  },
+  subtitle: {
+    color: mobileAuthShellPalette.secondaryText,
+    fontSize: fontSize.base,
+    marginTop: spacing[2],
+  },
+  title: {
+    color: mobileAuthShellPalette.primaryText,
+    fontSize: fontSize["3xl"],
+    fontWeight: fontWeight.extrabold,
+  },
+} as const;
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -141,88 +220,48 @@ export default function MobileHomeScreen() {
 
   if (status === "loading") {
     return (
-      <View
-        style={{
-          alignItems: "center",
-          backgroundColor: "#F9FAFB",
-          flex: 1,
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <ActivityIndicator color="#1E3A8A" size="large" />
-        <Text style={{ color: "#4B5563", fontSize: 16, marginTop: 12 }}>
-          Loading
-        </Text>
+      <View style={mobileAuthShellStyles.loadingScreen}>
+        <ActivityIndicator
+          color={mobileAuthShellPalette.primaryAction}
+          size="large"
+        />
+        <Text style={mobileAuthShellStyles.loadingText}>Loading</Text>
       </View>
     );
   }
 
   if (status === "signed_out") {
     return (
-      <View
-        style={{
-          backgroundColor: "#F9FAFB",
-          flex: 1,
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <Text style={{ color: "#111827", fontSize: 30, fontWeight: "800" }}>
-          Pest Patrol OS
-        </Text>
-        <Text style={{ color: "#4B5563", fontSize: 16, marginTop: 8 }}>
-          Technician login
-        </Text>
+      <View style={mobileAuthShellStyles.screen}>
+        <Text style={mobileAuthShellStyles.title}>Pest Patrol OS</Text>
+        <Text style={mobileAuthShellStyles.subtitle}>Technician login</Text>
 
-        <View style={{ gap: 12, marginTop: 28 }}>
+        <View style={mobileAuthShellStyles.form}>
           <TextInput
             autoCapitalize="none"
             keyboardType="email-address"
             onChangeText={setEmail}
             placeholder="Email"
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#D1D5DB",
-              borderRadius: 8,
-              borderWidth: 1,
-              color: "#111827",
-              minHeight: 48,
-              paddingHorizontal: 14,
-            }}
+            placeholderTextColor={mobileAuthShellPalette.secondaryText}
+            style={mobileAuthShellStyles.input}
             value={email}
           />
           <TextInput
             onChangeText={setPassword}
             placeholder="Password"
+            placeholderTextColor={mobileAuthShellPalette.secondaryText}
             secureTextEntry
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderColor: "#D1D5DB",
-              borderRadius: 8,
-              borderWidth: 1,
-              color: "#111827",
-              minHeight: 48,
-              paddingHorizontal: 14,
-            }}
+            style={mobileAuthShellStyles.input}
             value={password}
           />
           {error ? (
-            <Text style={{ color: "#B91C1C", fontSize: 14 }}>{error}</Text>
+            <Text style={mobileAuthShellStyles.errorText}>{error}</Text>
           ) : null}
           <Pressable
             onPress={() => void signIn(email, password)}
-            style={{
-              alignItems: "center",
-              backgroundColor: "#1E3A8A",
-              borderRadius: 8,
-              minHeight: 48,
-              justifyContent: "center",
-            }}
+            style={mobileAuthShellStyles.button}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>
-              Sign in
-            </Text>
+            <Text style={mobileAuthShellStyles.buttonText}>Sign in</Text>
           </Pressable>
         </View>
       </View>

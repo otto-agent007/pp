@@ -97,6 +97,7 @@ export type CustomerPortalAccessEventKind =
   | "opened"
   | "revoked"
   | "send_requested"
+  | "send_succeeded"
   | "send_failed";
 export type CustomerPortalDeliveryProvider = "manual" | "webhook";
 

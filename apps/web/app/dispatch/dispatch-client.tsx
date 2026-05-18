@@ -155,7 +155,7 @@ function GpsEvidenceEventRow({
   const label = gpsEventLabel(event.event_type);
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
+    <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-neutralDark">{label}</p>
         <a
@@ -167,10 +167,10 @@ function GpsEvidenceEventRow({
           Open {label.toLowerCase()} map
         </a>
       </div>
-      <p className="mt-1 text-xs text-gray-600">
+      <p className="mt-1 text-xs text-theme-text-secondary">
         {formatCapturedTime(event.captured_at)} - {event.radius_label}
       </p>
-      <p className="mt-1 text-xs text-gray-500">{accuracyLabel(event.accuracy_m)}</p>
+      <p className="mt-1 text-xs text-theme-text-muted">{accuracyLabel(event.accuracy_m)}</p>
     </div>
   );
 }
@@ -192,13 +192,13 @@ function LocationEvidencePanel({
   return (
     <section
       aria-label={`GPS evidence for ${jobId}`}
-      className="rounded-md border border-blue-100 bg-blue-50/70 p-3"
+      className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg/70 p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-blue-900">
+        <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-info-fgStrong">
           GPS evidence
         </p>
-        <p className="text-xs font-semibold text-blue-950">
+        <p className="text-xs font-semibold text-status-alert-info-fgStrong">
           {isLoading ? "Loading GPS evidence" : state.summary_label}
         </p>
       </div>
@@ -212,7 +212,7 @@ function LocationEvidencePanel({
           ))}
         </div>
       ) : (
-        <p className="mt-2 text-xs text-gray-600">
+        <p className="mt-2 text-xs text-theme-text-secondary">
           Arrival and departure GPS points will appear here after the technician
           syncs mobile captures.
         </p>
@@ -232,7 +232,7 @@ function RouteIntelligencePanel({
   const exceptionSummary = buildDispatchRouteExceptionSummary(intelligence.stops);
 
   return (
-    <section className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
+    <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 text-sm text-status-alert-info-fgStrong">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="font-semibold">Technician daily route companion</p>
@@ -249,50 +249,50 @@ function RouteIntelligencePanel({
           </p>
         </div>
         <div className="grid gap-2 text-xs font-semibold sm:grid-cols-2 lg:min-w-80">
-          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
             {plural(summary.total_stops, "stop")}
           </span>
-          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
             {plural(summary.active_stops, "active", "active")}
           </span>
-          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
             {plural(summary.completed_stops, "completed", "completed")}
           </span>
-          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
             {plural(summary.missing_coordinates_count, "missing coordinates", "missing coordinates")}
           </span>
-          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
             {plural(summary.missing_evidence_count, "missing GPS evidence", "missing GPS evidence")}
           </span>
-          <span className="rounded-md bg-white px-3 py-2 text-blue-950">
+          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
             {plural(summary.at_risk_stops, "at risk", "at risk")}
           </span>
         </div>
       </div>
-      <p className="mt-3 text-xs font-semibold text-blue-900">
+      <p className="mt-3 text-xs font-semibold text-status-alert-info-fgStrong">
         Showing {triageLabels[triage].toLowerCase()}.
       </p>
-      <div className="mt-3 rounded-md border border-blue-100 bg-white p-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-blue-900">
+      <div className="mt-3 rounded-md border border-status-alert-info-border bg-theme-background-surface p-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-status-alert-info-fgStrong">
           Exception review
         </p>
-        <p className="mt-1 text-sm font-semibold text-blue-950">
+        <p className="mt-1 text-sm font-semibold text-status-alert-info-fgStrong">
           {exceptionSummary.label}
         </p>
         {exceptionSummary.items.length > 0 ? (
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {exceptionSummary.items.map((item) => (
               <div
-                className="rounded-md border border-blue-100 bg-blue-50 p-2"
+                className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-2"
                 key={item.filter}
               >
-                <p className="text-xs font-semibold text-blue-950">
+                <p className="text-xs font-semibold text-status-alert-info-fgStrong">
                   {item.label}
                 </p>
-                <p className="text-xs text-blue-900">
+                <p className="text-xs text-status-alert-info-fgStrong">
                   {plural(item.count, "stop")}
                 </p>
-                <p className="mt-1 text-xs text-blue-800">{item.summary}</p>
+                <p className="mt-1 text-xs text-status-alert-info-fg">{item.summary}</p>
               </div>
             ))}
           </div>
@@ -302,7 +302,7 @@ function RouteIntelligencePanel({
       summary.unassigned_stops > 0 ||
       summary.missing_evidence_count > 0 ||
       summary.at_risk_stops > 0 ? (
-        <p className="mt-3 text-xs font-medium text-blue-900">
+        <p className="mt-3 text-xs font-medium text-status-alert-info-fgStrong">
           {summary.missing_location_count > 0
             ? `${plural(summary.missing_location_count, "stop")} missing service location. `
             : ""}
@@ -323,32 +323,32 @@ function RouteIntelligencePanel({
 
 function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) {
   return (
-    <article className="rounded-md border border-gray-200 bg-white p-3">
+    <article className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-neutralDark">{group.label}</h3>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-theme-text-muted">
             {plural(group.total_stops, "stop")} across {plural(group.days.length, "day")}
           </p>
         </div>
-        <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-900">
+        <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold text-status-alert-info-fgStrong">
           {plural(group.gps_evidence_count, "GPS captured", "GPS captured")}
         </span>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-gray-700">
-        <span className="rounded-md bg-gray-50 px-2 py-1">
+      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-theme-text-secondary">
+        <span className="rounded-md bg-theme-background-subtle px-2 py-1">
           {plural(group.active_stops, "active", "active")}
         </span>
-        <span className="rounded-md bg-gray-50 px-2 py-1">
+        <span className="rounded-md bg-theme-background-subtle px-2 py-1">
           {plural(group.completed_stops, "completed", "completed")}
         </span>
         {group.unassigned_stops > 0 ? (
-          <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-800">
+          <span className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg">
             {plural(group.unassigned_stops, "unassigned", "unassigned")}
           </span>
         ) : null}
         {group.missing_coordinates_count > 0 ? (
-          <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-800">
+          <span className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg">
             {plural(
               group.missing_coordinates_count,
               "missing coordinates",
@@ -357,14 +357,14 @@ function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) 
           </span>
         ) : null}
         {group.missing_location_count > 0 ? (
-          <span className="rounded-md bg-red-50 px-2 py-1 text-red-800">
+          <span className="rounded-md bg-status-alert-danger-bg px-2 py-1 text-status-alert-danger-fg">
             {plural(group.missing_location_count, "missing location")}
           </span>
         ) : null}
       </div>
       <div className="mt-3 space-y-1">
         {group.days.map((day) => (
-          <p className="text-xs text-gray-600" key={`${group.id}-${day.date}`}>
+          <p className="text-xs text-theme-text-secondary" key={`${group.id}-${day.date}`}>
             <span className="font-semibold text-neutralDark">{day.label}</span>
             {": "}
             {plural(day.total_stops, "stop")}, {plural(day.active_stops, "active", "active")},{" "}
@@ -382,22 +382,22 @@ function RouteGroupsPanel({
   groups: DispatchRouteGroupSummary[];
 }) {
   return (
-    <section className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+    <section className="rounded-lg border border-theme-border-subtle bg-theme-background-subtle p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-neutralDark">
             Route groups by technician
           </h2>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-theme-text-secondary">
             Weekly stop load, status mix, GPS evidence, and location readiness.
           </p>
         </div>
-        <p className="text-xs font-semibold text-gray-500">
+        <p className="text-xs font-semibold text-theme-text-muted">
           {plural(groups.length, "group")}
         </p>
       </div>
       {groups.length === 0 ? (
-        <p className="mt-3 rounded-md border border-dashed border-gray-200 bg-white p-3 text-sm text-gray-500">
+        <p className="mt-3 rounded-md border border-dashed border-theme-border-subtle bg-theme-background-surface p-3 text-sm text-theme-text-muted">
           No route groups for the current filters.
         </p>
       ) : (
@@ -545,7 +545,7 @@ export function DispatchClient() {
               Admin
             </p>
             <h1 className="text-3xl font-bold text-neutralDark">Dispatch Calendar</h1>
-            <div className="mt-3 max-w-3xl space-y-1 text-sm text-gray-600">
+            <div className="mt-3 max-w-3xl space-y-1 text-sm text-theme-text-secondary">
               <p>
                 Scheduled jobs stay visible for the week so the demo can show routing,
                 assignment, and status changes.
@@ -558,21 +558,21 @@ export function DispatchClient() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+              className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
               onClick={() => moveWeek(-1)}
               type="button"
             >
               Previous
             </button>
             <button
-              className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+              className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
               onClick={() => setAnchorDate(todayKey())}
               type="button"
             >
               Today
             </button>
             <button
-              className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+              className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
               onClick={() => moveWeek(1)}
               type="button"
             >
@@ -586,7 +586,7 @@ export function DispatchClient() {
             Week of
             <input
               aria-label="Week of"
-              className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
               onChange={(event) => setAnchorDate(event.target.value)}
               type="date"
               value={anchorDate}
@@ -596,7 +596,7 @@ export function DispatchClient() {
             Status
             <select
               aria-label="Dispatch status"
-              className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
               onChange={(event) => setStatus(event.target.value as StatusFilter)}
               value={status}
             >
@@ -612,7 +612,7 @@ export function DispatchClient() {
             Technician
             <select
               aria-label="Dispatch technician"
-              className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
               onChange={(event) => setTechnician(event.target.value)}
               value={technician}
             >
@@ -629,7 +629,7 @@ export function DispatchClient() {
             Triage
             <select
               aria-label="Dispatch triage"
-              className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
               onChange={(event) =>
                 setTriage(event.target.value as DispatchRouteTriageFilter)
               }
@@ -644,20 +644,20 @@ export function DispatchClient() {
           </label>
         </div>
 
-        <p className="text-sm text-gray-600">Week starting {weekStart}</p>
+        <p className="text-sm text-theme-text-secondary">Week starting {weekStart}</p>
 
         <RouteIntelligencePanel
           intelligence={visibleRouteIntelligence}
           triage={triage}
         />
         <RouteGroupsPanel groups={routeGroups} />
-        <section className="rounded-lg border border-sky-200 bg-sky-50 p-4 shadow-sm">
+        <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 shadow-sm">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
+              <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-info-fg">
                 Recurring-route compliance
               </p>
-              <p className="mt-1 text-sm text-sky-900">
+              <p className="mt-1 text-sm text-status-alert-info-fgStrong">
                 {
                   recurringCompliancePreview.required_fields.filter(
                     (field) => field.status === "missing",
@@ -667,7 +667,7 @@ export function DispatchClient() {
               </p>
             </div>
             <a
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-sky-300 bg-white px-3 text-sm font-semibold text-sky-900 hover:bg-sky-100"
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-status-alert-info-border bg-theme-background-surface px-3 text-sm font-semibold text-status-alert-info-fgStrong hover:bg-primitive-sky-100"
               href="/compliance"
             >
               Review rules
@@ -677,23 +677,23 @@ export function DispatchClient() {
       </header>
 
       {jobsQuery.isLoading ? (
-        <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+        <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
           Loading dispatch calendar
         </p>
       ) : (
         <section className="grid gap-3 lg:grid-cols-7">
           {visibleCalendarDays.map((day) => (
             <section
-              className="flex min-h-64 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
+              className="flex min-h-64 flex-col gap-3 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-3 shadow-sm"
               key={day.date}
             >
-              <header className="border-b border-gray-100 pb-2">
+              <header className="border-b border-primitive-slate-100 pb-2">
                 <h2 className="text-sm font-semibold text-neutralDark">{day.label}</h2>
-                <p className="text-xs text-gray-500">{day.jobs.length} jobs</p>
+                <p className="text-xs text-theme-text-muted">{day.jobs.length} jobs</p>
               </header>
 
               {day.jobs.length === 0 ? (
-                <div className="space-y-1 text-sm text-gray-500">
+                <div className="space-y-1 text-sm text-theme-text-muted">
                   <p>No jobs scheduled</p>
                   <p>
                     Create or schedule jobs, then use dispatch to assign a technician
@@ -703,29 +703,29 @@ export function DispatchClient() {
               ) : (
                 day.jobs.map((job) => (
                   <article
-                    className="flex flex-col gap-3 rounded-md border border-gray-200 bg-gray-50 p-3"
+                    className="flex flex-col gap-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                     key={job.id}
                   >
                     <div className="flex items-center justify-between gap-2 text-xs font-semibold">
-                      <span className="rounded-md bg-white px-2 py-1 text-blue-900">
+                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-status-alert-info-fgStrong">
                         {routeStopsByJobId[job.id]
                           ? `Stop ${routeStopsByJobId[job.id].sequence}`
                           : "Outside route"}
                       </span>
-                      <span className="text-gray-600">
+                      <span className="text-theme-text-secondary">
                         {routeStopLocationLabel(routeStopsByJobId[job.id])}
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                      <span className="rounded-md bg-white px-2 py-1 text-gray-700">
+                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-theme-text-secondary">
                         {routeStopEvidenceLabel(routeStopsByJobId[job.id])}
                       </span>
-                      <span className="rounded-md bg-white px-2 py-1 text-gray-700">
+                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-theme-text-secondary">
                         {routeStopRiskLabel(routeStopsByJobId[job.id])}
                       </span>
                       {routeStopsByJobId[job.id]?.triage_labels.map((label) => (
                         <span
-                          className="rounded-md bg-amber-50 px-2 py-1 text-amber-800"
+                          className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg"
                           key={label}
                         >
                           {label}
@@ -739,7 +739,7 @@ export function DispatchClient() {
                       <h3 className="mt-1 text-sm font-semibold text-neutralDark">
                         {job.customer?.name ?? "Unknown customer"}
                       </h3>
-                      <p className="mt-1 text-xs text-gray-600">
+                      <p className="mt-1 text-xs text-theme-text-secondary">
                         {job.location?.address ?? "No location saved"}
                       </p>
                       {routeStopsByJobId[job.id]?.location_map_url ? (
@@ -764,7 +764,7 @@ export function DispatchClient() {
                       Status
                       <select
                         aria-label={`Status for ${job.id}`}
-                        className="min-h-9 rounded-md border border-gray-300 bg-white px-2 text-xs outline-none focus:border-primary"
+                        className="min-h-9 rounded-md border border-theme-border-default bg-theme-background-surface px-2 text-xs outline-none focus:border-primary"
                         disabled={isUpdating}
                         onChange={(event) =>
                           changeStatus.mutate({
@@ -786,7 +786,7 @@ export function DispatchClient() {
                       Technician
                       <select
                         aria-label={`Technician for ${job.id}`}
-                        className="min-h-9 rounded-md border border-gray-300 bg-white px-2 text-xs outline-none focus:border-primary"
+                        className="min-h-9 rounded-md border border-theme-border-default bg-theme-background-surface px-2 text-xs outline-none focus:border-primary"
                         disabled={isUpdating}
                         onChange={(event) =>
                           assignTechnician.mutate({

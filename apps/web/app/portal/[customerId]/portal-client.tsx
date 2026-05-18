@@ -59,7 +59,7 @@ function formatMoney(cents: number, currency = "usd") {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <p className="rounded-md border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-600">
+    <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-surface p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
   );
@@ -71,23 +71,23 @@ function accessErrorMessage(error: Error | null, fallback: string) {
 
 function PortalMediaTile({ media }: { media: CustomerPortalMedia }) {
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-3">
+    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-3">
       {media.signed_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           alt={media.description ?? media.media_type}
-          className="h-48 w-full rounded-md bg-gray-100 object-cover"
+          className="h-48 w-full rounded-md bg-primitive-slate-100 object-cover"
           src={media.signed_url}
         />
       ) : (
-        <div className="flex h-48 items-center justify-center rounded-md bg-gray-100 px-4 text-center text-sm text-gray-500">
+        <div className="flex h-48 items-center justify-center rounded-md bg-primitive-slate-100 px-4 text-center text-sm text-theme-text-muted">
           Preview unavailable
         </div>
       )}
       <p className="mt-3 text-sm font-semibold text-neutralDark">
         {media.description ?? "Job media"}
       </p>
-      <p className="mt-1 text-xs text-gray-500">
+      <p className="mt-1 text-xs text-theme-text-muted">
         Captured {formatDateTime(media.captured_at)}
       </p>
     </article>
@@ -102,12 +102,12 @@ function PortalFormCard({
   const fields = submission.template?.schema.fields ?? [];
 
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-4">
+    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <h3 className="text-base font-semibold text-neutralDark">
           {submission.template?.name ?? "Service form"}
         </h3>
-        <p className="text-xs font-medium text-gray-500">
+        <p className="text-xs font-medium text-theme-text-muted">
           {formatDateTime(submission.submitted_at)}
         </p>
       </div>
@@ -115,20 +115,20 @@ function PortalFormCard({
         {fields.length > 0
           ? fields.map((field) => (
               <div key={field.id}>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   {field.label}
                 </dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                <dd className="mt-1 whitespace-pre-wrap text-sm text-theme-text-primary">
                   {formatValue(submission.form_data[field.id])}
                 </dd>
               </div>
             ))
           : Object.entries(submission.form_data).map(([key, value]) => (
               <div key={key}>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   {key}
                 </dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                <dd className="mt-1 whitespace-pre-wrap text-sm text-theme-text-primary">
                   {formatValue(value)}
                 </dd>
               </div>
@@ -140,26 +140,26 @@ function PortalFormCard({
 
 function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold text-neutralDark">
               Invoice {invoice.id.slice(0, 8)}
             </h2>
-            <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
+            <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-theme-text-secondary">
               {getCustomerPortalInvoiceStatusLabel(invoice.status)}
             </span>
           </div>
-          <p className="mt-2 text-sm text-gray-700">
+          <p className="mt-2 text-sm text-theme-text-secondary">
             {invoice.job?.location?.nickname ??
               invoice.job?.location?.address ??
               "Service invoice"}
           </p>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-theme-text-secondary">
             Service date {formatDateTime(invoice.job?.scheduled_start)}
           </p>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-theme-text-secondary">
             Due {formatDateTime(invoice.due_date)}
           </p>
         </div>
@@ -167,12 +167,12 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
           <p className="text-2xl font-bold text-neutralDark">
             {formatMoney(invoice.total_cents, invoice.currency)}
           </p>
-          <p className="mt-1 text-sm font-medium text-gray-600">
+          <p className="mt-1 text-sm font-medium text-theme-text-secondary">
             Balance {formatMoney(invoice.balance_cents, invoice.currency)}
           </p>
           {invoice.payment_url ? (
             <a
-              className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-900"
+              className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse shadow-sm hover:bg-primitive-sky-600"
               href={invoice.payment_url}
               rel="noreferrer"
               target="_blank"
@@ -183,13 +183,13 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
         </div>
       </div>
       {invoice.line_items.length > 0 ? (
-        <dl className="mt-4 grid gap-3 border-t border-gray-100 pt-4 sm:grid-cols-2">
+        <dl className="mt-4 grid gap-3 border-t border-primitive-slate-100 pt-4 sm:grid-cols-2">
           {invoice.line_items.map((item) => (
             <div key={item.id}>
-              <dt className="text-sm font-semibold text-gray-800">
+              <dt className="text-sm font-semibold text-theme-text-primary">
                 {item.description}
               </dt>
-              <dd className="mt-1 text-sm text-gray-600">
+              <dd className="mt-1 text-sm text-theme-text-secondary">
                 {item.quantity} x{" "}
                 {formatMoney(item.unit_amount_cents, invoice.currency)}
               </dd>
@@ -281,7 +281,7 @@ function PortalTimeline({
         <div className="grid gap-3">
           {items.map((item) => (
             <article
-              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm"
               key={item.id}
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -292,10 +292,10 @@ function PortalTimeline({
                   <h3 className="mt-1 text-lg font-semibold text-neutralDark">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="mt-1 text-sm text-theme-text-secondary">
                     {formatDateTime(item.date)}
                   </p>
-                  <p className="mt-2 text-sm text-gray-700">
+                  <p className="mt-2 text-sm text-theme-text-secondary">
                     {item.captures_label}
                   </p>
                 </div>
@@ -305,7 +305,7 @@ function PortalTimeline({
                   </p>
                   {item.payment_url ? (
                     <a
-                      className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-blue-900"
+                      className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primitive-sky-600"
                       href={item.payment_url}
                       rel="noreferrer"
                       target="_blank"
@@ -334,7 +334,7 @@ function CloseoutCard({
   const proof = getCustomerPortalProofHandoff(closeout);
 
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
@@ -343,84 +343,84 @@ function CloseoutCard({
           <h2 className="mt-1 text-2xl font-bold text-neutralDark">
             {closeout.job.location?.nickname ?? closeout.job.location?.address ?? "Service visit"}
           </h2>
-          <p className="mt-2 text-sm text-gray-700">
+          <p className="mt-2 text-sm text-theme-text-secondary">
             {closeout.job.location?.address ?? "Service location unavailable"}
           </p>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-theme-text-secondary">
             {summary.serviceDateLabel}
           </p>
-          <dl className="mt-4 grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+          <dl className="mt-4 grid gap-2 text-sm text-theme-text-secondary sm:grid-cols-3">
             <div>
-              <dt className="font-semibold text-gray-900">Location</dt>
+              <dt className="font-semibold text-theme-text-primary">Location</dt>
               <dd>{summary.locationLabel}</dd>
             </div>
             <div>
-              <dt className="font-semibold text-gray-900">Captures</dt>
+              <dt className="font-semibold text-theme-text-primary">Captures</dt>
               <dd>{summary.capturesLabel}</dd>
             </div>
             <div>
-              <dt className="font-semibold text-gray-900">Billing</dt>
+              <dt className="font-semibold text-theme-text-primary">Billing</dt>
               <dd>{summary.invoiceLabel}</dd>
             </div>
           </dl>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-md bg-gray-50 p-3">
+          <div className="rounded-md bg-theme-background-subtle p-3">
             <p className="text-lg font-bold text-neutralDark">
               {closeout.form_submissions.length}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Forms
             </p>
           </div>
-          <div className="rounded-md bg-gray-50 p-3">
+          <div className="rounded-md bg-theme-background-subtle p-3">
             <p className="text-lg font-bold text-neutralDark">
               {closeout.photos.length}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Photos
             </p>
           </div>
-          <div className="rounded-md bg-gray-50 p-3">
+          <div className="rounded-md bg-theme-background-subtle p-3">
             <p className="text-lg font-bold text-neutralDark">
               {closeout.signatures.length}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Signatures
             </p>
           </div>
         </div>
       </div>
 
-      <section className="mt-6 rounded-md border border-emerald-100 bg-emerald-50 p-4">
+      <section className="mt-6 rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-neutralDark">
               Proof of service
             </p>
-            <p className="mt-1 text-sm text-gray-700">{proof.summary_label}</p>
-            <p className="mt-1 text-xs font-medium text-gray-600">
+            <p className="mt-1 text-sm text-theme-text-secondary">{proof.summary_label}</p>
+            <p className="mt-1 text-xs font-medium text-theme-text-secondary">
               {proof.privacy_label}
             </p>
-            <p className="mt-2 text-sm font-semibold text-gray-800">
+            <p className="mt-2 text-sm font-semibold text-theme-text-primary">
               {proof.next_step_label}
             </p>
           </div>
-          <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold uppercase text-emerald-800">
+          <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold uppercase text-status-alert-success-fg">
             {proof.completion_label}
           </span>
         </div>
-        <dl className="mt-3 grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+        <dl className="mt-3 grid gap-2 text-sm text-theme-text-secondary sm:grid-cols-3">
           <div>
-            <dt className="font-semibold text-gray-900">Service date</dt>
+            <dt className="font-semibold text-theme-text-primary">Service date</dt>
             <dd>{proof.service_date_label}</dd>
           </div>
           <div>
-            <dt className="font-semibold text-gray-900">Location</dt>
+            <dt className="font-semibold text-theme-text-primary">Location</dt>
             <dd>{proof.location_label}</dd>
           </div>
           <div>
-            <dt className="font-semibold text-gray-900">Customer proof</dt>
+            <dt className="font-semibold text-theme-text-primary">Customer proof</dt>
             <dd>
               {proof.capture_counts.forms} forms, {proof.capture_counts.photos} photos,{" "}
               {proof.capture_counts.signatures} signatures
@@ -500,13 +500,13 @@ export function CustomerPortalClient({
             Customer portal
           </p>
           <h1 className="text-3xl font-bold text-neutralDark">{customerName}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600">
+          <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
             Completed service visits, invoices, forms, photos, and signatures.
           </p>
         </div>
         <input
           aria-label="Search service visits"
-          className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary md:w-80"
+          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary md:w-80"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search visits"
           value={search}

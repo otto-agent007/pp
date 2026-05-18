@@ -72,7 +72,7 @@ describe("customer portal access token events route", () => {
           id: "event-1",
           token_id: "token-1",
           customer_id: "customer-1",
-          kind: "send_requested",
+          kind: "send_succeeded",
           occurred_at: "2026-05-06T00:00:00.000Z",
           actor_profile_id: "admin-1",
           provider_payload: { portal_url: "http://localhost/portal/customer-1" },
@@ -104,7 +104,7 @@ describe("customer portal access token events route", () => {
         id: "event-1",
         token_id: "token-1",
         customer_id: "customer-1",
-        kind: "send_requested",
+        kind: "send_succeeded",
         occurred_at: "2026-05-06T00:00:00.000Z",
       },
       {

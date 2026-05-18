@@ -179,7 +179,7 @@ export function TechnicianLoginClient() {
   if (!inviteChecked) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-neutralLight px-6">
-        <p className="text-sm font-semibold text-gray-600">
+        <p className="text-sm font-semibold text-theme-text-secondary">
           Checking technician invite...
         </p>
       </main>
@@ -196,21 +196,21 @@ export function TechnicianLoginClient() {
           <h1 className="text-4xl font-bold text-neutralDark">
             Technician sign-in
           </h1>
-          <p className="max-w-2xl text-base leading-7 text-gray-600">
+          <p className="max-w-2xl text-base leading-7 text-theme-text-secondary">
             Field technicians can set their password from an invite, then use
             their technician account for assigned work.
           </p>
         </div>
 
         {inviteError ? (
-          <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-red-700">
+          <div className="rounded-lg border border-status-alert-danger-border bg-theme-background-surface p-6 shadow-sm">
+            <p className="text-sm font-semibold text-status-alert-danger-fg">
               {inviteError}
             </p>
           </div>
         ) : inviteSessionReady ? (
           <form
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-6 shadow-sm"
             onSubmit={submitPasswordSetup}
           >
             <div className="space-y-5">
@@ -227,7 +227,7 @@ export function TechnicianLoginClient() {
                 </label>
                 <input
                   autoComplete="new-password"
-                  className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   id="technician-new-password"
                   onChange={(event) => setNewPassword(event.target.value)}
                   type="password"
@@ -244,7 +244,7 @@ export function TechnicianLoginClient() {
                 </label>
                 <input
                   autoComplete="new-password"
-                  className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   id="technician-confirm-password"
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   type="password"
@@ -253,13 +253,13 @@ export function TechnicianLoginClient() {
               </div>
 
               {visibleError ? (
-                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg px-3 py-2 text-sm font-semibold text-status-alert-danger-fg">
                   {visibleError}
                 </p>
               ) : null}
 
               <button
-                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90"
+                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-theme-text-inverse transition hover:bg-primary/90"
                 type="submit"
               >
                 Set password
@@ -268,12 +268,12 @@ export function TechnicianLoginClient() {
           </form>
         ) : (
           <form
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-6 shadow-sm"
             onSubmit={submitSignIn}
           >
             <div className="space-y-5">
               {passwordUpdated ? (
-                <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+                <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
                   Password set. You can now sign in here with your technician
                   account.
                 </p>
@@ -288,7 +288,7 @@ export function TechnicianLoginClient() {
                 </label>
                 <input
                   autoComplete="email"
-                  className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   id="technician-email"
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
@@ -305,7 +305,7 @@ export function TechnicianLoginClient() {
                 </label>
                 <input
                   autoComplete="current-password"
-                  className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   id="technician-password"
                   onChange={(event) => setPassword(event.target.value)}
                   type="password"
@@ -314,19 +314,19 @@ export function TechnicianLoginClient() {
               </div>
 
               {visibleError ? (
-                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg px-3 py-2 text-sm font-semibold text-status-alert-danger-fg">
                   {visibleError}
                 </p>
               ) : null}
 
               {status === "signed_in" ? (
-                <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+                <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
                   Signed in. Assigned field work is available in the mobile app.
                 </p>
               ) : null}
 
               <button
-                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-theme-text-inverse transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={status === "loading"}
                 type="submit"
               >

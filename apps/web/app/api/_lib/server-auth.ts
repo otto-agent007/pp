@@ -83,7 +83,7 @@ export async function getAdminAccess(request: Request): Promise<
     }
 
     const profile = await getProfileRecord(client, data.user.id);
-    validateAdminAccess({ profile, session: {} as never });
+    validateAdminAccess({ profile });
 
     return {
       access: {

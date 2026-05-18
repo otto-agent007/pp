@@ -244,7 +244,12 @@ export function formatMissingCaptureList(items: string[]) {
 export function getCloseoutReviewReadiness(
   review: JobCloseoutReview,
 ): CloseoutReviewReadiness {
-  const counts = getCloseoutCounts(review);
+  return getCloseoutReviewReadinessFromCounts(getCloseoutCounts(review));
+}
+
+export function getCloseoutReviewReadinessFromCounts(
+  counts: CloseoutCounts,
+): CloseoutReviewReadiness {
   const missing = [
     counts.forms === 0 ? "Treatment form" : null,
     counts.chemicalLogs === 0 ? "Chemical log" : null,
@@ -400,13 +405,11 @@ export function getAdminCloseoutProofReview(input: {
 }
 
 function readinessFromSummary(summary: CloseoutCaptureSummary): CloseoutReviewReadiness {
-  return getCloseoutReviewReadiness({
-    chemical_logs: Array.from({ length: summary.chemicalLogs }) as never,
-    form_submissions: Array.from({ length: summary.forms }) as never,
-    job: { id: summary.jobId } as Job,
-    media: [],
-    photos: Array.from({ length: summary.photos }) as never,
-    signatures: Array.from({ length: summary.signatures }) as never,
+  return getCloseoutReviewReadinessFromCounts({
+    chemicalLogs: summary.chemicalLogs,
+    forms: summary.forms,
+    photos: summary.photos,
+    signatures: summary.signatures,
   });
 }
 
@@ -762,6 +765,10 @@ export function getCustomerPortalAccessTokenEventLabel(
 
   if (event.kind === "send_requested") {
     return "Send requested";
+  }
+
+  if (event.kind === "send_succeeded") {
+    return "Send succeeded";
   }
 
   if (event.kind === "send_failed") {

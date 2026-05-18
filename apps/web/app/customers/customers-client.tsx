@@ -127,18 +127,18 @@ function ledgerEntryActionLabel(entry: CustomerLedgerEntry) {
 
 function ledgerEntryDotClass(entry: CustomerLedgerEntry) {
   if (entry.type === "completed_service" || entry.type === "paid_invoice") {
-    return "bg-emerald-500";
+    return "bg-status-alert-success-bg0";
   }
 
   if (entry.type === "partial_payment" || entry.type === "needs_review_payment") {
-    return "bg-amber-400";
+    return "bg-status-alert-warning-solid";
   }
 
   if (entry.type === "draft_invoice" || entry.type === "void_invoice") {
-    return "bg-gray-300";
+    return "bg-theme-border-default";
   }
 
-  return "bg-blue-400";
+  return "bg-status-alert-info-solid";
 }
 
 function isServiceEntry(entry: CustomerLedgerEntry) {
@@ -228,18 +228,18 @@ function CustomerLedgerSummary({
   const showExpandButton = entries.length > recentEntries.length;
 
   return (
-    <section className="mt-5 rounded-md border border-gray-200 bg-gray-50 p-4">
+    <section className="mt-5 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
             Account ledger
           </p>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-theme-text-secondary">
             Latest service {formatDate(summary.latestServiceAt)}
           </p>
         </div>
         <Link
-          className="text-sm font-semibold text-primary hover:text-blue-900"
+          className="text-sm font-semibold text-primary hover:text-status-alert-info-fgStrong"
           href={customerBillingHref(customer.id)}
         >
           Open billing
@@ -248,7 +248,7 @@ function CustomerLedgerSummary({
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Open balance
           </dt>
           <dd className="mt-1 text-base font-bold text-neutralDark">
@@ -256,7 +256,7 @@ function CustomerLedgerSummary({
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Paid total
           </dt>
           <dd className="mt-1 text-base font-bold text-neutralDark">
@@ -264,7 +264,7 @@ function CustomerLedgerSummary({
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Latest invoice
           </dt>
           <dd className="mt-1 text-base font-bold text-neutralDark">
@@ -274,12 +274,12 @@ function CustomerLedgerSummary({
       </dl>
 
       {summary.reviewCount > 0 ? (
-        <div className="mt-3 flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm font-medium text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-3 flex flex-col gap-2 rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-2 text-sm font-medium text-status-alert-warning-fg sm:flex-row sm:items-center sm:justify-between">
           <p>
             {summary.reviewCount} payment{summary.reviewCount === 1 ? "" : "s"} need{summary.reviewCount === 1 ? "s" : ""} review.
           </p>
           <Link
-            className="font-semibold text-amber-900 hover:underline"
+            className="font-semibold text-status-alert-warning-fgStrong hover:underline"
             href={customerReviewHref(customer.id)}
           >
             Review →
@@ -297,18 +297,18 @@ function CustomerLedgerSummary({
             const isActive = activeTab === tab.id;
             const badgeClass =
               tab.id === "review" && tabCounts.review > 0 && !isActive
-                ? "bg-amber-100 text-amber-700"
+                ? "bg-status-alert-warning-bg text-status-alert-warning-fg"
                 : isActive
-                  ? "bg-white/30 text-white"
-                  : "bg-gray-100 text-gray-500";
+                  ? "bg-theme-background-surface/30 text-theme-text-inverse"
+                  : "bg-primitive-slate-100 text-theme-text-muted";
 
             return (
               <button
                 aria-selected={isActive}
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                   isActive
-                    ? "bg-primary text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary text-theme-text-inverse"
+                    : "text-theme-text-secondary hover:bg-primitive-slate-100"
                 }`}
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -326,16 +326,16 @@ function CustomerLedgerSummary({
       ) : null}
 
       {entries.length === 0 ? (
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="mt-4 text-sm text-theme-text-secondary">
           No service or billing activity yet. Schedule a job, then create an invoice before sharing the portal.
         </p>
       ) : visibleEntries.length === 0 ? (
-        <p className="py-4 text-center text-sm text-gray-500">
+        <p className="py-4 text-center text-sm text-theme-text-muted">
           No {activeTabLabel} entries for this customer.
         </p>
       ) : (
         <ol
-          className={`mt-4 divide-y divide-gray-200 ${
+          className={`mt-4 divide-y divide-theme-border-subtle ${
             expanded && entries.length > 10 ? "max-h-[480px] overflow-y-auto pr-2" : ""
           }`}
         >
@@ -348,7 +348,7 @@ function CustomerLedgerSummary({
       <div className="mt-4 flex items-center justify-between gap-3">
         {showExpandButton ? (
           <button
-            className="min-h-9 rounded-md border border-gray-300 px-3 text-xs font-semibold text-neutralDark hover:bg-gray-50"
+            className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
             onClick={() => {
               setExpanded((current) => !current);
               setActiveTab("all");
@@ -361,7 +361,7 @@ function CustomerLedgerSummary({
           <span />
         )}
         <Link
-          className="text-sm font-semibold text-primary hover:text-blue-900"
+          className="text-sm font-semibold text-primary hover:text-status-alert-info-fgStrong"
           href={customerBillingHref(customer.id)}
         >
           Open billing
@@ -415,7 +415,7 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
       <div className="min-w-0">
         <p
           className={`text-sm font-semibold ${
-            entry.review ? "text-amber-800" : "text-neutralDark"
+            entry.review ? "text-status-alert-warning-fg" : "text-neutralDark"
           }`}
         >
           <span
@@ -425,15 +425,15 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
           {entry.review ? "⚠ " : ""}
           {entry.label}
         </p>
-        <p className="mt-1 text-xs text-gray-600">{entry.detail}</p>
+        <p className="mt-1 text-xs text-theme-text-secondary">{entry.detail}</p>
       </div>
       <div className="flex shrink-0 flex-col gap-1 text-left sm:items-end sm:text-right">
-        <p className="text-xs font-medium text-gray-500">{formatDate(entry.date)}</p>
+        <p className="text-xs font-medium text-theme-text-muted">{formatDate(entry.date)}</p>
         {amountText ? (
           <p
             className={`text-xs font-semibold ${
               entry.type === "void_invoice"
-                ? "text-gray-400 line-through"
+                ? "text-theme-text-muted/70 line-through"
                 : "text-neutralDark"
             }`}
           >
@@ -441,7 +441,7 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
           </p>
         ) : null}
         {entry.balance_cents !== null && entry.balance_cents > 0 ? (
-          <p className="inline-flex items-center rounded bg-amber-50 px-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+          <p className="inline-flex items-center rounded bg-status-alert-warning-bg px-1 text-[10px] font-semibold uppercase tracking-wide text-status-alert-warning-fg">
             Balance {formatMoney(entry.balance_cents)}
           </p>
         ) : null}
@@ -556,14 +556,14 @@ export function CustomersClient() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             aria-label="Search customers"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Customer status"
-            className="min-h-11 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
             onChange={(event) => setStatus(event.target.value as CustomerStatus)}
             value={status}
           >
@@ -576,17 +576,17 @@ export function CustomersClient() {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {customersQuery.isLoading ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               Loading customers
             </p>
           ) : visibleCustomers.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600">
+            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
               No customers found
             </p>
           ) : (
             visibleCustomers.map((customer) => (
               <article
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+                className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
                 key={customer.id}
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -594,16 +594,16 @@ export function CustomersClient() {
                     <h2 className="text-lg font-semibold text-neutralDark">
                       {customer.name}
                     </h2>
-                    <p className="text-sm capitalize text-gray-600">
+                    <p className="text-sm capitalize text-theme-text-secondary">
                       {customer.property_type}
                     </p>
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-theme-text-secondary">
                       {[customer.phone, customer.email].filter(Boolean).join(" | ") ||
                         "No contact saved"}
                     </p>
                     <div className="mt-3 flex flex-col gap-1">
                       {(customer.locations ?? []).map((location) => (
-                        <p className="text-sm text-gray-700" key={location.id}>
+                        <p className="text-sm text-theme-text-secondary" key={location.id}>
                           {location.is_primary ? "Primary: " : ""}
                           {location.address}
                         </p>
@@ -612,7 +612,7 @@ export function CustomersClient() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                      className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                       onClick={() => editCustomer(customer)}
                       type="button"
                     >
@@ -620,7 +620,7 @@ export function CustomersClient() {
                     </button>
                     {customer.status === "active" ? (
                       <button
-                        className="min-h-10 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 hover:bg-red-50"
+                        className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-medium text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
                         disabled={archiveCustomer.isPending}
                         onClick={() => archiveCustomer.mutate(customer.id)}
                         type="button"
@@ -643,7 +643,7 @@ export function CustomersClient() {
         </div>
 
         <form
-          className="flex h-fit flex-col gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           onSubmit={submitCustomer}
         >
           <div className="flex items-center justify-between gap-3">
@@ -652,7 +652,7 @@ export function CustomersClient() {
             </h2>
             {editingCustomer ? (
               <button
-                className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                 onClick={resetForm}
                 type="button"
               >
@@ -661,19 +661,19 @@ export function CustomersClient() {
             ) : null}
           </div>
 
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-            <p className="text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3">
+            <p className="text-sm font-semibold text-status-alert-warning-fg">
               Customer setup demo tip
             </p>
-            <p className="mt-1 text-sm text-amber-800">
+            <p className="mt-1 text-sm text-status-alert-warning-fg">
               Save the customer with one active service location, then schedule
               the first job.
             </p>
-            <p className="mt-1 text-sm text-amber-800">
+            <p className="mt-1 text-sm text-status-alert-warning-fg">
               Use portal links after closeout and billing are ready.
             </p>
             <Link
-              className="mt-3 inline-flex min-h-10 items-center rounded-md border border-amber-300 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+              className="mt-3 inline-flex min-h-10 items-center rounded-md border border-status-alert-warning-border px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
               href="/jobs"
             >
               Schedule job
@@ -683,7 +683,7 @@ export function CustomersClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Name
             <input
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm font-normal outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
               onChange={(event) => setForm({ ...form, name: event.target.value })}
               value={form.name}
             />
@@ -693,7 +693,7 @@ export function CustomersClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Phone
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm font-normal outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
                 onChange={(event) => setForm({ ...form, phone: event.target.value })}
                 value={form.phone ?? ""}
               />
@@ -701,7 +701,7 @@ export function CustomersClient() {
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Email
               <input
-                className="min-h-11 rounded-md border border-gray-300 px-3 text-sm font-normal outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
                 onChange={(event) => setForm({ ...form, email: event.target.value })}
                 type="email"
                 value={form.email ?? ""}
@@ -712,7 +712,7 @@ export function CustomersClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Property type
             <select
-              className="min-h-11 rounded-md border border-gray-300 px-3 text-sm font-normal outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
               onChange={(event) =>
                 setForm({ ...form, property_type: event.target.value as PropertyType })
               }
@@ -727,7 +727,7 @@ export function CustomersClient() {
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Service notes
             <textarea
-              className="min-h-24 rounded-md border border-gray-300 px-3 py-2 text-sm font-normal outline-none focus:border-primary"
+              className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm font-normal outline-none focus:border-primary"
               onChange={(event) =>
                 setForm({ ...form, service_notes: event.target.value })
               }
@@ -739,7 +739,7 @@ export function CustomersClient() {
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-neutralDark">Locations</h3>
               <button
-                className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                 onClick={() =>
                   setForm({
                     ...form,
@@ -757,13 +757,13 @@ export function CustomersClient() {
 
             {form.locations.map((location, index) => (
               <div
-                className="flex flex-col gap-3 rounded-md border border-gray-200 p-3"
+                className="flex flex-col gap-3 rounded-md border border-theme-border-subtle p-3"
                 key={location.id ?? index}
               >
                 <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
                   Address
                   <input
-                    className="min-h-11 rounded-md border border-gray-300 px-3 text-sm font-normal outline-none focus:border-primary"
+                    className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
                     onChange={(event) =>
                       updateLocation(index, { address: event.target.value })
                     }
@@ -773,7 +773,7 @@ export function CustomersClient() {
                 <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
                   Nickname
                   <input
-                    className="min-h-11 rounded-md border border-gray-300 px-3 text-sm font-normal outline-none focus:border-primary"
+                    className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
                     onChange={(event) =>
                       updateLocation(index, { nickname: event.target.value })
                     }
@@ -783,7 +783,7 @@ export function CustomersClient() {
                 <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
                   Location notes
                   <textarea
-                    className="min-h-20 rounded-md border border-gray-300 px-3 py-2 text-sm font-normal outline-none focus:border-primary"
+                    className="min-h-20 rounded-md border border-theme-border-default px-3 py-2 text-sm font-normal outline-none focus:border-primary"
                     onChange={(event) =>
                       updateLocation(index, { service_notes: event.target.value })
                     }
@@ -802,7 +802,7 @@ export function CustomersClient() {
                     Primary
                   </label>
                   <button
-                    className="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-medium text-neutralDark hover:bg-gray-50"
+                    className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
                     onClick={() => removeLocation(index)}
                     type="button"
                   >
@@ -813,10 +813,10 @@ export function CustomersClient() {
             ))}
           </div>
 
-          {formError ? <p className="text-sm text-red-700">{formError}</p> : null}
+          {formError ? <p className="text-sm text-status-alert-danger-fg">{formError}</p> : null}
           {saveMessage ? (
             <p
-              className="rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800"
+              className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-3 text-sm font-medium text-status-alert-success-fg"
               role="status"
             >
               {saveMessage}
@@ -824,7 +824,7 @@ export function CustomersClient() {
           ) : null}
 
           <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-400"
+            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primitive-sky-600 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
             disabled={isSaving}
             type="submit"
           >

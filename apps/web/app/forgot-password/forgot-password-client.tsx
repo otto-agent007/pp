@@ -51,14 +51,14 @@ export function ForgotPasswordClient() {
           <h1 className="text-3xl font-bold text-neutralDark">
             Reset your password
           </h1>
-          <p className="text-sm leading-6 text-gray-600">
+          <p className="text-sm leading-6 text-theme-text-secondary">
             Enter your admin email and we will send a recovery link to your
             inbox.
           </p>
         </div>
 
         <form
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-6 shadow-sm"
           onSubmit={handleSubmit}
         >
           <div className="space-y-5">
@@ -71,7 +71,7 @@ export function ForgotPasswordClient() {
               </label>
               <input
                 autoComplete="email"
-                className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 id="reset-email"
                 onChange={(event) => setEmail(event.target.value)}
                 type="email"
@@ -80,19 +80,19 @@ export function ForgotPasswordClient() {
             </div>
 
             {error ? (
-              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg px-3 py-2 text-sm font-semibold text-status-alert-danger-fg">
                 {error}
               </p>
             ) : null}
 
             {sent ? (
-              <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+              <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
                 Check your email for a password reset link.
               </p>
             ) : null}
 
             <button
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-theme-text-inverse transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={submitting}
               type="submit"
             >

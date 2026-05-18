@@ -13,7 +13,8 @@
     "demo:reset": "tsx tooling/demo-seed.ts reset",
     "demo:seed": "tsx tooling/demo-seed.ts seed",
     "demo:smoke": "tsx tooling/demo-smoke-preflight.ts",
-    "lint": "turbo lint",
+    "lint": "tsx tooling/no-hardcoded-hex.ts && turbo lint",
+    "tokens:no-hardcoded-hex": "tsx tooling/no-hardcoded-hex.ts",
     "test": "vitest run tooling/compliance-ingest.test.ts && turbo test",
     "typecheck": "turbo typecheck",
     "format": "prettier --write ."
