@@ -275,6 +275,8 @@ describe("DispatchClient", () => {
     expect(within(mapPanel).getByText("San Diego Bay")).toBeInTheDocument();
     expect(within(mapPanel).getByText("Point Loma")).toBeInTheDocument();
     expect(within(mapPanel).getByText("I-5")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("Escondido")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("Tijuana")).toBeInTheDocument();
     expect(within(mapPanel).getByText("1 plotted")).toBeInTheDocument();
     expect(within(mapPanel).getByText("1 missing coordinates")).toBeInTheDocument();
     expect(screen.getByLabelText("Map pin Stop 2: Downtown Cafe"))
