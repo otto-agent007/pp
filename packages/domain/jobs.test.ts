@@ -2,6 +2,7 @@ import type { Job } from "@pest-patrol/types";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDispatchStaticMapState,
   buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
   buildDispatchRouteIntelligenceForDays,
@@ -734,6 +735,232 @@ describe("job domain", () => {
           label: "Missing GPS evidence",
         },
       ],
+    });
+  });
+
+  it("projects service coordinates onto the provider-free San Diego map", () => {
+    const jobs = [
+      {
+        id: "job-downtown",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-1",
+          name: "Downtown Cafe",
+          phone: null,
+          email: null,
+          property_type: "commercial",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "500 Demo Harbor Dr, San Diego, CA 92101",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.7157,
+          longitude: -117.1611,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+    ] satisfies Job[];
+    const intelligence = buildDispatchRouteIntelligence(jobs, "2026-05-06");
+
+    const mapState = buildDispatchStaticMapState(intelligence.stops);
+
+    expect(mapState.summary).toMatchObject({
+      missing_coordinates_count: 0,
+      outside_map_count: 0,
+      plotted_stops: 1,
+      total_stops: 1,
+    });
+    expect(mapState.points[0]).toMatchObject({
+      address_label: "500 Demo Harbor Dr, San Diego, CA 92101",
+      customer_label: "Downtown Cafe",
+      evidence_state: "missing",
+      job_id: "job-downtown",
+      label: "Stop 1",
+      source: "service_location",
+      status_state: "active",
+    });
+    expect(mapState.points[0].x_percent).toBeCloseTo(30.9, 1);
+    expect(mapState.points[0].y_percent).toBeCloseTo(69.9, 1);
+  });
+
+  it("falls back to latest GPS evidence when a stop lacks service coordinates", () => {
+    const jobs = [
+      {
+        id: "job-gps",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-1",
+          name: "La Jolla Office",
+          phone: null,
+          email: null,
+          property_type: "commercial",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "900 Demo Prospect St, San Diego, CA 92037",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: null,
+          longitude: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+    ] satisfies Job[];
+    const evidenceByJob = {
+      "job-gps": {
+        job_id: "job-gps",
+        latest_arrival: null,
+        latest_departure: {
+          accuracy_m: 18,
+          captured_at: "2026-05-06T08:45:00.000Z",
+          distance_m: null,
+          event_type: "departure",
+          latitude: 32.8328,
+          longitude: -117.2713,
+          map_url:
+            "https://www.google.com/maps/search/?api=1&query=32.8328%2C-117.2713",
+          radius_label: "Service coordinates unavailable",
+          radius_state: "unavailable",
+          within_radius: null,
+        },
+        latest_event: {
+          accuracy_m: 18,
+          captured_at: "2026-05-06T08:45:00.000Z",
+          distance_m: null,
+          event_type: "departure",
+          latitude: 32.8328,
+          longitude: -117.2713,
+          map_url:
+            "https://www.google.com/maps/search/?api=1&query=32.8328%2C-117.2713",
+          radius_label: "Service coordinates unavailable",
+          radius_state: "unavailable",
+          within_radius: null,
+        },
+        state: "captured",
+        summary_label: "Latest GPS: Departure",
+      },
+    } as const;
+    const intelligence = buildDispatchRouteIntelligence(
+      jobs,
+      "2026-05-06",
+      "all",
+      { evidenceByJob },
+    );
+
+    const mapState = buildDispatchStaticMapState(intelligence.stops, {
+      evidenceByJob,
+    });
+
+    expect(mapState.summary).toMatchObject({
+      missing_coordinates_count: 0,
+      plotted_stops: 1,
+    });
+    expect(mapState.points[0]).toMatchObject({
+      evidence_state: "partial",
+      job_id: "job-gps",
+      source: "latest_gps",
+      status_state: "completed",
+    });
+    expect(mapState.points[0].x_percent).toBeCloseTo(6.4, 1);
+    expect(mapState.points[0].y_percent).toBeCloseTo(51.9, 1);
+  });
+
+  it("summarizes missing and out-of-bounds stops without plotting them", () => {
+    const jobs = [
+      {
+        id: "job-outside",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "10 Pine Street",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 33.8121,
+          longitude: -117.919,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-missing",
+        customer_id: "customer-1",
+        location_id: "location-2",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        location: {
+          id: "location-2",
+          customer_id: "customer-1",
+          address: "20 Oak Avenue",
+          nickname: null,
+          service_notes: null,
+          is_primary: false,
+          latitude: null,
+          longitude: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+    ] satisfies Job[];
+    const intelligence = buildDispatchRouteIntelligence(jobs, "2026-05-06");
+
+    const mapState = buildDispatchStaticMapState(intelligence.stops);
+
+    expect(mapState.points).toEqual([]);
+    expect(mapState.summary).toMatchObject({
+      missing_coordinates_count: 1,
+      outside_map_count: 1,
+      plotted_stops: 0,
+      total_stops: 2,
     });
   });
 
