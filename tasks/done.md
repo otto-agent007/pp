@@ -1,5 +1,15 @@
 # Done
 
+## Claude Code Cleanup Issues 10, 12, 13, 15, 16
+
+- Removed the remaining `requireAdminAccess` server-auth wrapper after migrating API route callsites and tests to `getAdminAccess`
+- Removed the ignored empty `packages/ui` cache directory and kept the Patrol UI package uncreated until that port starts
+- Added brand SVG generation from `packages/assets/brand/*.svg` plus a drift test for the web inline SVG constants
+- Added `docs/DESIGN_SYSTEM.md` token consumption guidance for web, mobile, status tokens, and the hardcoded-color guard
+- Aligned README migration language with the task ledger so pending local migration files are not described as applied or aligned
+- Kept migrations, provider setup, env changes, preview mutation, production mutation, and deferred Claude/design artifacts out of scope
+- Verified with focused web route/brand tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+
 ## Brand And Dispatch Map Cleanup V1
 
 - Outlined the active Patrol UI wordmark lockups as SVG paths so product chrome, docs, PDF, and presentation exports do not depend on local font availability
