@@ -4,7 +4,7 @@
 
 - Outlined the active Patrol UI wordmark lockups as SVG paths so product chrome, docs, PDF, and presentation exports do not depend on local font availability
 - Added shared provider-free dispatch static-map state for San Diego demo stops, including service-coordinate pins, latest-GPS fallback, missing-coordinate summaries, and outside-view counts
-- Added a still `/dispatch` map panel backed by shared domain state while preserving existing external map links and avoiding Google Maps/Mapbox SDKs, provider setup, env changes, migrations, preview mutation, or production mutation
+- Added a still `/dispatch` map panel with recognizable San Diego coastline, Mission Bay, Point Loma, San Diego Bay, Mexico, and highway cues while preserving existing external map links and avoiding Google Maps/Mapbox SDKs, provider setup, env changes, migrations, preview mutation, or production mutation
 - Kept Claude Design review artifacts, design export files, inactive wordmark options, and relay markers out of this shipped slice
 - Verified with focused domain/web tests, Browser QA on `/dispatch`, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
 

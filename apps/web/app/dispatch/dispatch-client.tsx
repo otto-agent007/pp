@@ -343,55 +343,96 @@ function SanDiegoMapBackdrop() {
       />
       <path
         className="fill-status-alert-info-bg"
-        d="M58 32h372c54 0 98 44 98 98v180c0 22-18 40-40 40H58z"
+        d="M0 0h108c-2 24-12 43-31 60-23 20-26 43-8 65 20 24 19 45-3 66-18 18-17 39 5 58 23 20 27 42 11 67-13 20-7 43 19 64H0z"
+      />
+      <path
+        className="stroke-theme-border-subtle"
+        d="M107 34h478c18 0 32 14 32 32v242c0 18-14 32-32 32H105"
+        strokeLinecap="round"
+        strokeWidth="4"
       />
       <path
         className="stroke-status-alert-info-border"
-        d="M48 48c50 10 90 9 120-5 46-21 96-6 130 30 33 34 76 45 132 32 66-15 118 21 140 78 21 55 1 116-50 148H48z"
+        d="M108 0c-2 24-12 43-31 60-23 20-26 43-8 65 20 24 19 45-3 66-18 18-17 39 5 58 23 20 27 42 11 67-13 20-7 43 19 64"
         strokeLinecap="round"
+        strokeLinejoin="round"
         strokeWidth="8"
       />
       <path
+        className="fill-status-alert-info-bg"
+        d="M75 178c25-14 58-8 70 15 13 25-12 50-48 49-31-1-50-18-41-39 4-10 10-18 19-25z"
+      />
+      <path
+        className="stroke-status-alert-info-border"
+        d="M75 178c25-14 58-8 70 15 13 25-12 50-48 49-31-1-50-18-41-39 4-10 10-18 19-25z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3"
+      />
+      <path
+        className="fill-status-alert-info-bg"
+        d="M124 270c33-20 81-23 124-8 27 9 27 37 0 53-42 25-95 20-137 44-13-17-11-37 2-53 9-11 1-24 11-36z"
+      />
+      <path
+        className="stroke-status-alert-info-border"
+        d="M124 270c33-20 81-23 124-8 27 9 27 37 0 53-42 25-95 20-137 44-13-17-11-37 2-53 9-11 1-24 11-36z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3"
+      />
+      <path
+        className="fill-theme-background-surface stroke-theme-border-subtle"
+        d="M185 288c23 6 39 21 47 42-28 8-59 4-87-10 9-18 22-29 40-32z"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path
         className="stroke-theme-border-default"
-        d="M108 330c22-34 28-68 18-101-9-31-1-58 25-83 23-22 32-49 27-81"
+        d="M96 42c21 54 19 109-2 165-15 40-1 75 40 101 25 16 33 34 25 54"
         strokeLinecap="round"
         strokeWidth="5"
       />
       <path
         className="stroke-theme-border-default"
-        d="M214 336c36-46 52-95 48-148-2-36 10-69 36-98"
+        d="M190 72c20 61 21 111 2 151-17 36-9 75 26 109"
         strokeLinecap="round"
         strokeWidth="5"
       />
       <path
         className="stroke-theme-border-subtle"
-        d="M326 340c-5-44 7-81 36-111 29-30 45-69 47-117"
+        d="M354 48c-10 52-8 99 7 141 17 47 8 96-31 145"
         strokeLinecap="round"
         strokeWidth="5"
       />
       <path
         className="stroke-theme-border-subtle"
-        d="M440 326c-29-24-40-54-31-91 9-36 0-66-27-90"
+        d="M86 218c74-9 143-5 207 14 82 24 171 15 266-27"
         strokeLinecap="round"
         strokeWidth="4"
       />
       <path
         className="stroke-theme-border-subtle"
-        d="M92 248c62-8 119-4 171 11 60 18 122 10 185-24"
-        strokeLinecap="round"
-        strokeWidth="4"
-      />
-      <path
-        className="stroke-theme-border-subtle"
-        d="M98 150c80 25 153 28 219 8 57-18 111-10 161 24"
+        d="M86 155c75 23 142 25 201 7 65-20 126-12 184 25"
         strokeLinecap="round"
         strokeWidth="4"
       />
       <g className="fill-theme-text-muted">
-        <circle cx="197" cy="268" r="6" />
-        <circle cx="284" cy="208" r="6" />
-        <circle cx="360" cy="143" r="6" />
-        <circle cx="431" cy="245" r="6" />
+        <circle cx="290" cy="232" r="5" />
+        <circle cx="356" cy="188" r="5" />
+        <circle cx="470" cy="187" r="5" />
+        <circle cx="98" cy="207" r="5" />
+      </g>
+      <g className="fill-theme-text-muted text-[10px] font-semibold">
+        <text x="18" y="104">Pacific</text>
+        <text x="78" y="132">La Jolla</text>
+        <text x="74" y="222">Mission Bay</text>
+        <text x="95" y="332">Point Loma</text>
+        <text x="174" y="319">San Diego Bay</text>
+        <text x="493" y="358">Mexico</text>
+        <text x="117" y="126">I-5</text>
+        <text x="211" y="159">I-805</text>
+        <text x="371" y="118">I-15</text>
+        <text x="430" y="225">I-8</text>
       </g>
     </svg>
   );
