@@ -6,6 +6,7 @@ import {
   buildDispatchRouteExceptionSummary,
   buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligenceForDays,
+  buildDispatchStaticMapState,
   buildDispatchWeek,
   filterDispatchRouteStops,
   getTechnicianLabel,
@@ -20,6 +21,7 @@ import type {
   DispatchRouteIntelligence,
   DispatchRouteStop,
   DispatchRouteTriageFilter,
+  DispatchStaticMapState,
   TechnicianFilter,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobStatus } from "@pest-patrol/types";
@@ -321,6 +323,184 @@ function RouteIntelligencePanel({
   );
 }
 
+function mapPointSourceLabel(source: DispatchStaticMapState["points"][number]["source"]) {
+  return source === "service_location" ? "Service coordinates" : "Latest GPS";
+}
+
+function SanDiegoMapBackdrop() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-full w-full text-status-alert-info-fgStrong"
+      fill="none"
+      viewBox="0 0 640 380"
+    >
+      <rect
+        className="fill-theme-background-surface"
+        height="380"
+        rx="24"
+        width="640"
+      />
+      <path
+        className="fill-status-alert-info-bg"
+        d="M58 32h372c54 0 98 44 98 98v180c0 22-18 40-40 40H58z"
+      />
+      <path
+        className="stroke-status-alert-info-border"
+        d="M48 48c50 10 90 9 120-5 46-21 96-6 130 30 33 34 76 45 132 32 66-15 118 21 140 78 21 55 1 116-50 148H48z"
+        strokeLinecap="round"
+        strokeWidth="8"
+      />
+      <path
+        className="stroke-theme-border-default"
+        d="M108 330c22-34 28-68 18-101-9-31-1-58 25-83 23-22 32-49 27-81"
+        strokeLinecap="round"
+        strokeWidth="5"
+      />
+      <path
+        className="stroke-theme-border-default"
+        d="M214 336c36-46 52-95 48-148-2-36 10-69 36-98"
+        strokeLinecap="round"
+        strokeWidth="5"
+      />
+      <path
+        className="stroke-theme-border-subtle"
+        d="M326 340c-5-44 7-81 36-111 29-30 45-69 47-117"
+        strokeLinecap="round"
+        strokeWidth="5"
+      />
+      <path
+        className="stroke-theme-border-subtle"
+        d="M440 326c-29-24-40-54-31-91 9-36 0-66-27-90"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <path
+        className="stroke-theme-border-subtle"
+        d="M92 248c62-8 119-4 171 11 60 18 122 10 185-24"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <path
+        className="stroke-theme-border-subtle"
+        d="M98 150c80 25 153 28 219 8 57-18 111-10 161 24"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <g className="fill-theme-text-muted">
+        <circle cx="197" cy="268" r="6" />
+        <circle cx="284" cy="208" r="6" />
+        <circle cx="360" cy="143" r="6" />
+        <circle cx="431" cy="245" r="6" />
+      </g>
+    </svg>
+  );
+}
+
+function DispatchStaticMapPanel({
+  mapState,
+}: {
+  mapState: DispatchStaticMapState;
+}) {
+  return (
+    <section
+      aria-label="Provider-free San Diego dispatch map"
+      className="rounded-lg border border-theme-border-subtle bg-theme-background-subtle p-4"
+    >
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+            Provider-free still map
+          </p>
+          <h2 className="mt-1 text-sm font-semibold text-neutralDark">
+            San Diego dispatch map
+          </h2>
+          <p className="mt-1 text-xs text-theme-text-secondary">
+            Custom schematic for the demo route story. Pins use service
+            coordinates first, then latest synced GPS evidence.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-semibold text-theme-text-secondary">
+          <span className="rounded-md bg-theme-background-surface px-2 py-1">
+            {plural(mapState.summary.plotted_stops, "plotted", "plotted")}
+          </span>
+          <span className="rounded-md bg-theme-background-surface px-2 py-1">
+            {plural(
+              mapState.summary.missing_coordinates_count,
+              "missing coordinates",
+              "missing coordinates",
+            )}
+          </span>
+          <span className="rounded-md bg-theme-background-surface px-2 py-1">
+            {plural(
+              mapState.summary.outside_map_count,
+              "outside San Diego view",
+              "outside San Diego view",
+            )}
+          </span>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="relative aspect-[16/9] overflow-hidden rounded-md border border-theme-border-subtle bg-theme-background-surface">
+          <SanDiegoMapBackdrop />
+          {mapState.points.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm font-semibold text-theme-text-secondary">
+              No stops are pinned in the San Diego view.
+            </div>
+          ) : null}
+          {mapState.points.map((point) => (
+            <span
+              aria-label={`Map pin ${point.label}: ${point.customer_label}`}
+              className="absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-theme-background-surface bg-primary px-1 text-xs font-bold text-theme-background-surface shadow-sm"
+              key={point.job_id}
+              role="img"
+              style={{
+                left: `${point.x_percent}%`,
+                top: `${point.y_percent}%`,
+              }}
+              title={`${point.label}: ${point.customer_label}`}
+            >
+              {point.label.replace("Stop ", "")}
+            </span>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {mapState.points.length === 0 ? (
+            <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-surface p-3 text-sm text-theme-text-muted">
+              Add San Diego service coordinates or sync GPS evidence to place
+              pins on this overview.
+            </p>
+          ) : (
+            mapState.points.map((point) => (
+              <article
+                className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-3"
+                key={`${point.job_id}-summary`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-secondary">
+                      {point.label}
+                    </p>
+                    <h3 className="text-sm font-semibold text-neutralDark">
+                      {point.customer_label}
+                    </h3>
+                  </div>
+                  <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold text-status-alert-info-fgStrong">
+                    {mapPointSourceLabel(point.source)}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-theme-text-secondary">
+                  {point.address_label}
+                </p>
+              </article>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) {
   return (
     <article className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-3">
@@ -496,6 +676,13 @@ export function DispatchClient() {
       }),
     [locationEvidenceByJob, technician, visibleCalendarDays],
   );
+  const dispatchStaticMapState = useMemo(
+    () =>
+      buildDispatchStaticMapState(visibleRouteIntelligence.stops, {
+        evidenceByJob: locationEvidenceByJob,
+      }),
+    [locationEvidenceByJob, visibleRouteIntelligence.stops],
+  );
   const technicianLabels = useMemo(
     () =>
       Object.fromEntries(
@@ -650,6 +837,7 @@ export function DispatchClient() {
           intelligence={visibleRouteIntelligence}
           triage={triage}
         />
+        <DispatchStaticMapPanel mapState={dispatchStaticMapState} />
         <RouteGroupsPanel groups={routeGroups} />
         <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 shadow-sm">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">

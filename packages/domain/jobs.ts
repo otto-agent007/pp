@@ -122,6 +122,47 @@ export interface DispatchRouteGroupSummaryOptions {
   technicianLabels?: Record<string, string>;
 }
 
+export type DispatchStaticMapPointSource = "latest_gps" | "service_location";
+
+export interface DispatchStaticMapBounds {
+  east: number;
+  label: "San Diego County demo view";
+  north: number;
+  south: number;
+  west: number;
+}
+
+export interface DispatchStaticMapPoint {
+  address_label: string;
+  customer_label: string;
+  evidence_state: DispatchRouteEvidenceState;
+  job_id: string;
+  label: string;
+  latitude: number;
+  longitude: number;
+  source: DispatchStaticMapPointSource;
+  status_state: DispatchRouteStopStatusState;
+  x_percent: number;
+  y_percent: number;
+}
+
+export interface DispatchStaticMapSummary {
+  missing_coordinates_count: number;
+  outside_map_count: number;
+  plotted_stops: number;
+  total_stops: number;
+}
+
+export interface DispatchStaticMapState {
+  bounds: DispatchStaticMapBounds;
+  points: DispatchStaticMapPoint[];
+  summary: DispatchStaticMapSummary;
+}
+
+export interface DispatchStaticMapStateOptions {
+  evidenceByJob?: DispatchLocationEvidenceByJob;
+}
+
 export interface MobileDailyJobs {
   date: string;
   jobs: Job[];
@@ -163,6 +204,13 @@ export interface MobileDailyRouteTimeline {
 
 const scheduleDateTimePattern =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/;
+const dispatchStaticMapBounds: DispatchStaticMapBounds = {
+  east: -116.85,
+  label: "San Diego County demo view",
+  north: 33.17,
+  south: 32.52,
+  west: -117.3,
+};
 
 function normalizeOptional(value?: string | null) {
   const normalized = value?.trim();
@@ -791,6 +839,126 @@ export function buildDispatchRouteGroupSummaries(
 
     return left.label.localeCompare(right.label);
   });
+}
+
+function isCoordinate(value: unknown, min: number, max: number): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+}
+
+function stopMapCoordinate(
+  stop: DispatchRouteStop,
+  evidenceByJob: DispatchLocationEvidenceByJob,
+): { latitude: number; longitude: number; source: DispatchStaticMapPointSource } | null {
+  const serviceLatitude = stop.job.location?.latitude;
+  const serviceLongitude = stop.job.location?.longitude;
+
+  if (
+    isCoordinate(serviceLatitude, -90, 90) &&
+    isCoordinate(serviceLongitude, -180, 180)
+  ) {
+    return {
+      latitude: serviceLatitude,
+      longitude: serviceLongitude,
+      source: "service_location",
+    };
+  }
+
+  const latestGps = evidenceByJob[stop.job.id]?.latest_event;
+
+  if (
+    latestGps &&
+    isCoordinate(latestGps.latitude, -90, 90) &&
+    isCoordinate(latestGps.longitude, -180, 180)
+  ) {
+    return {
+      latitude: latestGps.latitude,
+      longitude: latestGps.longitude,
+      source: "latest_gps",
+    };
+  }
+
+  return null;
+}
+
+function isInsideDispatchStaticMapBounds(
+  point: Pick<DispatchStaticMapPoint, "latitude" | "longitude">,
+) {
+  return (
+    point.latitude <= dispatchStaticMapBounds.north &&
+    point.latitude >= dispatchStaticMapBounds.south &&
+    point.longitude >= dispatchStaticMapBounds.west &&
+    point.longitude <= dispatchStaticMapBounds.east
+  );
+}
+
+function percent(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function projectDispatchStaticMapPoint(
+  latitude: number,
+  longitude: number,
+) {
+  return {
+    x_percent: percent(
+      ((longitude - dispatchStaticMapBounds.west) /
+        (dispatchStaticMapBounds.east - dispatchStaticMapBounds.west)) *
+        100,
+    ),
+    y_percent: percent(
+      ((dispatchStaticMapBounds.north - latitude) /
+        (dispatchStaticMapBounds.north - dispatchStaticMapBounds.south)) *
+        100,
+    ),
+  };
+}
+
+export function buildDispatchStaticMapState(
+  stops: DispatchRouteStop[],
+  options: DispatchStaticMapStateOptions = {},
+): DispatchStaticMapState {
+  const evidenceByJob = options.evidenceByJob ?? {};
+  let missingCoordinatesCount = 0;
+  let outsideMapCount = 0;
+  const points: DispatchStaticMapPoint[] = [];
+
+  for (const stop of stops) {
+    const coordinate = stopMapCoordinate(stop, evidenceByJob);
+
+    if (!coordinate) {
+      missingCoordinatesCount += 1;
+      continue;
+    }
+
+    if (!isInsideDispatchStaticMapBounds(coordinate)) {
+      outsideMapCount += 1;
+      continue;
+    }
+
+    points.push({
+      address_label: stop.address_label,
+      customer_label: stop.customer_label,
+      evidence_state: stop.evidence_state,
+      job_id: stop.job.id,
+      label: `Stop ${stop.sequence}`,
+      latitude: coordinate.latitude,
+      longitude: coordinate.longitude,
+      source: coordinate.source,
+      status_state: stop.status_state,
+      ...projectDispatchStaticMapPoint(coordinate.latitude, coordinate.longitude),
+    });
+  }
+
+  return {
+    bounds: dispatchStaticMapBounds,
+    points,
+    summary: {
+      missing_coordinates_count: missingCoordinatesCount,
+      outside_map_count: outsideMapCount,
+      plotted_stops: points.length,
+      total_stops: stops.length,
+    },
+  };
 }
 
 export function filterDispatchRouteStops(

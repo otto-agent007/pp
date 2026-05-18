@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -122,6 +122,23 @@ const missingCoordinateJob = {
     longitude: null,
   },
 } as const;
+const sanDiegoJob = {
+  ...scheduledJob,
+  id: "job-san-diego",
+  assigned_tech_id: "technician-1",
+  scheduled_start: "2026-05-06T13:00:00",
+  customer: {
+    ...customer,
+    name: "Downtown Cafe",
+  },
+  location: {
+    ...customer.locations[0],
+    id: "location-san-diego",
+    address: "500 Demo Harbor Dr, San Diego, CA 92101",
+    latitude: 32.7157,
+    longitude: -117.1611,
+  },
+} as const;
 
 describe("DispatchClient", () => {
   const changeStatusMutate = vi.fn();
@@ -236,6 +253,57 @@ describe("DispatchClient", () => {
         "href",
         "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
       );
+  });
+
+  it("renders a provider-free San Diego map with filtered route pins", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [sanDiegoJob, missingCoordinateJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useJobGeofenceEvents).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    const mapPanel = screen.getByLabelText("Provider-free San Diego dispatch map");
+
+    expect(screen.getByRole("heading", { name: "San Diego dispatch map" }))
+      .toBeInTheDocument();
+    expect(within(mapPanel).getByText("Provider-free still map")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("1 plotted")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("1 missing coordinates")).toBeInTheDocument();
+    expect(screen.getByLabelText("Map pin Stop 2: Downtown Cafe"))
+      .toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Open service map for job-san-diego" }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.google.com/maps/search/?api=1&query=32.7157%2C-117.1611",
+    );
+  });
+
+  it("keeps the San Diego map visible when no stops can be plotted", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [missingCoordinateJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useJobGeofenceEvents).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    const mapPanel = screen.getByLabelText("Provider-free San Diego dispatch map");
+
+    expect(screen.getByRole("heading", { name: "San Diego dispatch map" }))
+      .toBeInTheDocument();
+    expect(within(mapPanel).getByText("0 plotted")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("1 missing coordinates")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("No stops are pinned in the San Diego view."))
+      .toBeInTheDocument();
   });
 
   it("updates route intelligence when technician filter changes", async () => {

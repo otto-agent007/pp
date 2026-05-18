@@ -254,6 +254,7 @@ export {
 } from "./customers";
 export {
   assignJobTechnician,
+  buildDispatchStaticMapState,
   buildDispatchRouteExceptionSummary,
   buildDispatchRouteGroupSummaries,
   buildDispatchRouteIntelligence,
@@ -293,6 +294,12 @@ export type {
   DispatchRouteStop,
   DispatchRouteStopStatusState,
   DispatchRouteTriageFilter,
+  DispatchStaticMapBounds,
+  DispatchStaticMapPoint,
+  DispatchStaticMapPointSource,
+  DispatchStaticMapState,
+  DispatchStaticMapStateOptions,
+  DispatchStaticMapSummary,
   TechnicianFilter,
   MobileDailyRouteTimeline,
   MobileRouteTimelineNextAction,

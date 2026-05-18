@@ -31,7 +31,7 @@ The earlier compliance baseline still matters:
 
 The prior provider-free operations readiness baseline still matters:
 
-1. Provider-free dispatch route intelligence covers scheduled-order stops, technician filtering, location readiness, status counts, and service-coordinate external links.
+1. Provider-free dispatch route intelligence covers scheduled-order stops, technician filtering, location readiness, status counts, a still San Diego dispatch map, and service-coordinate external links.
 2. The mobile technician visit flow stays organized around existing offline-first controls and queue behavior.
 3. Admin closeout proof handoff readiness and customer-safe portal proof summaries avoid exposing exact technician GPS.
 4. The design-token foundation feeds Tailwind, Figma variable names, the Expo mobile route shell, and tokenized mobile capture controls.

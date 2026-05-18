@@ -95,7 +95,7 @@ Current priority is the provider-free demo reliability batch and California comp
 - `/payments` remains the invoice workspace with closeouts, reconciliation, customer, and portal handoffs
 - `/customers` now includes expandable account ledger drill-downs, portal-token readiness, portal handoff review, provider status, fresh-token send, and send-attempt history
 - tokened `/portal` routes now include a customer-safe service, billing timeline, and proof-of-service summary
-- `/dispatch` includes provider-free scheduled route intelligence, exception review, triage filters, route groups by technician/day/status, GPS evidence after mobile sync, and external map links without embedded map SDKs
+- `/dispatch` includes provider-free scheduled route intelligence, a still San Diego dispatch map, exception review, triage filters, route groups by technician/day/status, GPS evidence after mobile sync, and external map links without embedded map SDKs
 - `/compliance` provides an advisory-only, Supabase-first RAG workspace for California structural pest rules, EPA label review, recurring routes, WDO/Branch 3 evidence, and multi-unit audit readiness; it includes source-readiness review and degrades cleanly when `OPENAI_API_KEY` is absent or `20260516175724_california_compliance_rag_v1.sql` has not been applied
 - the design-token foundation now feeds Tailwind, Figma variable names, the Expo mobile route shell, and tokenized mobile capture controls while preserving offline-first field stores and queue behavior
 - the mobile technician route flow groups existing offline-first field controls into a clearer visit sequence with done, queued, retry, needed readiness, and per-stop next actions

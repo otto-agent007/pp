@@ -19,6 +19,9 @@ describe("Wordmark", () => {
       "display:block;width:100%;height:100%",
     );
     expect(svg!.innerHTML).toContain("#0B2A66");
+    expect(svg!.innerHTML).toContain('data-outline-text="PEST PATROL"');
+    expect(svg!.innerHTML).not.toContain("<text");
+    expect(svg!.innerHTML).not.toContain("font-family");
     expect(svg!.innerHTML).not.toContain("wd-glow"); // dark-only halo
   });
 
@@ -33,6 +36,9 @@ describe("Wordmark", () => {
     expect(svg).not.toBeNull();
     expect(svg!.innerHTML).toMatch(/wd-glow-[^"]+/); // halo gradient suffixed
     expect(svg!.innerHTML).toContain('fill="#FFFFFF"'); // white wordmark text
+    expect(svg!.innerHTML).toContain('data-outline-text="PEST PATROL"');
+    expect(svg!.innerHTML).not.toContain("<text");
+    expect(svg!.innerHTML).not.toContain("font-family");
   });
 
   it("suffixes internal SVG ids per instance so two marks can coexist", () => {

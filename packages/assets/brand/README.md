@@ -18,6 +18,15 @@ Keep logo filenames descriptive and lowercase. Preserve accessible `title` and
 CSS token draft as the app token source, and do not merge it into
 `packages/ui-tokens` without a dedicated token-alignment slice.
 
+Active product chrome should use `wordmark.svg`, `wordmark-on-dark.svg`, and
+`logomark.svg` from the Claude Design `preview/brand-logos.html` handoff. Do not
+swap in the `pest-patrol-logo-*` candidates as "approved" app logos unless a
+new design review explicitly promotes them.
+
+The approved wordmark lockups outline the visible text as SVG paths. Keep them
+self-contained so app, docs, PDF, and presentation exports do not depend on
+Inter or any fallback font being available at render time.
+
 Web app shell usage lives in `apps/web/app/brand`. The React wrappers inline the
 static SVG strings and suffix internal SVG IDs per instance so gradients and
 filters do not collide when multiple marks render on one page.
