@@ -4,6 +4,14 @@ import {
   buildHomeCommandCenterState,
   type HomeCommandCenterSeverity,
 } from "@pest-patrol/domain";
+import {
+  Card,
+  Eyebrow,
+  StatTile,
+  StatusPill,
+  buttonClassName,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import Link from "next/link";
 
 import { useCustomerPortalProviderStatus } from "../hooks/useCustomerPortalAccess";
@@ -14,34 +22,11 @@ import { useInvoices } from "../hooks/usePayments";
 import { useTechnicians } from "../hooks/useTechnicians";
 import { DemoSeedControls } from "./demo-seed-controls";
 
-const severityClasses: Record<
-  HomeCommandCenterSeverity,
-  { bg: string; border: string; dot: string; text: string }
-> = {
-  good: {
-    bg: "bg-status-alert-success-bg",
-    border: "border-status-alert-success-border",
-    dot: "bg-status-alert-success-solid",
-    text: "text-status-alert-success-fg",
-  },
-  neutral: {
-    bg: "bg-status-alert-neutral-bg",
-    border: "border-status-alert-neutral-border",
-    dot: "bg-status-alert-neutral-solid",
-    text: "text-status-alert-neutral-fg",
-  },
-  urgent: {
-    bg: "bg-status-alert-danger-bg",
-    border: "border-status-alert-danger-border",
-    dot: "bg-status-alert-danger-solid",
-    text: "text-status-alert-danger-fg",
-  },
-  warning: {
-    bg: "bg-status-alert-warning-bg",
-    border: "border-status-alert-warning-border",
-    dot: "bg-status-alert-warning-solid",
-    text: "text-status-alert-warning-fg",
-  },
+const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
+  good: "success",
+  neutral: "neutral",
+  urgent: "danger",
+  warning: "warning",
 };
 
 function serviceLabel(notes: string | null | undefined) {
@@ -98,9 +83,7 @@ export function HomeCommandCenter() {
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-bold uppercase tracking-wide text-primitive-yellow-400">
-                Pest Patrol OS
-              </p>
+              <Eyebrow tone="inverse">Pest Patrol OS</Eyebrow>
               <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
                 Field command center
               </h1>
@@ -113,13 +96,17 @@ export function HomeCommandCenter() {
             </div>
             <div className="grid gap-2 text-sm sm:grid-cols-2 lg:min-w-96">
               <Link
-                className="rounded-md bg-theme-action-primary px-4 py-3 font-bold text-theme-text-inverse transition hover:bg-theme-action-primaryStrong"
+                className={buttonClassName({ fullWidth: true, size: "lg" })}
                 href={state.nextAction.href}
               >
                 {state.nextAction.label}
               </Link>
               <Link
-                className="rounded-md border border-theme-text-inverse/20 px-4 py-3 font-bold text-theme-text-inverse transition hover:bg-theme-background-surface/10"
+                className={buttonClassName({
+                  fullWidth: true,
+                  size: "lg",
+                  variant: "inverse",
+                })}
                 href="/dispatch"
               >
                 Open dispatch
@@ -127,53 +114,34 @@ export function HomeCommandCenter() {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {state.kpis.map((kpi) => {
-              const severity = severityClasses[kpi.severity];
-
-              return (
-                <div
-                  className={`rounded-md border bg-theme-background-surface p-4 text-theme-text-primary shadow-sm ${severity.border}`}
-                  key={kpi.id}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase text-theme-text-muted">
-                      {kpi.label}
-                    </p>
-                    <span
-                      aria-hidden="true"
-                      className={`h-2.5 w-2.5 rounded-full ${severity.dot}`}
-                    />
-                  </div>
-                  <p className="mt-3 text-3xl font-bold">{kpi.value}</p>
-                  <p className={`mt-1 text-sm font-semibold ${severity.text}`}>
-                    {kpi.detail}
-                  </p>
-                </div>
-              );
-            })}
+            {state.kpis.map((kpi) => (
+              <StatTile
+                detail={kpi.detail}
+                key={kpi.id}
+                label={kpi.label}
+                tone={severityTones[kpi.severity]}
+                value={kpi.value}
+              />
+            ))}
           </div>
         </div>
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[1.35fr_.9fr] lg:px-8">
-        <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+        <Card>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase text-primitive-sky-500">
-                Live dispatch
-              </p>
+              <Eyebrow tone="accent">Live dispatch</Eyebrow>
               <h2 className="mt-1 text-xl font-bold">Today&apos;s schedule</h2>
             </div>
-            <p className="rounded-md bg-primitive-yellow-400/20 px-3 py-2 text-xs font-bold text-primitive-navy-950">
+            <StatusPill tone="warning">
               {loading ? "Refreshing live snapshot" : state.portalProviderLabel}
-            </p>
+            </StatusPill>
           </div>
 
           <div className="mt-4 divide-y divide-primitive-slate-100">
             {state.schedule.length > 0 ? (
               state.schedule.map((job) => {
-                const severity = severityClasses[job.statusSeverity];
-
                 return (
                   <Link
                     className="grid gap-3 py-3 transition hover:bg-theme-background-subtle sm:grid-cols-[5rem_1fr_auto]"
@@ -185,11 +153,9 @@ export function HomeCommandCenter() {
                       <p className="font-bold">{job.serviceLabel}</p>
                       <p className="text-sm text-theme-text-secondary">{job.customerName}</p>
                     </div>
-                    <span
-                      className={`w-fit rounded-md px-2.5 py-1 text-xs font-bold ${severity.bg} ${severity.text}`}
-                    >
+                    <StatusPill tone={severityTones[job.statusSeverity]}>
                       {job.statusLabel}
-                    </span>
+                    </StatusPill>
                   </Link>
                 );
               })
@@ -200,44 +166,36 @@ export function HomeCommandCenter() {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
         <div className="grid content-start gap-4">
-          <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase text-primitive-sky-500">
-              Command brief
-            </p>
+          <Card>
+            <Eyebrow tone="accent">Command brief</Eyebrow>
             <h2 className="mt-1 text-xl font-bold">Next best action</h2>
             <p className="mt-2 text-sm text-theme-text-secondary">
               {state.nextAction.summary}
             </p>
             <div className="mt-4 grid gap-2">
               {state.alerts.map((alert) => {
-                const severity = severityClasses[alert.severity];
+                const tone = severityTones[alert.severity];
 
                 return (
                   <div
-                    className={`rounded-md border p-3 ${severity.bg} ${severity.border}`}
+                    className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                     key={alert.id}
                   >
-                    <p className={`text-sm font-bold ${severity.text}`}>
-                      {alert.label}
-                    </p>
+                    <StatusPill tone={tone}>{alert.label}</StatusPill>
                     <p className="mt-1 text-sm text-theme-text-secondary">{alert.detail}</p>
                   </div>
                 );
               })}
             </div>
-          </div>
-          <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase text-primitive-red-500">
-              Launch gates
-            </p>
+          </Card>
+          <Card>
+            <Eyebrow tone="danger">Launch gates</Eyebrow>
             <h2 className="mt-1 text-xl font-bold">Smoke readiness</h2>
             <div className="mt-4 divide-y divide-primitive-slate-100">
               {state.launchReadiness.map((item) => {
-                const severity = severityClasses[item.severity];
-
                 return (
                   <Link
                     className="block py-3 transition hover:bg-theme-background-subtle"
@@ -253,11 +211,9 @@ export function HomeCommandCenter() {
                           {item.summary}
                         </p>
                       </div>
-                      <span
-                        className={`w-fit rounded-md px-2.5 py-1 text-xs font-bold ${severity.bg} ${severity.text}`}
-                      >
+                      <StatusPill tone={severityTones[item.severity]}>
                         {item.stateLabel}
-                      </span>
+                      </StatusPill>
                     </div>
                     <p className="mt-2 text-xs font-semibold text-theme-text-muted">
                       {item.action}
@@ -271,18 +227,16 @@ export function HomeCommandCenter() {
                 );
               })}
             </div>
-          </div>
+          </Card>
           <DemoSeedControls />
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+        <Card>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase text-primitive-red-500">
-                Demo readiness
-              </p>
+              <Eyebrow tone="danger">Demo readiness</Eyebrow>
               <h2 className="mt-1 text-xl font-bold">Guided demo smoke</h2>
             </div>
             <p className="max-w-xl text-sm text-theme-text-secondary">
@@ -320,7 +274,7 @@ export function HomeCommandCenter() {
               </Link>
             ))}
           </div>
-        </div>
+        </Card>
       </section>
     </main>
   );

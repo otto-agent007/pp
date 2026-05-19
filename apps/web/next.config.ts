@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "@pest-patrol/api-client",
     "@pest-patrol/domain",
     "@pest-patrol/i18n",
+    "@pest-patrol/ui",
     "@pest-patrol/ui-tokens",
     "@pest-patrol/types",
   ],
