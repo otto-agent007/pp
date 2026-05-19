@@ -2,6 +2,44 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-19 Customer Admin UI Kit And Launch Gate Execution
+
+Status: the customer/admin shared-primitives closeout is locally verified through focused UI tests and web typecheck; the brand-font direction bundle is recorded as design-only guidance; compliance dry-run passed; local and protected-preview smoke remain blocked before seed/reset, browser smoke, live compliance ingestion, provider receipt work, or production action.
+
+Read-only checks:
+- Command: `corepack pnpm exec vitest run packages/ui/index.test.tsx apps/web/app/customers/customers-client.test.tsx apps/web/app/customers/customer-portal-links.test.tsx`
+- Result: pass; 3 files and 44 tests passed.
+- Command: `corepack pnpm --filter @pest-patrol/web typecheck`
+- Result: pass.
+- Command: local Next dev server on `http://127.0.0.1:3000` plus Playwright screenshot attempts for `/customers`
+- Result: local route compiled and returned HTTP 200, but rendered screenshot capture was blocked by local browser tooling (`chromium` target crash and Chrome `EACCES`). No screenshot artifact was accepted as proof.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Command: `supabase --version`
+- Result: pass; local CLI is `2.98.2`. The CLI reported `2.100.1` is available.
+- Command: `supabase status -o env`
+- Result: blocked before target verification because Docker Desktop's Linux engine pipe was unavailable in this session.
+- Blocker category: missing env/setup.
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before local seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: pass; latest Ready preview found at `https://pest-patrol-v4a42puf9-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-v4a42puf9-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Slice outcomes:
+- Customer Admin UI-Kit Closeout V1: tracked customer/admin UI changes remain presentation-only and verified with focused tests plus web typecheck.
+- Brand Font Direction Relay Closeout V1: relay/design assets are kept as review guidance only; no app chrome or active logo wrappers changed.
+- Migration Target + Compliance Activation V1: live target verification, migration application, and source-backed ingestion remain gated on approved Supabase env/access and explicit migration approval.
+- Local Demo Smoke Unlock V1: blocked before local seed/reset and browser smoke on missing approved Supabase env names.
+- Protected Preview Smoke + Manual-Fallback Gate V1: latest Ready preview discovered, but preview smoke remains blocked on missing approved Supabase env names plus operator-approved protected-preview access and sign-in.
+
+No seed/reset writes, browser login, provider dashboard mutations, environment mutations, migration application, live compliance ingestion, raw portal URLs, credentials, protected-preview access values, webhook payloads, preview data mutation, or production data actions were performed.
+
 ## 2026-05-18 Next Five Launch Gate Batch
 
 Status: brand app-shell intake and provider-free launch-gate guidance are implemented locally; compliance dry-run passed; local and protected-preview smoke remain blocked before any seed/reset, browser smoke, live compliance ingestion, provider-receipt work, or production action.

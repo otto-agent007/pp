@@ -7,6 +7,15 @@ import {
   validateCustomerInput,
   type CustomerLedgerEntry,
 } from "@pest-patrol/domain";
+import {
+  Avatar,
+  Button,
+  Card,
+  Eyebrow,
+  StatusPill,
+  buttonClassName,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import type {
   Customer,
   CustomerInput,
@@ -51,6 +60,11 @@ const updateSuccessMessage =
   "Customer updated. Schedule the first job next; share portal links when closeout and billing are ready.";
 
 type LedgerTabId = "all" | "services" | "invoices" | "open" | "review";
+
+const fieldClassName =
+  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none focus:border-theme-action-primary";
+const labelClassName =
+  "flex flex-col gap-1 text-sm font-medium text-neutralDark";
 
 const ledgerTabs: Array<{ id: LedgerTabId; label: string }> = [
   { id: "all", label: "All" },
@@ -114,7 +128,10 @@ function ledgerEntryActionLabel(entry: CustomerLedgerEntry) {
     return "View receipt";
   }
 
-  if (entry.type === "needs_review_payment" || entry.type === "partial_payment") {
+  if (
+    entry.type === "needs_review_payment" ||
+    entry.type === "partial_payment"
+  ) {
     return "Review payment";
   }
 
@@ -125,24 +142,29 @@ function ledgerEntryActionLabel(entry: CustomerLedgerEntry) {
   return "Open invoice";
 }
 
-function ledgerEntryDotClass(entry: CustomerLedgerEntry) {
+function ledgerEntryTone(entry: CustomerLedgerEntry): StatusPillTone {
   if (entry.type === "completed_service" || entry.type === "paid_invoice") {
-    return "bg-status-alert-success-bg0";
+    return "success";
   }
 
-  if (entry.type === "partial_payment" || entry.type === "needs_review_payment") {
-    return "bg-status-alert-warning-solid";
+  if (
+    entry.type === "partial_payment" ||
+    entry.type === "needs_review_payment"
+  ) {
+    return "warning";
   }
 
   if (entry.type === "draft_invoice" || entry.type === "void_invoice") {
-    return "bg-theme-border-default";
+    return "neutral";
   }
 
-  return "bg-status-alert-info-solid";
+  return "info";
 }
 
 function isServiceEntry(entry: CustomerLedgerEntry) {
-  return entry.type === "completed_service" || entry.type === "scheduled_service";
+  return (
+    entry.type === "completed_service" || entry.type === "scheduled_service"
+  );
 }
 
 function isOpenLedgerEntry(entry: CustomerLedgerEntry) {
@@ -181,14 +203,13 @@ function customerToInput(customer: Customer): CustomerInput {
     email: customer.email ?? "",
     property_type: customer.property_type,
     service_notes: customer.service_notes ?? "",
-    locations:
-      customer.locations?.map((location) => ({
-        id: location.id,
-        address: location.address,
-        nickname: location.nickname ?? "",
-        service_notes: location.service_notes ?? "",
-        is_primary: location.is_primary,
-      })) ?? [{ ...emptyLocation }],
+    locations: customer.locations?.map((location) => ({
+      id: location.id,
+      address: location.address,
+      nickname: location.nickname ?? "",
+      service_notes: location.service_notes ?? "",
+      is_primary: location.is_primary,
+    })) ?? [{ ...emptyLocation }],
   };
 }
 
@@ -224,22 +245,21 @@ function CustomerLedgerSummary({
     [entries],
   );
   const activeTabLabel =
-    ledgerTabs.find((tab) => tab.id === activeTab)?.label.toLowerCase() ?? "ledger";
+    ledgerTabs.find((tab) => tab.id === activeTab)?.label.toLowerCase() ??
+    "ledger";
   const showExpandButton = entries.length > recentEntries.length;
 
   return (
-    <section className="mt-5 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4">
+    <Card className="mt-5 shadow-none" padding="md" tone="subtle">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Account ledger
-          </p>
+          <Eyebrow tone="accent">Account ledger</Eyebrow>
           <p className="mt-1 text-sm text-theme-text-secondary">
             Latest service {formatDate(summary.latestServiceAt)}
           </p>
         </div>
         <Link
-          className="text-sm font-semibold text-primary hover:text-status-alert-info-fgStrong"
+          className={buttonClassName({ size: "sm", variant: "text" })}
           href={customerBillingHref(customer.id)}
         >
           Open billing
@@ -274,17 +294,29 @@ function CustomerLedgerSummary({
       </dl>
 
       {summary.reviewCount > 0 ? (
-        <div className="mt-3 flex flex-col gap-2 rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-2 text-sm font-medium text-status-alert-warning-fg sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            {summary.reviewCount} payment{summary.reviewCount === 1 ? "" : "s"} need{summary.reviewCount === 1 ? "s" : ""} review.
-          </p>
-          <Link
-            className="font-semibold text-status-alert-warning-fgStrong hover:underline"
-            href={customerReviewHref(customer.id)}
-          >
-            Review →
-          </Link>
-        </div>
+        <Card
+          className="mt-3 border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
+          padding="sm"
+        >
+          <div className="flex flex-col gap-2 text-sm font-medium text-status-alert-warning-fg sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              {summary.reviewCount} payment
+              {summary.reviewCount === 1 ? "" : "s"} need
+              {summary.reviewCount === 1 ? "s" : ""} review.
+            </p>
+            <Link
+              className={buttonClassName({
+                className:
+                  "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                size: "sm",
+                variant: "ghost",
+              })}
+              href={customerReviewHref(customer.id)}
+            >
+              Review →
+            </Link>
+          </div>
+        </Card>
       ) : null}
 
       {expanded ? (
@@ -305,18 +337,22 @@ function CustomerLedgerSummary({
             return (
               <button
                 aria-selected={isActive}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                  isActive
-                    ? "bg-primary text-theme-text-inverse"
-                    : "text-theme-text-secondary hover:bg-primitive-slate-100"
-                }`}
+                className={buttonClassName({
+                  className: isActive
+                    ? "rounded-full"
+                    : "rounded-full border-transparent",
+                  size: "sm",
+                  variant: isActive ? "primary" : "text",
+                })}
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 role="tab"
                 type="button"
               >
                 {tab.label}
-                <span className={`ml-1 rounded-full px-1.5 text-[10px] font-bold ${badgeClass}`}>
+                <span
+                  className={`ml-1 rounded-full px-1.5 text-[10px] font-bold ${badgeClass}`}
+                >
                   {tabCounts[tab.id]}
                 </span>
               </button>
@@ -327,7 +363,8 @@ function CustomerLedgerSummary({
 
       {entries.length === 0 ? (
         <p className="mt-4 text-sm text-theme-text-secondary">
-          No service or billing activity yet. Schedule a job, then create an invoice before sharing the portal.
+          No service or billing activity yet. Schedule a job, then create an
+          invoice before sharing the portal.
         </p>
       ) : visibleEntries.length === 0 ? (
         <p className="py-4 text-center text-sm text-theme-text-muted">
@@ -336,7 +373,9 @@ function CustomerLedgerSummary({
       ) : (
         <ol
           className={`mt-4 divide-y divide-theme-border-subtle ${
-            expanded && entries.length > 10 ? "max-h-[480px] overflow-y-auto pr-2" : ""
+            expanded && entries.length > 10
+              ? "max-h-[480px] overflow-y-auto pr-2"
+              : ""
           }`}
         >
           {visibleEntries.map((entry) => (
@@ -347,27 +386,27 @@ function CustomerLedgerSummary({
 
       <div className="mt-4 flex items-center justify-between gap-3">
         {showExpandButton ? (
-          <button
-            className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
+          <Button
             onClick={() => {
               setExpanded((current) => !current);
               setActiveTab("all");
             }}
-            type="button"
+            size="sm"
+            variant="ghost"
           >
             {expanded ? "Hide activity ↑" : "Show all activity"}
-          </button>
+          </Button>
         ) : (
           <span />
         )}
         <Link
-          className="text-sm font-semibold text-primary hover:text-status-alert-info-fgStrong"
+          className={buttonClassName({ size: "sm", variant: "text" })}
           href={customerBillingHref(customer.id)}
         >
           Open billing
         </Link>
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -388,7 +427,11 @@ function CustomerAccountFollowUp({
 
   return (
     <>
-      <CustomerLedgerSummary customer={customer} invoices={invoices} jobs={jobs} />
+      <CustomerLedgerSummary
+        customer={customer}
+        invoices={invoices}
+        jobs={jobs}
+      />
       <CustomerPortalLinks
         accountSummary={summary}
         customerContact={{
@@ -418,17 +461,14 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
             entry.review ? "text-status-alert-warning-fg" : "text-neutralDark"
           }`}
         >
-          <span
-            aria-hidden="true"
-            className={`mr-2 inline-block size-1.5 rounded-full align-middle ${ledgerEntryDotClass(entry)}`}
-          />
-          {entry.review ? "⚠ " : ""}
-          {entry.label}
+          <StatusPill tone={ledgerEntryTone(entry)}>{entry.label}</StatusPill>
         </p>
         <p className="mt-1 text-xs text-theme-text-secondary">{entry.detail}</p>
       </div>
       <div className="flex shrink-0 flex-col gap-1 text-left sm:items-end sm:text-right">
-        <p className="text-xs font-medium text-theme-text-muted">{formatDate(entry.date)}</p>
+        <p className="text-xs font-medium text-theme-text-muted">
+          {formatDate(entry.date)}
+        </p>
         {amountText ? (
           <p
             className={`text-xs font-semibold ${
@@ -441,13 +481,13 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
           </p>
         ) : null}
         {entry.balance_cents !== null && entry.balance_cents > 0 ? (
-          <p className="inline-flex items-center rounded bg-status-alert-warning-bg px-1 text-[10px] font-semibold uppercase tracking-wide text-status-alert-warning-fg">
+          <StatusPill dot={false} tone="warning">
             Balance {formatMoney(entry.balance_cents)}
-          </p>
+          </StatusPill>
         ) : null}
         {href ? (
           <Link
-            className="text-xs font-semibold text-primary hover:underline"
+            className={buttonClassName({ size: "sm", variant: "text" })}
             href={href}
           >
             {ledgerEntryActionLabel(entry)}
@@ -493,12 +533,17 @@ export function CustomersClient() {
     setSaveMessage(null);
   }
 
-  function updateLocation(index: number, update: Partial<CustomerLocationInput>) {
+  function updateLocation(
+    index: number,
+    update: Partial<CustomerLocationInput>,
+  ) {
     setForm((current) => ({
       ...current,
       locations: current.locations.map((location, locationIndex) => {
         if (locationIndex !== index) {
-          return update.is_primary ? { ...location, is_primary: false } : location;
+          return update.is_primary
+            ? { ...location, is_primary: false }
+            : location;
         }
 
         return { ...location, ...update };
@@ -508,7 +553,9 @@ export function CustomersClient() {
 
   function removeLocation(index: number) {
     setForm((current) => {
-      const remaining = current.locations.filter((_, locationIndex) => locationIndex !== index);
+      const remaining = current.locations.filter(
+        (_, locationIndex) => locationIndex !== index,
+      );
 
       return {
         ...current,
@@ -540,7 +587,9 @@ export function CustomersClient() {
       resetForm();
       setSaveMessage(isEditing ? updateSuccessMessage : createSuccessMessage);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save customer");
+      setFormError(
+        error instanceof Error ? error.message : "Unable to save customer",
+      );
     }
   }
 
@@ -548,23 +597,23 @@ export function CustomersClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Admin
-          </p>
+          <Eyebrow tone="accent">Admin</Eyebrow>
           <h1 className="text-3xl font-bold text-neutralDark">Customers</h1>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             aria-label="Search customers"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={fieldClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Customer status"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
-            onChange={(event) => setStatus(event.target.value as CustomerStatus)}
+            className={fieldClassName}
+            onChange={(event) =>
+              setStatus(event.target.value as CustomerStatus)
+            }
             value={status}
           >
             <option value="active">Active</option>
@@ -576,57 +625,59 @@ export function CustomersClient() {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {customersQuery.isLoading ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               Loading customers
-            </p>
+            </Card>
           ) : visibleCustomers.length === 0 ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               No customers found
-            </p>
+            </Card>
           ) : (
             visibleCustomers.map((customer) => (
-              <article
-                className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-                key={customer.id}
-              >
+              <Card key={customer.id} padding="lg" role="article">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-neutralDark">
-                      {customer.name}
-                    </h2>
-                    <p className="text-sm capitalize text-theme-text-secondary">
-                      {customer.property_type}
-                    </p>
-                    <p className="mt-2 text-sm text-theme-text-secondary">
-                      {[customer.phone, customer.email].filter(Boolean).join(" | ") ||
-                        "No contact saved"}
-                    </p>
-                    <div className="mt-3 flex flex-col gap-1">
-                      {(customer.locations ?? []).map((location) => (
-                        <p className="text-sm text-theme-text-secondary" key={location.id}>
-                          {location.is_primary ? "Primary: " : ""}
-                          {location.address}
-                        </p>
-                      ))}
+                  <div className="flex min-w-0 gap-3">
+                    <Avatar name={customer.name} size="lg" />
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-semibold text-neutralDark">
+                        {customer.name}
+                      </h2>
+                      <StatusPill dot={false} tone="neutral">
+                        {customer.property_type}
+                      </StatusPill>
+                      <p className="mt-2 text-sm text-theme-text-secondary">
+                        {[customer.phone, customer.email]
+                          .filter(Boolean)
+                          .join(" | ") || "No contact saved"}
+                      </p>
+                      <div className="mt-3 flex flex-col gap-1">
+                        {(customer.locations ?? []).map((location) => (
+                          <p
+                            className="text-sm text-theme-text-secondary"
+                            key={location.id}
+                          >
+                            {location.is_primary ? "Primary: " : ""}
+                            {location.address}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
+                    <Button
                       onClick={() => editCustomer(customer)}
-                      type="button"
+                      variant="ghost"
                     >
                       Edit
-                    </button>
+                    </Button>
                     {customer.status === "active" ? (
-                      <button
-                        className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-medium text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
+                      <Button
                         disabled={archiveCustomer.isPending}
                         onClick={() => archiveCustomer.mutate(customer.id)}
-                        type="button"
+                        variant="danger"
                       >
                         Archive
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                 </div>
@@ -637,200 +688,225 @@ export function CustomersClient() {
                     jobs={jobsQuery.data ?? []}
                   />
                 ) : null}
-              </article>
+              </Card>
             ))
           )}
         </div>
 
-        <form
-          className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-          onSubmit={submitCustomer}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-neutralDark">
-              {editingCustomer ? "Edit customer" : "Create customer"}
-            </h2>
-            {editingCustomer ? (
-              <button
-                className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                onClick={resetForm}
-                type="button"
-              >
-                New
-              </button>
-            ) : null}
-          </div>
-
-          <div className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3">
-            <p className="text-sm font-semibold text-status-alert-warning-fg">
-              Customer setup demo tip
-            </p>
-            <p className="mt-1 text-sm text-status-alert-warning-fg">
-              Save the customer with one active service location, then schedule
-              the first job.
-            </p>
-            <p className="mt-1 text-sm text-status-alert-warning-fg">
-              Use portal links after closeout and billing are ready.
-            </p>
-            <Link
-              className="mt-3 inline-flex min-h-10 items-center rounded-md border border-status-alert-warning-border px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
-              href="/jobs"
-            >
-              Schedule job
-            </Link>
-          </div>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Name
-            <input
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-              value={form.name}
-            />
-          </label>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-              Phone
-              <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
-                onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                value={form.phone ?? ""}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-              Email
-              <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-                type="email"
-                value={form.email ?? ""}
-              />
-            </label>
-          </div>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Property type
-            <select
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
-              onChange={(event) =>
-                setForm({ ...form, property_type: event.target.value as PropertyType })
-              }
-              value={form.property_type}
-            >
-              <option value="residential">Residential</option>
-              <option value="commercial">Commercial</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Service notes
-            <textarea
-              className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm font-normal outline-none focus:border-primary"
-              onChange={(event) =>
-                setForm({ ...form, service_notes: event.target.value })
-              }
-              value={form.service_notes ?? ""}
-            />
-          </label>
-
-          <div className="flex flex-col gap-3">
+        <Card className="h-fit" padding="none">
+          <form
+            className="flex h-fit flex-col gap-4 p-5"
+            onSubmit={submitCustomer}
+          >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-neutralDark">Locations</h3>
-              <button
-                className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                onClick={() =>
-                  setForm({
-                    ...form,
-                    locations: [
-                      ...form.locations,
-                      { ...emptyLocation, is_primary: form.locations.length === 0 },
-                    ],
-                  })
-                }
-                type="button"
-              >
-                Add
-              </button>
+              <h2 className="text-lg font-semibold text-neutralDark">
+                {editingCustomer ? "Edit customer" : "Create customer"}
+              </h2>
+              {editingCustomer ? (
+                <Button onClick={resetForm} variant="ghost">
+                  New
+                </Button>
+              ) : null}
             </div>
 
-            {form.locations.map((location, index) => (
-              <div
-                className="flex flex-col gap-3 rounded-md border border-theme-border-subtle p-3"
-                key={location.id ?? index}
-              >
-                <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-                  Address
-                  <input
-                    className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
-                    onChange={(event) =>
-                      updateLocation(index, { address: event.target.value })
-                    }
-                    value={location.address}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-                  Nickname
-                  <input
-                    className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm font-normal outline-none focus:border-primary"
-                    onChange={(event) =>
-                      updateLocation(index, { nickname: event.target.value })
-                    }
-                    value={location.nickname ?? ""}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-                  Location notes
-                  <textarea
-                    className="min-h-20 rounded-md border border-theme-border-default px-3 py-2 text-sm font-normal outline-none focus:border-primary"
-                    onChange={(event) =>
-                      updateLocation(index, { service_notes: event.target.value })
-                    }
-                    value={location.service_notes ?? ""}
-                  />
-                </label>
-                <div className="flex items-center justify-between gap-3">
-                  <label className="flex items-center gap-2 text-sm font-medium text-neutralDark">
-                    <input
-                      checked={Boolean(location.is_primary)}
-                      onChange={(event) =>
-                        updateLocation(index, { is_primary: event.target.checked })
-                      }
-                      type="checkbox"
-                    />
-                    Primary
-                  </label>
-                  <button
-                    className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                    onClick={() => removeLocation(index)}
-                    type="button"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {formError ? <p className="text-sm text-status-alert-danger-fg">{formError}</p> : null}
-          {saveMessage ? (
-            <p
-              className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-3 text-sm font-medium text-status-alert-success-fg"
-              role="status"
+            <Card
+              className="border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
+              padding="sm"
             >
-              {saveMessage}
-            </p>
-          ) : null}
+              <p className="text-sm font-semibold text-status-alert-warning-fg">
+                Customer setup demo tip
+              </p>
+              <p className="mt-1 text-sm text-status-alert-warning-fg">
+                Save the customer with one active service location, then
+                schedule the first job.
+              </p>
+              <p className="mt-1 text-sm text-status-alert-warning-fg">
+                Use portal links after closeout and billing are ready.
+              </p>
+              <Link
+                className={buttonClassName({
+                  className:
+                    "mt-3 border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                  size: "sm",
+                  variant: "ghost",
+                })}
+                href="/jobs"
+              >
+                Schedule job
+              </Link>
+            </Card>
 
-          <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primitive-sky-600 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
-            disabled={isSaving}
-            type="submit"
-          >
-            {isSaving ? "Saving" : "Save customer"}
-          </button>
-        </form>
+            <label className={labelClassName}>
+              Name
+              <input
+                className={fieldClassName}
+                onChange={(event) =>
+                  setForm({ ...form, name: event.target.value })
+                }
+                value={form.name}
+              />
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={labelClassName}>
+                Phone
+                <input
+                  className={fieldClassName}
+                  onChange={(event) =>
+                    setForm({ ...form, phone: event.target.value })
+                  }
+                  value={form.phone ?? ""}
+                />
+              </label>
+              <label className={labelClassName}>
+                Email
+                <input
+                  className={fieldClassName}
+                  onChange={(event) =>
+                    setForm({ ...form, email: event.target.value })
+                  }
+                  type="email"
+                  value={form.email ?? ""}
+                />
+              </label>
+            </div>
+
+            <label className={labelClassName}>
+              Property type
+              <select
+                className={fieldClassName}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    property_type: event.target.value as PropertyType,
+                  })
+                }
+                value={form.property_type}
+              >
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+
+            <label className={labelClassName}>
+              Service notes
+              <textarea
+                className={`${fieldClassName} min-h-24 py-2`}
+                onChange={(event) =>
+                  setForm({ ...form, service_notes: event.target.value })
+                }
+                value={form.service_notes ?? ""}
+              />
+            </label>
+
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-neutralDark">
+                  Locations
+                </h3>
+                <Button
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      locations: [
+                        ...form.locations,
+                        {
+                          ...emptyLocation,
+                          is_primary: form.locations.length === 0,
+                        },
+                      ],
+                    })
+                  }
+                  size="sm"
+                  variant="ghost"
+                >
+                  Add
+                </Button>
+              </div>
+
+              {form.locations.map((location, index) => (
+                <Card
+                  className="flex flex-col gap-3 shadow-none"
+                  key={location.id ?? index}
+                  padding="sm"
+                  tone="subtle"
+                >
+                  <label className={labelClassName}>
+                    Address
+                    <input
+                      className={fieldClassName}
+                      onChange={(event) =>
+                        updateLocation(index, { address: event.target.value })
+                      }
+                      value={location.address}
+                    />
+                  </label>
+                  <label className={labelClassName}>
+                    Nickname
+                    <input
+                      className={fieldClassName}
+                      onChange={(event) =>
+                        updateLocation(index, { nickname: event.target.value })
+                      }
+                      value={location.nickname ?? ""}
+                    />
+                  </label>
+                  <label className={labelClassName}>
+                    Location notes
+                    <textarea
+                      className={`${fieldClassName} min-h-20 py-2`}
+                      onChange={(event) =>
+                        updateLocation(index, {
+                          service_notes: event.target.value,
+                        })
+                      }
+                      value={location.service_notes ?? ""}
+                    />
+                  </label>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex items-center gap-2 text-sm font-medium text-neutralDark">
+                      <input
+                        checked={Boolean(location.is_primary)}
+                        onChange={(event) =>
+                          updateLocation(index, {
+                            is_primary: event.target.checked,
+                          })
+                        }
+                        type="checkbox"
+                      />
+                      Primary
+                    </label>
+                    <Button
+                      onClick={() => removeLocation(index)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {formError ? (
+              <p className="text-sm text-status-alert-danger-fg">{formError}</p>
+            ) : null}
+            {saveMessage ? (
+              <Card
+                className="border-status-alert-success-border bg-status-alert-success-bg text-sm font-medium text-status-alert-success-fg shadow-none"
+                padding="sm"
+                role="status"
+              >
+                {saveMessage}
+              </Card>
+            ) : null}
+
+            <Button disabled={isSaving} fullWidth size="lg" type="submit">
+              {isSaving ? "Saving" : "Save customer"}
+            </Button>
+          </form>
+        </Card>
       </section>
     </main>
   );

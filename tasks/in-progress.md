@@ -4,7 +4,8 @@ No active implementation slice is currently open.
 
 Follow-up candidates:
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
-- [ ] After explicit migration approval, run `compliance:ingest` against an approved local or preview Supabase environment before relying on source-backed `/compliance` advisories; the May 18, 2026 dry-run/no-embed preflight passed without Supabase writes or OpenAI calls.
+- [ ] If using the local Supabase target, start or repair Docker Desktop's Linux engine before rerunning `supabase status -o env`; the May 19, 2026 check could not inspect the local containers.
+- [ ] After explicit migration approval, run `compliance:ingest` against an approved local or preview Supabase environment before relying on source-backed `/compliance` advisories; the May 19, 2026 dry-run/no-embed preflight passed without Supabase writes or OpenAI calls.
 - [ ] If local Windows `vercel build` remains required, resolve the remaining Vercel CLI symlink blocker: after the `/auth/update-password` lambda mapping fix, local packaging now fails on `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight.
 - [ ] Operator runs local seed/reset with approved local Supabase credentials.

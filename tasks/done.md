@@ -1,5 +1,16 @@
 # Done
 
+## Customer Admin UI-Kit And Launch Gate Execution V1
+
+- Verified the customer/admin shared-primitives closeout with focused UI tests and web typecheck while keeping the tracked surface presentation-only
+- Started the local web app and confirmed `/customers` compiled and returned HTTP 200, but local browser screenshot capture was blocked by Playwright/Chrome runtime failures
+- Recorded the brand-font direction bundle as design-only relay guidance, preserving the approved app-shell lockups and inactive wordmark options boundary
+- Reran the compliance dry-run/no-embed preflight; it planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls
+- Confirmed local Supabase target verification is blocked in this session because Docker Desktop's Linux engine pipe is unavailable
+- Reran read-only local demo smoke; it remains blocked before seed/reset or browser smoke on missing approved Supabase env names
+- Discovered the latest Ready preview and reran read-only preview smoke; it remains blocked before preview seed/reset or authenticated browser smoke on missing approved Supabase env names and operator-approved protected-preview access/sign-in
+- Performed no migration application, live compliance ingestion, seed/reset write, browser login, provider dashboard mutation, environment mutation, protected-preview mutation, or production data action
+
 ## Claude Code Cleanup Issues 10, 12, 13, 15, 16
 
 - Removed the remaining `requireAdminAccess` server-auth wrapper after migrating API route callsites and tests to `getAdminAccess`
