@@ -2,13 +2,14 @@
 
 ## Current Priority: Provider-Free Demo Reliability + California Compliance RAG
 
-The latest local batch adds brand app-shell intake, operator-facing launch gate
-guidance, repo audit cleanup, and a repo-side Vercel packaging fix for the
-password recovery route alongside the advisory-only California Compliance RAG
-baseline and provider-free demo handoff path. It keeps protected-preview smoke
-gated on operator env/access and does not apply migrations, mutate preview or
-production data, configure providers, add Google Maps/Mapbox, add background
-tracking, or expose server-only keys to browser/mobile clients.
+The current launch-readiness track includes the customer/admin shared-primitives
+closeout, brand app-shell intake, operator-facing launch gate guidance, repo
+audit cleanup, and a repo-side Vercel packaging fix for the password recovery
+route alongside the advisory-only California Compliance RAG baseline and
+provider-free demo handoff path. It keeps protected-preview smoke gated on
+operator env/access and does not apply migrations, mutate preview or production
+data, configure providers, add Google Maps/Mapbox, add background tracking, or
+expose server-only keys to browser/mobile clients.
 
 Completed in this batch:
 
@@ -48,13 +49,14 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 ## Next Decision Points
 
 1. Verify the approved local/preview migration target before applying pending local migration files, including the compliance RAG schema and `20260518021520_portal_send_succeeded_event.sql`.
-2. After explicit migration approval, run `corepack pnpm compliance:ingest` against an approved local or preview Supabase environment before treating `/compliance` as source-backed; the May 18, 2026 dry-run/no-embed preflight passed locally without Supabase writes or OpenAI calls.
-3. If local Windows Vercel packaging remains required, resolve the remaining symlink permission/tooling blocker. The `/auth/update-password` lambda mapping issue is fixed, but `corepack pnpm dlx vercel build --yes` now fails after serverless function creation with `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
-4. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke; the May 18, 2026 read-only pass is still blocked on the required env names.
-5. Run local seed/reset only after the local preflight is ready, then smoke `/`, `/dispatch`, `/closeouts`, `/customers`, `/compliance`, the mobile route flow, and tokened portal surfaces with sanitized notes.
-6. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`; the May 18, 2026 read-only pass against the latest Ready preview is still blocked on the required env names and operator-approved protected-preview access.
-7. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
-8. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
-9. Confirm manual-fallback provider smoke when webhook env names are intentionally unset; defer webhook-backed provider delivery receipts until provider evidence exists.
-10. Decide whether reviewed compliance advisory evaluation, provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next only after authenticated preview evidence is available.
-11. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.
+2. If using local Supabase for that target verification, start or repair Docker Desktop's Linux engine before rerunning `supabase status -o env`; the May 19, 2026 check could not inspect the local containers.
+3. After explicit migration approval, run `corepack pnpm compliance:ingest` against an approved local or preview Supabase environment before treating `/compliance` as source-backed; the May 19, 2026 dry-run/no-embed preflight passed locally without Supabase writes or OpenAI calls.
+4. If local Windows Vercel packaging remains required, resolve the remaining symlink permission/tooling blocker. The `/auth/update-password` lambda mapping issue is fixed, but `corepack pnpm dlx vercel build --yes` now fails after serverless function creation with `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
+5. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` before local seed/reset or Browser smoke; the May 19, 2026 read-only pass is still blocked on the required env names.
+6. Run local seed/reset only after the local preflight is ready, then smoke `/`, `/dispatch`, `/closeouts`, `/customers`, `/compliance`, the mobile route flow, and tokened portal surfaces with sanitized notes.
+7. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`; the May 19, 2026 read-only pass against the latest Ready preview is still blocked on the required env names and operator-approved protected-preview access.
+8. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
+9. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
+10. Confirm manual-fallback provider smoke when webhook env names are intentionally unset; defer webhook-backed provider delivery receipts until provider evidence exists.
+11. Decide whether reviewed compliance advisory evaluation, provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next only after authenticated preview evidence is available.
+12. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.

@@ -7,6 +7,14 @@ import {
   getCustomerPortalHandoffReview,
   type CustomerLedgerSummary,
 } from "@pest-patrol/domain";
+import {
+  Button,
+  Card,
+  Eyebrow,
+  StatusPill,
+  buttonClassName,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import type {
   CustomerPortalAccessTokenEventSummary,
   CustomerPortalAccessTokenSummary,
@@ -122,7 +130,9 @@ function newestFirst(
 }
 
 function activeTokens(tokens: CustomerPortalAccessTokenSummary[]) {
-  return tokens.filter((token) => getCustomerPortalAccessTokenState(token) === "active");
+  return tokens.filter(
+    (token) => getCustomerPortalAccessTokenState(token) === "active",
+  );
 }
 
 function latestOpenedAt(tokens: CustomerPortalAccessTokenSummary[]) {
@@ -155,6 +165,28 @@ function tokenExpiryText(token: CustomerPortalAccessTokenSummary) {
 
   return "No expiration";
 }
+
+function tokenStateTone(
+  token: CustomerPortalAccessTokenSummary,
+): StatusPillTone {
+  const state = getCustomerPortalAccessTokenState(token);
+
+  if (state === "active") {
+    return token.last_used_at ? "success" : "warning";
+  }
+
+  if (state === "expired") {
+    return "neutral";
+  }
+
+  return "danger";
+}
+
+type PortalReadinessCard = {
+  body: string | null;
+  label: string;
+  tone: StatusPillTone;
+};
 
 function revokeConfirmPrompt(token: CustomerPortalAccessTokenSummary) {
   const hasExpiry = Boolean(token.expires_at);
@@ -201,48 +233,53 @@ function CustomerPortalTokenHistory({
 
   if (eventsQuery.isLoading) {
     return (
-      <div
+      <Card
         aria-label="Event history for portal link"
-        className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2 text-xs font-semibold text-theme-text-muted"
+        className="mt-2 text-xs font-semibold text-theme-text-muted shadow-none"
         id={regionId}
         onKeyDown={handleKeyDown}
+        padding="sm"
         role="region"
       >
         Loading history...
-      </div>
+      </Card>
     );
   }
 
   if (eventsQuery.error) {
     return (
-      <div
+      <Card
         aria-label="Event history for portal link"
-        className="mt-2 flex items-center justify-between gap-3 rounded-md border border-status-alert-danger-border bg-theme-background-surface px-3 py-2"
+        className="mt-2 border-status-alert-danger-border shadow-none"
         id={regionId}
         onKeyDown={handleKeyDown}
+        padding="sm"
         role="region"
       >
-        <p className="text-xs font-semibold text-status-alert-danger-fg">
-          {"Couldn't load portal history."}
-        </p>
-        <button
-          className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
-          onClick={() => void eventsQuery.refetch()}
-          type="button"
-        >
-          Retry
-        </button>
-      </div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold text-status-alert-danger-fg">
+            {"Couldn't load portal history."}
+          </p>
+          <Button
+            onClick={() => void eventsQuery.refetch()}
+            size="sm"
+            variant="ghost"
+          >
+            Retry
+          </Button>
+        </div>
+      </Card>
     );
   }
 
   if (events.length === 0) {
     return (
-      <div
+      <Card
         aria-label="Event history for portal link"
-        className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2 text-xs text-theme-text-muted"
+        className="mt-2 text-xs text-theme-text-muted shadow-none"
         id={regionId}
         onKeyDown={handleKeyDown}
+        padding="sm"
         role="region"
       >
         <p>No history recorded for this link.</p>
@@ -251,16 +288,17 @@ function CustomerPortalTokenHistory({
             {`History before ${formatDate(truncatedBefore)} isn't recorded.`}
           </p>
         ) : null}
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div
+    <Card
       aria-label="Event history for portal link"
-      className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface"
+      className="mt-2 shadow-none"
       id={regionId}
       onKeyDown={handleKeyDown}
+      padding="none"
       role="region"
     >
       <ul className="divide-y divide-primitive-slate-100">
@@ -270,7 +308,9 @@ function CustomerPortalTokenHistory({
               <p className="text-xs font-semibold text-neutralDark">
                 {getCustomerPortalAccessTokenEventLabel(event)}
               </p>
-              <p className="text-xs text-theme-text-muted">{eventDetail(event)}</p>
+              <p className="text-xs text-theme-text-muted">
+                {eventDetail(event)}
+              </p>
             </div>
             <p className="shrink-0 text-right text-xs font-semibold text-theme-text-muted">
               {formatAccessTimestamp(event.occurred_at)}
@@ -283,7 +323,7 @@ function CustomerPortalTokenHistory({
           {`History before ${formatDate(truncatedBefore)} isn't recorded.`}
         </p>
       ) : null}
-    </div>
+    </Card>
   );
 }
 
@@ -335,9 +375,9 @@ export function CustomerPortalLinks({
   const [freshSendError, setFreshSendError] = useState<string | null>(null);
   const [freshSendErrorId, setFreshSendErrorId] = useState<string | null>(null);
   const [freshSendingId, setFreshSendingId] = useState<string | null>(null);
-  const [freshSendRequestedId, setFreshSendRequestedId] = useState<string | null>(
-    null,
-  );
+  const [freshSendRequestedId, setFreshSendRequestedId] = useState<
+    string | null
+  >(null);
   const [freshManualLink, setFreshManualLink] = useState<{
     copied: boolean;
     portalUrl: string;
@@ -359,7 +399,10 @@ export function CustomerPortalLinks({
   );
 
   useEffect(() => {
-    if (expandedHistoryId && !sortedTokens.some((token) => token.id === expandedHistoryId)) {
+    if (
+      expandedHistoryId &&
+      !sortedTokens.some((token) => token.id === expandedHistoryId)
+    ) {
       setExpandedHistoryId(null);
     }
   }, [expandedHistoryId, sortedTokens]);
@@ -383,7 +426,9 @@ export function CustomerPortalLinks({
     }
 
     if (returnFocusHistoryTokenIdRef.current) {
-      historyButtonRefs.current.get(returnFocusHistoryTokenIdRef.current)?.focus();
+      historyButtonRefs.current
+        .get(returnFocusHistoryTokenIdRef.current)
+        ?.focus();
       returnFocusHistoryTokenIdRef.current = null;
     }
   }, [confirmingId, expandedHistoryId]);
@@ -441,7 +486,9 @@ export function CustomerPortalLinks({
       .catch(() => null);
 
     if (!result) {
-      setSendError("Couldn't request send. Share the link manually or try again.");
+      setSendError(
+        "Couldn't request send. Share the link manually or try again.",
+      );
       return;
     }
 
@@ -555,7 +602,10 @@ export function CustomerPortalLinks({
     setSendError(null);
     setSendRequested(false);
     setFreshManualLink(null);
-    expiresInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    expiresInputRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
     expiresInputRef.current?.focus();
   }
 
@@ -577,28 +627,29 @@ export function CustomerPortalLinks({
   })();
   const showProviderCopy = Boolean(providerCopy);
 
-  const sendButton = latestLink && providerReady ? (
-    sendRequested ? (
-      <p className="text-xs font-semibold text-accent">✓ Send requested.</p>
-    ) : (
-      <button
-        aria-busy={sendToken.isPending}
-        aria-disabled={!hasContact || sendToken.isPending}
-        aria-label="Send portal link via provider"
-        className="min-h-9 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={!hasContact || sendToken.isPending}
-        onClick={() => void sendLatestLink()}
-        title={
-          !hasContact
-            ? "No contact saved — share the link manually"
-            : undefined
-        }
-        type="button"
-      >
-        {sendToken.isPending ? "Sending…" : "Send link ▶"}
-      </button>
-    )
-  ) : null;
+  const sendButton =
+    latestLink && providerReady ? (
+      sendRequested ? (
+        <StatusPill tone="success">✓ Send requested.</StatusPill>
+      ) : (
+        <Button
+          aria-busy={sendToken.isPending}
+          aria-disabled={!hasContact || sendToken.isPending}
+          aria-label="Send portal link via provider"
+          disabled={!hasContact || sendToken.isPending}
+          onClick={() => void sendLatestLink()}
+          size="sm"
+          title={
+            !hasContact
+              ? "No contact saved — share the link manually"
+              : undefined
+          }
+          variant="ghost"
+        >
+          {sendToken.isPending ? "Sending…" : "Send link ▶"}
+        </Button>
+      )
+    ) : null;
 
   function cancelRevokeConfirmation(tokenId?: string) {
     returnFocusTokenIdRef.current = tokenId ?? null;
@@ -631,12 +682,12 @@ export function CustomerPortalLinks({
     cancelRevokeConfirmation(tokenId);
   }
 
-  const readinessCard = (() => {
+  const readinessCard: PortalReadinessCard = (() => {
     if (tokensQuery.isLoading) {
       return {
         body: null,
         label: "Loading portal status…",
-        tone: "border-l-gray-300",
+        tone: "neutral",
       };
     }
 
@@ -644,7 +695,7 @@ export function CustomerPortalLinks({
       return {
         body: "Use retry to reload portal access history.",
         label: "Couldn't load portal links.",
-        tone: "border-l-red-500",
+        tone: "danger",
       };
     }
 
@@ -653,14 +704,14 @@ export function CustomerPortalLinks({
         return {
           body: "This customer has no email or phone on file. Share the link manually.",
           label: "No contact saved",
-          tone: "border-l-gray-300",
+          tone: "warning",
         };
       }
 
       return {
         body: "Generate a link to share the customer portal.",
         label: "No portal links",
-        tone: "border-l-gray-300",
+        tone: "neutral",
       };
     }
 
@@ -668,7 +719,7 @@ export function CustomerPortalLinks({
       return {
         body: "Consider revoking older links before sharing again.",
         label: `${active.length} active links`,
-        tone: "border-l-amber-400",
+        tone: "warning",
       };
     }
 
@@ -679,14 +730,14 @@ export function CustomerPortalLinks({
         return {
           body: `Last opened ${formatAccessTimestamp(openedAt)}.`,
           label: "Customer has accessed the portal",
-          tone: "border-l-emerald-500",
+          tone: "success",
         };
       }
 
       return {
         body: "A portal link was shared but hasn't been opened.",
         label: "Shared — not yet opened",
-        tone: "border-l-amber-400",
+        tone: "warning",
       };
     }
 
@@ -694,33 +745,31 @@ export function CustomerPortalLinks({
       return {
         body: "This customer has no email or phone on file. Share the link manually.",
         label: "No contact saved",
-        tone: "border-l-gray-300",
+        tone: "warning",
       };
     }
 
     return {
       body: "All previous links are expired or revoked.",
       label: "No active links",
-      tone: "border-l-gray-300",
+      tone: "neutral",
     };
   })();
 
   return (
     <section className="mt-4 border-t border-primitive-slate-100 pt-4">
       <div>
-        <h3 className="text-sm font-semibold text-neutralDark">Portal access</h3>
+        <Eyebrow tone="accent">Portal access</Eyebrow>
         <p className="mt-1 text-xs text-theme-text-muted">
           Generate links to share with this customer.
         </p>
       </div>
 
       {portalHandoff ? (
-        <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm">
+        <Card className="mt-3 text-sm shadow-none" padding="sm" tone="subtle">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-                Portal handoff review
-              </p>
+              <Eyebrow>Portal handoff review</Eyebrow>
               <p className="mt-1 font-semibold text-neutralDark">
                 {portalHandoff.label}
               </p>
@@ -728,21 +777,26 @@ export function CustomerPortalLinks({
                 {portalHandoff.summary}
               </p>
             </div>
-            <p className="text-xs font-semibold text-theme-text-muted">
+            <StatusPill
+              dot={false}
+              tone={providerReady ? "success" : "neutral"}
+            >
               {portalHandoff.mode_label}
-            </p>
+            </StatusPill>
           </div>
-        </div>
+        </Card>
       ) : null}
 
-      <div
-        className={`mt-3 rounded-md border border-l-4 border-theme-border-subtle bg-theme-background-surface p-3 text-sm ${readinessCard.tone}`}
-      >
+      <Card className="mt-3 text-sm shadow-none" padding="sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="font-semibold text-neutralDark">{readinessCard.label}</p>
+            <StatusPill tone={readinessCard.tone}>
+              {readinessCard.label}
+            </StatusPill>
             {readinessCard.body ? (
-              <p className="mt-0.5 text-xs text-theme-text-secondary">{readinessCard.body}</p>
+              <p className="mt-0.5 text-xs text-theme-text-secondary">
+                {readinessCard.body}
+              </p>
             ) : null}
             {showProviderCopy ? (
               <p className="mt-1 text-xs font-medium text-theme-text-muted/70">
@@ -751,22 +805,22 @@ export function CustomerPortalLinks({
             ) : null}
           </div>
           {tokensQuery.error ? (
-            <button
-              className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
+            <Button
               onClick={() => void tokensQuery.refetch()}
-              type="button"
+              size="sm"
+              variant="ghost"
             >
               Retry
-            </button>
+            </Button>
           ) : null}
         </div>
-      </div>
+      </Card>
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
         <label className="flex flex-col gap-1 text-xs font-semibold text-theme-text-secondary">
           Expires
           <input
-            className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-normal text-neutralDark outline-none focus:border-primary"
+            className="min-h-10 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-neutralDark outline-none focus:border-theme-action-primary"
             disabled={createToken.isPending}
             onChange={(event) => setExpiresAt(event.target.value)}
             ref={expiresInputRef}
@@ -774,14 +828,12 @@ export function CustomerPortalLinks({
             value={expiresAt}
           />
         </label>
-        <button
-          className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primitive-sky-600 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
+        <Button
           disabled={createToken.isPending}
           onClick={() => void generateLink()}
-          type="button"
         >
           {createToken.isPending ? "Generating…" : "Generate link"}
-        </button>
+        </Button>
         {createToken.error ? (
           <p className="text-xs font-semibold text-status-alert-danger-fg">
             {"Couldn't generate portal link. Try again."}
@@ -790,7 +842,7 @@ export function CustomerPortalLinks({
       </div>
 
       {latestLink ? (
-        <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
+        <Card className="mt-3 shadow-none" padding="sm" tone="subtle">
           {copyUnavailable ? (
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-neutralDark">
@@ -798,18 +850,14 @@ export function CustomerPortalLinks({
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input
-                  className="min-h-10 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
+                  className="min-h-10 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-theme-action-primary"
                   onFocus={(event) => event.currentTarget.select()}
                   readOnly
                   value={latestLink}
                 />
-                <button
-                  className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
-                  onClick={() => void copyLatestLink()}
-                  type="button"
-                >
+                <Button onClick={() => void copyLatestLink()} variant="ghost">
                   {copyFlash ? "Copied!" : "Copy"}
-                </button>
+                </Button>
               </div>
               <p className="text-xs text-theme-text-muted">
                 Paste this into an email or text to share with the customer.
@@ -819,14 +867,14 @@ export function CustomerPortalLinks({
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold text-accent">
+                <StatusPill tone="success">
                   {message ?? "✓ Link copied to clipboard."}
-                </p>
+                </StatusPill>
                 {sendRequested ? sendButton : null}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button
-                  className="min-h-9 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                  className={buttonClassName({ size: "sm", variant: "ghost" })}
                   onClick={() => void copyLatestLink()}
                   ref={copyAgainRef}
                   type="button"
@@ -834,18 +882,17 @@ export function CustomerPortalLinks({
                   {copyFlash ? "Copied!" : "Copy again"}
                 </button>
                 {sendRequested ? null : sendButton}
-                <button
-                  className="min-h-9 px-1 text-sm font-semibold text-primary hover:underline"
-                  onClick={resetLatestLink}
-                  type="button"
-                >
+                <Button onClick={resetLatestLink} size="sm" variant="text">
                   Generate new
-                </button>
+                </Button>
               </div>
             </div>
           )}
           {sendError ? (
-            <p className="mt-2 text-xs font-semibold text-status-alert-danger-fg" role="alert">
+            <p
+              className="mt-2 text-xs font-semibold text-status-alert-danger-fg"
+              role="alert"
+            >
               {sendError}
             </p>
           ) : null}
@@ -854,7 +901,7 @@ export function CustomerPortalLinks({
               "This link is only available during this session. Reload the page and it's gone — generate a new one to reshare."
             }
           </p>
-        </div>
+        </Card>
       ) : null}
 
       <div className="mt-3 flex flex-col gap-2">
@@ -869,10 +916,12 @@ export function CustomerPortalLinks({
               data-testid="portal-link-skeleton"
             />
           </>
-        ) : tokensQuery.error || tokens.length === 0 ? (
-          null
-        ) : (
-          <div className="divide-y divide-primitive-slate-100 rounded-md border border-theme-border-subtle bg-theme-background-subtle">
+        ) : tokensQuery.error || tokens.length === 0 ? null : (
+          <Card
+            className="divide-y divide-primitive-slate-100 shadow-none"
+            padding="none"
+            tone="subtle"
+          >
             {sortedTokens.map((token) => {
               const state = getCustomerPortalAccessTokenState(token);
               const isActive = state === "active";
@@ -886,27 +935,26 @@ export function CustomerPortalLinks({
               return (
                 <div className="px-3 py-2" key={token.id}>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="min-w-0 text-xs font-semibold text-neutralDark">
-                      <span
-                        className={`mr-2 inline-block h-1.5 w-1.5 rounded-full align-middle ${
-                          isActive ? "bg-status-alert-success-solid" : "bg-theme-text-muted/70"
-                        }`}
-                      />
+                    <StatusPill tone={tokenStateTone(token)}>
                       {tokenRowLabel(token)}
-                    </p>
+                    </StatusPill>
                     <p className="shrink-0 text-right text-xs font-semibold text-theme-text-muted">
                       Created {formatDate(token.created_at)}
                     </p>
                   </div>
                   <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-theme-text-muted">
-                      {tokenExpiryText(token)} · {formatOpened(token.last_used_at)}
+                      {tokenExpiryText(token)} ·{" "}
+                      {formatOpened(token.last_used_at)}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <button
                         aria-controls={historyRegionId}
                         aria-expanded={isHistoryExpanded}
-                        className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                        className={buttonClassName({
+                          size: "sm",
+                          variant: "ghost",
+                        })}
                         onClick={() =>
                           setExpandedHistoryId((current) =>
                             current === token.id ? null : token.id,
@@ -926,73 +974,85 @@ export function CustomerPortalLinks({
                       {isActive ? (
                         <>
                           {freshSendingId === token.id ? (
-                            <button
+                            <Button
                               aria-busy="true"
-                              className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark disabled:cursor-not-allowed disabled:opacity-60"
                               disabled
-                              type="button"
+                              size="sm"
+                              variant="ghost"
                             >
                               Sending new…
-                            </button>
-                          ) : freshSendRequestedId === token.id || !providerReady ? null : (
-                            <button
+                            </Button>
+                          ) : freshSendRequestedId === token.id ||
+                            !providerReady ? null : (
+                            <Button
                               aria-label={`Send new portal link for link created ${formatDate(token.created_at)}`}
-                              className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={!hasContact || Boolean(freshSendingId)}
                               onClick={() => void sendNewLink(token)}
+                              size="sm"
                               title={
                                 !hasContact
                                   ? "No contact saved — share the link manually"
                                   : undefined
                               }
-                              type="button"
+                              variant="ghost"
                             >
                               Send new link
-                            </button>
+                            </Button>
                           )}
                           {isRevoking ? (
-                          <button
-                            className="min-h-9 rounded-md border border-status-alert-danger-border px-3 text-xs font-semibold text-status-alert-danger-fg disabled:cursor-not-allowed disabled:opacity-60"
-                            disabled
-                            type="button"
-                          >
-                            Revoking…
-                          </button>
-                        ) : isConfirming ? null : (
-                          <button
-                            aria-label={`Revoke portal link created ${formatDate(token.created_at)}`}
-                            className="min-h-9 rounded-md border border-status-alert-danger-border px-3 text-xs font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg disabled:cursor-not-allowed disabled:opacity-60"
-                            onClick={() => setConfirmingId(token.id)}
-                            ref={(node) => {
-                              if (node) {
-                                revokeButtonRefs.current.set(token.id, node);
-                              } else {
-                                revokeButtonRefs.current.delete(token.id);
-                              }
-                            }}
-                            type="button"
-                          >
-                            Revoke
-                          </button>
+                            <button
+                              className={buttonClassName({
+                                className:
+                                  "border-status-alert-danger-border text-status-alert-danger-fg",
+                                size: "sm",
+                                variant: "ghost",
+                              })}
+                              disabled
+                              type="button"
+                            >
+                              Revoking…
+                            </button>
+                          ) : isConfirming ? null : (
+                            <button
+                              aria-label={`Revoke portal link created ${formatDate(token.created_at)}`}
+                              className={buttonClassName({
+                                className:
+                                  "border-status-alert-danger-border text-status-alert-danger-fg hover:bg-status-alert-danger-bg",
+                                size: "sm",
+                                variant: "ghost",
+                              })}
+                              onClick={() => setConfirmingId(token.id)}
+                              ref={(node) => {
+                                if (node) {
+                                  revokeButtonRefs.current.set(token.id, node);
+                                } else {
+                                  revokeButtonRefs.current.delete(token.id);
+                                }
+                              }}
+                              type="button"
+                            >
+                              Revoke
+                            </button>
                           )}
                         </>
                       ) : null}
                     </div>
                   </div>
                   {freshSendRequestedId === token.id ? (
-                    <p className="mt-2 text-xs font-semibold text-accent">
+                    <StatusPill className="mt-2" tone="success">
                       ✓ Send requested for the fresh link.
-                    </p>
+                    </StatusPill>
                   ) : null}
                   {freshManualLink?.tokenId === token.id ? (
-                    <div className="mt-2 rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2">
+                    <Card className="mt-2 shadow-none" padding="sm">
                       <p className="text-xs font-semibold text-neutralDark">
-                        Fresh active link created. Older active links remain available until revoked.
+                        Fresh active link created. Older active links remain
+                        available until revoked.
                       </p>
                       {freshManualLink.copied ? (
-                        <p className="mt-1 text-xs font-semibold text-accent">
+                        <StatusPill className="mt-1" tone="success">
                           ✓ Fresh link copied to clipboard.
-                        </p>
+                        </StatusPill>
                       ) : (
                         <p className="mt-1 text-xs text-theme-text-muted">
                           Copy the fresh link manually:
@@ -1000,23 +1060,26 @@ export function CustomerPortalLinks({
                       )}
                       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                         <input
-                          className="min-h-9 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-primary"
+                          className="min-h-9 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-theme-action-primary"
                           onFocus={(event) => event.currentTarget.select()}
                           readOnly
                           value={freshManualLink.portalUrl}
                         />
-                        <button
-                          className="min-h-9 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                        <Button
                           onClick={() => void copyFreshManualLink()}
-                          type="button"
+                          size="sm"
+                          variant="ghost"
                         >
                           Copy fresh link
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Card>
                   ) : null}
                   {freshSendError && freshSendErrorId === token.id ? (
-                    <p className="mt-2 text-xs font-semibold text-status-alert-danger-fg" role="alert">
+                    <p
+                      className="mt-2 text-xs font-semibold text-status-alert-danger-fg"
+                      role="alert"
+                    >
                       {freshSendError}
                     </p>
                   ) : null}
@@ -1028,10 +1091,13 @@ export function CustomerPortalLinks({
                     />
                   ) : null}
                   {isActive && isConfirming ? (
-                    <div
+                    <Card
                       aria-label={`Confirm revoke for ${tokenRowLabel(token)}`}
-                      className="mt-2 rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg px-3 py-2"
-                      onKeyDown={(event) => handleConfirmKeyDown(event, token.id)}
+                      className="mt-2 border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
+                      onKeyDown={(event) =>
+                        handleConfirmKeyDown(event, token.id)
+                      }
+                      padding="sm"
                       role="group"
                     >
                       <p className="text-xs font-semibold text-neutralDark">
@@ -1043,27 +1109,30 @@ export function CustomerPortalLinks({
                       <div className="mt-2 flex justify-end gap-2">
                         <button
                           aria-label="Cancel revoke"
-                          className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                          className={buttonClassName({
+                            size: "sm",
+                            variant: "ghost",
+                          })}
                           onClick={() => cancelRevokeConfirmation(token.id)}
                           ref={cancelRevokeRef}
                           type="button"
                         >
                           Cancel
                         </button>
-                        <button
-                          className="min-h-8 rounded-md bg-status-alert-danger-solid px-3 text-xs font-semibold text-theme-text-inverse hover:bg-primitive-red-600"
+                        <Button
                           onClick={() => confirmRevoke(token.id)}
-                          type="button"
+                          size="sm"
+                          variant="danger"
                         >
                           Confirm revoke
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Card>
                   ) : null}
                 </div>
               );
             })}
-          </div>
+          </Card>
         )}
       </div>
       {revokeToken.error ? (
