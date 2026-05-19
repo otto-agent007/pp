@@ -25,6 +25,13 @@ import type {
   TechnicianFilter,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobStatus } from "@pest-patrol/types";
+import {
+  Button,
+  Card,
+  Eyebrow,
+  StatusPill,
+  buttonClassName,
+} from "@pest-patrol/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCustomers } from "../../hooks/useCustomers";
@@ -157,7 +164,7 @@ function GpsEvidenceEventRow({
   const label = gpsEventLabel(event.event_type);
 
   return (
-    <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface px-3 py-2">
+    <Card padding="sm">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-neutralDark">{label}</p>
         <a
@@ -173,7 +180,7 @@ function GpsEvidenceEventRow({
         {formatCapturedTime(event.captured_at)} - {event.radius_label}
       </p>
       <p className="mt-1 text-xs text-theme-text-muted">{accuracyLabel(event.accuracy_m)}</p>
-    </div>
+    </Card>
   );
 }
 
@@ -197,9 +204,9 @@ function LocationEvidencePanel({
       className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg/70 p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-info-fgStrong">
+        <Eyebrow className="text-status-alert-info-fgStrong">
           GPS evidence
-        </p>
+        </Eyebrow>
         <p className="text-xs font-semibold text-status-alert-info-fgStrong">
           {isLoading ? "Loading GPS evidence" : state.summary_label}
         </p>
@@ -251,42 +258,43 @@ function RouteIntelligencePanel({
           </p>
         </div>
         <div className="grid gap-2 text-xs font-semibold sm:grid-cols-2 lg:min-w-80">
-          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
+          <StatusPill dot={false} tone="info">
             {plural(summary.total_stops, "stop")}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
+          </StatusPill>
+          <StatusPill dot={false} tone="info">
             {plural(summary.active_stops, "active", "active")}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
+          </StatusPill>
+          <StatusPill dot={false} tone="info">
             {plural(summary.completed_stops, "completed", "completed")}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
+          </StatusPill>
+          <StatusPill dot={false} tone="info">
             {plural(summary.missing_coordinates_count, "missing coordinates", "missing coordinates")}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
+          </StatusPill>
+          <StatusPill dot={false} tone="info">
             {plural(summary.missing_evidence_count, "missing GPS evidence", "missing GPS evidence")}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-3 py-2 text-status-alert-info-fgStrong">
+          </StatusPill>
+          <StatusPill dot={false} tone="info">
             {plural(summary.at_risk_stops, "at risk", "at risk")}
-          </span>
+          </StatusPill>
         </div>
       </div>
       <p className="mt-3 text-xs font-semibold text-status-alert-info-fgStrong">
         Showing {triageLabels[triage].toLowerCase()}.
       </p>
       <div className="mt-3 rounded-md border border-status-alert-info-border bg-theme-background-surface p-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-status-alert-info-fgStrong">
+        <Eyebrow className="text-status-alert-info-fgStrong">
           Exception review
-        </p>
+        </Eyebrow>
         <p className="mt-1 text-sm font-semibold text-status-alert-info-fgStrong">
           {exceptionSummary.label}
         </p>
         {exceptionSummary.items.length > 0 ? (
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {exceptionSummary.items.map((item) => (
-              <div
-                className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-2"
+              <Card
+                className="border-status-alert-info-border bg-status-alert-info-bg"
                 key={item.filter}
+                padding="sm"
               >
                 <p className="text-xs font-semibold text-status-alert-info-fgStrong">
                   {item.label}
@@ -295,7 +303,7 @@ function RouteIntelligencePanel({
                   {plural(item.count, "stop")}
                 </p>
                 <p className="mt-1 text-xs text-status-alert-info-fg">{item.summary}</p>
-              </div>
+              </Card>
             ))}
           </div>
         ) : null}
@@ -509,9 +517,9 @@ function DispatchStaticMapPanel({
   mapState: DispatchStaticMapState;
 }) {
   return (
-    <section
+    <Card
       aria-label="Provider-free San Diego dispatch map"
-      className="rounded-lg border border-theme-border-subtle bg-theme-background-subtle p-4"
+      tone="subtle"
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -527,23 +535,23 @@ function DispatchStaticMapPanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-theme-text-secondary">
-          <span className="rounded-md bg-theme-background-surface px-2 py-1">
+          <StatusPill dot={false} tone="info">
             {plural(mapState.summary.plotted_stops, "plotted", "plotted")}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-2 py-1">
+          </StatusPill>
+          <StatusPill dot={false} tone="warning">
             {plural(
               mapState.summary.missing_coordinates_count,
               "missing coordinates",
               "missing coordinates",
             )}
-          </span>
-          <span className="rounded-md bg-theme-background-surface px-2 py-1">
+          </StatusPill>
+          <StatusPill dot={false} tone="neutral">
             {plural(
               mapState.summary.outside_map_count,
               "outside San Diego view",
               "outside San Diego view",
             )}
-          </span>
+          </StatusPill>
         </div>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -578,9 +586,9 @@ function DispatchStaticMapPanel({
             </p>
           ) : (
             mapState.points.map((point) => (
-              <article
-                className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-3"
+              <Card
                 key={`${point.job_id}-summary`}
+                padding="sm"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -591,25 +599,25 @@ function DispatchStaticMapPanel({
                       {point.customer_label}
                     </h3>
                   </div>
-                  <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold text-status-alert-info-fgStrong">
+                  <StatusPill dot={false} tone="info">
                     {mapPointSourceLabel(point.source)}
-                  </span>
+                  </StatusPill>
                 </div>
                 <p className="mt-2 text-xs text-theme-text-secondary">
                   {point.address_label}
                 </p>
-              </article>
+              </Card>
             ))
           )}
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
 
 function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) {
   return (
-    <article className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-3">
+    <Card padding="sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-neutralDark">{group.label}</h3>
@@ -617,35 +625,35 @@ function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) 
             {plural(group.total_stops, "stop")} across {plural(group.days.length, "day")}
           </p>
         </div>
-        <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold text-status-alert-info-fgStrong">
+        <StatusPill dot={false} tone="info">
           {plural(group.gps_evidence_count, "GPS captured", "GPS captured")}
-        </span>
+        </StatusPill>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-theme-text-secondary">
-        <span className="rounded-md bg-theme-background-subtle px-2 py-1">
+        <StatusPill dot={false} tone="neutral">
           {plural(group.active_stops, "active", "active")}
-        </span>
-        <span className="rounded-md bg-theme-background-subtle px-2 py-1">
+        </StatusPill>
+        <StatusPill dot={false} tone="success">
           {plural(group.completed_stops, "completed", "completed")}
-        </span>
+        </StatusPill>
         {group.unassigned_stops > 0 ? (
-          <span className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg">
+          <StatusPill dot={false} tone="warning">
             {plural(group.unassigned_stops, "unassigned", "unassigned")}
-          </span>
+          </StatusPill>
         ) : null}
         {group.missing_coordinates_count > 0 ? (
-          <span className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg">
+          <StatusPill dot={false} tone="warning">
             {plural(
               group.missing_coordinates_count,
               "missing coordinates",
               "missing coordinates",
             )}
-          </span>
+          </StatusPill>
         ) : null}
         {group.missing_location_count > 0 ? (
-          <span className="rounded-md bg-status-alert-danger-bg px-2 py-1 text-status-alert-danger-fg">
+          <StatusPill dot={false} tone="danger">
             {plural(group.missing_location_count, "missing location")}
-          </span>
+          </StatusPill>
         ) : null}
       </div>
       <div className="mt-3 space-y-1">
@@ -658,7 +666,7 @@ function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) 
           </p>
         ))}
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -668,7 +676,7 @@ function RouteGroupsPanel({
   groups: DispatchRouteGroupSummary[];
 }) {
   return (
-    <section className="rounded-lg border border-theme-border-subtle bg-theme-background-subtle p-4">
+    <Card tone="subtle">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-neutralDark">
@@ -693,7 +701,7 @@ function RouteGroupsPanel({
           ))}
         </div>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -850,27 +858,24 @@ export function DispatchClient() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
+            <Button
               onClick={() => moveWeek(-1)}
-              type="button"
+              variant="ghost"
             >
               Previous
-            </button>
-            <button
-              className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
+            </Button>
+            <Button
               onClick={() => setAnchorDate(todayKey())}
-              type="button"
+              variant="ghost"
             >
               Today
-            </button>
-            <button
-              className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
+            </Button>
+            <Button
               onClick={() => moveWeek(1)}
-              type="button"
+              variant="ghost"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -961,7 +966,11 @@ export function DispatchClient() {
               </p>
             </div>
             <a
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-status-alert-info-border bg-theme-background-surface px-3 text-sm font-semibold text-status-alert-info-fgStrong hover:bg-primitive-sky-100"
+              className={buttonClassName({
+                className:
+                  "border-status-alert-info-border bg-theme-background-surface text-status-alert-info-fgStrong hover:bg-primitive-sky-100 hover:text-status-alert-info-fgStrong",
+                variant: "ghost",
+              })}
               href="/compliance"
             >
               Review rules
@@ -977,9 +986,10 @@ export function DispatchClient() {
       ) : (
         <section className="grid gap-3 lg:grid-cols-7">
           {visibleCalendarDays.map((day) => (
-            <section
-              className="flex min-h-64 flex-col gap-3 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-3 shadow-sm"
+            <Card
+              className="flex min-h-64 flex-col gap-3"
               key={day.date}
+              padding="sm"
             >
               <header className="border-b border-primitive-slate-100 pb-2">
                 <h2 className="text-sm font-semibold text-neutralDark">{day.label}</h2>
@@ -996,34 +1006,33 @@ export function DispatchClient() {
                 </div>
               ) : (
                 day.jobs.map((job) => (
-                  <article
-                    className="flex flex-col gap-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
+                  <Card
+                    className="flex flex-col gap-3"
                     key={job.id}
+                    padding="sm"
+                    tone="subtle"
                   >
                     <div className="flex items-center justify-between gap-2 text-xs font-semibold">
-                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-status-alert-info-fgStrong">
+                      <StatusPill dot={false} tone="info">
                         {routeStopsByJobId[job.id]
                           ? `Stop ${routeStopsByJobId[job.id].sequence}`
                           : "Outside route"}
-                      </span>
+                      </StatusPill>
                       <span className="text-theme-text-secondary">
                         {routeStopLocationLabel(routeStopsByJobId[job.id])}
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-theme-text-secondary">
+                      <StatusPill dot={false} tone="neutral">
                         {routeStopEvidenceLabel(routeStopsByJobId[job.id])}
-                      </span>
-                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-theme-text-secondary">
+                      </StatusPill>
+                      <StatusPill dot={false} tone="neutral">
                         {routeStopRiskLabel(routeStopsByJobId[job.id])}
-                      </span>
+                      </StatusPill>
                       {routeStopsByJobId[job.id]?.triage_labels.map((label) => (
-                        <span
-                          className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg"
-                          key={label}
-                        >
+                        <StatusPill dot={false} key={label} tone="warning">
                           {label}
-                        </span>
+                        </StatusPill>
                       ))}
                     </div>
                     <div>
@@ -1098,10 +1107,10 @@ export function DispatchClient() {
                         ))}
                       </select>
                     </label>
-                  </article>
+                  </Card>
                 ))
               )}
-            </section>
+            </Card>
           ))}
         </section>
       )}
