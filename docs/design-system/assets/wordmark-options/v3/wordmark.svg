@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 120" role="img" aria-labelledby="pp-wm-title pp-wm-desc">
+  <title id="pp-wm-title">Pest Patrol wordmark</title>
+  <desc id="pp-wm-desc">PEST PATROL set in a custom condensed industrial sans, all caps, with a five-degree forward slant. Drawn as flat SVG paths in a single navy fill, for use on light surfaces.</desc>
+  <metadata>
+    Pest Patrol OS - Patrol UI Design System
+    Wordmark master - v3 (Direction A refined, fleet livery)
+    Hand-traced glyph paths. No font dependency. Transforms flattened into final path coordinates.
+    Slant: 5 degree forward. Cap height: 100u. Stem: 18u. Tracking: 14u. Word space: 32u.
+  </metadata>
+  <g fill="#071A3D">
+    <path fill-rule="evenodd" d="M14 10 L70 10 L64.75 70 L26.75 70 L23.25 110 L5.25 110 Z M30.43 28 L50.43 28 L48.33 52 L28.33 52 Z"></path>
+    <path d="M84 10 L134 10 L132.43 28 L100.43 28 L98.33 52 L122.33 52 L120.93 68 L96.93 68 L94.83 92 L126.83 92 L125.25 110 L75.25 110 Z"></path>
+    <path d="M148 10 L202 10 L200.43 28 L164.43 28 L162.33 52 L198.33 52 L193.25 110 L139.25 110 L140.83 92 L176.83 92 L178.93 68 L142.93 68 Z"></path>
+    <path d="M216 10 L270 10 L268.43 28 L250.43 28 L243.25 110 L225.25 110 L232.43 28 L214.43 28 Z"></path>
+    <path fill-rule="evenodd" d="M302 10 L358 10 L352.75 70 L314.75 70 L311.25 110 L293.25 110 Z M318.43 28 L338.43 28 L336.33 52 L316.33 52 Z"></path>
+    <path fill-rule="evenodd" d="M372 10 L432 10 L423.25 110 L405.25 110 L408.93 68 L384.93 68 L381.25 110 L363.25 110 Z M388.43 28 L412.43 28 L410.33 52 L386.33 52 Z"></path>
+    <path d="M446 10 L500 10 L498.43 28 L480.43 28 L473.25 110 L455.25 110 L462.43 28 L444.43 28 Z"></path>
+    <path fill-rule="evenodd" d="M514 10 L574 10 L568.93 68 L564.93 68 L565.25 110 L547.25 110 L546.93 68 L526.93 68 L523.25 110 L505.25 110 Z M530.43 28 L554.43 28 L552.33 52 L528.33 52 Z"></path>
+    <path fill-rule="evenodd" d="M598 10 L638 10 Q648 10 647.13 20 L640.13 100 Q639.25 110 629.25 110 L589.25 110 Q579.25 110 580.13 100 L587.13 20 Q588 10 598 10 Z M610.43 28 L622.43 28 Q628.43 28 627.9 34 L623.35 86 Q622.83 92 616.83 92 L604.83 92 Q598.83 92 599.35 86 L603.9 34 Q604.43 28 610.43 28 Z"></path>
+    <path d="M662 10 L680 10 L672.83 92 L702.83 92 L701.25 110 L653.25 110 Z"></path>
+  </g>
+</svg>
