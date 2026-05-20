@@ -4,6 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  assertComplianceSchemaReady,
   upsertComplianceChunkRecords,
   upsertComplianceDocumentRecord,
   upsertComplianceSourceRecord,
@@ -46,6 +47,7 @@ export interface ComplianceIngestionSummary {
 }
 
 interface ComplianceIngestionDependencies {
+  assertSchemaReady?: (client: ComplianceClient) => Promise<void>;
   createEmbedding?: (input: string) => Promise<number[] | null>;
   readTextFile?: (filePath: string) => Promise<string>;
   upsertChunks?: (
@@ -248,6 +250,8 @@ export async function runComplianceIngestion(
   const dryRun = Boolean(options.dryRun);
   const noEmbed = Boolean(options.noEmbed);
   const client = dryRun ? undefined : options.client ?? createServiceRoleClient(env);
+  const assertSchemaReady =
+    dependencies.assertSchemaReady ?? assertComplianceSchemaReady;
   const createEmbedding =
     dependencies.createEmbedding ??
     ((input: string) => createOpenAIEmbedding(input, env));
@@ -272,6 +276,10 @@ export async function runComplianceIngestion(
     sourcesProcessed: 0,
     sourcesSkipped: manifest.length - selectedEntries.length,
   };
+
+  if (client) {
+    await assertSchemaReady(client);
+  }
 
   for (const entry of selectedEntries) {
     const sourceText = await readTextFile(path.resolve(manifestBaseDir, entry.text_path));

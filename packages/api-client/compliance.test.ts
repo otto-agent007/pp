@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  assertComplianceSchemaReady,
   createComplianceAdvisoryAuditRecord,
   isComplianceSchemaUnavailableError,
   listComplianceSourceRecords,
@@ -138,6 +139,64 @@ describe("compliance api client", () => {
     expect(sources).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("compliance_sources");
     expect(query.calls).toContainEqual(["select", ["*"]]);
+  });
+
+  it("probes compliance schema readiness before advisory retrieval", async () => {
+    const sourceQuery = new MockQuery({ data: [{ id: "source-1" }], error: null });
+    const documentQuery = new MockQuery({
+      data: [{ id: "document-1" }],
+      error: null,
+    });
+    const chunkQuery = new MockQuery({ data: [{ id: "chunk-1" }], error: null });
+    const auditQuery = new MockQuery({ data: [{ id: "audit-1" }], error: null });
+    from
+      .mockReturnValueOnce(sourceQuery as never)
+      .mockReturnValueOnce(documentQuery as never)
+      .mockReturnValueOnce(chunkQuery as never)
+      .mockReturnValueOnce(auditQuery as never);
+    rpc.mockResolvedValue({ data: [], error: null } as never);
+
+    await assertComplianceSchemaReady();
+
+    expect(from).toHaveBeenNthCalledWith(1, "compliance_sources");
+    expect(sourceQuery.calls).toEqual([
+      ["select", ["id"]],
+      ["limit", [1]],
+    ]);
+    expect(from).toHaveBeenNthCalledWith(2, "compliance_documents");
+    expect(documentQuery.calls).toEqual([
+      ["select", ["id"]],
+      ["limit", [1]],
+    ]);
+    expect(from).toHaveBeenNthCalledWith(3, "compliance_chunks");
+    expect(chunkQuery.calls).toEqual([
+      ["select", ["id"]],
+      ["limit", [1]],
+    ]);
+    expect(from).toHaveBeenNthCalledWith(4, "compliance_advisory_audits");
+    expect(auditQuery.calls).toEqual([
+      ["select", ["id"]],
+      ["limit", [1]],
+    ]);
+    expect(rpc).toHaveBeenCalledWith(
+      "match_compliance_chunks",
+      expect.objectContaining({
+        authority_filter: null,
+        match_count: 1,
+        workflow_filter: null,
+      }),
+    );
+    const probeInput = rpc.mock.calls[0]?.[1] as {
+      query_embedding?: number[];
+    };
+    expect(probeInput.query_embedding).toHaveLength(1536);
+    expect(probeInput.query_embedding?.every((value) => value === 0)).toBe(true);
+    expect(probeInput).toEqual({
+      authority_filter: null,
+      match_count: 1,
+      query_embedding: probeInput.query_embedding,
+      workflow_filter: null,
+    });
   });
 
   it("searches reviewed chunks with vector RPC when an embedding exists", async () => {

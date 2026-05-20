@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 const createComplianceAdvisoryAuditRecord = vi.fn();
+const assertComplianceSchemaReady = vi.fn();
 const isComplianceSchemaUnavailableError = vi.fn();
 const listChemicalLogRecords = vi.fn();
 const listJobRecords = vi.fn();
@@ -11,6 +12,8 @@ let adminResponse: Response | null = null;
 let serviceClient: { from: ReturnType<typeof vi.fn> };
 
 vi.mock("@pest-patrol/api-client", () => ({
+  assertComplianceSchemaReady: (client: unknown) =>
+    assertComplianceSchemaReady(client),
   createComplianceAdvisoryAuditRecord: (
     input: unknown,
     client: unknown,
@@ -96,6 +99,8 @@ describe("compliance advisory route", () => {
   beforeEach(() => {
     adminResponse = null;
     serviceClient = { from: vi.fn() };
+    assertComplianceSchemaReady.mockReset();
+    assertComplianceSchemaReady.mockResolvedValue(undefined);
     createComplianceAdvisoryAuditRecord.mockReset();
     isComplianceSchemaUnavailableError.mockReset();
     isComplianceSchemaUnavailableError.mockReturnValue(false);
@@ -184,18 +189,13 @@ describe("compliance advisory route", () => {
 
   it("returns sanitized setup state when the compliance schema is missing", async () => {
     vi.stubEnv("OPENAI_API_KEY", "sk-test-secret");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        json: () => Promise.resolve({ data: [{ embedding: [0.1, 0.2] }] }),
-        ok: true,
-      }),
-    );
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
     const schemaError = Object.assign(
       new Error('relation "public.compliance_chunks" does not exist'),
       { code: "42P01" },
     );
-    searchComplianceChunkRecords.mockRejectedValue(schemaError);
+    assertComplianceSchemaReady.mockRejectedValue(schemaError);
     isComplianceSchemaUnavailableError.mockImplementation(
       (error) => error === schemaError,
     );
@@ -220,6 +220,8 @@ describe("compliance advisory route", () => {
       status: "schema_unavailable",
     });
     expect(body.advisory?.status).toBe("insufficient_sources");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(searchComplianceChunkRecords).not.toHaveBeenCalled();
     expect(createComplianceAdvisoryAuditRecord).not.toHaveBeenCalled();
     expect(JSON.stringify(body)).not.toContain("relation");
     expect(JSON.stringify(body)).not.toContain("compliance_chunks");

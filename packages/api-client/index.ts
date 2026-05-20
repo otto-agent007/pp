@@ -35,6 +35,7 @@ export {
   listCloseoutCaptureSummaryRecords,
 } from "./closeouts";
 export {
+  assertComplianceSchemaReady,
   createComplianceAdvisoryAuditRecord,
   isComplianceSchemaUnavailableError,
   listComplianceAdvisoryAuditRecords,
