@@ -1,5 +1,17 @@
 # Done
 
+## Gated Launch-Readiness Batch V1
+
+- Created the fresh `codex/launch-readiness-gates` branch from the PR #40 merge commit after confirming the previous branch was merged
+- Cleared stale zero-byte Git lock files left by an earlier failed fetch, then fast-forwarded local `main` and `origin/main` to `55031fb`
+- Added a compliance schema/RPC readiness probe before `/api/compliance/advisories` creates an OpenAI embedding, preventing OpenAI calls and advisory audit writes when compliance schema is missing or partially applied
+- Extended live `compliance:ingest` to check schema readiness before non-dry-run upserts or embeddings, while keeping `--dry-run --no-embed` Supabase-free and OpenAI-free
+- Reran the Supabase/RLS audit: compliance RAG grants are explicit for `authenticated` and `service_role`, no `anon` grants were added, RLS remains enabled, and migrations must be applied in timestamp order because compliance policies depend on `private.has_admin_access()`
+- Verified the latest Ready preview as `https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app`, confirmed Vercel Preview Supabase/scheduler env names are present, and confirmed the app shell via `vercel curl`
+- Passed the full repo verification gate after clearing only the generated repo-local `.turbo` cache to recover from a C: disk-space `ENOSPC` build failure
+- Confirmed local and preview smoke remain blocked before seed/reset or authenticated Browser smoke on missing approved Supabase env names plus operator preview access/sign-in
+- Performed no migration application, live compliance ingestion, seed/reset write, browser login, provider dashboard mutation, environment mutation, protected-preview mutation, or production data action
+
 ## Customer Admin UI-Kit And Launch Gate Execution V1
 
 - Verified the customer/admin shared-primitives closeout with focused UI tests and web typecheck while keeping the tracked surface presentation-only

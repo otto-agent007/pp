@@ -1,4 +1,5 @@
 import {
+  assertComplianceSchemaReady,
   createComplianceAdvisoryAuditRecord,
   isComplianceSchemaUnavailableError,
   listChemicalLogRecords,
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
     }
 
     const client = createServiceRoleSupabaseClient();
+    await assertComplianceSchemaReady(client);
     const queryText = buildComplianceQueryText(parsedInput);
     const embedding = await createEmbedding(
       queryText,

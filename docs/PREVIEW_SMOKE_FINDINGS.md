@@ -2,6 +2,50 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-20 Gated Launch-Readiness Batch
+
+Status: Supabase/RLS audit and compliance RAG hardening are locally verified; preview discovery is current; local and protected-preview smoke remain gated before seed/reset or authenticated browser smoke.
+
+Read-only checks:
+- Command: `supabase --version`
+- Result: pass; local CLI is `2.98.2`. The CLI reported `2.100.1` is available.
+- Command: `supabase migration list --local`
+- Result: blocked by local Docker/Supabase health inspection: Docker Desktop returned a 500 for `supabase_db_pest-patrol-os`. No migration apply command was run.
+- Command: migration/RLS grep audit plus Supabase security review.
+- Result: pass; the compliance RAG migration enables RLS on its new tables, grants Data API reachability to `authenticated` and `service_role` but not `anon`, and uses `private.has_admin_access()` after the hardening migration. Apply migrations strictly in timestamp order because compliance and portal audit policies depend on `20260507220000_supabase_security_hardening_v1.sql`.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Command: focused compliance tests with `--pool=threads --maxWorkers=1 --no-file-parallelism`
+- Result: pass for route/API-client/UI compliance coverage; the broad first Vitest pass hit Windows worker-start timeouts, so focused reruns used lower concurrency.
+- Command: full repo gate: `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`.
+- Result: pass. The first build attempt hit machine disk pressure with `ENOSPC` while C: reported 0 GB free; clearing only the repo-local generated `.turbo` cache freed about 4.16 GB and the build rerun passed.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: pass; latest Ready preview found at `https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel inspect https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; deployment `dpl_EoiVf5MRzQaxUXNoTNtn2XGPQYPW` is Ready with alias `https://pest-patrol-os-git-codex-ace315-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel env ls`
+- Result: pass; encrypted Preview env names exist for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and `AUTOMATION_CRON_SECRET`. Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list.
+- Command: `corepack pnpm dlx vercel curl / --deployment https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; the protected preview returned the Pest Patrol OS app shell with the admin gate text `Checking admin access...`.
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before local seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: Codex Browser runtime connection through the Browser plugin.
+- Result: Browser runtime listed the Codex In-app Browser, but rendered route walking was not attempted because the local preflight is env-blocked and no local dev server/browser pane was ready for smoke.
+
+Slice outcomes:
+- Compliance RAG Schema Guard V1: `/api/compliance/advisories` now probes the compliance tables and `match_compliance_chunks` RPC before creating an OpenAI embedding, so missing or partial schema drift returns sanitized setup-required state without an OpenAI call or audit write.
+- Supabase/RLS Audit V1: no migration edit was needed; compliance Data API grants are explicit and RLS remains the authenticated row-level boundary. `service_role` remains server/tooling-only and must never be exposed as `NEXT_PUBLIC_*` or `EXPO_PUBLIC_*`.
+- Preview Drift Check V1: latest Ready preview, app-shell boot, project metadata, cron path, and safe env-name presence were verified through the Vercel CLI; Vercel connector/API inspection still needs re-auth or CLI fallback for this scope.
+- Local Rendered Smoke Gate V1: local smoke remains blocked before seed/reset or route walking until approved local Supabase env names are loaded and the local Browser/dev-server path is active.
+
+No seed/reset writes, browser login, provider dashboard mutations, environment mutations, migration application, live compliance ingestion, raw portal URLs, credentials, protected-preview access values, webhook payloads, preview data mutation, or production data actions were performed.
+
 ## 2026-05-19 Customer Admin UI Kit And Launch Gate Execution
 
 Status: the customer/admin shared-primitives closeout is locally verified through focused UI tests and web typecheck; the brand-font direction bundle is recorded as design-only guidance; compliance dry-run passed; local and protected-preview smoke remain blocked before seed/reset, browser smoke, live compliance ingestion, provider receipt work, or production action.

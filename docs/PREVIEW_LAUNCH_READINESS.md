@@ -82,13 +82,15 @@ Apply all migrations in timestamp order for a new preview database. The latest l
 
 Before applying migrations, the operator should confirm the target Supabase project, backup/rollback comfort, and whether any migrations have already been applied. The compliance migration is currently a proposal with explicit Data API grants plus RLS policies; Codex should not run migration apply commands without explicit approval.
 
+RLS/Data API note: apply migrations strictly in timestamp order. The compliance RAG and portal audit migrations depend on `20260507220000_supabase_security_hardening_v1.sql` because their policies call `private.has_admin_access()`; do not apply them as standalone SQL to a target missing that hardening migration. The compliance tables deliberately grant Data API reachability to `authenticated` and `service_role`, not `anon`; RLS remains the row-level boundary for authenticated users. `service_role` access is server/tooling-only, bypasses RLS, and must never be exposed as `NEXT_PUBLIC_*` or `EXPO_PUBLIC_*`.
+
 ## Preview Smoke Run
 
 Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
 For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
-Latest local preflight note: the May 19, 2026 read-only local and preview preflights remain blocked until the operator loads approved Supabase env names and provides protected-preview access/sign-in. Local Supabase target inspection also needs Docker Desktop's Linux engine available before `supabase status -o env` can run. The latest Ready preview found by Vercel CLI was `https://pest-patrol-v4a42puf9-ottoagent007-gmailcoms-projects.vercel.app`. Local Vercel packaging no longer fails on the `/auth/update-password` lambda mapping, but this Windows session is still blocked by a Vercel output symlink `EPERM`. No seed/reset, browser login, provider dashboard mutation, environment mutation, migration, live compliance ingestion, or production data action was attempted during those blocked passes.
+Latest local preflight note: the May 20, 2026 gated readiness pass found the latest Ready preview at `https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app` and verified the protected app shell through `vercel curl`. Vercel Preview env names exist for Supabase and scheduler secrets, but the local shell still lacks `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, so local and preview `demo:smoke` preflights remain blocked before seed/reset or browser smoke. Local Supabase target inspection is also blocked until Docker Desktop's local engine health path works for `supabase status -o env`. No seed/reset, browser login, provider dashboard mutation, environment mutation, migration, live compliance ingestion, or production data action was attempted during this pass.
 
 Run these in order after the preview deployment has the approved environment variables:
 

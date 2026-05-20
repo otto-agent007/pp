@@ -83,6 +83,7 @@ const complianceSchemaObjectNames = [
   "job_unit_audit_items",
   "match_compliance_chunks",
 ];
+const complianceEmbeddingDimensions = 1536;
 
 function getSupabaseErrorText(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -192,6 +193,36 @@ export async function listComplianceSourceRecords(
   }
 
   return (data ?? []) as ComplianceSource[];
+}
+
+export async function assertComplianceSchemaReady(
+  client: ComplianceClient = supabase,
+) {
+  const tableNames = [
+    "compliance_sources",
+    "compliance_documents",
+    "compliance_chunks",
+    "compliance_advisory_audits",
+  ];
+
+  for (const tableName of tableNames) {
+    const { error } = await client.from(tableName).select("id").limit(1);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  const { error } = await client.rpc("match_compliance_chunks", {
+    authority_filter: null,
+    match_count: 1,
+    query_embedding: Array.from({ length: complianceEmbeddingDimensions }, () => 0),
+    workflow_filter: null,
+  });
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function upsertComplianceSourceRecord(
