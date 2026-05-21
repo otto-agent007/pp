@@ -87,9 +87,11 @@ function printPreflight(result: DemoSmokePreflightResult) {
   console.log(`Target: ${result.target}`);
   console.log(`Base URL: ${result.baseUrl}`);
   console.log(`Shell seed readiness: ${statusLabel(result.shellSeedReady)}`);
-  console.log(`Browser smoke readiness: ${statusLabel(result.browserSmokeReady)}`);
   console.log(
-    `Demo story: ${result.summary.customers} customers, ${result.summary.locations} locations, ${result.summary.technicians} technicians, ${result.summary.jobs} jobs, ${result.summary.inventory_items} inventory items, ${result.summary.invoices} invoices.`,
+    `Browser smoke readiness: ${statusLabel(result.browserSmokeReady)}`,
+  );
+  console.log(
+    `Demo story: ${result.summary.customers} customers, ${result.summary.locations} locations, ${result.summary.technicians} technicians, ${result.summary.jobs} jobs, ${result.summary.inventory_items} inventory items, ${result.summary.media_items} media items, ${result.summary.invoices} invoices.`,
   );
   console.log("");
   printList("Missing env names:", result.missingEnvNames);

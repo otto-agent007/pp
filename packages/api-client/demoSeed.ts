@@ -4,6 +4,7 @@ import {
   type DemoSeedInventoryItem,
   type DemoSeedInvoice,
   type DemoSeedJob,
+  type DemoSeedMediaItem,
   type DemoSeedPlan,
   type DemoSeedTechnician,
   type DemoSeedGuardrailInput,
@@ -28,7 +29,10 @@ interface SupabaseQuery {
   single(): Promise<{ data: unknown; error: Error | null }>;
   then<TResult1 = { data: unknown; error: Error | null }, TResult2 = never>(
     onfulfilled?:
-      | ((value: { data: unknown; error: Error | null }) => TResult1 | PromiseLike<TResult1>)
+      | ((value: {
+          data: unknown;
+          error: Error | null;
+        }) => TResult1 | PromiseLike<TResult1>)
       | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): Promise<TResult1 | TResult2>;
@@ -43,7 +47,10 @@ export interface DemoSeedSupabaseClient {
         email_confirm: boolean;
         password?: string;
         user_metadata: Record<string, unknown>;
-      }): Promise<{ data: { user: { id: string; email?: string } | null }; error: Error | null }>;
+      }): Promise<{
+        data: { user: { id: string; email?: string } | null };
+        error: Error | null;
+      }>;
       deleteUser(id: string): Promise<{ data: unknown; error: Error | null }>;
       listUsers(): Promise<{
         data: { users: Array<{ id: string; email?: string | null }> };
@@ -52,6 +59,16 @@ export interface DemoSeedSupabaseClient {
     };
   };
   from(table: string): SupabaseQuery;
+  storage: {
+    from(bucket: string): {
+      remove(paths: string[]): Promise<{ data: unknown; error: Error | null }>;
+      upload(
+        path: string,
+        body: Blob,
+        options: { contentType: string; upsert: boolean },
+      ): Promise<{ data: unknown; error: Error | null }>;
+    };
+  };
 }
 
 interface DemoSeedAuthClient {
@@ -71,6 +88,7 @@ export interface DemoSeedSummary {
   inventory: number;
   invoices: number;
   jobs: number;
+  media: number;
   payments: number;
   technicians: number;
 }
@@ -105,10 +123,7 @@ async function runSingle<T>(query: SupabaseQuery, action: string) {
   return data;
 }
 
-function technicianProfileRow(
-  technician: DemoSeedTechnician,
-  userId: string,
-) {
+function technicianProfileRow(technician: DemoSeedTechnician, userId: string) {
   return {
     display_name: technician.display_name,
     email: technician.email,
@@ -129,7 +144,9 @@ function adminProfileRow(adminUser: DemoSeedAdminUser, userId: string) {
 }
 
 function jobRow(job: DemoSeedJob, context: DemoSeedContext) {
-  const technicianId = context.technicianIdsByKey.get(job.assigned_technician_key);
+  const technicianId = context.technicianIdsByKey.get(
+    job.assigned_technician_key,
+  );
 
   if (!technicianId) {
     throw new Error(`Missing demo technician ${job.assigned_technician_key}`);
@@ -175,6 +192,19 @@ function invoiceRow(invoice: DemoSeedInvoice) {
   };
 }
 
+function mediaRow(media: DemoSeedMediaItem) {
+  return {
+    captured_at: media.captured_at,
+    description: media.description,
+    id: media.id,
+    job_id: media.job_id,
+    media_type: media.media_type,
+    storage_bucket: media.storage_bucket,
+    storage_path: media.storage_path,
+    uploaded_by: null,
+  };
+}
+
 function emptySummary(): DemoSeedSummary {
   return {
     adminUsers: 0,
@@ -184,9 +214,47 @@ function emptySummary(): DemoSeedSummary {
     inventory: 0,
     invoices: 0,
     jobs: 0,
+    media: 0,
     payments: 0,
     technicians: 0,
   };
+}
+
+async function uploadDemoMedia(
+  client: DemoSeedSupabaseClient,
+  media: DemoSeedMediaItem,
+) {
+  const { error } = await client.storage
+    .from(media.storage_bucket)
+    .upload(
+      media.storage_path,
+      new Blob([media.content], { type: media.content_type }),
+      {
+        contentType: media.content_type,
+        upsert: true,
+      },
+    );
+
+  assertNoError(error, `Upload demo media ${media.storage_path}`);
+}
+
+async function removeDemoMedia(
+  client: DemoSeedSupabaseClient,
+  media: DemoSeedMediaItem[],
+) {
+  const byBucket = new Map<string, string[]>();
+
+  media.forEach((item) => {
+    byBucket.set(item.storage_bucket, [
+      ...(byBucket.get(item.storage_bucket) ?? []),
+      item.storage_path,
+    ]);
+  });
+
+  for (const [bucket, paths] of byBucket) {
+    const { error } = await client.storage.from(bucket).remove(paths);
+    assertNoError(error, `Reset demo media bucket ${bucket}`);
+  }
 }
 
 export function validateDemoSeedExecution(
@@ -208,7 +276,9 @@ export async function seedDemoRecords(
 ) {
   const summary = emptySummary();
   const context: DemoSeedContext = {
-    inventoryIdsByKey: new Map(plan.inventory.map((item) => [item.key, item.id])),
+    inventoryIdsByKey: new Map(
+      plan.inventory.map((item) => [item.key, item.id]),
+    ),
     technicianIdsByKey: new Map(),
   };
 
@@ -252,14 +322,18 @@ export async function seedDemoRecords(
     assertNoError(error, `Create demo technician ${technician.email}`);
 
     if (!data.user) {
-      throw new Error(`Create demo technician ${technician.email}: no user returned`);
+      throw new Error(
+        `Create demo technician ${technician.email}: no user returned`,
+      );
     }
 
     context.technicianIdsByKey.set(technician.key, data.user.id);
     await runSingle(
       client
         .from("profiles")
-        .upsert(technicianProfileRow(technician, data.user.id), { onConflict: "id" })
+        .upsert(technicianProfileRow(technician, data.user.id), {
+          onConflict: "id",
+        })
         .select("*"),
       `Upsert demo technician profile ${technician.email}`,
     );
@@ -325,6 +399,16 @@ export async function seedDemoRecords(
   );
   summary.formSubmissions = plan.formSubmissions.length;
 
+  for (const media of plan.media) {
+    await uploadDemoMedia(client, media);
+  }
+
+  await runQuery(
+    client.from("job_media").insert(plan.media.map(mediaRow)),
+    "Insert demo media",
+  );
+  summary.media = plan.media.length;
+
   await runQuery(
     client.from("invoices").insert(plan.invoices.map(invoiceRow)),
     "Insert demo invoices",
@@ -339,9 +423,14 @@ export async function seedDemoRecords(
 
   const payments = plan.invoices
     .map((invoice) => invoice.payment)
-    .filter((payment): payment is NonNullable<typeof payment> => Boolean(payment));
+    .filter((payment): payment is NonNullable<typeof payment> =>
+      Boolean(payment),
+    );
 
-  await runQuery(client.from("payments").insert(payments), "Insert demo payments");
+  await runQuery(
+    client.from("payments").insert(payments),
+    "Insert demo payments",
+  );
   summary.payments = payments.length;
 
   return summary;
@@ -383,7 +472,10 @@ async function deleteByIds(
     return;
   }
 
-  await runQuery(client.from(table).delete().in(column, ids), `Reset demo ${table}`);
+  await runQuery(
+    client.from(table).delete().in(column, ids),
+    `Reset demo ${table}`,
+  );
 }
 
 export async function resetDemoSeedRecords(
@@ -403,7 +495,10 @@ export async function resetDemoSeedRecords(
       ),
     "Find demo customers",
   );
-  await runQuery(client.from("jobs").select("id").in("customer_id", customerIds), "Find demo jobs");
+  await runQuery(
+    client.from("jobs").select("id").in("customer_id", customerIds),
+    "Find demo jobs",
+  );
   await runQuery(
     client.from("invoices").select("id").in("customer_id", customerIds),
     "Find demo invoices",
@@ -414,16 +509,15 @@ export async function resetDemoSeedRecords(
   await deleteByIds(client, "invoices", "id", invoiceIds);
   await deleteByIds(client, "job_form_submissions", "job_id", jobIds);
   await deleteByIds(client, "chemical_logs", "job_id", jobIds);
+  await deleteByIds(client, "job_media", "job_id", jobIds);
+  await removeDemoMedia(client, plan.media);
   await deleteByIds(client, "jobs", "id", jobIds);
   await deleteByIds(client, "chemical_inventory", "id", planInventoryIds(plan));
   await deleteByIds(client, "locations", "customer_id", customerIds);
   await deleteByIds(client, "customers", "id", customerIds);
 
   await runQuery(
-    client
-      .from("profiles")
-      .delete()
-      .eq("email", plan.resetFilters.adminEmail),
+    client.from("profiles").delete().eq("email", plan.resetFilters.adminEmail),
     "Reset demo admin profile",
   );
 
@@ -438,9 +532,10 @@ export async function resetDemoSeedRecords(
   const { data, error } = await client.auth.admin.listUsers();
   assertNoError(error, "List demo auth users");
 
-  const demoUsers = data.users.filter((user) =>
-    user.email === plan.resetFilters.adminEmail ||
-    user.email?.startsWith(plan.resetFilters.technicianEmailPrefix),
+  const demoUsers = data.users.filter(
+    (user) =>
+      user.email === plan.resetFilters.adminEmail ||
+      user.email?.startsWith(plan.resetFilters.technicianEmailPrefix),
   );
 
   for (const user of demoUsers) {
@@ -456,6 +551,7 @@ export async function resetDemoSeedRecords(
     inventory: plan.inventory.length,
     invoices: invoiceIds.length,
     jobs: jobIds.length,
+    media: plan.media.length,
     technicians: demoUsers.filter((user) =>
       user.email?.startsWith(plan.resetFilters.technicianEmailPrefix),
     ).length,
@@ -506,7 +602,9 @@ export async function getDemoSeedStatusRecord(
   });
 
   if (!response.ok) {
-    throw new Error(await jsonError(response, "Unable to load demo seed status"));
+    throw new Error(
+      await jsonError(response, "Unable to load demo seed status"),
+    );
   }
 
   return (await response.json()) as DemoSeedStatusResponse;
@@ -545,7 +643,9 @@ export async function runDemoSeedActionRecord(
   });
 
   if (!response.ok) {
-    throw new Error(await jsonError(response, "Unable to run demo seed action"));
+    throw new Error(
+      await jsonError(response, "Unable to run demo seed action"),
+    );
   }
 
   return (await response.json()) as DemoSeedActionResponse;

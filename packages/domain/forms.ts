@@ -13,7 +13,13 @@ import type {
   JobFormSubmissionInput,
 } from "@pest-patrol/types";
 
-const fieldTypes: FormFieldType[] = ["text", "textarea", "number", "boolean", "select"];
+const fieldTypes: FormFieldType[] = [
+  "text",
+  "textarea",
+  "number",
+  "boolean",
+  "select",
+];
 
 export const defaultTreatmentFormTemplate: FormTemplate = {
   id: "00000000-0000-4000-8000-000000000101",
@@ -45,10 +51,33 @@ export const defaultTreatmentFormTemplate: FormTemplate = {
         placeholder: "Products or methods used",
       },
       {
+        id: "application_method",
+        label: "Application method",
+        type: "textarea",
+        placeholder: "Bait placement, crack-and-crevice, exclusion, monitoring",
+      },
+      {
+        id: "service_branch",
+        label: "Service branch",
+        type: "text",
+        placeholder: "San Diego branch route",
+      },
+      {
+        id: "weather_conditions",
+        label: "Weather / site conditions",
+        type: "textarea",
+        placeholder: "Interior service, dry exterior, wind, rain, access notes",
+      },
+      {
         id: "customer_instructions",
         label: "Customer instructions",
         type: "textarea",
         placeholder: "Re-entry notes, prep, follow-up instructions",
+      },
+      {
+        id: "epa_label_reviewed",
+        label: "EPA label reviewed",
+        type: "boolean",
       },
       {
         id: "follow_up_required",
@@ -146,10 +175,13 @@ export function createFormDraft(
   now?: string,
 ): FormDraft {
   const validTemplate = validateFormTemplate(template);
-  const values = validTemplate.schema.fields.reduce<JobFormData>((accumulator, field) => {
-    accumulator[field.id] = field.type === "boolean" ? false : null;
-    return accumulator;
-  }, {});
+  const values = validTemplate.schema.fields.reduce<JobFormData>(
+    (accumulator, field) => {
+      accumulator[field.id] = field.type === "boolean" ? false : null;
+      return accumulator;
+    },
+    {},
+  );
 
   return {
     job_id: requireNonEmpty(jobId, "Job"),
@@ -191,16 +223,19 @@ export function normalizeFormSubmissionInput(
   template: FormTemplate,
 ): JobFormSubmissionInput {
   const validTemplate = validateFormTemplate(template);
-  const formData = validTemplate.schema.fields.reduce<JobFormData>((accumulator, field) => {
-    const value = normalizeFieldValue(field, input.form_data[field.id]);
+  const formData = validTemplate.schema.fields.reduce<JobFormData>(
+    (accumulator, field) => {
+      const value = normalizeFieldValue(field, input.form_data[field.id]);
 
-    if (field.required && (value === null || value === "")) {
-      throw new Error(`${field.label} is required`);
-    }
+      if (field.required && (value === null || value === "")) {
+        throw new Error(`${field.label} is required`);
+      }
 
-    accumulator[field.id] = value;
-    return accumulator;
-  }, {});
+      accumulator[field.id] = value;
+      return accumulator;
+    },
+    {},
+  );
 
   return {
     job_id: requireNonEmpty(input.job_id, "Job"),
@@ -248,5 +283,7 @@ export async function createJobFormSubmission(
   input: JobFormSubmissionInput,
   template: FormTemplate,
 ) {
-  return createJobFormSubmissionRecord(validateFormSubmissionInput(input, template));
+  return createJobFormSubmissionRecord(
+    validateFormSubmissionInput(input, template),
+  );
 }

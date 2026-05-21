@@ -27,7 +27,12 @@ export type OfflineQueueAction =
 
 export type OfflineQueueStatus = "queued" | "retrying" | "failed" | "synced";
 
-export type FormFieldType = "text" | "textarea" | "number" | "boolean" | "select";
+export type FormFieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "boolean"
+  | "select";
 
 export type FormTemplateStatus = "active" | "archived";
 
@@ -57,6 +62,7 @@ export interface DemoSeedSummary {
   invoices: number;
   jobs: number;
   locations: number;
+  media_items: number;
   payments: number;
   technicians: number;
 }
@@ -146,7 +152,11 @@ export type ComplianceRequiredFieldStatus = "missing" | "present" | "unknown";
 
 export type LocationUnitStatus = "active" | "archived";
 
-export type LocationUnitAreaType = "common_area" | "exterior" | "other" | "unit";
+export type LocationUnitAreaType =
+  | "common_area"
+  | "exterior"
+  | "other"
+  | "unit";
 
 export type JobUnitAuditStatus =
   | "inaccessible"
@@ -782,8 +792,10 @@ export interface JobPhotoUploadQueuePayload extends Record<string, unknown> {
   captured_at?: string | null;
 }
 
-export interface JobSignatureCaptureQueuePayload
-  extends Record<string, unknown> {
+export interface JobSignatureCaptureQueuePayload extends Record<
+  string,
+  unknown
+> {
   job_id: string;
   local_uri: string;
   file_name: string;

@@ -3,18 +3,15 @@
 No active implementation slice is currently open.
 
 Recent closure:
-- The gated launch-readiness batch reran Supabase/RLS audit, compliance RAG checks, preview drift checks, and local smoke preflight without mutating preview, production, providers, env, or Supabase data.
-- `/api/compliance/advisories` now checks compliance schema/RPC readiness before creating an OpenAI embedding, so missing or partially applied compliance schema returns sanitized setup-required state without an OpenAI call or audit write.
-- `corepack pnpm compliance:ingest -- --dry-run --no-embed` planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
-- Latest Ready preview discovered by Vercel CLI is `https://pest-patrol-ehvt94v55-ottoagent007-gmailcoms-projects.vercel.app`; `vercel inspect` reports it Ready and `vercel curl / --deployment <preview-url>` returns the Pest Patrol OS app shell.
-- Full repo verification passed with `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`; the first build attempt was machine-space blocked by `ENOSPC` until the repo-local generated `.turbo` cache was cleared.
-- Vercel Preview env names exist for Supabase and scheduler secrets, but Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list.
-- Local and preview smoke preflights remain blocked before seed/reset or authenticated browser smoke because approved Supabase env names are not loaded in this shell.
-- Local Supabase target inspection is blocked because Docker Desktop returned a local container health error for `supabase status -o env`.
-- Codex Browser runtime connected and listed the in-app Browser, but rendered route walking remains blocked until local env/preflight, dev server, and an active Browser pane are ready.
-- Protected-preview smoke remains blocked on operator-approved preview access and an admin/dispatcher sign-in path.
+- Demo Media Proof V1 moved the dirty demo seed/media work onto a fresh branch from `origin/main`, preserving the readiness-evidence PR as a separate review surface.
+- The demo seed story now includes San Diego-specific customer locations, richer Rivera Cafe closeout data, expanded treatment-form fields, 3 chemical logs, 2 form submissions, 6 inventory items, and 3 synthetic proof media items.
+- Seed/reset now uploads SVG proof media to the `job-media` storage bucket, inserts matching `job_media` rows, removes those storage paths during reset, and reports media counts through the CLI/dashboard summary.
+- Local fixture mode maps the seeded media paths to checked-in `/demo-media/*` SVG assets, so closeout and portal proof surfaces can render service photos and a synthetic customer signature without Supabase storage access.
+- Verified with focused demo seed/domain/API-client/web tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build`; no migration, provider setup, env mutation, preview mutation, production mutation, seed/reset write, or browser login was performed.
 
 Follow-up candidates:
+- [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
+- [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
 - [ ] If using the local Supabase target, start or repair Docker Desktop's Linux engine before rerunning `supabase status -o env`; the May 20, 2026 check could not inspect the local containers.
 - [ ] After explicit migration approval, run `compliance:ingest` against an approved local or preview Supabase environment before relying on source-backed `/compliance` advisories; the May 20, 2026 dry-run/no-embed preflight passed without Supabase writes or OpenAI calls.

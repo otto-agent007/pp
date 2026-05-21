@@ -55,6 +55,7 @@ export type {
   DemoSeedInvoice,
   DemoSeedInvoiceLineItem,
   DemoSeedJob,
+  DemoSeedMediaItem,
   DemoSeedPayment,
   DemoSeedPlan,
   DemoSeedRuntimeStatusInput,
