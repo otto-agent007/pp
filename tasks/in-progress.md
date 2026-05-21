@@ -4,6 +4,15 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Mobile UI Native Primitives V1 added `@pest-patrol/ui-native` with shared
+  token-driven `Button`, `Card`, `Eyebrow`, `StatusPill`, `StatTile`, and
+  `Avatar` React Native primitives.
+- `AssignedJobCard` now uses the shared native `StatusPill`, and
+  `MobileTechnicianHeader` uses the shared native `Button` for Language and
+  Sign Out controls.
+- The slice kept `routeShellStyles.ts`, `mobileCaptureControlStyles`,
+  migrations, provider setup, env changes, preview/production mutations, auth
+  changes, and app chrome out of scope.
 - Status Color + Searchability QA V1 added a shared `SearchableSelect`
   primitive, made `StatTile` tone affect card border/background, and tightened
   status colors across automation, dispatch, jobs, inventory, payments, and
@@ -58,6 +67,9 @@ Recent closure:
 
 Follow-up candidates:
 
+- [ ] Consider the next mobile-native primitive adoption slice only after this
+  package lands; likely candidates are capture-control buttons/cards or an
+  offline badge primitive, not a broad mobile restyle.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.

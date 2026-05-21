@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
+import { StatusPill, type StatusPillTone } from "@pest-patrol/ui-native";
 
 import {
   mobileRouteShellPalette,
   mobileRouteShellStyles,
-  mobileRouteShellTone,
 } from "../styles/routeShellStyles";
 
 export interface AssignedJobCardProps {
@@ -15,6 +15,7 @@ export interface AssignedJobCardProps {
   notes?: string | null;
   scheduledStart: string;
   statusLabel: string;
+  statusTone?: StatusPillTone;
   workPlan?: MobileJobWorkPlanItem[];
 }
 
@@ -32,6 +33,7 @@ export function AssignedJobCard({
   notes,
   scheduledStart,
   statusLabel,
+  statusTone = "info",
   workPlan = [],
 }: AssignedJobCardProps) {
   return (
@@ -41,9 +43,7 @@ export function AssignedJobCard({
           <Text style={styles.timeLabel}>Scheduled</Text>
           <Text style={styles.time}>{formatAssignedJobTime(scheduledStart)}</Text>
         </View>
-        <View style={styles.statusPill}>
-          <Text style={styles.statusText}>{statusLabel}</Text>
-        </View>
+        <StatusPill tone={statusTone}>{statusLabel}</StatusPill>
       </View>
 
       <View style={styles.body}>
@@ -134,19 +134,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
-  },
-  statusPill: {
-    backgroundColor: mobileRouteShellPalette.routeSoft,
-    borderColor: mobileRouteShellTone.sync.ready.borderColor,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  statusText: {
-    color: mobileRouteShellPalette.accentText,
-    fontSize: 12,
-    fontWeight: "800",
   },
   time: {
     color: mobileRouteShellPalette.accentText,
