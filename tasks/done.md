@@ -9,6 +9,19 @@
 - Preserved the existing hooks, data flow, API boundaries, schema, provider setup, environment configuration, active brand assets, preview state, and production state
 - Verified with focused inventory/closeouts tests, local browser QA on desktop and narrow widths, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
 
+## Readiness Smoke Evidence Batch V1
+
+- Fast-forwarded local `main` to the merged PR #41 baseline and created `codex/readiness-smoke-evidence-v1` for the next gated readiness pass
+- Reran Supabase CLI discovery, local status, and local migration-history checks; local target verification remains blocked because Docker Desktop's Linux engine pipe is unavailable and local Postgres on `127.0.0.1:54322` refused the connection
+- Reaudited the launch-sensitive migrations without applying them; portal/compliance policies still depend on `private.has_admin_access()`, RLS remains enabled, and compliance grants stay explicit for `authenticated` and `service_role`
+- Reran `corepack pnpm compliance:ingest -- --dry-run --no-embed`; it planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls
+- Verified the latest Ready preview as `https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app`, confirmed the protected app shell through `vercel curl`, and confirmed Preview env names are present for Supabase/scheduler secrets only
+- Reran read-only local and preview `demo:smoke` preflights; both remain blocked before seed/reset or browser smoke on missing approved Supabase env names, and preview also remains blocked on operator-approved access/sign-in
+- Confirmed manual-fallback provider behavior with focused portal, notification, and payment tests while keeping rendered smoke gated on an authenticated local or preview browser path
+- Updated README, implementation/readiness docs, preview smoke findings, and task tracking with the current evidence and blockers
+- Verified with focused compliance/manual-fallback tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+- Performed no migration application, live compliance ingestion, seed/reset write, browser login, provider dashboard mutation, environment mutation, protected-preview mutation, or production data action
+
 ## Demo Media Proof V1
 
 - Moved the current dirty demo seed/media work to a fresh `codex/demo-media-proof-v1` branch from `origin/main`, keeping the readiness-evidence PR separate
