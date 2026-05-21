@@ -5,7 +5,13 @@ import {
   shouldUseLocalDemoFixtures,
 } from "@pest-patrol/domain";
 
-const localDemoFixtures = buildDemoWorkflowFixtures();
+function stableFixtureNow() {
+  const now = new Date();
+
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+}
+
+const localDemoFixtures = buildDemoWorkflowFixtures({ now: stableFixtureNow() });
 
 export function isLocalDemoFixtureMode() {
   return shouldUseLocalDemoFixtures({
