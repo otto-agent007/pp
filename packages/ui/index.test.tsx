@@ -1,12 +1,14 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   Avatar,
   Button,
   Card,
   Eyebrow,
+  SearchableSelect,
   StatTile,
   StatusPill,
   buttonClassName,
@@ -79,6 +81,10 @@ describe("@pest-patrol/ui", () => {
     );
 
     expect(screen.getByText("Today's jobs")).toHaveClass("uppercase");
+    expect(screen.getByText("Today's jobs").closest(".rounded-lg")).toHaveClass(
+      "border-status-alert-danger-border",
+      "bg-status-alert-danger-bg",
+    );
     expect(screen.getByText("12")).toHaveClass("tabular-nums");
     expect(screen.getByText("2 need review")).toHaveClass(
       "text-status-alert-danger-fg",
@@ -90,5 +96,81 @@ describe("@pest-patrol/ui", () => {
 
     expect(screen.getByText("DR")).toHaveAttribute("aria-label", "Dana Reyes");
     expect(screen.getByText("DR")).toHaveClass("bg-primitive-sky-600");
+  });
+
+  it("filters searchable select options by typed labels and keywords", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+
+    render(
+      <SearchableSelect
+        ariaLabel="Route job"
+        emptyMessage="No jobs found"
+        label="Job"
+        onChange={handleChange}
+        options={[
+          { label: "Select job", value: "" },
+          {
+            keywords: ["Rivera Cafe", "Harbor Drive"],
+            label: "5/6/26, 9:00 AM - Rivera Cafe - 100 Harbor Dr",
+            value: "job-1",
+          },
+          {
+            keywords: ["Apex Homes", "Pine Street"],
+            label: "5/6/26, 1:00 PM - Apex Homes - 10 Pine Street",
+            value: "job-2",
+          },
+        ]}
+        value=""
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox", { name: "Route job" }));
+    await user.type(screen.getByRole("combobox", { name: "Route job" }), "pine");
+    await user.keyboard("{Enter}");
+
+    expect(handleChange).toHaveBeenCalledWith("job-2");
+  });
+
+  it("supports empty options, no-match copy, disabled options, and small sizing", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+
+    render(
+      <SearchableSelect
+        ariaLabel="Technician"
+        emptyMessage="No technicians found"
+        label="Technician"
+        onChange={handleChange}
+        options={[
+          { label: "Unassigned", value: "" },
+          { disabled: true, label: "Inactive Tech", value: "tech-inactive" },
+          { label: "Testnician", value: "tech-1" },
+        ]}
+        size="sm"
+        value=""
+      />,
+    );
+
+    const input = screen.getByRole("combobox", { name: "Technician" });
+
+    expect(input).toHaveClass("min-h-9", "text-xs");
+
+    await user.click(input);
+    expect(screen.getByRole("option", { name: "Unassigned" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Inactive Tech" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    await user.clear(input);
+    await user.type(input, "missing");
+    expect(screen.getByText("No technicians found")).toBeInTheDocument();
+
+    await user.clear(input);
+    await user.type(input, "test");
+    await user.click(screen.getByRole("option", { name: "Testnician" }));
+
+    expect(handleChange).toHaveBeenCalledWith("tech-1");
   });
 });

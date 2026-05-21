@@ -268,6 +268,14 @@ describe("CloseoutsClient", () => {
     expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
     expect(screen.getByText("Total completed")).toBeInTheDocument();
+    expect(screen.getByText("Closeout compliance audit")).toHaveClass(
+      "text-status-alert-warning-fg",
+    );
+    expect(
+      screen.getByText(
+        "Branch 3 and multi-unit evidence stays advisory in V1. 3 WDO report fields need review before source-backed handoff.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
     expect(screen.getByText("Ready for office proof review")).toBeInTheDocument();
     expect(
@@ -415,6 +423,25 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("No chemical logs captured for this job.")).toBeInTheDocument();
     expect(screen.getByText("No photos captured for this job.")).toBeInTheDocument();
     expect(screen.getByText("No signatures captured for this job.")).toBeInTheDocument();
+  });
+
+  it("uses warning tones for synced-proof gaps", () => {
+    vi.mocked(useJobGeofenceEvents).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getByText("Arrival GPS missing")).toHaveClass(
+      "text-status-alert-warning-fg",
+    );
+    expect(screen.getByText("Departure GPS missing")).toHaveClass(
+      "text-status-alert-warning-fg",
+    );
+    expect(screen.getByText("Review synced field evidence")).toHaveClass(
+      "text-status-alert-warning-fg",
+    );
   });
 
   it("filters queue sections from counter tiles", async () => {

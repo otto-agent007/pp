@@ -80,6 +80,20 @@ const job = {
   },
 } as const;
 
+async function chooseSearchableOption(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string | RegExp,
+  search: string,
+  optionName: string | RegExp,
+) {
+  const input = screen.getByRole("combobox", { name });
+
+  await user.click(input);
+  await user.clear(input);
+  await user.type(input, search);
+  await user.click(await screen.findByRole("option", { name: optionName }));
+}
+
 describe("InventoryClient", () => {
   const createInventoryMutateAsync = vi.fn();
   const updateInventoryMutateAsync = vi.fn();
@@ -128,8 +142,35 @@ describe("InventoryClient", () => {
     render(<InventoryClient />);
 
     expect(screen.getAllByText("Low stock")).toHaveLength(2);
+    expect(screen.getByText("Needs reorder review")).toHaveClass(
+      "text-status-alert-danger-fg",
+    );
+    expect(screen.getByText("Needs reorder review").closest(".rounded-lg")).toHaveClass(
+      "border-status-alert-danger-border",
+      "bg-status-alert-danger-bg",
+    );
     expect(screen.getAllByText("Bait Gel").length).toBeGreaterThan(0);
     expect(screen.getByText("2 oz | Reorder at 4 oz")).toBeInTheDocument();
+    expect(screen.getByText("2 oz | Reorder at 4 oz").closest('[role="article"]')).toHaveClass(
+      "border-status-alert-danger-border",
+      "bg-status-alert-danger-bg",
+    );
+  });
+
+  it("keeps clear low-stock counters neutral instead of success green", () => {
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [{ ...activeChemical, current_stock: 10 }],
+      isLoading: false,
+    } as never);
+
+    render(<InventoryClient />);
+
+    expect(screen.getByText("No reorder alerts")).toHaveClass(
+      "text-theme-text-secondary",
+    );
+    expect(screen.getByText("No reorder alerts")).not.toHaveClass(
+      "text-status-alert-success-fg",
+    );
   });
 
   it("filters archived inventory", async () => {
@@ -190,8 +231,8 @@ describe("InventoryClient", () => {
     const user = userEvent.setup();
     render(<InventoryClient />);
 
-    await user.selectOptions(screen.getByLabelText("Job"), "job-1");
-    await user.selectOptions(screen.getByLabelText("Chemical"), "chemical-1");
+    await chooseSearchableOption(user, "Job", "apex", /Apex Homes/);
+    await chooseSearchableOption(user, "Chemical", "bait", /Bait Gel/);
     await user.clear(screen.getByLabelText("Amount used"));
     await user.type(screen.getByLabelText("Amount used"), "2");
     await user.click(screen.getByRole("button", { name: "Log chemical use" }));

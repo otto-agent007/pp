@@ -16,6 +16,11 @@ import {
   type InvoiceStatusFilter,
 } from "@pest-patrol/domain";
 import type { Invoice, Job } from "@pest-patrol/types";
+import {
+  SearchableSelect,
+  StatusPill,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -93,6 +98,19 @@ function jobLabel(job: Job) {
 function invoiceTitle(invoice: Invoice) {
   return invoice.customer?.name ?? invoice.job?.customer?.name ?? "Unknown customer";
 }
+
+const reconciliationToneByStatus: Record<
+  InvoiceReconciliationStatus,
+  StatusPillTone
+> = {
+  awaiting_payment: "info",
+  draft: "neutral",
+  manual_paid: "warning",
+  needs_review: "danger",
+  partially_paid: "warning",
+  reconciled_paid: "success",
+  void: "neutral",
+};
 
 function EmptyState({ children }: { children: string }) {
   return (
@@ -194,6 +212,22 @@ export function PaymentsClient() {
         (job) => job.status === "completed" && !invoicedJobIds.has(job.id),
       ),
     [jobs, invoicedJobIds],
+  );
+  const completedJobOptions = useMemo(
+    () => [
+      { label: "Select job", value: "" },
+      ...completedJobs.map((job) => ({
+        keywords: [
+          job.customer?.name,
+          job.location?.address,
+          job.location?.nickname,
+          job.service_notes,
+        ].filter((value): value is string => Boolean(value)),
+        label: jobLabel(job),
+        value: job.id,
+      })),
+    ],
+    [completedJobs],
   );
   const visibleInvoices = useMemo(
     () => {
@@ -460,9 +494,9 @@ export function PaymentsClient() {
                         <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
                           {invoice.status}
                         </span>
-                        <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold uppercase text-primary">
+                        <StatusPill tone={reconciliationToneByStatus[reconciliation.status]}>
                           {reconciliation.label}
-                        </span>
+                        </StatusPill>
                       </div>
                       <p className="mt-2 text-sm text-theme-text-secondary">
                         {invoice.job?.location?.address ?? "No location"}
@@ -647,25 +681,17 @@ export function PaymentsClient() {
             </p>
           ) : null}
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Completed job
-            <select
-              aria-label="Completed job"
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-              onChange={(event) => {
-                setCloseoutHandoffJobId("");
-                setForm((current) => ({ ...current, job_id: event.target.value }));
-              }}
-              value={form.job_id || selectedJob?.id || ""}
-            >
-              <option value="">Select job</option>
-              {completedJobs.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {jobLabel(job)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            ariaLabel="Completed job"
+            emptyMessage="No completed jobs found"
+            label="Completed job"
+            onChange={(jobId) => {
+              setCloseoutHandoffJobId("");
+              setForm((current) => ({ ...current, job_id: jobId }));
+            }}
+            options={completedJobOptions}
+            value={form.job_id || selectedJob?.id || ""}
+          />
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Amount
             <input

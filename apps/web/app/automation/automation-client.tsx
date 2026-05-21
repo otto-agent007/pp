@@ -38,6 +38,7 @@ import type {
   AutomationRule,
   AutomationSchedulerRun,
 } from "@pest-patrol/types";
+import { SearchableSelect } from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useCustomers } from "../../hooks/useCustomers";
@@ -256,6 +257,61 @@ export function AutomationClient() {
     [customersQuery.data],
   );
   const jobs = jobsQuery.data ?? emptyJobs;
+  const reminderTemplateOptions = useMemo(
+    () => [
+      { label: "No template", value: "" },
+      ...activeTemplates.map((template) => ({
+        keywords: [template.title, template.message].filter(
+          (value): value is string => Boolean(value),
+        ),
+        label: template.name,
+        value: template.id,
+      })),
+    ],
+    [activeTemplates],
+  );
+  const reminderRuleOptions = useMemo(
+    () => [
+      { label: "Manual reminder", value: "" },
+      ...activeRules.map((rule) => ({
+        keywords: [rule.message, rule.template?.name].filter(
+          (value): value is string => Boolean(value),
+        ),
+        label: rule.name,
+        value: rule.id,
+      })),
+    ],
+    [activeRules],
+  );
+  const reminderCustomerOptions = useMemo(
+    () => [
+      { label: "No customer", value: "" },
+      ...activeCustomers.map((customer) => ({
+        keywords: [customer.email, customer.phone, customer.service_notes].filter(
+          (value): value is string => Boolean(value),
+        ),
+        label: customer.name,
+        value: customer.id,
+      })),
+    ],
+    [activeCustomers],
+  );
+  const reminderJobOptions = useMemo(
+    () => [
+      { label: "No job", value: "" },
+      ...jobs.map((job) => ({
+        keywords: [
+          job.customer?.name,
+          job.location?.address,
+          job.location?.nickname,
+          job.service_notes,
+        ].filter((value): value is string => Boolean(value)),
+        label: jobLabel(job),
+        value: job.id,
+      })),
+    ],
+    [jobs],
+  );
   const selectedNotificationJob = useMemo(
     () => jobs.find((job) => job.id === notificationForm.job_id) ?? null,
     [jobs, notificationForm.job_id],
@@ -1402,56 +1458,40 @@ export function AutomationClient() {
                 {notificationError}
               </p>
             ) : null}
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-              Template
-              <select
-                aria-label="Reminder template"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-                onChange={(event) => {
-                  const template = activeTemplates.find(
-                    (item) => item.id === event.target.value,
-                  );
+            <SearchableSelect
+              ariaLabel="Reminder template"
+              emptyMessage="No templates found"
+              label="Template"
+              onChange={(templateId) => {
+                const template = activeTemplates.find(
+                  (item) => item.id === templateId,
+                );
 
-                  if (template) {
-                    applyTemplate(template);
-                  } else {
-                    setNotificationForm((current) => ({
-                      ...current,
-                      template_id: "",
-                    }));
-                  }
-                }}
-                value={notificationForm.template_id}
-              >
-                <option value="">No template</option>
-                {activeTemplates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-              Rule
-              <select
-                aria-label="Reminder rule"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-                onChange={(event) =>
+                if (template) {
+                  applyTemplate(template);
+                } else {
                   setNotificationForm((current) => ({
                     ...current,
-                    rule_id: event.target.value,
-                  }))
+                    template_id: "",
+                  }));
                 }
-                value={notificationForm.rule_id}
-              >
-                <option value="">Manual reminder</option>
-                {activeRules.map((rule) => (
-                  <option key={rule.id} value={rule.id}>
-                    {rule.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              }}
+              options={reminderTemplateOptions}
+              value={notificationForm.template_id}
+            />
+            <SearchableSelect
+              ariaLabel="Reminder rule"
+              emptyMessage="No active rules found"
+              label="Rule"
+              onChange={(ruleId) =>
+                setNotificationForm((current) => ({
+                  ...current,
+                  rule_id: ruleId,
+                }))
+              }
+              options={reminderRuleOptions}
+              value={notificationForm.rule_id}
+            />
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Type
               <select
@@ -1471,48 +1511,32 @@ export function AutomationClient() {
                 </option>
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-              Customer
-              <select
-                aria-label="Reminder customer"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-                onChange={(event) =>
-                  setNotificationForm((current) => ({
-                    ...current,
-                    customer_id: event.target.value,
-                  }))
-                }
-                value={notificationForm.customer_id}
-              >
-                <option value="">No customer</option>
-                {activeCustomers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-              Job
-              <select
-                aria-label="Reminder job"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-                onChange={(event) =>
-                  setNotificationForm((current) => ({
-                    ...current,
-                    job_id: event.target.value,
-                  }))
-                }
-                value={notificationForm.job_id}
-              >
-                <option value="">No job</option>
-                {jobs.map((job) => (
-                  <option key={job.id} value={job.id}>
-                    {jobLabel(job)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SearchableSelect
+              ariaLabel="Reminder customer"
+              emptyMessage="No customers found"
+              label="Customer"
+              onChange={(customerId) =>
+                setNotificationForm((current) => ({
+                  ...current,
+                  customer_id: customerId,
+                }))
+              }
+              options={reminderCustomerOptions}
+              value={notificationForm.customer_id}
+            />
+            <SearchableSelect
+              ariaLabel="Reminder job"
+              emptyMessage="No jobs found"
+              label="Job"
+              onChange={(jobId) =>
+                setNotificationForm((current) => ({
+                  ...current,
+                  job_id: jobId,
+                }))
+              }
+              options={reminderJobOptions}
+              value={notificationForm.job_id}
+            />
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
               Title
               <input

@@ -21,7 +21,9 @@ Completed in this batch:
 6. Verified the latest Ready Vercel preview as `https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app`; `vercel inspect` reports Ready and `vercel curl` returns the Pest Patrol OS app shell.
 7. Confirmed Vercel Preview env names exist for Supabase and scheduler secrets, while Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names remain absent from the safe env-name list and therefore deferred/manual-fallback unless the operator configures them.
 8. Reran local and preview `demo:smoke` preflights; both remain blocked before seed/reset or browser smoke because approved Supabase env names are not loaded in this shell. Local Supabase target inspection is also blocked by Docker Desktop's missing Linux engine pipe and local Postgres on `127.0.0.1:54322` refusing connections.
-9. Confirmed manual-fallback provider behavior through focused portal, automation, and payments tests; rendered route walking remains gated on local env/preflight, a running dev server, and an active Browser pane or operator-approved preview session.
+9. Confirmed manual-fallback provider behavior through focused portal, automation, and payments tests; seed/reset smoke and authenticated preview route walking remain gated on approved env/access.
+10. Added Status Color + Searchability QA V1: a shared `SearchableSelect`, tone-aware `StatTile` cards, searchable workflow controls across automation/dispatch/jobs/inventory/payments, and clearer status tones for inventory, payments, and closeouts.
+11. Ran local Browser QA against `/automation`, `/dispatch`, `/jobs`, `/inventory`, `/payments`, and `/closeouts` at desktop and narrow widths with local fixture data; the routes rendered without fresh console errors or document-level horizontal overflow, and searchable option filtering worked where fixture data exists.
 
 Previously completed launch-readiness items still matter:
 

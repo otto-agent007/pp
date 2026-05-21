@@ -215,6 +215,24 @@ function templatesSection() {
   return screen.getByText("Notification templates").closest("section")!;
 }
 
+function chooseSearchableOption(
+  name: string | RegExp,
+  search: string,
+  optionName: string | RegExp,
+) {
+  const input = screen.getByRole("combobox", { name });
+
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: search } });
+  const listbox = document.getElementById(
+    input.getAttribute("aria-controls") ?? "",
+  );
+
+  expect(listbox).toBeInTheDocument();
+  fireEvent.mouseDown(within(listbox!).getByRole("option", { name: optionName }));
+  fireEvent.blur(input);
+}
+
 describe("AutomationClient", () => {
   const createRule = vi.fn();
   const updateRule = vi.fn();
@@ -655,9 +673,7 @@ describe("AutomationClient", () => {
     fireEvent.change(screen.getByLabelText("Reminder message"), {
       target: { value: variableTemplate.message },
     });
-    fireEvent.change(screen.getByLabelText("Reminder job"), {
-      target: { value: "job-1" },
-    });
+    chooseSearchableOption("Reminder job", "pine", /Apex Homes/);
     fireEvent.change(screen.getByLabelText("Reminder due"), {
       target: { value: "2026-05-07T09:00" },
     });
@@ -728,13 +744,10 @@ describe("AutomationClient", () => {
     const user = userEvent.setup();
     render(<AutomationClient />);
 
-    fireEvent.change(screen.getByLabelText("Reminder template"), {
-      target: { value: "template-1" },
-    });
+    chooseSearchableOption("Reminder template", "follow", "Follow-up call");
     expect(screen.getByLabelText("Reminder title")).toHaveValue("Call customer");
-    fireEvent.change(screen.getByLabelText("Reminder customer"), {
-      target: { value: "customer-1" },
-    });
+    chooseSearchableOption("Reminder rule", "post", "Post-service follow-up");
+    chooseSearchableOption("Reminder customer", "apex", "Apex Homes");
     fireEvent.change(screen.getByLabelText("Reminder due"), {
       target: { value: "2026-05-07T09:00" },
     });
@@ -746,6 +759,7 @@ describe("AutomationClient", () => {
     expect(createNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         customer_id: "customer-1",
+        rule_id: "rule-1",
         title: "Call customer",
         message: "Ask how the service went",
       }),

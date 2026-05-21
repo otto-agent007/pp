@@ -99,6 +99,20 @@ const canceledJob = {
   service_notes: "Canceled service",
 } as const;
 
+async function chooseSearchableOption(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string | RegExp,
+  search: string,
+  optionName: string | RegExp,
+) {
+  const input = screen.getByRole("combobox", { name });
+
+  await user.click(input);
+  await user.clear(input);
+  await user.type(input, search);
+  await user.click(await screen.findByRole("option", { name: optionName }));
+}
+
 describe("JobsClient", () => {
   const cancelMutate = vi.fn();
   const createMutateAsync = vi.fn();
@@ -182,7 +196,8 @@ describe("JobsClient", () => {
   it("labels technician options by display name", () => {
     render(<JobsClient />);
 
-    expect(screen.getByRole("option", { name: "Testnician" })).toBeInTheDocument();
+    const technician = screen.getByRole("combobox", { name: "Technician" });
+    expect(technician).toHaveValue("Unassigned");
   });
 
   it("filters by status and date", async () => {
@@ -216,10 +231,13 @@ describe("JobsClient", () => {
     const user = userEvent.setup();
     render(<JobsClient />);
 
-    await user.selectOptions(screen.getByLabelText("Customer"), "customer-1");
-    expect(screen.getByLabelText("Location")).toHaveValue("location-1");
+    await chooseSearchableOption(user, "Customer", "apex", "Apex Homes");
+    expect(screen.getByRole("combobox", { name: "Location" })).toHaveValue(
+      "10 Pine Street",
+    );
 
-    await user.selectOptions(screen.getByLabelText("Location"), "location-2");
+    await chooseSearchableOption(user, "Location", "oak", /20 Oak Avenue/);
+    await chooseSearchableOption(user, "Technician", "test", "Testnician");
     await user.type(screen.getByLabelText("Start"), "2026-05-06T09:00");
     await user.type(screen.getByLabelText("Service notes"), "Exterior");
     await user.click(screen.getByRole("button", { name: "Save job" }));
@@ -228,6 +246,7 @@ describe("JobsClient", () => {
       expect.objectContaining({
         customer_id: "customer-1",
         location_id: "location-2",
+        assigned_tech_id: "technician-1",
         scheduled_start: "2026-05-06T09:00",
         service_notes: "Exterior",
       }),

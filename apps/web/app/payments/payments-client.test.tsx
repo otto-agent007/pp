@@ -163,6 +163,20 @@ const needsReviewInvoice = {
   ],
 } as const;
 
+async function chooseSearchableOption(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string | RegExp,
+  search: string,
+  optionName: string | RegExp,
+) {
+  const input = screen.getByRole("combobox", { name });
+
+  await user.click(input);
+  await user.clear(input);
+  await user.type(input, search);
+  await user.click(await screen.findByRole("option", { name: optionName }));
+}
+
 describe("PaymentsClient", () => {
   const createInvoice = vi.fn();
   const createPaymentLink = vi.fn();
@@ -290,6 +304,13 @@ describe("PaymentsClient", () => {
     render(<PaymentsClient />);
 
     expect(screen.getAllByText("Needs review").length).toBeGreaterThanOrEqual(2);
+    expect(
+      screen
+        .getAllByText("Needs review")
+        .some((element) =>
+          element.className.includes("text-status-alert-danger-fg"),
+        ),
+    ).toBe(true);
     expect(screen.getByText("1 invoice")).toBeInTheDocument();
     expect(screen.getAllByText("Reconciled paid").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Manually marked paid").length).toBeGreaterThanOrEqual(2);
@@ -382,12 +403,15 @@ describe("PaymentsClient", () => {
 
     render(<PaymentsClient />);
 
-    expect(screen.getByLabelText("Completed job")).toHaveValue("job-2");
+    expect(
+      (screen.getByRole("combobox", { name: "Completed job" }) as HTMLInputElement)
+        .value,
+    ).toContain("20 Oak Avenue");
     expect(
       screen.getByText("From closeout: Apex Homes @ 20 Oak Avenue"),
     ).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("Completed job"), "job-1");
+    await chooseSearchableOption(user, "Completed job", "pine", /10 Pine Street/);
 
     expect(
       screen.queryByText("From closeout: Apex Homes @ 20 Oak Avenue"),

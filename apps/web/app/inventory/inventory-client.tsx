@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   Eyebrow,
+  SearchableSelect,
   StatTile,
   StatusPill,
   buttonClassName,
@@ -103,6 +104,35 @@ export function InventoryClient() {
     () => inventoryItems.filter((item) => item.status === "active"),
     [inventoryItems],
   );
+  const jobOptions = useMemo(
+    () => [
+      { label: "Select job", value: "" },
+      ...(jobsQuery.data ?? []).map((job) => ({
+        keywords: [
+          job.customer?.name,
+          job.location?.address,
+          job.location?.nickname,
+          job.service_notes,
+        ].filter((item): item is string => Boolean(item)),
+        label: jobLabel(job),
+        value: job.id,
+      })),
+    ],
+    [jobsQuery.data],
+  );
+  const chemicalOptions = useMemo(
+    () => [
+      { label: "Select chemical", value: "" },
+      ...activeInventory.map((item) => ({
+        keywords: [item.epa_number].filter((value): value is string =>
+          Boolean(value),
+        ),
+        label: `${item.name} (${item.current_stock} ${item.unit})`,
+        value: item.id,
+      })),
+    ],
+    [activeInventory],
+  );
   const visibleInventory = useMemo(
     () => filterChemicalInventory(inventoryItems, search, status),
     [inventoryItems, search, status],
@@ -111,6 +141,9 @@ export function InventoryClient() {
     () => getInventorySummary(inventoryItems),
     [inventoryItems],
   );
+  const lowStockSummaryTone = summary.lowStockCount > 0 ? "danger" : "neutral";
+  const lowStockSummaryDetail =
+    summary.lowStockCount > 0 ? "Needs reorder review" : "No reorder alerts";
   const lowStockItems = useMemo(
     () =>
       visibleInventory.filter(
@@ -223,9 +256,9 @@ export function InventoryClient() {
           value={summary.activeCount}
         />
         <StatTile
-          detail="Needs reorder review"
+          detail={lowStockSummaryDetail}
           label="Low stock"
-          tone={summary.lowStockCount > 0 ? "danger" : "success"}
+          tone={lowStockSummaryTone}
           value={summary.lowStockCount}
         />
         <StatTile
@@ -352,7 +385,11 @@ export function InventoryClient() {
               return (
                 <Card
                   key={item.id}
-                  className="min-w-0"
+                  className={
+                    isLowStock
+                      ? "min-w-0 border-status-alert-danger-border bg-status-alert-danger-bg"
+                      : "min-w-0"
+                  }
                   padding="lg"
                   role="article"
                 >
@@ -535,46 +572,32 @@ export function InventoryClient() {
               </Card>
             ) : null}
 
-            <label className={labelClassName}>
-              Job
-              <select
-                className={fieldClassName}
-                onChange={(event) =>
-                  setLogForm((current) => ({
-                    ...current,
-                    job_id: event.target.value,
-                  }))
-                }
-                value={logForm.job_id}
-              >
-                <option value="">Select job</option>
-                {(jobsQuery.data ?? []).map((job) => (
-                  <option key={job.id} value={job.id}>
-                    {jobLabel(job)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={labelClassName}>
-              Chemical
-              <select
-                className={fieldClassName}
-                onChange={(event) =>
-                  setLogForm((current) => ({
-                    ...current,
-                    chemical_id: event.target.value,
-                  }))
-                }
-                value={logForm.chemical_id}
-              >
-                <option value="">Select chemical</option>
-                {activeInventory.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} ({item.current_stock} {item.unit})
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SearchableSelect
+              ariaLabel="Job"
+              emptyMessage="No jobs found"
+              label="Job"
+              onChange={(jobId) =>
+                setLogForm((current) => ({
+                  ...current,
+                  job_id: jobId,
+                }))
+              }
+              options={jobOptions}
+              value={logForm.job_id}
+            />
+            <SearchableSelect
+              ariaLabel="Chemical"
+              emptyMessage="No active chemicals found"
+              label="Chemical"
+              onChange={(chemicalId) =>
+                setLogForm((current) => ({
+                  ...current,
+                  chemical_id: chemicalId,
+                }))
+              }
+              options={chemicalOptions}
+              value={logForm.chemical_id}
+            />
             <label className={labelClassName}>
               Amount used
               <input

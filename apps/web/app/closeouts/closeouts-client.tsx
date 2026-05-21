@@ -27,6 +27,7 @@ import {
   StatTile,
   StatusPill,
   buttonClassName,
+  type StatusPillTone,
 } from "@pest-patrol/ui";
 import type {
   FormValue,
@@ -196,6 +197,26 @@ function ReviewMetric({ label, value }: { label: string; value: number }) {
       value={value}
     />
   );
+}
+
+const proofCardToneClasses: Record<StatusPillTone, string> = {
+  danger: "border-status-alert-danger-border bg-status-alert-danger-bg shadow-none",
+  info: "border-status-alert-info-border bg-status-alert-info-bg shadow-none",
+  neutral: "border-theme-border-subtle bg-theme-background-surface shadow-none",
+  success: "border-status-alert-success-border bg-status-alert-success-bg shadow-none",
+  warning: "border-status-alert-warning-border bg-status-alert-warning-bg shadow-none",
+};
+
+function proofCompletionTone(label: string): StatusPillTone {
+  if (label === "Ready") {
+    return "success";
+  }
+
+  if (label === "Missing evidence") {
+    return "danger";
+  }
+
+  return "warning";
 }
 
 function QueueRow({
@@ -505,10 +526,28 @@ function ProofHandoffCard({
     ? "Departure GPS captured"
     : "Departure GPS missing";
   const proof = review;
+  const completionLabel = proof?.completion_label ?? "Needs review";
+  const completionTone = proofCompletionTone(completionLabel);
+  const arrivalTone = evidence?.latest_arrival ? "success" : "warning";
+  const departureTone = evidence?.latest_departure ? "success" : "warning";
+  const gpsLabel = proof?.gps_label ?? handoff.gps_label;
+  const gpsTone: StatusPillTone =
+    gpsLabel.includes("missing") || gpsLabel.includes("Partial")
+      ? "warning"
+      : "success";
+  const billingTone: StatusPillTone =
+    proof?.billing_label === "Billing captures ready" ? "success" : completionTone;
+  const invoiceTone: StatusPillTone = invoice
+    ? invoice.status === "paid"
+      ? "success"
+      : "info"
+    : "neutral";
+  const syncTone: StatusPillTone =
+    proof?.sync_confidence_label === "High sync confidence" ? "success" : "warning";
 
   return (
     <Card
-      className="border-status-alert-success-border bg-status-alert-success-bg shadow-none"
+      className={proofCardToneClasses[completionTone]}
       padding="md"
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -523,30 +562,28 @@ function ProofHandoffCard({
             {handoff.proof_summary}
           </p>
         </div>
-        <span className="w-fit rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
-          {proof?.completion_label ?? "Needs review"}
-        </span>
+        <StatusPill tone={completionTone}>{completionLabel}</StatusPill>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <StatusPill dot={false} tone={arrivalTone}>
           {arrivalLabel}
-        </span>
-        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+        </StatusPill>
+        <StatusPill dot={false} tone={departureTone}>
           {departureLabel}
-        </span>
-        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+        </StatusPill>
+        <StatusPill dot={false} tone={gpsTone}>
           {handoff.gps_label}
-        </span>
-        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+        </StatusPill>
+        <StatusPill dot={false} tone={billingTone}>
           {proof?.billing_label ?? handoff.proof_label}
-        </span>
-        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+        </StatusPill>
+        <StatusPill dot={false} tone={invoiceTone}>
           {proof?.invoice_label ??
             (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
-        </span>
-        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+        </StatusPill>
+        <StatusPill dot={false} tone={syncTone}>
           {proof?.sync_confidence_label ?? "Review synced field evidence"}
-        </span>
+        </StatusPill>
       </div>
       <ul className="mt-3 grid gap-1 text-xs font-medium text-theme-text-secondary sm:grid-cols-2">
         {handoff.gps_items.map((item) => (
@@ -674,6 +711,34 @@ export function CloseoutsClient() {
       }),
     [selectedJob],
   );
+  const branchComplianceMissingFieldCount =
+    branchCompliancePreview.required_fields.filter(
+      (field) => field.status !== "present",
+    ).length;
+  const branchComplianceNeedsReview =
+    branchCompliancePreview.status !== "advisory_ready" ||
+    branchComplianceMissingFieldCount > 0;
+  const branchComplianceSummary =
+    branchComplianceMissingFieldCount > 0
+      ? `${branchComplianceMissingFieldCount} WDO report fields need review before source-backed handoff.`
+      : branchComplianceNeedsReview
+        ? "Source chunks are not ingested yet; keep this as advisory review before billing handoff."
+        : "WDO report fields are ready for cited review once source chunks are ingested.";
+  const branchComplianceToneClasses = branchComplianceNeedsReview
+    ? {
+        action:
+          "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+        eyebrow: "text-status-alert-warning-fg",
+        root: "border-status-alert-warning-border bg-status-alert-warning-bg shadow-sm",
+        text: "text-status-alert-warning-fgStrong",
+      }
+    : {
+        action:
+          "border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
+        eyebrow: "text-status-alert-success-fg",
+        root: "border-status-alert-success-border bg-status-alert-success-bg shadow-sm",
+        text: "text-status-alert-success-fgStrong",
+      };
   const noQueueAction = search.trim()
     ? "Clear the search, show all jobs, or wait for completed jobs to reach the queue."
     : "No completed jobs yet. As technicians finish jobs in dispatch, they will appear here.";
@@ -758,29 +823,22 @@ export function CloseoutsClient() {
       </section>
 
       <Card
-        className="border-status-alert-success-border bg-status-alert-success-bg shadow-sm"
+        className={branchComplianceToneClasses.root}
         padding="md"
       >
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <Eyebrow className="text-status-alert-success-fg">
+            <Eyebrow className={branchComplianceToneClasses.eyebrow}>
               Closeout compliance audit
             </Eyebrow>
-            <p className="mt-1 text-sm text-status-alert-success-fgStrong">
+            <p className={`mt-1 text-sm ${branchComplianceToneClasses.text}`}>
               Branch 3 and multi-unit evidence stays advisory in V1.{" "}
-              {
-                branchCompliancePreview.required_fields.filter(
-                  (field) => field.status !== "present",
-                ).length
-              }{" "}
-              WDO report fields are ready for cited review once source chunks
-              are ingested.
+              {branchComplianceSummary}
             </p>
           </div>
           <a
             className={buttonClassName({
-              className:
-                "border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
+              className: branchComplianceToneClasses.action,
               variant: "ghost",
             })}
             href="/compliance"

@@ -7,6 +7,7 @@ import {
   validateJobInput,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobInput, JobStatus } from "@pest-patrol/types";
+import { SearchableSelect } from "@pest-patrol/ui";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -104,9 +105,57 @@ export function JobsClient() {
     () => (customersQuery.data ?? []).filter((customer) => customer.status === "active"),
     [customersQuery.data],
   );
-  const selectedCustomer = activeCustomers.find((customer) => customer.id === form.customer_id);
-  const availableLocations =
-    selectedCustomer?.locations?.filter((location) => location.status === "active") ?? [];
+  const selectedCustomer = useMemo(
+    () => activeCustomers.find((customer) => customer.id === form.customer_id),
+    [activeCustomers, form.customer_id],
+  );
+  const availableLocations = useMemo(
+    () =>
+      selectedCustomer?.locations?.filter((location) => location.status === "active") ?? [],
+    [selectedCustomer],
+  );
+  const customerOptions = useMemo(
+    () => [
+      { label: "Select customer", value: "" },
+      ...activeCustomers.map((customer) => ({
+        keywords: [
+          customer.phone,
+          customer.email,
+          customer.service_notes,
+          ...(customer.locations?.map((location) => location.address) ?? []),
+        ].filter((item): item is string => Boolean(item)),
+        label: customer.name,
+        value: customer.id,
+      })),
+    ],
+    [activeCustomers],
+  );
+  const locationOptions = useMemo(
+    () => [
+      { label: "Select location", value: "" },
+      ...availableLocations.map((location) => ({
+        keywords: [location.nickname, location.service_notes].filter(
+          (item): item is string => Boolean(item),
+        ),
+        label: `${location.nickname ? `${location.nickname}: ` : ""}${location.address}`,
+        value: location.id,
+      })),
+    ],
+    [availableLocations],
+  );
+  const technicianOptions = useMemo(
+    () => [
+      { label: "Unassigned", value: "" },
+      ...(techniciansQuery.data ?? []).map((technician) => ({
+        keywords: [technician.email, technician.display_name].filter(
+          (item): item is string => Boolean(item),
+        ),
+        label: getTechnicianLabel(technician),
+        value: technician.id,
+      })),
+    ],
+    [techniciansQuery.data],
+  );
   const decoratedJobs = useMemo(
     () => (jobsQuery.data ?? []).map((job) => decorateJob(job, customersQuery.data ?? [])),
     [customersQuery.data, jobsQuery.data],
@@ -349,54 +398,34 @@ export function JobsClient() {
             </p>
           ) : null}
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Customer
-            <select
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-              onChange={(event) => selectCustomer(event.target.value)}
-              value={form.customer_id}
-            >
-              <option value="">Select customer</option>
-              {activeCustomers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            ariaLabel="Customer"
+            emptyMessage="No customers found"
+            label="Customer"
+            onChange={selectCustomer}
+            options={customerOptions}
+            value={form.customer_id}
+          />
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Location
-            <select
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-              onChange={(event) => updateForm({ location_id: event.target.value })}
-              value={form.location_id}
-            >
-              <option value="">Select location</option>
-              {availableLocations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.nickname ? `${location.nickname}: ` : ""}
-                  {location.address}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            ariaLabel="Location"
+            emptyMessage="No locations found"
+            label="Location"
+            onChange={(locationId) => updateForm({ location_id: locationId })}
+            options={locationOptions}
+            value={form.location_id}
+          />
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Technician
-            <select
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-              onChange={(event) => updateForm({ assigned_tech_id: event.target.value })}
-              value={form.assigned_tech_id ?? ""}
-            >
-              <option value="">Unassigned</option>
-              {(techniciansQuery.data ?? []).map((technician) => (
-                <option key={technician.id} value={technician.id}>
-                  {getTechnicianLabel(technician)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            ariaLabel="Technician"
+            emptyMessage="No technicians found"
+            label="Technician"
+            onChange={(technicianId) =>
+              updateForm({ assigned_tech_id: technicianId })
+            }
+            options={technicianOptions}
+            value={form.assigned_tech_id ?? ""}
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">

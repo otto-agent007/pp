@@ -1035,3 +1035,12 @@
 - Tokenized web app color usage and mobile auth/field-flow palettes, then added a strict hardcoded app-color scanner to root lint
 - Added a local `send_succeeded` portal audit-event migration proposal and route/domain/UI test coverage while keeping legacy `send_requested` events readable
 - Verified with focused tests, Browser DOM/console QA on `/` and `/dispatch`, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build`
+
+## Status Color + Searchability QA V1
+
+- Added a shared `SearchableSelect` primitive in `@pest-patrol/ui` with typed options, keyword filtering, empty-state copy, disabled options, keyboard navigation, and small/medium sizes
+- Made `StatTile` tones color the whole card border/background while preserving the existing detail-tone treatment
+- Replaced dense select boxes with searchable controls across automation reminders, dispatch technician filters/assignment, job scheduling, inventory usage logging, and payment closeout handoff
+- Tightened status colors for inventory low stock, payment reconciliation, closeout compliance, GPS evidence, billing readiness, invoice state, and sync-confidence states
+- Kept the slice presentation-only: no migrations, provider setup, env changes, preview/production mutations, direct Supabase calls from UI, or domain/API contract changes
+- Verified with focused UI/web tests, Browser QA on `/automation`, `/dispatch`, `/jobs`, `/inventory`, `/payments`, and `/closeouts` at desktop and narrow widths, full repo verification, and `git diff --check`
