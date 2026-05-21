@@ -219,6 +219,58 @@ function proofCompletionTone(label: string): StatusPillTone {
   return "warning";
 }
 
+function QueueRowBase({
+  children,
+  isSelected,
+  onSelect,
+}: {
+  children: React.ReactNode;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
+        isSelected ? "border-primary" : "border-theme-border-subtle"
+      }`}
+      onClick={onSelect}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function QueueRowContent({
+  job,
+  pill,
+  summary,
+}: {
+  job: Job;
+  pill?: React.ReactNode;
+  summary?: string | null;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-sm font-semibold text-neutralDark">
+          {jobTitle(job)}
+        </p>
+        <p className="mt-1 text-sm text-theme-text-secondary">
+          {job.location?.address ?? "No location saved"}
+        </p>
+        <p className="mt-2 text-xs font-medium text-theme-text-muted">
+          {formatDateTime(job.scheduled_start)}
+        </p>
+        <p className="mt-2 line-clamp-2 text-xs text-theme-text-muted">
+          {summary ?? job.service_notes}
+        </p>
+      </div>
+      {pill}
+    </div>
+  );
+}
+
 function QueueRow({
   item,
   isSelected,
@@ -242,33 +294,33 @@ function QueueRow({
     ) : null;
 
   return (
-    <button
-      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
-        isSelected ? "border-primary" : "border-theme-border-subtle"
-      }`}
-      onClick={onSelect}
-      type="button"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-neutralDark">
-            {jobTitle(item.job)}
-          </p>
-          <p className="mt-1 text-sm text-theme-text-secondary">
-            {item.job.location?.address ?? "No location saved"}
-          </p>
-          <p className="mt-2 text-xs font-medium text-theme-text-muted">
-            {formatDateTime(item.job.scheduled_start)}
-          </p>
-          <p className="mt-2 line-clamp-2 text-xs text-theme-text-muted">
-            {item.state === "needsCaptures"
-              ? getBillingQueueItemSummary(item)
-              : item.job.service_notes}
-          </p>
-        </div>
-        {pill}
-      </div>
-    </button>
+    <QueueRowBase isSelected={isSelected} onSelect={onSelect}>
+      <QueueRowContent
+        job={item.job}
+        pill={pill}
+        summary={
+          item.state === "needsCaptures"
+            ? getBillingQueueItemSummary(item)
+            : item.job.service_notes
+        }
+      />
+    </QueueRowBase>
+  );
+}
+
+function OtherJobRow({
+  isSelected,
+  job,
+  onSelect,
+}: {
+  isSelected: boolean;
+  job: Job;
+  onSelect: () => void;
+}) {
+  return (
+    <QueueRowBase isSelected={isSelected} onSelect={onSelect}>
+      <QueueRowContent job={job} />
+    </QueueRowBase>
   );
 }
 
@@ -892,26 +944,12 @@ export function CloseoutsClient() {
                     </span>
                   </h2>
                   {otherJobs.map((job) => (
-                    <button
-                      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
-                        selectedJob?.id === job.id
-                          ? "border-primary"
-                          : "border-theme-border-subtle"
-                      }`}
+                    <OtherJobRow
+                      isSelected={selectedJob?.id === job.id}
                       key={job.id}
-                      onClick={() => setSelectedJobId(job.id)}
-                      type="button"
-                    >
-                      <p className="text-sm font-semibold text-neutralDark">
-                        {jobTitle(job)}
-                      </p>
-                      <p className="mt-1 text-sm text-theme-text-secondary">
-                        {job.location?.address ?? "No location saved"}
-                      </p>
-                      <p className="mt-2 text-xs text-theme-text-muted">
-                        {job.service_notes}
-                      </p>
-                    </button>
+                      job={job}
+                      onSelect={() => setSelectedJobId(job.id)}
+                    />
                   ))}
                 </section>
               ) : null}

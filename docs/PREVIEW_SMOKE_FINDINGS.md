@@ -2,6 +2,38 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-21 Demo-Visible Fixture Smoke
+
+Status: Local fixture demo visibility is verified on `http://localhost:3000` without Supabase env values, seed/reset writes, provider setup, migration application, preview mutation, or production mutation. Real local and preview seed/reset remain gated on approved Supabase env names and operator access.
+
+Local fixture browser checks:
+- Command: `corepack pnpm --filter @pest-patrol/web dev --turbopack -p 3000`
+- Result: pass after using Turbopack dev mode; the default webpack eval-source-map dev chunk produced a stale in-app browser syntax error before the restart path.
+- Browser flow: `/` local fixture demo dashboard.
+- Result: pass; `Field command center`, `Demo - Rivera Cafe`, `Local fixture demo`, and `3 media items` rendered. Clicking `Seed demo story` stayed local/fixture-only and did not show `Authentication is required`.
+- Browser routes: `/customers`, `/inventory`, `/payments`, `/closeouts`, and tokened `/portal/00000000-0000-4000-8000-00000000c002?access_token=portal-token`.
+- Result: pass; Rivera Cafe rendered across customer, payment, closeout, and portal surfaces; inventory rendered `Demo - Glueboard Monitors`; closeout and portal each rendered 3 checked-in `/demo-media/*` assets including `Dry storage monitor check` and `Signed by Jamie Rivera`.
+- Browser layout checks: desktop routes and a 390px home viewport.
+- Result: pass; no document-level horizontal overflow and no fresh browser console warnings/errors after restarting the dev server with the stabilized fixture clock.
+
+Read-only gates:
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before real local seed/reset.
+- Missing setup names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: pass; latest Ready preview is `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app`, and latest Ready production deployment is `https://pest-patrol-5sw483rdk-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel inspect https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; deployment `dpl_8xszgWTxr341j2NKLMZ8G6W9HFYd` is Ready with alias `https://pest-patrol-os-git-codex-ff5a21-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel env ls`
+- Result: pass; encrypted Preview env names exist for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and `AUTOMATION_CRON_SECRET`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated browser smoke.
+- Blocker category: missing local shell env/setup and operator access blocked.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+
+No real seed/reset write, browser credential capture, provider dashboard mutation, environment mutation, migration application, live compliance ingestion, raw portal token disclosure, protected-preview access value, webhook payload, preview data mutation, or production data action was performed.
+
 ## 2026-05-20 Readiness Smoke Evidence Batch
 
 Status: Latest `main` is synced after PR #41, this batch is running on `codex/readiness-smoke-evidence-v1`, and the next five launch-gate slices remain evidence-gated. Migration application, live compliance ingestion, local/preview seed/reset, rendered browser smoke, provider setup, env mutation, and production/preview data mutation were not attempted.
