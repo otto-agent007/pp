@@ -58,6 +58,10 @@ Recent closure:
 
 Follow-up candidates:
 
+- [ ] Claude relay 014 proposal is reviewed at
+  `.claude/design/014-inventory-usage-closeout-proof-states/codex-review.md`;
+  keep implementation as a narrow UI-only slice after the current dirty
+  worktree is preserved or split into explicit review surfaces.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
