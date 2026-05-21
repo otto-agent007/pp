@@ -4,6 +4,23 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Status Color + Searchability QA V1 added a shared `SearchableSelect`
+  primitive, made `StatTile` tone affect card border/background, and tightened
+  status colors across automation, dispatch, jobs, inventory, payments, and
+  closeouts.
+- Searchable controls now cover reminder templates/rules/customers/jobs,
+  dispatch technician filtering/assignment, job customer/location/technician
+  selection, inventory job/chemical logging, and completed-job invoice handoff.
+- `/inventory`, `/payments`, and `/closeouts` now use clearer warning,
+  danger, info, success, and neutral treatment for low stock, reconciliation,
+  compliance, GPS, billing, invoice, and sync-confidence states.
+- Local Browser QA on `http://127.0.0.1:3001` rendered `/automation`,
+  `/dispatch`, `/jobs`, `/inventory`, `/payments`, and `/closeouts` at desktop
+  and narrow widths with no fresh console errors, no document-level horizontal
+  overflow, and expected searchable option filtering where fixture data exists.
+- Kept migrations, provider setup, Supabase dashboard work, environment
+  changes, preview/production mutations, direct database calls from UI, and
+  domain/API contract changes out of scope.
 - Claude Design Inventory + Closeouts Refinement V1 preserved local demo
   before/after references under
   `.claude/design/013-inventory-closeouts-refinement/references`.
@@ -28,7 +45,9 @@ Recent closure:
 - Vercel Preview env names exist for Supabase and scheduler secrets, but Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list.
 - Local and preview smoke preflights remain blocked before seed/reset or authenticated browser smoke because approved Supabase env names are not loaded in this shell.
 - Local Supabase target inspection is blocked because Docker Desktop's Linux engine pipe is unavailable for `supabase status -o env` and local Postgres on `127.0.0.1:54322` refused `supabase migration list --local`.
-- Codex Browser runtime connected and listed the in-app Browser, but rendered route walking remains blocked until local env/preflight, dev server, and an active Browser pane are ready.
+- Codex Browser runtime connected and local fixture route walking now works for
+  presentation QA; seed/reset smoke and authenticated preview route walking
+  remain gated on approved env/access.
 - Protected-preview smoke remains blocked on operator-approved preview access and an admin/dispatcher sign-in path.
 - Manual-fallback provider states are locally test-proven for portal, notification, and payment setup copy, but authenticated browser smoke remains gated on env/access.
 - Demo Media Proof V1 moved the dirty demo seed/media work onto a fresh branch from `origin/main`, preserving the readiness-evidence PR as a separate review surface.

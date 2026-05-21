@@ -140,6 +140,20 @@ const sanDiegoJob = {
   },
 } as const;
 
+async function chooseSearchableOption(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string | RegExp,
+  search: string,
+  optionName: string | RegExp,
+) {
+  const input = screen.getByRole("combobox", { name });
+
+  await user.click(input);
+  await user.clear(input);
+  await user.type(input, search);
+  await user.click(await screen.findByRole("option", { name: optionName }));
+}
+
 describe("DispatchClient", () => {
   const changeStatusMutate = vi.fn();
   const assignTechnicianMutate = vi.fn();
@@ -325,7 +339,7 @@ describe("DispatchClient", () => {
 
     expect(screen.getAllByText("2 stops").length).toBeGreaterThan(0);
 
-    await user.selectOptions(screen.getByLabelText("Dispatch technician"), "technician-1");
+    await chooseSearchableOption(user, "Dispatch technician", "test", "Testnician");
 
     expect(screen.getByText("1 stop")).toBeInTheDocument();
   });
@@ -375,16 +389,19 @@ describe("DispatchClient", () => {
     render(<DispatchClient />);
 
     await user.selectOptions(screen.getByLabelText("Dispatch status"), "completed");
-    await user.selectOptions(screen.getByLabelText("Dispatch technician"), "technician-1");
+    await chooseSearchableOption(user, "Dispatch technician", "test", "Testnician");
 
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
   });
 
-  it("labels technician filters by display name", () => {
+  it("labels technician filters by display name", async () => {
+    const user = userEvent.setup();
     render(<DispatchClient />);
 
-    expect(screen.getAllByRole("option", { name: "Testnician" }).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("combobox", { name: "Dispatch technician" }));
+
+    expect(screen.getByRole("option", { name: "Testnician" })).toBeInTheDocument();
   });
 
   it("preselects a matching technician from the query string", () => {
@@ -392,7 +409,9 @@ describe("DispatchClient", () => {
 
     render(<DispatchClient />);
 
-    expect(screen.getByLabelText("Dispatch technician")).toHaveValue("technician-1");
+    expect(screen.getByRole("combobox", { name: "Dispatch technician" })).toHaveValue(
+      "Testnician",
+    );
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
   });
@@ -400,7 +419,9 @@ describe("DispatchClient", () => {
   it("keeps all technicians selected when the query string omits technician", () => {
     render(<DispatchClient />);
 
-    expect(screen.getByLabelText("Dispatch technician")).toHaveValue("all");
+    expect(screen.getByRole("combobox", { name: "Dispatch technician" })).toHaveValue(
+      "All technicians",
+    );
     expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
   });
@@ -410,7 +431,9 @@ describe("DispatchClient", () => {
 
     render(<DispatchClient />);
 
-    expect(screen.getByLabelText("Dispatch technician")).toHaveValue("all");
+    expect(screen.getByRole("combobox", { name: "Dispatch technician" })).toHaveValue(
+      "All technicians",
+    );
     expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
   });
@@ -429,7 +452,7 @@ describe("DispatchClient", () => {
     render(<DispatchClient />);
 
     await user.selectOptions(screen.getByLabelText("Status for job-1"), "en_route");
-    await user.selectOptions(screen.getByLabelText("Technician for job-1"), "technician-1");
+    await chooseSearchableOption(user, "Technician for job-1", "test", "Testnician");
 
     expect(changeStatusMutate).toHaveBeenCalledWith({
       job: scheduledJob,

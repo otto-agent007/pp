@@ -29,6 +29,7 @@ import {
   Button,
   Card,
   Eyebrow,
+  SearchableSelect,
   StatusPill,
   buttonClassName,
 } from "@pest-patrol/ui";
@@ -721,6 +722,33 @@ export function DispatchClient() {
     () => techniciansQuery.data ?? [],
     [techniciansQuery.data],
   );
+  const technicianFilterOptions = useMemo(
+    () => [
+      { label: "All technicians", value: "all" },
+      { label: "Unassigned", value: "unassigned" },
+      ...technicians.map((item) => ({
+        keywords: [item.email, item.display_name].filter(
+          (value): value is string => Boolean(value),
+        ),
+        label: getTechnicianLabel(item),
+        value: item.id,
+      })),
+    ],
+    [technicians],
+  );
+  const technicianAssignmentOptions = useMemo(
+    () => [
+      { label: "Unassigned", value: "" },
+      ...technicians.map((item) => ({
+        keywords: [item.email, item.display_name].filter(
+          (value): value is string => Boolean(value),
+        ),
+        label: getTechnicianLabel(item),
+        value: item.id,
+      })),
+    ],
+    [technicians],
+  );
 
   useEffect(() => {
     if (hasAppliedTechnicianQuery.current || techniciansQuery.isLoading) {
@@ -906,23 +934,14 @@ export function DispatchClient() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
-            Technician
-            <select
-              aria-label="Dispatch technician"
-              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
-              onChange={(event) => setTechnician(event.target.value)}
-              value={technician}
-            >
-              <option value="all">All technicians</option>
-              <option value="unassigned">Unassigned</option>
-              {technicians.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getTechnicianLabel(item)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            ariaLabel="Dispatch technician"
+            emptyMessage="No technicians found"
+            label="Technician"
+            onChange={(value) => setTechnician(value as TechnicianFilter)}
+            options={technicianFilterOptions}
+            value={technician}
+          />
           <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
             Triage
             <select
@@ -1085,28 +1104,21 @@ export function DispatchClient() {
                       </select>
                     </label>
 
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutralDark">
-                      Technician
-                      <select
-                        aria-label={`Technician for ${job.id}`}
-                        className="min-h-9 rounded-md border border-theme-border-default bg-theme-background-surface px-2 text-xs outline-none focus:border-primary"
-                        disabled={isUpdating}
-                        onChange={(event) =>
-                          assignTechnician.mutate({
-                            job,
-                            technicianId: event.target.value || null,
-                          })
-                        }
-                        value={job.assigned_tech_id ?? ""}
-                      >
-                        <option value="">Unassigned</option>
-                        {technicians.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {getTechnicianLabel(item)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <SearchableSelect
+                      ariaLabel={`Technician for ${job.id}`}
+                      disabled={isUpdating}
+                      emptyMessage="No technicians found"
+                      label="Technician"
+                      onChange={(technicianId) =>
+                        assignTechnician.mutate({
+                          job,
+                          technicianId: technicianId || null,
+                        })
+                      }
+                      options={technicianAssignmentOptions}
+                      size="sm"
+                      value={job.assigned_tech_id ?? ""}
+                    />
                   </Card>
                 ))
               )}

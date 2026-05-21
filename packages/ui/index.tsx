@@ -1,3 +1,11 @@
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import type * as React from "react";
 
 type ClassValue = false | null | string | undefined;
@@ -88,6 +96,259 @@ export function Button({
       {children}
       {trailingIcon}
     </button>
+  );
+}
+
+export interface SearchableSelectOption {
+  disabled?: boolean;
+  keywords?: string[];
+  label: string;
+  value: string;
+}
+
+export type SearchableSelectSize = "md" | "sm";
+
+export interface SearchableSelectProps {
+  ariaLabel: string;
+  disabled?: boolean;
+  emptyMessage?: string;
+  label: React.ReactNode;
+  onChange: (value: string) => void;
+  options: SearchableSelectOption[];
+  size?: SearchableSelectSize;
+  value: string;
+}
+
+const searchableSelectSizeClasses: Record<
+  SearchableSelectSize,
+  { input: string; list: string; option: string; root: string }
+> = {
+  md: {
+    input: "min-h-11 px-3 text-sm",
+    list: "text-sm",
+    option: "px-3 py-2",
+    root: "text-sm",
+  },
+  sm: {
+    input: "min-h-9 px-2 text-xs",
+    list: "text-xs",
+    option: "px-2 py-1.5",
+    root: "text-xs",
+  },
+};
+
+function optionSearchText(option: SearchableSelectOption) {
+  return [option.label, ...(option.keywords ?? [])].join(" ").toLowerCase();
+}
+
+function firstEnabledIndex(options: SearchableSelectOption[]) {
+  return options.findIndex((option) => !option.disabled);
+}
+
+function nextEnabledIndex(
+  options: SearchableSelectOption[],
+  currentIndex: number,
+  direction: 1 | -1,
+) {
+  if (options.length === 0) {
+    return -1;
+  }
+
+  for (let offset = 1; offset <= options.length; offset += 1) {
+    const nextIndex =
+      (currentIndex + direction * offset + options.length) % options.length;
+
+    if (!options[nextIndex].disabled) {
+      return nextIndex;
+    }
+  }
+
+  return -1;
+}
+
+export function SearchableSelect({
+  ariaLabel,
+  disabled = false,
+  emptyMessage = "No options found",
+  label,
+  onChange,
+  options,
+  size = "md",
+  value,
+}: SearchableSelectProps) {
+  const inputId = useId();
+  const listboxId = useId();
+  const activeOptionId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selectedOption = options.find((option) => option.value === value);
+  const sizeClasses = searchableSelectSizeClasses[size];
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return options;
+    }
+
+    return options.filter((option) =>
+      optionSearchText(option).includes(normalizedQuery),
+    );
+  }, [options, query]);
+  const [activeIndex, setActiveIndex] = useState(() =>
+    firstEnabledIndex(filteredOptions),
+  );
+  const activeOption = filteredOptions[activeIndex];
+
+  useEffect(() => {
+    setActiveIndex(firstEnabledIndex(filteredOptions));
+  }, [filteredOptions]);
+
+  function closeList() {
+    setIsOpen(false);
+    setQuery("");
+  }
+
+  function selectOption(option: SearchableSelectOption) {
+    if (option.disabled) {
+      return;
+    }
+
+    onChange(option.value);
+    closeList();
+    inputRef.current?.focus();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setIsOpen(true);
+      setActiveIndex((current) =>
+        nextEnabledIndex(filteredOptions, current, 1),
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setIsOpen(true);
+      setActiveIndex((current) =>
+        nextEnabledIndex(filteredOptions, current, -1),
+      );
+      return;
+    }
+
+    if (event.key === "Enter") {
+      if (!isOpen) {
+        setIsOpen(true);
+        return;
+      }
+
+      event.preventDefault();
+
+      if (activeOption) {
+        selectOption(activeOption);
+      }
+
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeList();
+    }
+  }
+
+  return (
+    <div
+      className={cx(
+        "relative flex min-w-0 flex-col gap-1 font-medium text-neutralDark",
+        sizeClasses.root,
+      )}
+    >
+      <label htmlFor={inputId}>{label}</label>
+      <input
+        aria-activedescendant={
+          isOpen && activeOption ? `${activeOptionId}-${activeIndex}` : undefined
+        }
+        aria-autocomplete="list"
+        aria-controls={listboxId}
+        aria-expanded={isOpen}
+        aria-label={ariaLabel}
+        className={cx(
+          "w-full rounded-md border border-theme-border-default bg-theme-background-surface text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20 disabled:cursor-not-allowed disabled:opacity-60",
+          sizeClasses.input,
+        )}
+        disabled={disabled}
+        id={inputId}
+        onBlur={closeList}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setIsOpen(true);
+        }}
+        onClick={() => {
+          setQuery("");
+          setIsOpen(true);
+        }}
+        onFocus={() => {
+          setQuery("");
+          setIsOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+        ref={inputRef}
+        role="combobox"
+        value={isOpen ? query : selectedOption?.label ?? ""}
+      />
+      {isOpen && !disabled ? (
+        <div
+          className={cx(
+            "absolute top-full z-30 mt-1 max-h-60 w-full overflow-auto rounded-md border border-theme-border-default bg-theme-background-surface py-1 shadow-lg",
+            sizeClasses.list,
+          )}
+          id={listboxId}
+          role="listbox"
+        >
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option, index) => {
+              const isActive = index === activeIndex;
+              const isSelected = option.value === value;
+
+              return (
+                <button
+                  aria-disabled={option.disabled ? "true" : undefined}
+                  aria-selected={isSelected}
+                  className={cx(
+                    "flex w-full items-center text-left font-medium outline-none transition",
+                    sizeClasses.option,
+                    isActive &&
+                      "bg-theme-background-subtle text-theme-text-primary",
+                    !isActive && "text-theme-text-secondary",
+                    isSelected && "font-bold text-theme-text-primary",
+                    option.disabled &&
+                      "cursor-not-allowed text-theme-text-muted opacity-60",
+                  )}
+                  disabled={option.disabled}
+                  id={`${activeOptionId}-${index}`}
+                  key={`${option.value}-${option.label}`}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    selectOption(option);
+                  }}
+                  role="option"
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              );
+            })
+          ) : (
+            <div className="px-3 py-2 text-theme-text-muted" role="status">
+              {emptyMessage}
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -253,6 +514,14 @@ const statDetailToneClasses: Record<StatusPillTone, string> = {
   warning: "text-status-alert-warning-fg",
 };
 
+const statTileToneClasses: Record<StatusPillTone, string> = {
+  danger: "border-status-alert-danger-border bg-status-alert-danger-bg",
+  info: "border-status-alert-info-border bg-status-alert-info-bg",
+  neutral: "border-theme-border-subtle bg-theme-background-surface",
+  success: "border-status-alert-success-border bg-status-alert-success-bg",
+  warning: "border-status-alert-warning-border bg-status-alert-warning-bg",
+};
+
 export function StatTile({
   className,
   detail,
@@ -262,7 +531,7 @@ export function StatTile({
   ...props
 }: StatTileProps) {
   return (
-    <Card className={className} {...props}>
+    <Card className={cx(statTileToneClasses[tone], className)} {...props}>
       <div className="flex items-start justify-between gap-3">
         <Eyebrow>{label}</Eyebrow>
         <span
