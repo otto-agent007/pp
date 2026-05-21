@@ -21,6 +21,13 @@ import {
   type CloseoutStatusFilter,
   type CloseoutProofHandoffSummary,
 } from "@pest-patrol/domain";
+import {
+  Card,
+  Eyebrow,
+  StatTile,
+  StatusPill,
+  buttonClassName,
+} from "@pest-patrol/ui";
 import type {
   FormValue,
   Invoice,
@@ -46,6 +53,8 @@ type QueueFilter =
   | CloseoutReviewQueueFilterId;
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
+const fieldClassName =
+  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20";
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
@@ -114,7 +123,11 @@ function latestQueueItems(queue: BillingQueueGroup, filter: QueueFilter) {
     return { ...queue, needsCaptures: [] };
   }
 
-  if (filter === "ready" || filter === "gps_review" || filter === "needs_invoice") {
+  if (
+    filter === "ready" ||
+    filter === "gps_review" ||
+    filter === "needs_invoice"
+  ) {
     return { ...queue, invoiced: [], needsCaptures: [] };
   }
 
@@ -137,10 +150,13 @@ function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
+    <Card
+      className="border-dashed border-theme-border-default bg-theme-background-subtle text-sm text-theme-text-secondary shadow-none"
+      padding="md"
+    >
       <p>{children}</p>
       {description ? <p className="mt-2">{description}</p> : null}
-    </div>
+    </Card>
   );
 }
 
@@ -174,35 +190,11 @@ function CountTile({
 
 function ReviewMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4">
-      <p className="text-2xl font-bold text-neutralDark">{value}</p>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function StatusPill({
-  tone,
-  children,
-}: {
-  tone: "info" | "neutral" | "success" | "warning";
-  children: string;
-}) {
-  const tones = {
-    info: "border-status-alert-info-border bg-status-alert-info-bg text-status-alert-info-fg",
-    neutral: "border-theme-border-subtle bg-theme-background-subtle text-theme-text-secondary",
-    success: "border-status-alert-success-border bg-status-alert-success-bg text-status-alert-success-fg",
-    warning: "border-status-alert-warning-border bg-status-alert-warning-bg text-status-alert-warning-fg",
-  };
-
-  return (
-    <span
-      className={`rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${tones[tone]}`}
-    >
-      {children}
-    </span>
+    <StatTile
+      label={label}
+      tone={value > 0 ? "success" : "neutral"}
+      value={value}
+    />
   );
 }
 
@@ -277,7 +269,9 @@ function QueueSection({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutralDark">
           {title}{" "}
-          <span className="font-medium text-theme-text-muted">({items.length})</span>
+          <span className="font-medium text-theme-text-muted">
+            ({items.length})
+          </span>
         </h2>
       </div>
       {items.length === 0 ? (
@@ -302,7 +296,7 @@ function FormSubmissionCard({ submission }: { submission: JobFormSubmission }) {
   const fields = submission.template?.schema.fields ?? [];
 
   return (
-    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4">
+    <Card padding="md" role="article">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <h3 className="text-base font-semibold text-neutralDark">
           {submission.template?.name ?? "Treatment form"}
@@ -334,13 +328,13 @@ function FormSubmissionCard({ submission }: { submission: JobFormSubmission }) {
               </div>
             ))}
       </dl>
-    </article>
+    </Card>
   );
 }
 
 function MediaTile({ media }: { media: JobMedia }) {
   return (
-    <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-3">
+    <Card padding="sm" role="article">
       {media.signed_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -357,20 +351,18 @@ function MediaTile({ media }: { media: JobMedia }) {
         <p className="text-sm font-semibold text-neutralDark">
           {media.description ?? media.storage_path}
         </p>
-        <p className="mt-1 break-all text-xs text-theme-text-muted">{media.storage_path}</p>
+        <p className="mt-1 break-all text-xs text-theme-text-muted">
+          {media.storage_path}
+        </p>
         <p className="mt-1 text-xs text-theme-text-muted">
           Captured {formatDateTime(media.captured_at)}
         </p>
       </div>
-    </article>
+    </Card>
   );
 }
 
-function NextActionCard({
-  item,
-}: {
-  item: BillingQueueItem | null;
-}) {
+function NextActionCard({ item }: { item: BillingQueueItem | null }) {
   if (!item) {
     return null;
   }
@@ -379,7 +371,10 @@ function NextActionCard({
     const actions = buildBillingPortalNextActions({ job: item.job });
 
     return (
-      <div className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
+      <Card
+        className="border-status-alert-success-border bg-status-alert-success-bg shadow-none"
+        padding="md"
+      >
         <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
         <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
@@ -387,7 +382,7 @@ function NextActionCard({
         <div className="mt-4 flex flex-wrap gap-2">
           {actions.map((action) => (
             <a
-              className="inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90"
+              className={buttonClassName({ size: "sm" })}
               href={action.href}
               key={action.id}
             >
@@ -395,18 +390,23 @@ function NextActionCard({
             </a>
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (!item.invoice) {
     return (
-      <div className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-4">
+      <Card
+        className="border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
+        padding="md"
+      >
         <p className="text-sm font-semibold text-neutralDark">
           {item.readiness.label}
         </p>
-        <p className="mt-1 text-sm text-theme-text-secondary">{item.readiness.summary}</p>
-      </div>
+        <p className="mt-1 text-sm text-theme-text-secondary">
+          {item.readiness.summary}
+        </p>
+      </Card>
     );
   }
 
@@ -433,20 +433,33 @@ function NextActionCard({
   };
 
   return (
-    <div className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-4">
+    <Card
+      className="border-status-alert-info-border bg-status-alert-info-bg shadow-none"
+      padding="md"
+    >
       <p className="text-sm font-semibold text-neutralDark">
         {titleByStatus[invoice.status]}
       </p>
-      <p className="mt-1 text-sm text-theme-text-secondary">{bodyByStatus[invoice.status]}</p>
+      <p className="mt-1 text-sm text-theme-text-secondary">
+        {bodyByStatus[invoice.status]}
+      </p>
       <a
-        className="mt-4 inline-flex min-h-10 items-center rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90"
+        className={buttonClassName({ className: "mt-4", size: "md" })}
         href={
           invoice.status === "sent" && invoice.payment_url
             ? invoice.payment_url
             : `/payments?invoice_id=${encodeURIComponent(invoice.id)}`
         }
-        rel={invoice.status === "sent" && invoice.payment_url ? "noreferrer" : undefined}
-        target={invoice.status === "sent" && invoice.payment_url ? "_blank" : undefined}
+        rel={
+          invoice.status === "sent" && invoice.payment_url
+            ? "noreferrer"
+            : undefined
+        }
+        target={
+          invoice.status === "sent" && invoice.payment_url
+            ? "_blank"
+            : undefined
+        }
       >
         {invoice.status === "sent" && invoice.payment_url
           ? "Open payment link"
@@ -457,7 +470,12 @@ function NextActionCard({
           .filter((action) => action.id !== "review_payment")
           .map((action) => (
             <a
-              className="rounded-md border border-status-alert-info-border bg-theme-background-surface px-3 py-2 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
+              className={buttonClassName({
+                className:
+                  "border-status-alert-info-border bg-theme-background-surface text-primary hover:bg-status-alert-info-bg",
+                fullWidth: true,
+                variant: "ghost",
+              })}
               href={action.href}
               key={action.id}
             >
@@ -465,7 +483,7 @@ function NextActionCard({
             </a>
           ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -489,7 +507,10 @@ function ProofHandoffCard({
   const proof = review;
 
   return (
-    <div className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
+    <Card
+      className="border-status-alert-success-border bg-status-alert-success-bg shadow-none"
+      padding="md"
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-neutralDark">
@@ -498,29 +519,32 @@ function ProofHandoffCard({
           <p className="mt-2 text-sm font-semibold text-neutralDark">
             {handoff.proof_label}
           </p>
-          <p className="mt-1 text-sm text-theme-text-secondary">{handoff.proof_summary}</p>
+          <p className="mt-1 text-sm text-theme-text-secondary">
+            {handoff.proof_summary}
+          </p>
         </div>
-        <span className="w-fit rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <span className="w-fit rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.completion_label ?? "Needs review"}
         </span>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
           {arrivalLabel}
         </span>
-        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
           {departureLabel}
         </span>
-        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
           {handoff.gps_label}
         </span>
-        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.billing_label ?? handoff.proof_label}
         </span>
-        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
-          {proof?.invoice_label ?? (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
+        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
+          {proof?.invoice_label ??
+            (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
         </span>
-        <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold text-status-alert-success-fg">
+        <span className="rounded-full bg-theme-background-surface px-2.5 py-1 text-xs font-semibold text-status-alert-success-fg">
           {proof?.sync_confidence_label ?? "Review synced field evidence"}
         </span>
       </div>
@@ -540,7 +564,7 @@ function ProofHandoffCard({
       <p className="mt-3 text-xs font-medium text-theme-text-secondary">
         {handoff.portal_handoff_summary}
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -589,12 +613,7 @@ export function CloseoutsClient() {
     [jobs, search, status],
   );
   const queue = useMemo(
-    () =>
-      buildBillingQueue(
-        visibleJobs,
-        invoices,
-        summariesQuery.data ?? [],
-      ),
+    () => buildBillingQueue(visibleJobs, invoices, summariesQuery.data ?? []),
     [invoices, summariesQuery.data, visibleJobs],
   );
   const counts = useMemo(() => getBillingQueueCounts(queue), [queue]);
@@ -608,21 +627,28 @@ export function CloseoutsClient() {
     ...filteredQueue.needsCaptures,
     ...filteredQueue.invoiced,
   ];
-  const otherJobs = status === "all"
-    ? visibleJobs.filter((job) => job.status !== "completed")
-    : [];
+  const otherJobs =
+    status === "all"
+      ? visibleJobs.filter((job) => job.status !== "completed")
+      : [];
   const selectedQueueItem =
-    queueItems.find((item) => item.job.id === selectedJobId) ?? queueItems[0] ?? null;
+    queueItems.find((item) => item.job.id === selectedJobId) ??
+    queueItems[0] ??
+    null;
   const selectedJob =
     selectedQueueItem?.job ??
     otherJobs.find((job) => job.id === selectedJobId) ??
     otherJobs[0] ??
     null;
-  const closeout = useJobCloseoutReview(selectedJob?.status === "completed" ? selectedJob : null);
-  const reviewCounts = closeout.review ? getCloseoutCounts(closeout.review) : null;
+  const closeout = useJobCloseoutReview(
+    selectedJob?.status === "completed" ? selectedJob : null,
+  );
+  const reviewCounts = closeout.review
+    ? getCloseoutCounts(closeout.review)
+    : null;
   const readiness = closeout.review
     ? getCloseoutReviewReadiness(closeout.review)
-    : selectedQueueItem?.readiness ?? null;
+    : (selectedQueueItem?.readiness ?? null);
   const selectedEvidence = selectedJob
     ? locationEvidenceByJob[selectedJob.id]
     : undefined;
@@ -651,8 +677,10 @@ export function CloseoutsClient() {
   const noQueueAction = search.trim()
     ? "Clear the search, show all jobs, or wait for completed jobs to reach the queue."
     : "No completed jobs yet. As technicians finish jobs in dispatch, they will appear here.";
-  const isLoading = jobsQuery.isLoading || invoicesQuery.isLoading || summariesQuery.isLoading;
-  const hasError = jobsQuery.error || invoicesQuery.error || summariesQuery.error;
+  const isLoading =
+    jobsQuery.isLoading || invoicesQuery.isLoading || summariesQuery.isLoading;
+  const hasError =
+    jobsQuery.error || invoicesQuery.error || summariesQuery.error;
 
   function setFilter(filter: QueueFilter) {
     setQueueFilter(filter);
@@ -668,7 +696,11 @@ export function CloseoutsClient() {
       }
 
       const query = params.toString();
-      window.history.pushState(null, "", query ? `?${query}` : window.location.pathname);
+      window.history.pushState(
+        null,
+        "",
+        query ? `?${query}` : window.location.pathname,
+      );
     }
   }
 
@@ -676,28 +708,26 @@ export function CloseoutsClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Admin
-          </p>
+          <Eyebrow tone="inverse">Admin</Eyebrow>
           <h1 className="text-3xl font-bold text-neutralDark">
             Billing work queue
           </h1>
           <p className="mt-3 max-w-3xl text-sm text-theme-text-secondary">
-            Completed jobs grouped by billing readiness. Open one to review captures
-            or create an invoice.
+            Completed jobs grouped by billing readiness. Open one to review
+            captures or create an invoice.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             aria-label="Search closeouts"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={fieldClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Queue status"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={fieldClassName}
             onChange={(event) =>
               setStatus(event.target.value as CloseoutStatusFilter)
             }
@@ -727,32 +757,40 @@ export function CloseoutsClient() {
         />
       </section>
 
-      <section className="rounded-lg border border-status-alert-success-border bg-status-alert-success-bg p-4 shadow-sm">
+      <Card
+        className="border-status-alert-success-border bg-status-alert-success-bg shadow-sm"
+        padding="md"
+      >
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-success-fg">
+            <Eyebrow className="text-status-alert-success-fg">
               Closeout compliance audit
-            </p>
+            </Eyebrow>
             <p className="mt-1 text-sm text-status-alert-success-fgStrong">
               Branch 3 and multi-unit evidence stays advisory in V1.{" "}
               {
                 branchCompliancePreview.required_fields.filter(
                   (field) => field.status !== "present",
                 ).length
-              } WDO report fields are ready for cited review once source chunks
+              }{" "}
+              WDO report fields are ready for cited review once source chunks
               are ingested.
             </p>
           </div>
           <a
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-status-alert-success-border bg-theme-background-surface px-3 text-sm font-semibold text-status-alert-success-fgStrong hover:bg-status-alert-success-bg"
+            className={buttonClassName({
+              className:
+                "border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
+              variant: "ghost",
+            })}
             href="/compliance"
           >
             Open compliance
           </a>
         </div>
-      </section>
+      </Card>
 
-      <section className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <aside className="flex flex-col gap-4">
           {isLoading ? (
             <EmptyState>Loading billing work</EmptyState>
@@ -761,7 +799,9 @@ export function CloseoutsClient() {
               Could not load completed jobs.
             </EmptyState>
           ) : queueItems.length === 0 && otherJobs.length === 0 ? (
-            <EmptyState description={noQueueAction}>No billing work found</EmptyState>
+            <EmptyState description={noQueueAction}>
+              No billing work found
+            </EmptyState>
           ) : (
             <>
               <QueueSection
@@ -788,12 +828,17 @@ export function CloseoutsClient() {
               {otherJobs.length > 0 ? (
                 <section className="flex flex-col gap-2">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-neutralDark">
-                    Other jobs <span className="font-medium text-theme-text-muted">({otherJobs.length})</span>
+                    Other jobs{" "}
+                    <span className="font-medium text-theme-text-muted">
+                      ({otherJobs.length})
+                    </span>
                   </h2>
                   {otherJobs.map((job) => (
                     <button
                       className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
-                        selectedJob?.id === job.id ? "border-primary" : "border-theme-border-subtle"
+                        selectedJob?.id === job.id
+                          ? "border-primary"
+                          : "border-theme-border-subtle"
                       }`}
                       key={job.id}
                       onClick={() => setSelectedJobId(job.id)}
@@ -816,12 +861,14 @@ export function CloseoutsClient() {
           )}
         </aside>
 
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
           {!selectedJob ? (
-            <EmptyState>Select a completed job to review its closeout.</EmptyState>
+            <EmptyState>
+              Select a completed job to review its closeout.
+            </EmptyState>
           ) : (
             <>
-              <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
+              <section className="flex flex-col gap-4">
                 <NextActionCard item={selectedQueueItem} />
                 {proofHandoff ? (
                   <ProofHandoffCard
@@ -831,12 +878,12 @@ export function CloseoutsClient() {
                     review={adminProofReview}
                   />
                 ) : null}
-                <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
+                <div className="mt-5 flex flex-col gap-4">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
                       {selectedJob.status}
                     </p>
-                    <h2 className="mt-1 text-2xl font-bold text-neutralDark">
+                    <h2 className="mt-1 break-words text-2xl font-bold text-neutralDark">
                       {jobTitle(selectedJob)}
                     </h2>
                     <p className="mt-2 text-sm text-theme-text-secondary">
@@ -847,13 +894,16 @@ export function CloseoutsClient() {
                     </p>
                   </div>
                   {reviewCounts ? (
-                    <div className="grid min-w-72 grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <ReviewMetric label="Forms" value={reviewCounts.forms} />
                       <ReviewMetric
                         label="Chemicals"
                         value={reviewCounts.chemicalLogs}
                       />
-                      <ReviewMetric label="Photos" value={reviewCounts.photos} />
+                      <ReviewMetric
+                        label="Photos"
+                        value={reviewCounts.photos}
+                      />
                       <ReviewMetric
                         label="Signatures"
                         value={reviewCounts.signatures}
@@ -885,7 +935,9 @@ export function CloseoutsClient() {
               </section>
 
               {selectedJob.status !== "completed" ? (
-                <EmptyState>Select a completed job to review its closeout.</EmptyState>
+                <EmptyState>
+                  Select a completed job to review its closeout.
+                </EmptyState>
               ) : closeout.isLoading ? (
                 <EmptyState>Loading field captures</EmptyState>
               ) : closeout.error ? (
@@ -897,7 +949,9 @@ export function CloseoutsClient() {
                       Treatment forms
                     </h2>
                     {closeout.review.form_submissions.length === 0 ? (
-                      <EmptyState>No treatment forms captured for this job.</EmptyState>
+                      <EmptyState>
+                        No treatment forms captured for this job.
+                      </EmptyState>
                     ) : (
                       closeout.review.form_submissions.map((submission) => (
                         <FormSubmissionCard
@@ -913,7 +967,9 @@ export function CloseoutsClient() {
                       Chemical logs
                     </h2>
                     {closeout.review.chemical_logs.length === 0 ? (
-                      <EmptyState>No chemical logs captured for this job.</EmptyState>
+                      <EmptyState>
+                        No chemical logs captured for this job.
+                      </EmptyState>
                     ) : (
                       <div className="grid gap-3 md:grid-cols-2">
                         {closeout.review.chemical_logs.map((log) => (
@@ -928,7 +984,9 @@ export function CloseoutsClient() {
                               {log.amount_used} {log.chemical?.unit ?? ""}
                             </p>
                             {log.notes ? (
-                              <p className="mt-2 text-sm text-theme-text-secondary">{log.notes}</p>
+                              <p className="mt-2 text-sm text-theme-text-secondary">
+                                {log.notes}
+                              </p>
                             ) : null}
                           </article>
                         ))}
@@ -937,7 +995,9 @@ export function CloseoutsClient() {
                   </section>
 
                   <section className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-neutralDark">Photos</h2>
+                    <h2 className="text-xl font-semibold text-neutralDark">
+                      Photos
+                    </h2>
                     {closeout.review.photos.length === 0 ? (
                       <EmptyState>No photos captured for this job.</EmptyState>
                     ) : (
@@ -954,7 +1014,9 @@ export function CloseoutsClient() {
                       Signatures
                     </h2>
                     {closeout.review.signatures.length === 0 ? (
-                      <EmptyState>No signatures captured for this job.</EmptyState>
+                      <EmptyState>
+                        No signatures captured for this job.
+                      </EmptyState>
                     ) : (
                       <div className="grid gap-3 md:grid-cols-2">
                         {closeout.review.signatures.map((media) => (

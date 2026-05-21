@@ -1,5 +1,14 @@
 # Done
 
+## Claude Design Inventory + Closeouts Refinement V1
+
+- Added the Inventory + Closeouts Claude relay slice under `.claude/design/013-inventory-closeouts-refinement` with the brief, advisory proposal, Codex review, and preserved local demo reference screenshots
+- Saved desktop and narrow before/after screenshots for `/inventory` and `/closeouts` so future design passes can compare the refined screens against the prior field-command/admin-dashboard direction
+- Refined `/inventory` with shared Patrol UI primitives for stat tiles, compliance review, low-stock watchlist, inventory rows, create/edit/archive forms, usage logging, and recent logs
+- Refined `/closeouts` with shared Patrol UI primitives for billing counters, compliance audit copy, queue cards, proof handoff readiness, invoice actions, and a sticky proof-review detail rail
+- Preserved the existing hooks, data flow, API boundaries, schema, provider setup, environment configuration, active brand assets, preview state, and production state
+- Verified with focused inventory/closeouts tests, local browser QA on desktop and narrow widths, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+
 ## Readiness Smoke Evidence Batch V1
 
 - Fast-forwarded local `main` to the merged PR #41 baseline and created `codex/readiness-smoke-evidence-v1` for the next gated readiness pass

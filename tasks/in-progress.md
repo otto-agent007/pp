@@ -4,6 +4,22 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Claude Design Inventory + Closeouts Refinement V1 preserved local demo
+  before/after references under
+  `.claude/design/013-inventory-closeouts-refinement/references`.
+- `/inventory` now uses shared Patrol UI primitives for the header, stat tiles,
+  compliance strip, low-stock watchlist, inventory rows, forms, and recent logs
+  while preserving the existing hooks and data flow.
+- `/closeouts` now uses shared Patrol UI primitives for billing counters,
+  compliance audit copy, queue cards, proof-handoff panels, action cards, and a
+  sticky detail rail while preserving existing closeout data and mutations.
+- Verified with focused inventory/closeouts tests, local browser before/after
+  QA at desktop and narrow widths, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
+- Kept migrations, provider setup, Supabase dashboard work, environment changes,
+  preview/production mutations, direct database calls from UI, and brand/font
+  promotion out of scope.
 - The readiness smoke evidence batch reran Supabase/RLS audit, compliance RAG checks, preview drift checks, local/preview smoke preflights, and manual-fallback provider tests without mutating preview, production, providers, env, or Supabase data.
 - `/api/compliance/advisories` now checks compliance schema/RPC readiness before creating an OpenAI embedding, so missing or partially applied compliance schema returns sanitized setup-required state without an OpenAI call or audit write.
 - `corepack pnpm compliance:ingest -- --dry-run --no-embed` planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
