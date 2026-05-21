@@ -6,10 +6,7 @@ import {
   DEMO_SEED_CONFIRMATION,
 } from "@pest-patrol/domain";
 
-import {
-  useDemoSeedStatus,
-  useRunDemoSeedAction,
-} from "../hooks/useDemoSeed";
+import { useDemoSeedStatus, useRunDemoSeedAction } from "../hooks/useDemoSeed";
 
 function plural(count: number, noun: string) {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
@@ -42,9 +39,7 @@ export function DemoSeedControls() {
         <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
           Demo data
         </p>
-        <h3 className="text-base font-semibold text-neutralDark">
-          Demo data
-        </h3>
+        <h3 className="text-base font-semibold text-neutralDark">Demo data</h3>
         <p className="text-sm text-theme-text-secondary">
           {status?.environment_label ?? "Checking demo seed status"}
         </p>
@@ -70,6 +65,7 @@ export function DemoSeedControls() {
           <p className="mt-2 text-sm text-theme-text-secondary">
             Also includes {plural(summary.locations, "location")},{" "}
             {plural(summary.inventory_items, "inventory item")},{" "}
+            {plural(summary.media_items, "media item")},{" "}
             {plural(summary.invoices, "invoice")}, and{" "}
             {plural(summary.payments, "payment")}.
           </p>
@@ -77,7 +73,9 @@ export function DemoSeedControls() {
       ) : null}
 
       {statusQuery.isLoading ? (
-        <p className="mt-3 text-sm text-theme-text-secondary">Checking availability...</p>
+        <p className="mt-3 text-sm text-theme-text-secondary">
+          Checking availability...
+        </p>
       ) : null}
       {status?.reason ? (
         <p className="mt-3 text-sm font-semibold text-status-alert-warning-fg">

@@ -13,6 +13,16 @@
 - Verified with focused compliance/manual-fallback tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
 - Performed no migration application, live compliance ingestion, seed/reset write, browser login, provider dashboard mutation, environment mutation, protected-preview mutation, or production data action
 
+## Demo Media Proof V1
+
+- Moved the current dirty demo seed/media work to a fresh `codex/demo-media-proof-v1` branch from `origin/main`, keeping the readiness-evidence PR separate
+- Added a richer San Diego demo story with updated customer locations, expanded Rivera Cafe closeout context, 6 inventory items, 3 chemical logs, 2 treatment form submissions, and 3 synthetic proof media records
+- Added synthetic SVG service-photo and customer-signature assets for local fixture mode under `apps/web/public/demo-media`
+- Extended demo seed summaries, dashboard copy, and smoke-preflight output to include media item counts
+- Extended seed/reset execution to upload SVG proof media to Supabase Storage, insert `job_media` rows, and remove those storage paths during reset
+- Kept migrations, provider setup, env changes, preview mutation, production mutation, seed/reset writes, and browser login out of scope
+- Verified with focused demo seed/domain/API-client/web tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build`
+
 ## Gated Launch-Readiness Batch V1
 
 - Created the fresh `codex/launch-readiness-gates` branch from the PR #40 merge commit after confirming the previous branch was merged

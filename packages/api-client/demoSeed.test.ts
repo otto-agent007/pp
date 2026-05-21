@@ -67,7 +67,10 @@ class MockQuery {
     return Promise.resolve(this.result);
   }
 
-  then(resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) {
+  then(
+    resolve: (value: unknown) => unknown,
+    reject: (error: unknown) => unknown,
+  ) {
     return Promise.resolve(this.result).then(resolve, reject);
   }
 }
@@ -108,6 +111,21 @@ function createMockClient() {
       queries.push(query);
       return query;
     }),
+    storage: {
+      from: vi.fn((bucket: string) => {
+        calls.push(`storage.from:${bucket}`);
+        return {
+          remove: vi.fn(async (paths: string[]) => {
+            calls.push(`storage.remove:${paths.join(",")}`);
+            return { data: [], error: null };
+          }),
+          upload: vi.fn(async (path: string) => {
+            calls.push(`storage.upload:${path}`);
+            return { data: {}, error: null };
+          }),
+        };
+      }),
+    },
   };
 
   return { calls, client, queries };
@@ -146,11 +164,14 @@ describe("demo seed api client", () => {
       adminUsers: 1,
       technicians: 3,
       customers: 4,
-      inventory: 4,
+      inventory: 6,
       jobs: 5,
+      media: 3,
       invoices: 2,
     });
-    expect(calls.filter((call) => call.startsWith("auth.createUser"))).toHaveLength(4);
+    expect(
+      calls.filter((call) => call.startsWith("auth.createUser")),
+    ).toHaveLength(4);
     expect(calls[0]).toBe("auth.createUser:demo@email.com");
     expect(calls).toEqual(
       expect.arrayContaining([
@@ -161,13 +182,18 @@ describe("demo seed api client", () => {
         "from:jobs",
         "from:chemical_logs",
         "from:job_form_submissions",
+        "from:job_media",
         "from:invoices",
         "from:invoice_line_items",
         "from:payments",
       ]),
     );
-    expect(calls.indexOf("from:customers")).toBeLessThan(calls.indexOf("from:jobs"));
-    expect(calls.indexOf("from:jobs")).toBeLessThan(calls.indexOf("from:invoices"));
+    expect(calls.indexOf("from:customers")).toBeLessThan(
+      calls.indexOf("from:jobs"),
+    );
+    expect(calls.indexOf("from:jobs")).toBeLessThan(
+      calls.indexOf("from:invoices"),
+    );
   });
 
   it("replaces demo records by resetting before seeding", async () => {
@@ -198,7 +224,10 @@ describe("demo seed api client", () => {
       now: new Date("2026-05-14T16:38:00.000Z"),
     });
 
-    await resetDemoSeedRecords(client as unknown as DemoSeedSupabaseClient, plan);
+    await resetDemoSeedRecords(
+      client as unknown as DemoSeedSupabaseClient,
+      plan,
+    );
 
     expect(calls.slice(0, 8)).toEqual([
       "from:customers",
