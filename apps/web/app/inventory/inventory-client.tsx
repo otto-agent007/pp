@@ -7,6 +7,14 @@ import {
   validateChemicalInventoryInput,
   validateChemicalLogInput,
 } from "@pest-patrol/domain";
+import {
+  Button,
+  Card,
+  Eyebrow,
+  StatTile,
+  StatusPill,
+  buttonClassName,
+} from "@pest-patrol/ui";
 import type {
   ChemicalInventoryInput,
   ChemicalInventoryItem,
@@ -45,6 +53,10 @@ const emptyLogForm: ChemicalLogInput = {
 };
 
 const emptyInventoryItems: ChemicalInventoryItem[] = [];
+const fieldClassName =
+  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20";
+const labelClassName =
+  "flex flex-col gap-1 text-sm font-medium text-neutralDark";
 
 function itemToInput(item: ChemicalInventoryItem): ChemicalInventoryInput {
   return {
@@ -77,7 +89,9 @@ export function InventoryClient() {
   const createLog = useCreateChemicalLog();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<InventoryStatusFilter>("active");
-  const [editingItem, setEditingItem] = useState<ChemicalInventoryItem | null>(null);
+  const [editingItem, setEditingItem] = useState<ChemicalInventoryItem | null>(
+    null,
+  );
   const [inventoryForm, setInventoryForm] =
     useState<ChemicalInventoryInput>(emptyInventoryForm);
   const [logForm, setLogForm] = useState<ChemicalLogInput>(emptyLogForm);
@@ -93,7 +107,20 @@ export function InventoryClient() {
     () => filterChemicalInventory(inventoryItems, search, status),
     [inventoryItems, search, status],
   );
-  const summary = useMemo(() => getInventorySummary(inventoryItems), [inventoryItems]);
+  const summary = useMemo(
+    () => getInventorySummary(inventoryItems),
+    [inventoryItems],
+  );
+  const lowStockItems = useMemo(
+    () =>
+      visibleInventory.filter(
+        (item) =>
+          item.status === "active" &&
+          item.reorder_level !== null &&
+          item.current_stock <= item.reorder_level,
+      ),
+    [visibleInventory],
+  );
   const chemicalCompliancePreview = useMemo(
     () =>
       buildComplianceAdvisory({
@@ -103,7 +130,8 @@ export function InventoryClient() {
       }),
     [logsQuery.data],
   );
-  const isSavingInventory = createInventory.isPending || updateInventory.isPending;
+  const isSavingInventory =
+    createInventory.isPending || updateInventory.isPending;
 
   function resetInventoryForm() {
     setEditingItem(null);
@@ -132,7 +160,9 @@ export function InventoryClient() {
 
       resetInventoryForm();
     } catch (error) {
-      setInventoryError(error instanceof Error ? error.message : "Unable to save chemical");
+      setInventoryError(
+        error instanceof Error ? error.message : "Unable to save chemical",
+      );
     }
   }
 
@@ -145,7 +175,9 @@ export function InventoryClient() {
       await createLog.mutateAsync(input);
       setLogForm(emptyLogForm);
     } catch (error) {
-      setLogError(error instanceof Error ? error.message : "Unable to log chemical use");
+      setLogError(
+        error instanceof Error ? error.message : "Unable to log chemical use",
+      );
     }
   }
 
@@ -153,23 +185,27 @@ export function InventoryClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Admin
-          </p>
+          <Eyebrow tone="inverse">Admin</Eyebrow>
           <h1 className="text-3xl font-bold text-neutralDark">Inventory</h1>
+          <p className="mt-2 max-w-3xl text-sm text-theme-text-secondary">
+            Stock, EPA labels, and field usage in one scan-first operations
+            view.
+          </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             aria-label="Search inventory"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={fieldClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Inventory status"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
-            onChange={(event) => setStatus(event.target.value as InventoryStatusFilter)}
+            className={fieldClassName}
+            onChange={(event) =>
+              setStatus(event.target.value as InventoryStatusFilter)
+            }
             value={status}
           >
             <option value="active">Active</option>
@@ -179,50 +215,54 @@ export function InventoryClient() {
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Active
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">{summary.activeCount}</p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Low stock
-          </p>
-          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">{summary.lowStockCount}</p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Archived
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {summary.archivedCount}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Stock units
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {summary.totalStock}
-          </p>
-        </div>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          detail="Ready to assign"
+          label="Active"
+          tone="success"
+          value={summary.activeCount}
+        />
+        <StatTile
+          detail="Needs reorder review"
+          label="Low stock"
+          tone={summary.lowStockCount > 0 ? "danger" : "success"}
+          value={summary.lowStockCount}
+        />
+        <StatTile
+          detail="Hidden from field use"
+          label="Archived"
+          tone="neutral"
+          value={summary.archivedCount}
+        />
+        <StatTile
+          detail="Across active catalog"
+          label="Stock units"
+          tone="info"
+          value={summary.totalStock}
+        />
       </section>
 
-      <section className="rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg p-4 shadow-sm">
+      <Card
+        className="border-status-alert-warning-border bg-status-alert-warning-bg shadow-sm"
+        padding="md"
+      >
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-warning-fg">
+            <Eyebrow className="text-status-alert-warning-fg">
               EPA/DPR compliance review
-            </p>
+            </Eyebrow>
             <p className="mt-1 text-sm text-status-alert-warning-fgStrong">
-              Chemical logs now feed the California Compliance RAG lane. V1 keeps
-              this advisory-only and flags missing evidence before closeout.
+              Chemical logs now feed the California Compliance RAG lane. V1
+              keeps this advisory-only and flags missing evidence before
+              closeout.
             </p>
           </div>
           <a
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-status-alert-warning-border bg-theme-background-surface px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
+            className={buttonClassName({
+              className:
+                "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+              variant: "ghost",
+            })}
             href="/compliance"
           >
             Open compliance
@@ -238,22 +278,70 @@ export function InventoryClient() {
                 key={field.field}
               >
                 <p className="font-semibold text-neutralDark">{field.label}</p>
-                <p className="mt-1 text-status-alert-warning-fgStrong">{field.reason}</p>
+                <p className="mt-1 text-status-alert-warning-fgStrong">
+                  {field.reason}
+                </p>
               </div>
             ))}
         </div>
+      </Card>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <Eyebrow tone="danger">Low-stock review</Eyebrow>
+            <h2 className="mt-1 text-xl font-bold text-neutralDark">
+              Reorder watchlist
+            </h2>
+          </div>
+          <p className="max-w-2xl text-sm text-theme-text-secondary">
+            Keep the field team moving by catching products at or below reorder
+            before closeout proof gets blocked.
+          </p>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {lowStockItems.length > 0 ? (
+            lowStockItems.map((item) => (
+              <Card
+                className="border-status-alert-danger-border bg-status-alert-danger-bg shadow-none"
+                key={item.id}
+                padding="sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-neutralDark">
+                      {item.name}
+                    </p>
+                    <p className="mt-1 text-sm text-status-alert-danger-fg">
+                      {item.current_stock} {item.unit} on hand
+                      {item.reorder_level !== null
+                        ? ` / reorder at ${item.reorder_level}`
+                        : ""}
+                    </p>
+                  </div>
+                  <StatusPill tone="danger">Reorder</StatusPill>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-subtle p-4 text-sm text-theme-text-secondary md:col-span-2 xl:col-span-3">
+              No products are at reorder level. Keep logging usage after each
+              service to preserve this signal.
+            </p>
+          )}
+        </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="flex flex-col gap-3">
+      <section className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="flex min-w-0 flex-col gap-3">
           {inventoryQuery.isLoading ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               Loading inventory
-            </p>
+            </Card>
           ) : visibleInventory.length === 0 ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               No inventory found
-            </p>
+            </Card>
           ) : (
             visibleInventory.map((item) => {
               const isLowStock =
@@ -262,20 +350,20 @@ export function InventoryClient() {
                 item.current_stock <= item.reorder_level;
 
               return (
-                <article
-                  className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
+                <Card
                   key={item.id}
+                  className="min-w-0"
+                  padding="lg"
+                  role="article"
                 >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-semibold text-neutralDark">
+                        <h2 className="break-words text-lg font-semibold text-neutralDark">
                           {item.name}
                         </h2>
                         {isLowStock ? (
-                          <span className="rounded-md bg-status-alert-danger-bg px-2 py-1 text-xs font-medium text-status-alert-danger-fg">
-                            Low stock
-                          </span>
+                          <StatusPill tone="danger">Low stock</StatusPill>
                         ) : null}
                       </div>
                       <p className="mt-2 text-sm text-theme-text-secondary">
@@ -285,36 +373,36 @@ export function InventoryClient() {
                           : ""}
                       </p>
                       <p className="mt-1 text-sm text-theme-text-secondary">
-                        {item.epa_number ? `EPA ${item.epa_number}` : "No EPA number"}
+                        {item.epa_number
+                          ? `EPA ${item.epa_number}`
+                          : "No EPA number"}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
+                    <div className="flex flex-wrap gap-2">
+                      <Button
                         onClick={() => editInventoryItem(item)}
-                        type="button"
+                        variant="ghost"
                       >
                         Edit
-                      </button>
+                      </Button>
                       {item.status === "active" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-medium text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
+                        <Button
                           disabled={archiveInventory.isPending}
                           onClick={() => archiveInventory.mutate(item.id)}
-                          type="button"
+                          variant="danger"
                         >
                           Archive
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   </div>
-                </article>
+                </Card>
               );
             })
           )}
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <form
             className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitInventory}
@@ -324,36 +412,39 @@ export function InventoryClient() {
                 {editingItem ? "Edit chemical" : "Add chemical"}
               </h2>
               {editingItem ? (
-                <button
-                  className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                  onClick={resetInventoryForm}
-                  type="button"
-                >
+                <Button onClick={resetInventoryForm} variant="ghost">
                   New
-                </button>
+                </Button>
               ) : null}
             </div>
 
             {inventoryError ? (
-              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
+              <Card
+                className="border-status-alert-danger-border bg-status-alert-danger-bg text-sm text-status-alert-danger-fg shadow-none"
+                padding="sm"
+                role="alert"
+              >
                 {inventoryError}
-              </p>
+              </Card>
             ) : null}
 
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={labelClassName}>
               Name
               <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className={fieldClassName}
                 onChange={(event) =>
-                  setInventoryForm((current) => ({ ...current, name: event.target.value }))
+                  setInventoryForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
                 }
                 value={inventoryForm.name}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={labelClassName}>
               EPA number
               <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className={fieldClassName}
                 onChange={(event) =>
                   setInventoryForm((current) => ({
                     ...current,
@@ -364,10 +455,10 @@ export function InventoryClient() {
               />
             </label>
             <div className="grid gap-3 sm:grid-cols-3">
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className={labelClassName}>
                 Stock
                 <input
-                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                  className={fieldClassName}
                   min="0"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
@@ -379,10 +470,10 @@ export function InventoryClient() {
                   value={inventoryForm.current_stock}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className={labelClassName}>
                 Unit
                 <select
-                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                  className={fieldClassName}
                   onChange={(event) =>
                     setInventoryForm((current) => ({
                       ...current,
@@ -397,16 +488,18 @@ export function InventoryClient() {
                   <option value="each">each</option>
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className={labelClassName}>
                 Reorder
                 <input
-                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                  className={fieldClassName}
                   min="0"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
                       ...current,
                       reorder_level:
-                        event.target.value === "" ? null : Number(event.target.value),
+                        event.target.value === ""
+                          ? null
+                          : Number(event.target.value),
                     }))
                   }
                   type="number"
@@ -415,32 +508,42 @@ export function InventoryClient() {
               </label>
             </div>
 
-            <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            <Button
               disabled={isSavingInventory}
+              fullWidth
+              size="lg"
               type="submit"
             >
               Save chemical
-            </button>
+            </Button>
           </form>
 
           <form
             className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitLog}
           >
-            <h2 className="text-xl font-semibold text-neutralDark">Log usage</h2>
+            <h2 className="text-xl font-semibold text-neutralDark">
+              Log usage
+            </h2>
             {logError ? (
-              <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
+              <Card
+                className="border-status-alert-danger-border bg-status-alert-danger-bg text-sm text-status-alert-danger-fg shadow-none"
+                padding="sm"
+                role="alert"
+              >
                 {logError}
-              </p>
+              </Card>
             ) : null}
 
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={labelClassName}>
               Job
               <select
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className={fieldClassName}
                 onChange={(event) =>
-                  setLogForm((current) => ({ ...current, job_id: event.target.value }))
+                  setLogForm((current) => ({
+                    ...current,
+                    job_id: event.target.value,
+                  }))
                 }
                 value={logForm.job_id}
               >
@@ -452,10 +555,10 @@ export function InventoryClient() {
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={labelClassName}>
               Chemical
               <select
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className={fieldClassName}
                 onChange={(event) =>
                   setLogForm((current) => ({
                     ...current,
@@ -472,10 +575,10 @@ export function InventoryClient() {
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={labelClassName}>
               Amount used
               <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className={fieldClassName}
                 min="0"
                 onChange={(event) =>
                   setLogForm((current) => ({
@@ -487,30 +590,39 @@ export function InventoryClient() {
                 value={logForm.amount_used}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={labelClassName}>
               Notes
               <textarea
-                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
+                className={`${fieldClassName} min-h-24 py-2`}
                 onChange={(event) =>
-                  setLogForm((current) => ({ ...current, notes: event.target.value }))
+                  setLogForm((current) => ({
+                    ...current,
+                    notes: event.target.value,
+                  }))
                 }
                 value={logForm.notes ?? ""}
               />
             </label>
-            <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            <Button
               disabled={createLog.isPending}
+              fullWidth
+              size="lg"
               type="submit"
             >
               Log chemical use
-            </button>
+            </Button>
           </form>
 
-          <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
-            <h2 className="text-xl font-semibold text-neutralDark">Recent usage</h2>
+          <Card padding="lg">
+            <h2 className="text-xl font-semibold text-neutralDark">
+              Recent usage
+            </h2>
             <div className="mt-4 flex flex-col gap-3">
               {(logsQuery.data ?? []).slice(0, 5).map((log) => (
-                <article className="text-sm text-theme-text-secondary" key={log.id}>
+                <article
+                  className="text-sm text-theme-text-secondary"
+                  key={log.id}
+                >
                   <p className="font-medium text-neutralDark">
                     {log.chemical?.name ?? "Unknown chemical"}
                   </p>
@@ -521,10 +633,12 @@ export function InventoryClient() {
                 </article>
               ))}
               {(logsQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-theme-text-muted">No chemical use logged</p>
+                <p className="text-sm text-theme-text-muted">
+                  No chemical use logged
+                </p>
               ) : null}
             </div>
-          </section>
+          </Card>
         </div>
       </section>
     </main>

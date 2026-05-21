@@ -3,6 +3,23 @@
 No active implementation slice is currently open.
 
 Recent closure:
+
+- Claude Design Inventory + Closeouts Refinement V1 preserved local demo
+  before/after references under
+  `.claude/design/013-inventory-closeouts-refinement/references`.
+- `/inventory` now uses shared Patrol UI primitives for the header, stat tiles,
+  compliance strip, low-stock watchlist, inventory rows, forms, and recent logs
+  while preserving the existing hooks and data flow.
+- `/closeouts` now uses shared Patrol UI primitives for billing counters,
+  compliance audit copy, queue cards, proof-handoff panels, action cards, and a
+  sticky detail rail while preserving existing closeout data and mutations.
+- Verified with focused inventory/closeouts tests, local browser before/after
+  QA at desktop and narrow widths, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
+- Kept migrations, provider setup, Supabase dashboard work, environment changes,
+  preview/production mutations, direct database calls from UI, and brand/font
+  promotion out of scope.
 - Demo Media Proof V1 moved the dirty demo seed/media work onto a fresh branch from `origin/main`, preserving the readiness-evidence PR as a separate review surface.
 - The demo seed story now includes San Diego-specific customer locations, richer Rivera Cafe closeout data, expanded treatment-form fields, 3 chemical logs, 2 form submissions, 6 inventory items, and 3 synthetic proof media items.
 - Seed/reset now uploads SVG proof media to the `job-media` storage bucket, inserts matching `job_media` rows, removes those storage paths during reset, and reports media counts through the CLI/dashboard summary.
@@ -10,6 +27,7 @@ Recent closure:
 - Verified with focused demo seed/domain/API-client/web tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build`; no migration, provider setup, env mutation, preview mutation, production mutation, seed/reset write, or browser login was performed.
 
 Follow-up candidates:
+
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.

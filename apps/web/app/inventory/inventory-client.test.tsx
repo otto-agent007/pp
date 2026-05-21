@@ -128,7 +128,7 @@ describe("InventoryClient", () => {
     render(<InventoryClient />);
 
     expect(screen.getAllByText("Low stock")).toHaveLength(2);
-    expect(screen.getByText("Bait Gel")).toBeInTheDocument();
+    expect(screen.getAllByText("Bait Gel").length).toBeGreaterThan(0);
     expect(screen.getByText("2 oz | Reorder at 4 oz")).toBeInTheDocument();
   });
 
@@ -136,7 +136,10 @@ describe("InventoryClient", () => {
     const user = userEvent.setup();
     render(<InventoryClient />);
 
-    await user.selectOptions(screen.getByLabelText("Inventory status"), "archived");
+    await user.selectOptions(
+      screen.getByLabelText("Inventory status"),
+      "archived",
+    );
 
     expect(screen.getByText("Old Spray")).toBeInTheDocument();
     expect(screen.queryByText("Bait Gel")).not.toBeInTheDocument();
