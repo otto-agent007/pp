@@ -2,6 +2,49 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-20 Readiness Smoke Evidence Batch
+
+Status: Latest `main` is synced after PR #41, this batch is running on `codex/readiness-smoke-evidence-v1`, and the next five launch-gate slices remain evidence-gated. Migration application, live compliance ingestion, local/preview seed/reset, rendered browser smoke, provider setup, env mutation, and production/preview data mutation were not attempted.
+
+Read-only checks:
+- Command: `supabase --version`
+- Result: pass; local CLI is `2.98.2`. The CLI reported `2.100.1` is available.
+- Command: `supabase status -o env`
+- Result: blocked before local target env export because Docker Desktop's Linux engine pipe was not present: `open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.`
+- Command: `supabase migration list --local`
+- Result: blocked before local migration history inspection because local Postgres on `127.0.0.1:54322` refused the connection. No migration apply command was run.
+- Command: migration/RLS grep audit for the security hardening, portal audit, portal send, compliance RAG, and `send_succeeded` migrations.
+- Result: pass; `private.has_admin_access()` is defined before dependent portal/compliance policies, portal audit history has RLS enabled, compliance RAG tables enable RLS, and compliance Data API grants remain explicit for `authenticated` and `service_role`.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Command: focused compliance/manual-fallback provider tests with low Vitest concurrency.
+- Result: pass; 10 files and 81 tests passed across compliance ingest/API/route/UI, portal provider status/send/customer UI, notification provider status/UI, and payment setup guidance.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: pass; latest Ready preview found at `https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app`. The newest deployment overall was Production, so preview smoke used the newest Preview deployment.
+- Command: `corepack pnpm dlx vercel inspect https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; deployment `dpl_BN6YUGx2o5opmmBU6nxMhVSpqCji` is Ready with alias `https://pest-patrol-os-git-codex-3922be-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel env ls`
+- Result: pass; encrypted Preview env names exist for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and `AUTOMATION_CRON_SECRET`. Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list.
+- Command: `corepack pnpm dlx vercel curl / --deployment https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; the protected preview returned the Pest Patrol OS app shell with the admin gate text `Checking admin access...`.
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before local seed/reset or browser smoke.
+- Blocker category: missing env/setup.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names reported by the preflight: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Slice outcomes:
+- Migration Target Verification Package: local target verification remains blocked on Docker/local Postgres availability; migration-file readiness was rechecked without applying migrations.
+- Compliance Source Activation Dry-to-Live Gate: dry-run/no-embed remains clean; live ingest remains gated on explicit migration approval plus approved local or preview Supabase env/access.
+- Local Demo Smoke Unlock: local preflight remains blocked before seed/reset or browser smoke on missing approved Supabase env names.
+- Protected Preview Authenticated Smoke: latest Ready preview app shell is reachable through Vercel CLI, but authenticated browser smoke remains gated on approved env names, protected-preview access, and admin/dispatcher sign-in.
+- Manual-Fallback Provider Smoke Closure: local focused tests prove manual-only portal, notification, and payment setup states avoid secret exposure and delivery claims; rendered smoke remains gated on an authenticated local or preview browser path.
+
+No seed/reset writes, browser login, provider dashboard mutations, environment mutations, migration application, live compliance ingestion, raw portal URLs, credentials, protected-preview access values, webhook payloads, preview data mutation, or production data actions were performed.
+
 ## 2026-05-20 Gated Launch-Readiness Batch
 
 Status: Supabase/RLS audit and compliance RAG hardening are locally verified; preview discovery is current; local and protected-preview smoke remain gated before seed/reset or authenticated browser smoke.
