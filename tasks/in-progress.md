@@ -4,6 +4,31 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Demo-Visible Fixture Smoke V1 made local fixture demo data truly no-auth:
+  the dashboard Demo data panel now reports `Local fixture demo`, fixture
+  seed/reset actions are local no-ops, and the UI no longer shows
+  `Authentication is required` when Supabase env values are absent.
+- Tokened local `/portal` now reads fixture closeouts and billing, so Rivera
+  Cafe service photos and the synthetic signature render without Supabase
+  storage/API access.
+- Local Browser QA on `http://localhost:3000` rendered `/`, `/customers`,
+  `/inventory`, `/payments`, `/closeouts`, and tokened `/portal` with Rivera
+  Cafe data, 3 `/demo-media/*` assets on closeout and portal surfaces, no fresh
+  console warnings/errors after the clean Turbopack restart, and no
+  document-level horizontal overflow at desktop or 390px home viewport.
+- Read-only local and preview `demo:smoke` preflights still block real
+  seed/reset before writes because this shell lacks approved Supabase env
+  names; preview smoke also remains gated on operator-approved preview access
+  and admin/dispatcher sign-in.
+- Current Vercel discovery found latest Ready preview
+  `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app`
+  and latest Ready production
+  `https://pest-patrol-5sw483rdk-ottoagent007-gmailcoms-projects.vercel.app`.
+- `corepack pnpm compliance:ingest -- --dry-run --no-embed` still plans 6
+  sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Kept real seed/reset writes, migrations, provider setup, environment changes,
+  preview mutations, production mutations, credentials, raw portal tokens, and
+  live compliance ingestion out of scope.
 - Status Color + Searchability QA V1 added a shared `SearchableSelect`
   primitive, made `StatTile` tone affect card border/background, and tightened
   status colors across automation, dispatch, jobs, inventory, payments, and
@@ -71,7 +96,7 @@ Follow-up candidates:
 - [ ] Operator runs local seed/reset with approved local Supabase credentials.
 - [ ] Operator runs preview seed from the dashboard or a protected shell with preview Supabase credentials.
 - [ ] Operator optionally supplies `DEMO_TECH_PASSWORD` for technician login demos.
-- [ ] Operator loads approved preview Supabase env names, then reruns preview demo preflight against `https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app` or the newest Ready preview discovered at execution time.
+- [ ] Operator loads approved preview Supabase env names, then reruns preview demo preflight against the newest Ready preview discovered at execution time; the May 21, 2026 discovery was `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app`.
 - [ ] Run authenticated preview smoke against the seeded story and record sanitized findings for dispatch exceptions, mobile next actions, closeout filters, and portal handoff review.
 - [ ] Confirm manual-fallback provider smoke in an authenticated browser when webhook env names are intentionally unset.
 - [ ] Decide whether portal delivery receipts, richer provider failure states, or production launch checklist work should be next after webhook-backed evidence exists.

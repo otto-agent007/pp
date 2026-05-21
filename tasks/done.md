@@ -1,5 +1,14 @@
 # Done
 
+## Demo-Visible Fixture Smoke V1
+
+- Fixed local fixture demo status/actions so the dashboard no longer calls the authenticated `/api/demo-seed` route or shows `Authentication is required` when Supabase env values are intentionally absent
+- Added local fixture portal closeout and billing reads so tokened `/portal` can render Rivera Cafe proof media and billing context without Supabase storage/API access
+- Stabilized the local fixture clock to avoid public portal hydration mismatches between server render and client hydration
+- Verified `http://localhost:3000` with the in-app Browser on `/`, `/customers`, `/inventory`, `/payments`, `/closeouts`, and tokened `/portal`; Rivera Cafe, 6 inventory items, and 3 checked-in demo media assets rendered with no fresh console errors or document-level horizontal overflow
+- Reran read-only local/preview demo smoke preflights; real seed/reset remains blocked on missing approved Supabase env names and preview access
+- Reran current Vercel discovery/inspection and compliance dry-run/no-embed; no migration, provider, env, preview, production, or real seed/reset mutation was performed
+
 ## Claude Design Inventory + Closeouts Refinement V1
 
 - Added the Inventory + Closeouts Claude relay slice under `.claude/design/013-inventory-closeouts-refinement` with the brief, advisory proposal, Codex review, and preserved local demo reference screenshots
