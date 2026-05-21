@@ -85,6 +85,11 @@ function sanitizeFormData(input: Record<string, unknown>) {
   );
 }
 
+function demoMediaUrl(storagePath: string) {
+  const parts = storagePath.split("/");
+  return `/demo-media/${parts[parts.length - 1] ?? storagePath}`;
+}
+
 function cloneJob(job: Job): Job {
   return {
     ...job,
@@ -94,7 +99,9 @@ function cloneJob(job: Job): Job {
     customer: job.customer
       ? {
           ...job.customer,
-          locations: job.customer.locations?.map((location) => ({ ...location })),
+          locations: job.customer.locations?.map((location) => ({
+            ...location,
+          })),
         }
       : undefined,
     location: job.location ? { ...job.location } : undefined,
@@ -170,10 +177,14 @@ export function buildDemoWorkflowFixtures(
       updated_at: createdAt,
     })),
   }));
-  const customersById = new Map(customers.map((customer) => [customer.id, customer]));
+  const customersById = new Map(
+    customers.map((customer) => [customer.id, customer]),
+  );
   const locationsById = new Map(
     customers.flatMap((customer) =>
-      (customer.locations ?? []).map((location) => [location.id, location] as const),
+      (customer.locations ?? []).map(
+        (location) => [location.id, location] as const,
+      ),
     ),
   );
   const inventory: ChemicalInventoryItem[] = plan.inventory.map((item) => ({
@@ -187,10 +198,14 @@ export function buildDemoWorkflowFixtures(
     created_at: createdAt,
     updated_at: createdAt,
   }));
-  const inventoryByKey = new Map(plan.inventory.map((item) => [item.key, item.id]));
+  const inventoryByKey = new Map(
+    plan.inventory.map((item) => [item.key, item.id]),
+  );
   const inventoryById = new Map(inventory.map((item) => [item.id, item]));
   const jobs: Job[] = plan.jobs.map((job) => {
-    const assignedTechnician = techniciansByKey.get(job.assigned_technician_key);
+    const assignedTechnician = techniciansByKey.get(
+      job.assigned_technician_key,
+    );
 
     return {
       id: job.id,
@@ -241,39 +256,28 @@ export function buildDemoWorkflowFixtures(
       job: jobsById.get(submission.job_id),
     }),
   );
-  const completedJob = jobs.find((job) => job.status === "completed");
-  const media: JobMedia[] = completedJob
-    ? [
-        {
-          id: fixtureId("3", 1),
-          job_id: completedJob.id,
-          media_type: "photo",
-          storage_bucket: JOB_MEDIA_BUCKET,
-          storage_path: `${completedJob.id}/demo-service-photo.jpg`,
-          signed_url: null,
-          description: "Demo service condition photo",
-          uploaded_by: completedJob.assigned_tech_id,
-          captured_at: completedJob.scheduled_end,
-          created_at: createdAt,
-          updated_at: createdAt,
-          job: completedJob,
-        },
-        {
-          id: fixtureId("3", 2),
-          job_id: completedJob.id,
-          media_type: "signature",
-          storage_bucket: JOB_MEDIA_BUCKET,
-          storage_path: `${completedJob.id}/demo-signature.png`,
-          signed_url: null,
-          description: "Demo customer signature",
-          uploaded_by: completedJob.assigned_tech_id,
-          captured_at: completedJob.scheduled_end,
-          created_at: createdAt,
-          updated_at: createdAt,
-          job: completedJob,
-        },
-      ]
-    : [];
+  const media: JobMedia[] = plan.media.map((item) => {
+    const job = jobsById.get(item.job_id);
+
+    if (!job) {
+      throw new Error(`Missing demo media job ${item.job_id}`);
+    }
+
+    return {
+      id: item.id,
+      job_id: item.job_id,
+      media_type: item.media_type,
+      storage_bucket: JOB_MEDIA_BUCKET,
+      storage_path: item.storage_path,
+      signed_url: demoMediaUrl(item.storage_path),
+      description: item.description,
+      uploaded_by: job.assigned_tech_id,
+      captured_at: item.captured_at,
+      created_at: createdAt,
+      updated_at: createdAt,
+      job,
+    };
+  });
   const invoices: Invoice[] = plan.invoices.map((invoice, invoiceIndex) => {
     const lineItems: InvoiceLineItem[] = invoice.line_items.map(
       (item, lineItemIndex) => ({
@@ -323,18 +327,21 @@ export function buildDemoWorkflowFixtures(
       payments,
     };
   });
-  const closeoutSummaries = jobs.map((job): CloseoutCaptureSummary => ({
-    jobId: job.id,
-    forms: formSubmissions.filter((submission) => submission.job_id === job.id)
-      .length,
-    chemicalLogs: chemicalLogs.filter((log) => log.job_id === job.id).length,
-    photos: media.filter(
-      (item) => item.job_id === job.id && item.media_type === "photo",
-    ).length,
-    signatures: media.filter(
-      (item) => item.job_id === job.id && item.media_type === "signature",
-    ).length,
-  }));
+  const closeoutSummaries = jobs.map(
+    (job): CloseoutCaptureSummary => ({
+      jobId: job.id,
+      forms: formSubmissions.filter(
+        (submission) => submission.job_id === job.id,
+      ).length,
+      chemicalLogs: chemicalLogs.filter((log) => log.job_id === job.id).length,
+      photos: media.filter(
+        (item) => item.job_id === job.id && item.media_type === "photo",
+      ).length,
+      signatures: media.filter(
+        (item) => item.job_id === job.id && item.media_type === "signature",
+      ).length,
+    }),
+  );
   const portalTokenId = fixtureId("6", 1);
   const portalAccessTokensByCustomerId: Record<
     string,

@@ -13,7 +13,9 @@ const now = "2026-05-05T18:00:00.000Z";
 
 describe("forms domain", () => {
   it("validates the default treatment template", () => {
-    expect(validateFormTemplate(defaultTreatmentFormTemplate).schema.fields).toHaveLength(5);
+    expect(
+      validateFormTemplate(defaultTreatmentFormTemplate).schema.fields,
+    ).toHaveLength(9);
   });
 
   it("creates an empty draft with boolean defaults", () => {
@@ -27,6 +29,7 @@ describe("forms domain", () => {
       values: {
         target_pests: null,
         areas_treated: null,
+        epa_label_reviewed: false,
         follow_up_required: false,
       },
     });
@@ -62,8 +65,12 @@ describe("forms domain", () => {
         form_data: {
           target_pests: "Roaches",
           areas_treated: "Kitchen and laundry room",
+          application_method: "Crack-and-crevice treatment",
           materials_applied: "",
+          service_branch: "San Diego route",
+          weather_conditions: "",
           customer_instructions: "Keep pets away until dry",
+          epa_label_reviewed: true,
           follow_up_required: true,
         },
       },
@@ -76,8 +83,12 @@ describe("forms domain", () => {
       form_data: {
         target_pests: "Roaches",
         areas_treated: "Kitchen and laundry room",
+        application_method: "Crack-and-crevice treatment",
         materials_applied: null,
+        service_branch: "San Diego route",
+        weather_conditions: null,
         customer_instructions: "Keep pets away until dry",
+        epa_label_reviewed: true,
         follow_up_required: true,
       },
     });

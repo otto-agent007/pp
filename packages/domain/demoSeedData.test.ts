@@ -35,10 +35,10 @@ describe("demo seed data", () => {
       email: "demo+harbor-hoa@example.test",
     });
     expect(plan.technicians).toHaveLength(3);
-    expect(plan.technicians.every((tech) => tech.email.endsWith("@example.test"))).toBe(
-      true,
-    );
-    expect(plan.inventory).toHaveLength(4);
+    expect(
+      plan.technicians.every((tech) => tech.email.endsWith("@example.test")),
+    ).toBe(true);
+    expect(plan.inventory).toHaveLength(6);
     expect(plan.jobs.map((job) => job.scheduled_start)).toContain(
       "2026-05-14T09:38:00.000Z",
     );
@@ -46,9 +46,13 @@ describe("demo seed data", () => {
       "2026-05-14T10:38:00.000Z",
     );
     expect(plan.jobs.some((job) => job.status === "completed")).toBe(true);
-    expect(plan.chemicalLogs).toHaveLength(1);
-    expect(plan.formSubmissions).toHaveLength(1);
-    expect(plan.invoices.map((invoice) => invoice.status)).toEqual(["sent", "paid"]);
+    expect(plan.chemicalLogs).toHaveLength(3);
+    expect(plan.formSubmissions).toHaveLength(2);
+    expect(plan.media).toHaveLength(3);
+    expect(plan.invoices.map((invoice) => invoice.status)).toEqual([
+      "sent",
+      "paid",
+    ]);
     expect(JSON.stringify(plan)).toContain(DEMO_SEED_MARKER);
   });
 
@@ -130,6 +134,7 @@ describe("demo seed data", () => {
       "jobs",
       "chemicalLogs",
       "formSubmissions",
+      "media",
       "invoices",
       "payments",
     ]);
@@ -139,6 +144,7 @@ describe("demo seed data", () => {
       "invoices",
       "formSubmissions",
       "chemicalLogs",
+      "media",
       "jobs",
       "inventory",
       "locations",
@@ -155,13 +161,14 @@ describe("demo seed data", () => {
 
     expect(getDemoSeedPlanSummary(plan)).toEqual({
       admin_users: 1,
-      chemical_logs: 1,
+      chemical_logs: 3,
       customers: 4,
-      form_submissions: 1,
-      inventory_items: 4,
+      form_submissions: 2,
+      inventory_items: 6,
       invoices: 2,
       jobs: 5,
       locations: 5,
+      media_items: 3,
       payments: 1,
       technicians: 3,
     });

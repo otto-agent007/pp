@@ -97,14 +97,14 @@ async function main() {
     const result = await replaceDemoSeedRecords(client, plan);
     const summary = result.seed;
     console.log(
-      `Demo seed complete for ${validation.target}: ${summary.adminUsers} admin, ${summary.customers} customers, ${summary.technicians} technicians, ${summary.jobs} jobs, ${summary.inventory} inventory items, ${summary.invoices} invoices.`,
+      `Demo seed complete for ${validation.target}: ${summary.adminUsers} admin, ${summary.customers} customers, ${summary.technicians} technicians, ${summary.jobs} jobs, ${summary.inventory} inventory items, ${summary.media} media items, ${summary.invoices} invoices.`,
     );
     return;
   }
 
   const summary = await resetDemoSeedRecords(client, plan);
   console.log(
-    `Demo reset complete for ${validation.target}: ${summary.adminUsers} admin auth user, ${summary.customers} customers, ${summary.technicians} technician auth users, ${summary.jobs} jobs, ${summary.inventory} inventory items, ${summary.invoices} invoices targeted.`,
+    `Demo reset complete for ${validation.target}: ${summary.adminUsers} admin auth user, ${summary.customers} customers, ${summary.technicians} technician auth users, ${summary.jobs} jobs, ${summary.inventory} inventory items, ${summary.media} media items, ${summary.invoices} invoices targeted.`,
   );
 }
 
