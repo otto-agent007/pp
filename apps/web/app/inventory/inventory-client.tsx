@@ -57,7 +57,7 @@ const emptyInventoryItems: ChemicalInventoryItem[] = [];
 const fieldClassName =
   "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20";
 const labelClassName =
-  "flex flex-col gap-1 text-sm font-medium text-neutralDark";
+  "flex flex-col gap-1 text-sm font-medium text-theme-text-primary";
 
 function itemToInput(item: ChemicalInventoryItem): ChemicalInventoryInput {
   return {

@@ -141,6 +141,9 @@ describe("InventoryClient", () => {
   it("renders summary and low stock state", () => {
     render(<InventoryClient />);
 
+    expect(screen.getByLabelText("Name").closest("label")).toHaveClass(
+      "text-theme-text-primary",
+    );
     expect(screen.getAllByText("Low stock")).toHaveLength(2);
     expect(screen.getByText("Needs reorder review")).toHaveClass(
       "text-status-alert-danger-fg",

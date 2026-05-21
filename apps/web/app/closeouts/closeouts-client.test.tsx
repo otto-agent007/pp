@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -337,6 +337,13 @@ describe("CloseoutsClient", () => {
 
     await user.selectOptions(screen.getByLabelText("Queue status"), "all");
 
+    const otherJobRow = screen.getByText("Upcoming service").closest("button");
+
+    if (!otherJobRow) {
+      throw new Error("Expected other job row to render as a button");
+    }
+
+    expect(within(otherJobRow).getByText(/May 6, 2026/)).toBeInTheDocument();
     expect(screen.getByText("Upcoming service")).toBeInTheDocument();
   });
 
