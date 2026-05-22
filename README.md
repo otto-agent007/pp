@@ -47,6 +47,8 @@ corepack pnpm demo:reset -- --target local --confirm seed-demo-data
 
 The seed creates the easy admin demo login `demo@email.com` / `password` plus the synthetic ops story, including San Diego demo stops, proof-ready closeout data, and synthetic service-photo/signature media. Local development sign-in also shows a one-click demo login button; when Supabase env values are absent, it opens the no-auth local fixture demo instead of calling authenticated seed routes, so a manual local seed step is optional. Use `--target preview` only from an operator shell with the approved preview Supabase URL and `SUPABASE_SERVICE_ROLE_KEY` already loaded. Optional technician login demos can pass `--tech-password-env DEMO_TECH_PASSWORD`; that technician password value stays in the operator environment and is never written to the repo. The dashboard action uses the same server-side guardrails and replaces existing demo-owned records before reseeding.
 
+The current fixture-ready admin polish also surfaces inventory usage recency and closeout proof-state cues from existing hook data, without new migrations, providers, seed/reset writes, preview mutations, or production mutations.
+
 ## Environment
 
 Copy `.env.example` to the app-specific env file you need, then provide Supabase and provider credentials.

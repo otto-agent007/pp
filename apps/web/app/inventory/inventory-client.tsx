@@ -19,6 +19,7 @@ import {
 import type {
   ChemicalInventoryInput,
   ChemicalInventoryItem,
+  ChemicalLog,
   ChemicalLogInput,
   InventoryStatus,
   InventoryUnit,
@@ -80,6 +81,30 @@ function jobLabel(job: Job) {
   return `${scheduled} - ${customer} - ${location}`;
 }
 
+function formatDateMedium(value: string) {
+  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
+function groupLogsByChemical(logs: ChemicalLog[]) {
+  const logsByChemical = new Map<string, ChemicalLog[]>();
+
+  for (const log of logs) {
+    const chemicalLogs = logsByChemical.get(log.chemical_id) ?? [];
+    chemicalLogs.push(log);
+    logsByChemical.set(log.chemical_id, chemicalLogs);
+  }
+
+  for (const chemicalLogs of logsByChemical.values()) {
+    chemicalLogs.sort(
+      (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at),
+    );
+  }
+
+  return logsByChemical;
+}
+
 export function InventoryClient() {
   const inventoryQuery = useChemicalInventory();
   const logsQuery = useChemicalLogs();
@@ -98,8 +123,16 @@ export function InventoryClient() {
   const [logForm, setLogForm] = useState<ChemicalLogInput>(emptyLogForm);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [logError, setLogError] = useState<string | null>(null);
+  const [expandedChemicalId, setExpandedChemicalId] = useState<string | null>(
+    null,
+  );
 
   const inventoryItems = inventoryQuery.data ?? emptyInventoryItems;
+  const canShowChemicalUsage = !logsQuery.isLoading && !logsQuery.error;
+  const logsByChemical = useMemo(
+    () => groupLogsByChemical(logsQuery.data ?? []),
+    [logsQuery.data],
+  );
   const activeInventory = useMemo(
     () => inventoryItems.filter((item) => item.status === "active"),
     [inventoryItems],
@@ -334,28 +367,43 @@ export function InventoryClient() {
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {lowStockItems.length > 0 ? (
-            lowStockItems.map((item) => (
-              <Card
-                className="border-status-alert-danger-border bg-status-alert-danger-bg shadow-none"
-                key={item.id}
-                padding="sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-neutralDark">
-                      {item.name}
-                    </p>
-                    <p className="mt-1 text-sm text-status-alert-danger-fg">
-                      {item.current_stock} {item.unit} on hand
-                      {item.reorder_level !== null
-                        ? ` / reorder at ${item.reorder_level}`
-                        : ""}
-                    </p>
+            lowStockItems.map((item) => {
+              const latestLog = logsByChemical.get(item.id)?.[0] ?? null;
+
+              return (
+                <Card
+                  className="border-status-alert-danger-border bg-status-alert-danger-bg shadow-none"
+                  key={item.id}
+                  padding="sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-neutralDark">
+                        {item.name}
+                      </p>
+                      <p className="mt-1 text-sm text-status-alert-danger-fg">
+                        {item.current_stock} {item.unit} on hand
+                        {item.reorder_level !== null
+                          ? ` / reorder at ${item.reorder_level}`
+                          : ""}
+                      </p>
+                      {canShowChemicalUsage ? (
+                        <p className="mt-1 text-xs font-medium text-theme-text-muted">
+                          {latestLog
+                            ? `Last used ${formatDateMedium(
+                                latestLog.created_at,
+                              )} - ${
+                                latestLog.job?.customer?.name ?? "unknown job"
+                              }`
+                            : "No uses logged - inspect for aging stock"}
+                        </p>
+                      ) : null}
+                    </div>
+                    <StatusPill tone="danger">Reorder</StatusPill>
                   </div>
-                  <StatusPill tone="danger">Reorder</StatusPill>
-                </div>
-              </Card>
-            ))
+                </Card>
+              );
+            })
           ) : (
             <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-subtle p-4 text-sm text-theme-text-secondary md:col-span-2 xl:col-span-3">
               No products are at reorder level. Keep logging usage after each
@@ -381,6 +429,8 @@ export function InventoryClient() {
                 item.status === "active" &&
                 item.reorder_level !== null &&
                 item.current_stock <= item.reorder_level;
+              const chemicalLogs = logsByChemical.get(item.id) ?? [];
+              const isExpanded = expandedChemicalId === item.id;
 
               return (
                 <Card
@@ -414,6 +464,21 @@ export function InventoryClient() {
                           ? `EPA ${item.epa_number}`
                           : "No EPA number"}
                       </p>
+                      {canShowChemicalUsage ? (
+                        <p
+                          className={
+                            chemicalLogs.length > 0
+                              ? "mt-1 text-sm text-theme-text-secondary"
+                              : "mt-1 text-sm text-theme-text-muted"
+                          }
+                        >
+                          {chemicalLogs.length === 0
+                            ? "No uses logged yet"
+                            : `${chemicalLogs.length} use${
+                                chemicalLogs.length === 1 ? "" : "s"
+                              } logged`}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -431,8 +496,46 @@ export function InventoryClient() {
                           Archive
                         </Button>
                       ) : null}
+                      {canShowChemicalUsage && chemicalLogs.length > 0 ? (
+                        <Button
+                          aria-label={
+                            isExpanded
+                              ? `Collapse uses for ${item.name}`
+                              : `View uses for ${item.name}`
+                          }
+                          onClick={() =>
+                            setExpandedChemicalId(isExpanded ? null : item.id)
+                          }
+                          variant="ghost"
+                        >
+                          {isExpanded ? "Collapse" : "View uses"}
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
+                  {isExpanded ? (
+                    <div className="mt-4 rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+                        Recent uses
+                      </p>
+                      <div className="mt-3 grid gap-2">
+                        {chemicalLogs.slice(0, 3).map((log) => (
+                          <div
+                            className="grid gap-1 text-sm sm:grid-cols-[minmax(0,1fr)_auto]"
+                            key={log.id}
+                          >
+                            <p className="font-medium text-neutralDark">
+                              {log.job?.customer?.name ?? "Unknown customer"}
+                            </p>
+                            <p className="text-theme-text-secondary">
+                              {log.amount_used} {item.unit} -{" "}
+                              {formatDateMedium(log.created_at)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </Card>
               );
             })

@@ -294,9 +294,7 @@ describe("CloseoutsClient", () => {
         "Customer portal can show reviewed service forms, photos, signatures, service date, and location; exact technician GPS stays private.",
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("Needs photo and signature before billing."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Missing: photo · signature")).toBeInTheDocument();
     expect(screen.getByText("Sent")).toBeInTheDocument();
     expect(screen.getByText("Treatment Form")).toBeInTheDocument();
     expect(screen.getByText("Ants")).toBeInTheDocument();
@@ -306,6 +304,14 @@ describe("CloseoutsClient", () => {
     expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
     expect(
       screen.getByText("Treatment form, chemical log, photo, and signature are captured."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Location evidence")).toBeInTheDocument();
+    expect(screen.getByText("Billing captures")).toBeInTheDocument();
+    expect(
+      screen.getByText("All proof captured. Create invoice to close out."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Invoice will include GPS + form evidence."),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create invoice" })).toHaveAttribute(
       "href",
@@ -327,6 +333,9 @@ describe("CloseoutsClient", () => {
       "href",
       "/customers?customer_id=customer-1",
     );
+    expect(
+      screen.getByText("Awaiting customer payment. No action needed until paid or overdue."),
+    ).toBeInTheDocument();
   });
 
   it("filters to completed jobs by default and can show all jobs", async () => {
@@ -463,6 +472,10 @@ describe("CloseoutsClient", () => {
     await user.click(screen.getByRole("button", { name: /Missing captures 1/i }));
 
     expect(screen.getByText("Needs photo and signature")).toBeInTheDocument();
+    expect(screen.getByText("Missing: photo · signature")).toBeInTheDocument();
+    expect(
+      screen.getByText("Billing handoff is blocked until captures sync."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();
   });
 

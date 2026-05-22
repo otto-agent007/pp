@@ -27,6 +27,10 @@ Completed in this batch:
 12. Added Demo-Visible Fixture Smoke V1: local fixture demo seed status/actions no longer call the authenticated seed route, tokened `/portal` reads local fixture closeouts/billing, and the fixture clock is stable for public portal hydration.
 13. Verified the local fixture demo on `http://localhost:3000` with Browser route walking for `/`, `/customers`, `/inventory`, `/payments`, `/closeouts`, and tokened `/portal`; Rivera Cafe data, 6 inventory items, and all 3 checked-in `/demo-media/*` proof assets rendered without fresh console errors or document-level overflow.
 14. Refreshed current Vercel discovery: latest Ready preview is `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app` and latest Ready production deployment is `https://pest-patrol-5sw483rdk-ottoagent007-gmailcoms-projects.vercel.app`; real seed/reset remains blocked in this shell before writes on missing approved Supabase env names.
+15. Added Inventory Usage + Closeout Proof States V1: `/inventory` now derives per-chemical usage counts, low-stock usage recency, and inline recent-use strips from already loaded chemical logs.
+16. Refined `/closeouts` proof-state UI with missing-capture micro-lines, grouped location/billing evidence, and next-action cues for blocked, ready, invoiced, sent, paid, and voided jobs.
+17. Preserved existing hooks, data flow, API contracts, schema, providers, env, seed/reset writes, preview state, and production state for the 014 relay implementation.
+18. Verified the 014 slice with focused inventory/closeouts tests, full repo tests, typecheck, lint, build, and `git diff --check`.
 
 Previously completed launch-readiness items still matter:
 

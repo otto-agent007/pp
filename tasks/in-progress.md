@@ -4,6 +4,15 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Inventory Usage + Closeout Proof States V1 now surfaces per-chemical usage
+  counts, low-stock last-used recency, and expandable last-3-use history on
+  `/inventory` from already loaded chemical logs.
+- `/closeouts` now uses missing-capture micro-lines, grouped location/billing
+  proof evidence, and next-action context cues for blocked, ready, invoiced,
+  sent, paid, and voided jobs.
+- The 014 relay implementation kept existing hooks, data flow, API contracts,
+  schema, providers, env, seed/reset writes, preview state, and production state
+  out of scope.
 - Demo-Visible Fixture Smoke V1 made local fixture demo data truly no-auth:
   the dashboard Demo data panel now reports `Local fixture demo`, fixture
   seed/reset actions are local no-ops, and the UI no longer shows
@@ -83,10 +92,6 @@ Recent closure:
 
 Follow-up candidates:
 
-- [ ] Claude relay 014 proposal is reviewed at
-  `.claude/design/014-inventory-usage-closeout-proof-states/codex-review.md`;
-  keep implementation as a narrow UI-only slice after the current dirty
-  worktree is preserved or split into explicit review surfaces.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
