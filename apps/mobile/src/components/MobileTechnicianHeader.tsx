@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { buildMobileTechnicianReadinessPanel } from "@pest-patrol/domain";
+import { Button } from "@pest-patrol/ui-native";
 
 import {
   mobileRouteShellPalette,
@@ -74,43 +75,13 @@ export function MobileTechnicianHeader({
         </View>
 
         <View style={{ gap: 8 }}>
-          <Pressable
-            onPress={toggleLanguage}
-            style={{
-              ...mobileRouteShellStyles.control,
-              borderColor: mobileRouteShellPalette.border,
-              borderWidth: 1,
-            }}
-          >
-            <Text
-              style={{
-                color: mobileRouteShellPalette.primaryText,
-                fontSize: 13,
-                fontWeight: "800",
-              }}
-            >
-              {lang === "en" ? "Español" : "English"}
-            </Text>
-          </Pressable>
+          <Button onPress={toggleLanguage} size="sm" variant="ghost">
+            {lang === "en" ? "Español" : "English"}
+          </Button>
           {onSignOut ? (
-            <Pressable
-              onPress={onSignOut}
-              style={{
-                ...mobileRouteShellStyles.control,
-                borderColor: mobileRouteShellPalette.border,
-                borderWidth: 1,
-              }}
-            >
-              <Text
-                style={{
-                  color: mobileRouteShellPalette.primaryText,
-                  fontSize: 13,
-                  fontWeight: "800",
-                }}
-              >
-                Sign out
-              </Text>
-            </Pressable>
+            <Button onPress={onSignOut} size="sm" variant="ghost">
+              Sign out
+            </Button>
           ) : null}
         </View>
       </View>

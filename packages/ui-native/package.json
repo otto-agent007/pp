@@ -1,0 +1,27 @@
+{
+  "name": "@pest-patrol/ui-native",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.tsx",
+  "types": "./index.tsx",
+  "dependencies": {
+    "@pest-patrol/ui-tokens": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.3.0",
+    "react-native": ">=0.76.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "react": "^18.3.1",
+    "react-native": "^0.76.5",
+    "typescript": "^5.7.2"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  }
+}

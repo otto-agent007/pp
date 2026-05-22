@@ -27,6 +27,8 @@ Completed in this batch:
 12. Added Demo-Visible Fixture Smoke V1: local fixture demo seed status/actions no longer call the authenticated seed route, tokened `/portal` reads local fixture closeouts/billing, and the fixture clock is stable for public portal hydration.
 13. Verified the local fixture demo on `http://localhost:3000` with Browser route walking for `/`, `/customers`, `/inventory`, `/payments`, `/closeouts`, and tokened `/portal`; Rivera Cafe data, 6 inventory items, and all 3 checked-in `/demo-media/*` proof assets rendered without fresh console errors or document-level overflow.
 14. Refreshed current Vercel discovery: latest Ready preview is `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app` and latest Ready production deployment is `https://pest-patrol-5sw483rdk-ottoagent007-gmailcoms-projects.vercel.app`; real seed/reset remains blocked in this shell before writes on missing approved Supabase env names.
+15. Added Mobile UI Native Primitives V1: `@pest-patrol/ui-native` now provides token-driven `Button`, `Card`, `Eyebrow`, `StatusPill`, `StatTile`, and `Avatar` primitives for the Expo technician app.
+16. Migrated the targeted mobile proof points only: `AssignedJobCard` uses the shared native `StatusPill`, and `MobileTechnicianHeader` uses the shared native `Button` for Language and Sign Out controls while preserving the existing route-shell styles and offline-first flow.
 
 Previously completed launch-readiness items still matter:
 
@@ -76,5 +78,6 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 9. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
 10. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 11. Confirm manual-fallback provider smoke in an authenticated browser when webhook env names are intentionally unset; local focused tests now cover the manual-only portal, notification, and payment setup states, but browser evidence remains gated on env/access.
-12. Decide whether reviewed compliance advisory evaluation, provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next only after authenticated preview evidence is available.
-13. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.
+12. Continue mobile primitive adoption only as small follow-up slices, such as capture-control buttons/cards or an offline badge primitive; keep broad mobile restyling deferred.
+13. Decide whether reviewed compliance advisory evaluation, provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next only after authenticated preview evidence is available.
+14. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.

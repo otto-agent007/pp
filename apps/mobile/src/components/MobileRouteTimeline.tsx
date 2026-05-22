@@ -2,12 +2,21 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MobileDailyRouteTimeline, MobileRouteTimelineJob } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
+import type { StatusPillTone } from "@pest-patrol/ui-native";
 
 import {
   mobileRouteShellPalette,
   mobileRouteShellStyles,
 } from "../styles/routeShellStyles";
 import { AssignedJobCard } from "./AssignedJobCard";
+
+const statusTones: Record<JobStatus, StatusPillTone> = {
+  canceled: "neutral",
+  completed: "success",
+  en_route: "info",
+  in_progress: "warning",
+  scheduled: "neutral",
+};
 
 interface MobileRouteTimelineProps {
   focusedJobId?: string | null;
@@ -52,6 +61,7 @@ function RouteSection({
         notes={item.job.service_notes}
         scheduledStart={item.job.scheduled_start}
         statusLabel={statusLabels[item.job.status]}
+        statusTone={statusTones[item.job.status]}
         workPlan={item.workPlan}
       >
         {renderJobControls(item.job, item.workPlan)}

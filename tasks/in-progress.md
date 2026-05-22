@@ -4,6 +4,15 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Mobile UI Native Primitives V1 added `@pest-patrol/ui-native` with shared
+  token-driven `Button`, `Card`, `Eyebrow`, `StatusPill`, `StatTile`, and
+  `Avatar` React Native primitives.
+- `AssignedJobCard` now uses the shared native `StatusPill`, and
+  `MobileTechnicianHeader` uses the shared native `Button` for Language and
+  Sign Out controls.
+- The slice kept `routeShellStyles.ts`, `mobileCaptureControlStyles`,
+  migrations, provider setup, env changes, preview/production mutations, auth
+  changes, and app chrome out of scope.
 - Demo-Visible Fixture Smoke V1 made local fixture demo data truly no-auth:
   the dashboard Demo data panel now reports `Local fixture demo`, fixture
   seed/reset actions are local no-ops, and the UI no longer shows
@@ -83,6 +92,9 @@ Recent closure:
 
 Follow-up candidates:
 
+- [ ] Consider the next mobile-native primitive adoption slice only after this
+  package lands; likely candidates are capture-control buttons/cards or an
+  offline badge primitive, not a broad mobile restyle.
 - [ ] Claude relay 014 proposal is reviewed at
   `.claude/design/014-inventory-usage-closeout-proof-states/codex-review.md`;
   keep implementation as a narrow UI-only slice after the current dirty
