@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { Image, Pressable, Text, TextInput, View } from "react-native";
+import { Image, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { CaptureButton, CaptureSection } from "@pest-patrol/ui-native";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobPhotos } from "../store/useJobPhotos";
@@ -76,7 +77,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
   }
 
   return (
-    <View style={mobileCaptureControlStyles.section}>
+    <CaptureSection>
       <Text style={mobileCaptureControlStyles.title}>{copy.photos.title}</Text>
       <Text style={mobileCaptureControlStyles.warningBody}>
         {copy.photos.description}
@@ -113,29 +114,29 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       ) : null}
 
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Pressable
+        <CaptureButton
           onPress={() => void handleCamera()}
+          variant="primary"
           style={{
-            ...mobileCaptureControlStyles.primaryButton,
             flex: 1,
           }}
         >
           <Text style={mobileCaptureControlStyles.primaryButtonText}>
             {copy.photos.camera}
           </Text>
-        </Pressable>
-        <Pressable
+        </CaptureButton>
+        <CaptureButton
           onPress={() => void handleLibrary()}
+          variant="secondary"
           style={{
-            ...mobileCaptureControlStyles.secondaryButton,
             flex: 1,
           }}
         >
           <Text style={mobileCaptureControlStyles.secondaryButtonText}>
             {copy.photos.library}
           </Text>
-        </Pressable>
+        </CaptureButton>
       </View>
-    </View>
+    </CaptureSection>
   );
 }

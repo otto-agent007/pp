@@ -1,9 +1,14 @@
-import { Pressable, Text, View } from "react-native";
+import { Text } from "react-native";
 import {
   buildMobileJobWorkPlan,
   getMobileCompletionReadinessGuard,
 } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
+import {
+  CaptureButton,
+  CaptureCard,
+  CaptureSection,
+} from "@pest-patrol/ui-native";
 
 import { useAssignedJobs } from "../store/useAssignedJobs";
 import { useLanguage } from "../store/useLanguage";
@@ -40,9 +45,8 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
   }
 
   return (
-    <View
+    <CaptureSection
       style={{
-        ...mobileCaptureControlStyles.section,
         flexDirection: "row",
         flexWrap: "wrap",
       }}
@@ -53,21 +57,18 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
           status === "completed" && shouldWarnBeforeCompletion;
 
         return (
-          <Pressable
+          <CaptureButton
             key={status}
             onPress={() => {
               if (!isGuardedCompletion) {
                 queueStatusUpdate(job.id, status);
               }
             }}
+            variant={isActive ? "primary" : "secondary"}
             style={{
-              ...(isActive
-                ? mobileCaptureControlStyles.primaryButton
-                : mobileCaptureControlStyles.secondaryButton),
               borderColor: isActive
                 ? mobileRouteShellPalette.rail
                 : mobileRouteShellPalette.borderStrong,
-              borderWidth: 1,
               minHeight: 40,
             }}
           >
@@ -82,16 +83,17 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
                 ? copy.fieldStatus.reviewCompletion
                 : copy.status[status]}
             </Text>
-          </Pressable>
+          </CaptureButton>
         );
       })}
 
       {shouldWarnBeforeCompletion ? (
-        <View
-          style={{
-            ...mobileCaptureControlStyles.warningCard,
-            ...mobileRouteShellTone.visit.pending,
-          }}
+        <CaptureCard
+          style={[
+            mobileCaptureControlStyles.warningCard,
+            mobileRouteShellTone.visit.pending,
+          ]}
+          tone="warning"
         >
           <Text style={mobileCaptureControlStyles.warningTitle}>
             {copy.fieldStatus.reviewBeforeCompleting}
@@ -99,16 +101,17 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
           <Text style={mobileCaptureControlStyles.warningBody}>
             {completionGuard.summary}
           </Text>
-          <Pressable
+          <CaptureButton
             onPress={() => queueStatusUpdate(job.id, "completed")}
+            variant="warning"
             style={mobileCaptureControlStyles.warningButton}
           >
             <Text style={mobileCaptureControlStyles.primaryButtonText}>
               {copy.fieldStatus.completeAnyway}
             </Text>
-          </Pressable>
-        </View>
+          </CaptureButton>
+        </CaptureCard>
       ) : null}
-    </View>
+    </CaptureSection>
   );
 }

@@ -172,6 +172,13 @@ describe("ComplianceClient", () => {
     expect(
       await screen.findByText("Chemical application advisory is ready with 1 cited source."),
     ).toBeInTheDocument();
+    expect(screen.getByText("Evaluation")).toBeInTheDocument();
+    expect(screen.getByText("Advisory ready for operator review")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Cited advisory has 1 source, 0 missing evidence fields, and 0 operator review items.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("DPR structural recordkeeping")).toBeInTheDocument();
   });
 
@@ -234,6 +241,22 @@ describe("ComplianceClient", () => {
     expect(
       screen.getByText("Set OPENAI_API_KEY to enable source-backed retrieval."),
     ).toBeInTheDocument();
+  });
+
+  it("sanitizes advisory runtime errors when local provider setup is unavailable", async () => {
+    const user = userEvent.setup();
+    mutateAsync.mockRejectedValueOnce(new Error("Supabase is not configured"));
+
+    render(<ComplianceClient />);
+
+    await user.click(screen.getByRole("button", { name: "Run advisory" }));
+
+    expect(
+      await screen.findByText(
+        "Compliance advisory runtime is unavailable. Check setup readiness and try again after approved admin configuration is available.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Supabase is not configured")).not.toBeInTheDocument();
   });
 
   it("renders audit loading and error states without raw setup details", () => {

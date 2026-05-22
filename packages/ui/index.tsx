@@ -556,6 +556,48 @@ export function StatTile({
   );
 }
 
+export type CountTileProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> & {
+  active?: boolean;
+  count: React.ReactNode;
+  label: React.ReactNode;
+  tone?: StatusPillTone;
+};
+
+export function CountTile({
+  active = false,
+  className,
+  count,
+  disabled,
+  label,
+  tone = "neutral",
+  type = "button",
+  ...props
+}: CountTileProps) {
+  return (
+    <button
+      aria-pressed={active}
+      className={cx(
+        "rounded-lg border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        statTileToneClasses[tone],
+        active && "ring-2 ring-theme-action-primary ring-offset-1",
+        !disabled && "hover:border-theme-action-primary",
+        className,
+      )}
+      disabled={disabled}
+      type={type}
+      {...props}
+    >
+      <Eyebrow>{label}</Eyebrow>
+      <div className="mt-2 text-2xl font-bold tabular-nums text-neutralDark">
+        {count}
+      </div>
+    </button>
+  );
+}
+
 export type AvatarSize = "lg" | "md" | "sm";
 
 const avatarSizeClasses: Record<AvatarSize, string> = {

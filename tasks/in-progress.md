@@ -4,6 +4,33 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Provider-Free Polish Next Five V1 graduated capture-control native
+  primitives, shared CountTile reuse, wordmark promotion-readiness docs,
+  fixture-backed compliance advisory evaluation, and manual-fallback provider
+  copy harmonization.
+- Mobile capture controls now use shared `@pest-patrol/ui-native`
+  `CaptureSection`, `CaptureCard`, and `CaptureButton` primitives while
+  preserving offline stores, sync queue payloads, route-shell layout, and the
+  existing capture-control styles that still own inputs/details.
+- `/closeouts` and `/payments` now reuse a shared presentation-only
+  `CountTile` primitive with accessible button semantics without changing
+  filtering behavior or domain models.
+- Brand readiness now documents production title text, active/reference asset
+  boundaries, minimum lockup sizing, and mobile lockup behavior while keeping
+  inactive v3 wordmark drafts out of app chrome and package exports.
+- Compliance advisory evaluation now runs fixture-backed domain/UI checks and
+  keeps schema-unavailable, RAG-disabled, and runtime-unavailable states
+  advisory-only with sanitized operator copy.
+- Portal, notification, payment, automation, and home launch-gate surfaces now
+  share manual-fallback/provider-readiness copy without exposing provider
+  internals, webhook URLs, secrets, payloads, or raw portal tokens.
+- Focused tests, mobile/web/package typechecks, local Browser QA for
+  `/payments`, `/closeouts`, and `/compliance` at desktop and narrow widths,
+  `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and
+  `corepack pnpm build` passed for the final branch.
+- The batch kept migrations, provider setup, env changes, Supabase writes, live
+  compliance ingestion, preview/production mutations, provider dashboard work,
+  and app-chrome brand swaps out of scope.
 - Stash Rescue Sync Badge + Compliance Live State V1 added a shared native
   `SyncBadge` primitive with tone, dot, and pending-count support.
 - `SyncStatusIndicator` now uses the shared badge for its visual state while

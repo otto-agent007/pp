@@ -3,6 +3,7 @@
 import {
   buildComplianceAdvisory,
   complianceSourceAnchors,
+  evaluateComplianceAdvisory,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
   getComplianceSchemaUnavailableReadiness,
@@ -75,6 +76,20 @@ function statusTone(status: ComplianceAdvisory["status"]) {
   return "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg";
 }
 
+function evaluationTone(
+  status: ReturnType<typeof evaluateComplianceAdvisory>["status"],
+) {
+  if (status === "ready") {
+    return "border-status-alert-success-border bg-status-alert-success-bg text-status-alert-success-fg";
+  }
+
+  if (status === "operator_review_required") {
+    return "border-status-alert-warning-border bg-status-alert-warning-bg text-status-alert-warning-fg";
+  }
+
+  return "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg";
+}
+
 function runtimeCopy(runtime: ComplianceRuntime) {
   if (runtime.available) {
     return "Runtime: OpenAI retrieval available.";
@@ -83,6 +98,21 @@ function runtimeCopy(runtime: ComplianceRuntime) {
   return `Runtime: RAG disabled - ${
     runtime.reason ?? `${runtime.requiredEnvName} is not configured`
   }.`;
+}
+
+function advisoryErrorCopy(caught: unknown) {
+  const message =
+    caught instanceof Error ? caught.message : "Unable to create compliance advisory";
+
+  if (
+    /supabase|schema|relation|service-role|service role|OPENAI_API_KEY/i.test(
+      message,
+    )
+  ) {
+    return "Compliance advisory runtime is unavailable. Check setup readiness and try again after approved admin configuration is available.";
+  }
+
+  return message;
 }
 
 function EmptyState({ children }: { children: string }) {
@@ -167,6 +197,10 @@ export function ComplianceClient() {
     () => getComplianceMultiUnitAuditSummary([], []),
     [],
   );
+  const advisoryEvaluation = useMemo(
+    () => (advisory ? evaluateComplianceAdvisory(advisory) : null),
+    [advisory],
+  );
 
   async function submitAdvisory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,11 +217,7 @@ export function ComplianceClient() {
       setAdvisorySetup(result.setup ?? null);
     } catch (caught) {
       setAdvisoryRuntime(null);
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Unable to create compliance advisory",
-      );
+      setError(advisoryErrorCopy(caught));
     }
   }
 
@@ -451,6 +481,39 @@ export function ComplianceClient() {
                 {advisory.status.replace(/_/g, " ")}
               </p>
               <p className="text-sm text-theme-text-secondary">{advisory.summary}</p>
+              {advisoryEvaluation ? (
+                <div className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm">
+                  <h3 className="font-semibold text-neutralDark">Evaluation</h3>
+                  <p
+                    className={`mt-2 w-fit rounded-md border px-2 py-1 text-xs font-semibold ${evaluationTone(
+                      advisoryEvaluation.status,
+                    )}`}
+                  >
+                    {advisoryEvaluation.label}
+                  </p>
+                  <p className="mt-2 text-theme-text-secondary">
+                    {advisoryEvaluation.summary}
+                  </p>
+                  <ul className="mt-3 grid gap-2">
+                    {advisoryEvaluation.checks.map((check) => (
+                      <li
+                        className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-2"
+                        key={check.id}
+                      >
+                        <span className="font-semibold text-neutralDark">
+                          {check.label}
+                        </span>
+                        <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
+                          {check.state}
+                        </span>
+                        <p className="mt-1 text-theme-text-secondary">
+                          {check.detail}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {advisoryRuntime ? (
                 <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm text-theme-text-secondary">
                   {runtimeCopy(advisoryRuntime)}

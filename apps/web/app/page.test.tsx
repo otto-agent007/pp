@@ -149,6 +149,11 @@ describe("HomePage", () => {
     expect(screen.getByText("Compliance source setup")).toBeInTheDocument();
     expect(screen.getByText("Manual fallback accepted")).toBeInTheDocument();
     expect(
+      screen.getByText(
+        "Portal links can be copied and shared manually without changing provider settings.",
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText("corepack pnpm compliance:ingest -- --dry-run --no-embed"),
     ).toBeInTheDocument();
     expect(screen.queryByText(/service-role key/i)).not.toBeInTheDocument();

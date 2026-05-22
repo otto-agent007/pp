@@ -88,6 +88,11 @@ export type {
   ProductionSmokeChecklistItem,
   RemainingProductionReadinessAction,
 } from "./productionReadiness";
+export { getProviderReadinessCopy } from "./providerReadiness";
+export type {
+  ProviderReadinessCopy,
+  ProviderReadinessSurface,
+} from "./providerReadiness";
 
 export {
   createAutomationRule,
@@ -349,6 +354,7 @@ export {
   complianceSourceAnchors,
   getComplianceKnowledgeBaseReadiness,
   createComplianceAdvisoryAudit,
+  evaluateComplianceAdvisory,
   getComplianceMultiUnitAuditSummary,
   getComplianceRuntimeStatus,
   getComplianceSchemaReadyReadiness,
@@ -366,6 +372,10 @@ export {
 } from "./compliance";
 export type {
   ComplianceAdvisoryBuildInput,
+  ComplianceAdvisoryEvaluation,
+  ComplianceAdvisoryEvaluationCheck,
+  ComplianceAdvisoryEvaluationCheckState,
+  ComplianceAdvisoryEvaluationStatus,
   ComplianceChunkSearchInput,
   ComplianceChunkIngestionInput,
   ComplianceDocumentIngestionInput,

@@ -41,6 +41,30 @@ export interface CardProps {
   tone?: CardTone;
 }
 
+export type CaptureButtonVariant = "primary" | "secondary" | "warning";
+
+export interface CaptureButtonProps {
+  children: ReactNode;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  variant?: CaptureButtonVariant;
+}
+
+export type CaptureCardTone = "surface" | "warning";
+
+export interface CaptureCardProps {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  tone?: CaptureCardTone;
+}
+
+export interface CaptureSectionProps {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
 export type EyebrowTone = "accent" | "danger" | "inverse" | "muted";
 
 export interface EyebrowProps {
@@ -191,6 +215,59 @@ const cardToneStyles: Record<CardTone, ViewStyle> = {
   },
   surface: {
     backgroundColor: lightTheme.background.surface,
+  },
+};
+
+const captureButtonVariantStyles: Record<
+  CaptureButtonVariant,
+  { pressed: ViewStyle; root: ViewStyle; text: TextStyle }
+> = {
+  primary: {
+    pressed: {
+      opacity: 0.88,
+    },
+    root: {
+      backgroundColor: lightTheme.background.inverse,
+      borderColor: transparent,
+    },
+    text: {
+      color: lightTheme.text.inverse,
+    },
+  },
+  secondary: {
+    pressed: {
+      backgroundColor: lightTheme.background.subtle,
+    },
+    root: {
+      backgroundColor: lightTheme.background.surface,
+      borderColor: lightTheme.border.strong,
+    },
+    text: {
+      color: lightTheme.text.primary,
+    },
+  },
+  warning: {
+    pressed: {
+      opacity: 0.88,
+    },
+    root: {
+      backgroundColor: lightTheme.background.inverse,
+      borderColor: transparent,
+    },
+    text: {
+      color: lightTheme.text.inverse,
+    },
+  },
+};
+
+const captureCardToneStyles: Record<CaptureCardTone, ViewStyle> = {
+  surface: {
+    backgroundColor: lightTheme.background.surface,
+    borderColor: lightTheme.border.subtle,
+  },
+  warning: {
+    backgroundColor: status.alert.warning.bg,
+    borderColor: status.alert.warning.border,
   },
 };
 
@@ -428,6 +505,66 @@ export function Card({
   );
 }
 
+export function CaptureSection({ children, style }: CaptureSectionProps) {
+  return <View style={[styles.captureSection, style]}>{children}</View>;
+}
+
+export function CaptureCard({
+  children,
+  style,
+  tone = "surface",
+}: CaptureCardProps) {
+  const content =
+    typeof children === "string" || typeof children === "number" ? (
+      <Text style={styles.captureCardText}>{children}</Text>
+    ) : (
+      children
+    );
+
+  return (
+    <View style={[styles.captureCard, captureCardToneStyles[tone], style]}>
+      {content}
+    </View>
+  );
+}
+
+export function CaptureButton({
+  children,
+  disabled = false,
+  fullWidth = false,
+  onPress,
+  style,
+  variant = "primary",
+}: CaptureButtonProps) {
+  const variantStyles = captureButtonVariantStyles[variant];
+  const content =
+    typeof children === "string" || typeof children === "number" ? (
+      <Text style={[styles.captureButtonText, variantStyles.text]}>
+        {children}
+      </Text>
+    ) : (
+      children
+    );
+
+  return (
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      pointerEvents={disabled ? "none" : "auto"}
+      style={({ pressed }) => [
+        styles.captureButton,
+        variantStyles.root,
+        fullWidth ? styles.fullWidth : styles.contentWidth,
+        pressed ? variantStyles.pressed : null,
+        disabled ? styles.disabled : null,
+        style,
+      ]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
 export function Eyebrow({
   children,
   style,
@@ -525,6 +662,36 @@ const styles = StyleSheet.create({
     borderColor: lightTheme.border.subtle,
     borderRadius: radius.md,
     borderWidth: 1,
+  },
+  captureButton: {
+    alignItems: "center",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing[3],
+  },
+  captureButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  captureCard: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: spacing[2],
+    padding: spacing[3],
+  },
+  captureCardText: {
+    color: lightTheme.text.secondary,
+    fontSize: fontSize.sm,
+    lineHeight: 18,
+  },
+  captureSection: {
+    borderColor: lightTheme.border.subtle,
+    borderTopWidth: 1,
+    gap: spacing[3],
+    marginTop: spacing[3],
+    paddingTop: spacing[3],
   },
   contentWidth: {
     alignSelf: "flex-start",

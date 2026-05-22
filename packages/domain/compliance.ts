@@ -164,6 +164,30 @@ export interface ComplianceKnowledgeBaseReadiness {
   workflows: ComplianceWorkflowKnowledgeBaseReadiness[];
 }
 
+export type ComplianceAdvisoryEvaluationStatus =
+  | "blocked"
+  | "operator_review_required"
+  | "ready";
+
+export type ComplianceAdvisoryEvaluationCheckState =
+  | "blocked"
+  | "pass"
+  | "review";
+
+export interface ComplianceAdvisoryEvaluationCheck {
+  detail: string;
+  id: "advisory-scope" | "required-evidence" | "source-citations";
+  label: string;
+  state: ComplianceAdvisoryEvaluationCheckState;
+}
+
+export interface ComplianceAdvisoryEvaluation {
+  checks: ComplianceAdvisoryEvaluationCheck[];
+  label: string;
+  status: ComplianceAdvisoryEvaluationStatus;
+  summary: string;
+}
+
 const workflowLabels: Record<ComplianceWorkflow, string> = {
   chemical_application: "Chemical application",
   multi_unit_audit: "Multi-unit audit",
@@ -323,6 +347,10 @@ function latestDate(values: string[]) {
       .filter((value) => !Number.isNaN(Date.parse(value)))
       .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? null
   );
+}
+
+function plural(value: number, noun: string) {
+  return `${value} ${noun}${value === 1 ? "" : "s"}`;
 }
 
 function toCitation(chunk: ComplianceChunk): ComplianceCitation {
@@ -692,6 +720,78 @@ export function buildComplianceAdvisory(
     status: "advisory_ready",
     summary: `${workflowLabels[input.workflow]} advisory is ready with ${citations.length} cited source${citations.length === 1 ? "" : "s"}.`,
     workflow: input.workflow,
+  };
+}
+
+export function evaluateComplianceAdvisory(
+  advisory: ComplianceAdvisory,
+): ComplianceAdvisoryEvaluation {
+  const citationCount = advisory.citations.length;
+  const missingEvidenceCount = advisory.required_fields.filter(
+    (field) => field.status === "missing",
+  ).length;
+  const unknownEvidenceCount = advisory.required_fields.filter(
+    (field) => field.status === "unknown",
+  ).length;
+  const warningFindingCount = advisory.findings.filter(
+    (finding) => finding.severity !== "info",
+  ).length;
+  const operatorReviewCount =
+    unknownEvidenceCount +
+    warningFindingCount +
+    (advisory.review_task ? 1 : 0);
+  const blocked =
+    advisory.status === "rag_disabled" ||
+    advisory.status === "insufficient_sources" ||
+    citationCount === 0;
+  const status: ComplianceAdvisoryEvaluationStatus = blocked
+    ? "blocked"
+    : missingEvidenceCount > 0 || operatorReviewCount > 0
+      ? "operator_review_required"
+      : "ready";
+  const label =
+    status === "blocked"
+      ? "Blocked until sources are ready"
+      : status === "operator_review_required"
+        ? "Operator review required"
+        : "Advisory ready for operator review";
+  const summary = blocked
+    ? "Advisory is blocked until reviewed citations are available."
+    : `Cited advisory has ${plural(citationCount, "source")}, ${plural(
+        missingEvidenceCount,
+        "missing evidence field",
+      )}, and ${plural(operatorReviewCount, "operator review item")}.`;
+
+  return {
+    checks: [
+      {
+        detail: blocked
+          ? "No reviewed citations are attached to this advisory response."
+          : `${plural(citationCount, "reviewed citation")} attached.`,
+        id: "source-citations",
+        label: "Source citations",
+        state: blocked ? "blocked" : "pass",
+      },
+      {
+        detail:
+          missingEvidenceCount > 0
+            ? `${plural(missingEvidenceCount, "required field")} missing from the workflow context.`
+            : "Required evidence is present or explicitly marked for operator review.",
+        id: "required-evidence",
+        label: "Required evidence",
+        state: missingEvidenceCount > 0 ? "review" : "pass",
+      },
+      {
+        detail:
+          "Advisories are operator aids only and must be verified against cited source material before closeout.",
+        id: "advisory-scope",
+        label: "Advisory scope",
+        state: "review",
+      },
+    ],
+    label,
+    status,
+    summary,
   };
 }
 

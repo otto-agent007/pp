@@ -14,6 +14,7 @@ import {
   buildComplianceQueryText,
   buildComplianceSourceHash,
   chunkComplianceDocumentText,
+  evaluateComplianceAdvisory,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
   getComplianceRuntimeStatus,
@@ -315,6 +316,52 @@ describe("compliance domain", () => {
       expect.arrayContaining([
         expect.objectContaining({ title: "Label citation check" }),
       ]),
+    );
+  });
+
+  it("evaluates fixture-backed advisories for operator-facing copy without live providers", () => {
+    const citedAdvisory = buildComplianceAdvisory({
+      chemicalLog,
+      chunks: [chunk],
+      now,
+      workflow: "chemical_application",
+    });
+    const citedEvaluation = evaluateComplianceAdvisory(citedAdvisory);
+
+    expect(citedEvaluation).toEqual(
+      expect.objectContaining({
+        label: "Operator review required",
+        status: "operator_review_required",
+        summary:
+          "Cited advisory has 1 source, 0 missing evidence fields, and 1 operator review item.",
+      }),
+    );
+    expect(citedEvaluation.checks).toContainEqual(
+      expect.objectContaining({
+        id: "source-citations",
+        state: "pass",
+      }),
+    );
+    expect(citedEvaluation.checks).toContainEqual(
+      expect.objectContaining({
+        id: "advisory-scope",
+        state: "review",
+      }),
+    );
+
+    expect(
+      evaluateComplianceAdvisory(
+        buildComplianceAdvisory({
+          chunks: [],
+          now,
+          workflow: "wdo_branch3",
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        label: "Blocked until sources are ready",
+        status: "blocked",
+      }),
     );
   });
 

@@ -22,6 +22,7 @@ import {
 } from "@pest-patrol/domain";
 import {
   Card,
+  CountTile,
   Eyebrow,
   StatTile,
   StatusPill,
@@ -173,34 +174,6 @@ function EmptyState({
       <p>{children}</p>
       {description ? <p className="mt-2">{description}</p> : null}
     </Card>
-  );
-}
-
-function CountTile({
-  active,
-  label,
-  onClick,
-  value,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  value: number;
-}) {
-  return (
-    <button
-      aria-pressed={active}
-      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
-        active ? "border-primary" : "border-theme-border-subtle"
-      }`}
-      onClick={onClick}
-      type="button"
-    >
-      <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-bold text-neutralDark">{value}</p>
-    </button>
   );
 }
 
@@ -951,17 +924,17 @@ export function CloseoutsClient() {
         {reviewFilters.map((filter) => (
           <CountTile
             active={queueFilter === filter.id}
+            count={filter.count}
             key={filter.id}
             label={filter.label}
             onClick={() => setFilter(filter.id)}
-            value={filter.count}
           />
         ))}
         <CountTile
           active={queueFilter === "all"}
+          count={counts.totalCompleted}
           label="Total completed"
           onClick={() => setFilter("all")}
-          value={counts.totalCompleted}
         />
       </section>
 

@@ -365,11 +365,11 @@ describe("AutomationClient", () => {
     expect(screen.getAllByText("Follow-up call").length).toBeGreaterThan(0);
     expect(screen.getByText("Notification generation")).toBeInTheDocument();
     expect(screen.getByText("Provider: Webhook configured")).toBeInTheDocument();
-    expect(screen.getByText("Webhook secret configured")).toBeInTheDocument();
-    expect(screen.getByText("Webhook delivery is active")).toBeInTheDocument();
+    expect(screen.getByText("Provider credential configured")).toBeInTheDocument();
+    expect(screen.getByText("Webhook notification delivery")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Uses server-only NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET.",
+        "Provider delivery is configured, but receipts remain evidence-gated until provider smoke passes.",
       ),
     ).toBeInTheDocument();
     expect(screen.getAllByText("Follow up with Apex Homes").length).toBeGreaterThan(
@@ -401,18 +401,20 @@ describe("AutomationClient", () => {
     render(<AutomationClient />);
 
     expect(screen.getByText("Provider: Manual fallback")).toBeInTheDocument();
-    expect(screen.getByText("Manual fallback is active")).toBeInTheDocument();
+    expect(screen.getByText("Manual fallback accepted")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery.",
+        "Manual notification follow-up stays available without changing provider settings.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Manual scheduler runs and manual notification follow-up stay available without browser-side cron or webhook secrets.",
+        "Webhook delivery and receipts remain deferred until provider setup is approved.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/https:\/\/provider.example/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/NOTIFICATION_DELIVERY_/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/webhook secret/i)).not.toBeInTheDocument();
   });
 
   it("filters notification delivery triage states", async () => {

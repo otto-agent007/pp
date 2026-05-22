@@ -7,6 +7,7 @@ import {
   Avatar,
   Button,
   Card,
+  CountTile,
   Eyebrow,
   SearchableSelect,
   StatTile,
@@ -89,6 +90,35 @@ describe("@pest-patrol/ui", () => {
     expect(screen.getByText("2 need review")).toHaveClass(
       "text-status-alert-danger-fg",
     );
+  });
+
+  it("renders interactive count tiles with pressed, disabled, and tone states", async () => {
+    const user = userEvent.setup();
+    const handleClick = vi.fn();
+
+    render(
+      <CountTile
+        active
+        count={4}
+        disabled
+        label="Needs review"
+        onClick={handleClick}
+        tone="warning"
+      />,
+    );
+
+    const tile = screen.getByRole("button", { name: /Needs review 4/i });
+
+    expect(tile).toHaveAttribute("aria-pressed", "true");
+    expect(tile).toBeDisabled();
+    expect(tile).toHaveClass(
+      "border-status-alert-warning-border",
+      "bg-status-alert-warning-bg",
+    );
+
+    await user.click(tile);
+
+    expect(handleClick).not.toHaveBeenCalled();
   });
 
   it("renders deterministic avatar initials without app-specific logic", () => {

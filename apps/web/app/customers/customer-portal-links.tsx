@@ -5,6 +5,7 @@ import {
   getCustomerPortalAccessTokenLabel,
   getCustomerPortalAccessTokenState,
   getCustomerPortalHandoffReview,
+  getProviderReadinessCopy,
   type CustomerLedgerSummary,
 } from "@pest-patrol/domain";
 import {
@@ -610,6 +611,10 @@ export function CustomerPortalLinks({
   }
 
   const providerReady = providerStatus.data?.provider === "webhook";
+  const providerReadinessCopy = getProviderReadinessCopy(
+    "portal",
+    providerStatus.data,
+  );
   const providerCopy = (() => {
     if (providerStatus.isLoading) {
       return "Checking portal delivery provider…";
@@ -623,7 +628,7 @@ export function CustomerPortalLinks({
       return null;
     }
 
-    return "Portal delivery provider is manual-only. Share links manually.";
+    return providerReadinessCopy.detail;
   })();
   const showProviderCopy = Boolean(providerCopy);
 
