@@ -18,6 +18,7 @@ import {
   Eyebrow,
   StatTile,
   StatusPill,
+  SyncBadge,
 } from "./index";
 
 vi.mock("react-native", async () => {
@@ -238,6 +239,34 @@ describe("ui-native primitives", () => {
     );
     expect(withoutDotViews).toHaveLength(1);
     expect(collectText(withoutDot)).toContain("Synced");
+  });
+
+  it("renders sync badges with tone, count, and optional dots", () => {
+    const element = (
+      <SyncBadge count={3} tone="warning">
+        Offline
+      </SyncBadge>
+    );
+    const viewStyles = collectElementsByType(element, "View").map((item) =>
+      mergedStyles(item.props.style),
+    );
+
+    expect(collectText(element)).toEqual(
+      expect.arrayContaining(["Offline", "3"]),
+    );
+    expect(viewStyles).toContainEqual(
+      expect.objectContaining({
+        backgroundColor: status.alert.warning.bg,
+        borderColor: status.alert.warning.border,
+      }),
+    );
+    expect(viewStyles).toContainEqual(
+      expect.objectContaining({
+        backgroundColor: status.sync.retrying.solid,
+        height: 6,
+        width: 6,
+      }),
+    );
   });
 
   it("renders stat tiles with tone values and optional detail copy", () => {
