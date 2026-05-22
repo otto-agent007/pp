@@ -4,6 +4,20 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Stash Rescue Sync Badge + Compliance Live State V1 added a shared native
+  `SyncBadge` primitive with tone, dot, and pending-count support.
+- `SyncStatusIndicator` now uses the shared badge for its visual state while
+  preserving existing offline queue logic, sync actions, route-shell container
+  styling, and offline-first behavior.
+- `/compliance` now clarifies non-live multi-unit readiness, advisory runtime
+  state, and audit loading/error/empty states without exposing raw setup or
+  schema details.
+- The rescue slice kept stale stash inventory/closeout/doc hunks, migrations,
+  provider setup, environment changes, Supabase writes, live compliance
+  ingestion, preview mutations, and production mutations out of scope.
+- Focused native/mobile/compliance tests, mobile typecheck, local Browser QA
+  on `/compliance` at desktop and narrow widths, full repo gates, and
+  `git diff --check` passed for the final branch.
 - Inventory Usage + Closeout Proof States V1 now surfaces per-chemical usage
   counts, low-stock last-used recency, and expandable last-3-use history on
   `/inventory` from already loaded chemical logs.
@@ -101,9 +115,9 @@ Recent closure:
 
 Follow-up candidates:
 
-- [ ] Consider the next mobile-native primitive adoption slice only after this
-  package lands; likely candidates are capture-control buttons/cards or an
-  offline badge primitive, not a broad mobile restyle.
+- [ ] Consider the next mobile-native primitive adoption slice only after the
+  current shared-native package changes land; likely candidates are
+  capture-control buttons/cards, not a broad mobile restyle.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.

@@ -1,6 +1,7 @@
 import React from "react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { status } from "@pest-patrol/ui-tokens";
 
 import { mobileRouteShellTone } from "../styles/routeShellStyles";
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
@@ -28,6 +29,11 @@ const syncStatusState = vi.hoisted(() => ({
   lastSyncAt: null as string | null,
   networkStatus: "online",
 }));
+const syncBadgeCalls = vi.hoisted(() => [] as Array<{
+  children?: ReactNode;
+  count?: number;
+  tone?: string;
+}>);
 
 vi.mock("../store/useOfflineQueue", () => ({
   useOfflineQueue: (selector: (state: typeof offlineQueueState) => unknown) =>
@@ -41,6 +47,30 @@ vi.mock("../store/useQueueSync", () => ({
 vi.mock("../store/useSyncStatus", () => ({
   useSyncStatus: () => syncStatusState,
 }));
+
+vi.mock("@pest-patrol/ui-native", async () => {
+  const ReactModule = await import("react");
+
+  return {
+    SyncBadge: ({
+      children,
+      count,
+      tone,
+    }: {
+      children?: ReactNode;
+      count?: number;
+      tone?: string;
+    }) => {
+      syncBadgeCalls.push({ children, count, tone });
+
+      return ReactModule.createElement(
+        "SyncBadge",
+        { count, tone },
+        children,
+      );
+    },
+  };
+});
 
 vi.mock("react-native", async () => {
   const ReactModule = await import("react");
@@ -62,6 +92,9 @@ vi.mock("react-native", async () => {
         { disabled, onPress, style },
         children,
       ),
+    StyleSheet: {
+      create: <T,>(styles: T) => styles,
+    },
     Text: ({
       children,
       style,
@@ -214,5 +247,46 @@ describe("SyncStatusIndicator", () => {
     );
 
     syncStatusState.lastError = null;
+  });
+
+  it("uses the shared warning sync badge for offline pending work", () => {
+    syncBadgeCalls.length = 0;
+    offlineQueueState.items = [
+      {
+        action: "job_status_update",
+        attempts: 0,
+        created_at: "2026-05-07T10:00:00.000Z",
+        id: "queue-1",
+        last_error: null,
+        next_retry_at: null,
+        payload: { job_id: "job-1", status: "completed" },
+        status: "queued",
+        updated_at: "2026-05-07T10:00:00.000Z",
+      },
+    ];
+    syncStatusState.networkStatus = "offline";
+
+    const element = <SyncStatusIndicator />;
+    const text = collectText(element).join("");
+    const styles = collectElementsByType(element, "View").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+
+    expect(text).toContain("Offline");
+    expect(syncBadgeCalls).toContainEqual(
+      expect.objectContaining({
+        count: 1,
+        tone: "warning",
+      }),
+    );
+    expect(styles).toContainEqual(
+      expect.objectContaining({
+        backgroundColor: status.alert.warning.bg,
+        borderColor: status.alert.warning.border,
+      }),
+    );
+
+    offlineQueueState.items = [];
+    syncStatusState.networkStatus = "online";
   });
 });

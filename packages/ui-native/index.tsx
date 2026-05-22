@@ -62,6 +62,15 @@ export interface StatusPillProps {
   tone?: StatusPillTone;
 }
 
+export type SyncBadgeTone = StatusPillTone;
+
+export interface SyncBadgeProps {
+  children: ReactNode;
+  count?: number;
+  dot?: boolean;
+  tone?: SyncBadgeTone;
+}
+
 export type StatTileTone = StatusPillTone;
 
 export interface StatTileProps {
@@ -446,6 +455,25 @@ export function StatusPill({
   );
 }
 
+export function SyncBadge({
+  children,
+  count,
+  dot = true,
+  tone = "neutral",
+}: SyncBadgeProps) {
+  const toneStyles = statusPillToneStyles[tone];
+
+  return (
+    <View style={[styles.syncBadge, toneStyles.root]}>
+      {dot ? <View style={[styles.statusDot, toneStyles.dot]} /> : null}
+      <Text style={[styles.statusText, toneStyles.text]}>{children}</Text>
+      {count !== undefined ? (
+        <Text style={[styles.syncBadgeCount, toneStyles.text]}>{count}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 export function StatTile({
   detail,
   label,
@@ -554,5 +582,20 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
+  },
+  syncBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing[1],
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+  },
+  syncBadgeCount: {
+    fontSize: fontSize.xs,
+    fontVariant: ["tabular-nums"],
+    fontWeight: fontWeight.extrabold,
   },
 });

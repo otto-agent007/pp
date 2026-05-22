@@ -1,5 +1,13 @@
 # Done
 
+## Stash Rescue Sync Badge + Compliance Live State V1
+
+- Added a token-driven `SyncBadge` primitive to `@pest-patrol/ui-native` with tone, optional dot, and pending-count support
+- Adopted `SyncBadge` only in the mobile `SyncStatusIndicator`, preserving existing offline queue logic, sync actions, labels, and route-shell container styling
+- Clarified `/compliance` live-state UX with non-live multi-unit copy, advisory runtime copy for RAG-disabled/provider-ready states, and audit loading/error/empty states without raw schema details
+- Kept migrations, provider setup, env changes, Supabase writes, live compliance ingestion, preview mutations, production mutations, inventory changes, and closeout changes out of scope
+- Verified with focused native/mobile/compliance tests, mobile typecheck, local Browser QA on `/compliance` at desktop and narrow widths, full repo tests, typecheck, lint, build, and `git diff --check`
+
 ## Inventory Usage + Closeout Proof States V1
 
 - Added per-chemical usage counts, low-stock last-used recency, and an expandable last-3-use strip on `/inventory` using already loaded chemical logs

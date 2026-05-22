@@ -153,6 +153,11 @@ describe("ComplianceClient", () => {
     expect(screen.getAllByText("WDO / Branch 3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Multi-unit audits").length).toBeGreaterThan(0);
     expect(screen.getByText("1 reviewed, 0 draft")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Not live yet - unit roster and per-unit treatment hooks are deferred.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("runs advisory requests through the server hook and renders citations", async () => {
@@ -194,5 +199,66 @@ describe("ComplianceClient", () => {
     ).toBeDisabled();
     expect(screen.queryByText(/relation/)).not.toBeInTheDocument();
     expect(screen.queryByText(/compliance_sources/)).not.toBeInTheDocument();
+  });
+
+  it("renders RAG-disabled runtime state after advisory requests", async () => {
+    const user = userEvent.setup();
+    mutateAsync.mockResolvedValueOnce({
+      advisory: {
+        citations: [],
+        findings: [],
+        generated_at: now,
+        required_fields: [],
+        review_task: "Set OPENAI_API_KEY to enable source-backed retrieval.",
+        status: "rag_disabled",
+        summary: "RAG is disabled, so this advisory used local readiness only.",
+        workflow: "chemical_application",
+      },
+      runtime: {
+        available: false,
+        provider: "openai",
+        reason: "OPENAI_API_KEY is not configured",
+        requiredEnvName: "OPENAI_API_KEY",
+      },
+    });
+
+    render(<ComplianceClient />);
+
+    await user.click(screen.getByRole("button", { name: "Run advisory" }));
+
+    expect(
+      await screen.findByText(
+        "Runtime: RAG disabled - OPENAI_API_KEY is not configured.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Set OPENAI_API_KEY to enable source-backed retrieval."),
+    ).toBeInTheDocument();
+  });
+
+  it("renders audit loading and error states without raw setup details", () => {
+    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as never);
+
+    const { rerender } = render(<ComplianceClient />);
+
+    expect(screen.getByText("Loading advisory audits")).toBeInTheDocument();
+
+    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
+      data: undefined,
+      error: new Error(
+        'relation "public.compliance_advisory_audits" does not exist',
+      ),
+      isLoading: false,
+    } as never);
+
+    rerender(<ComplianceClient />);
+
+    expect(
+      screen.getByText("Advisory audits unavailable; setup or retry required."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/compliance_advisory_audits/)).not.toBeInTheDocument();
   });
 });

@@ -33,6 +33,9 @@ Completed in this batch:
 18. Refined `/closeouts` proof-state UI with missing-capture micro-lines, grouped location/billing evidence, and next-action cues for blocked, ready, invoiced, sent, paid, and voided jobs.
 19. Preserved existing hooks, data flow, API contracts, schema, providers, env, seed/reset writes, preview state, and production state for the 014 relay implementation.
 20. Verified the 014 slice with focused inventory/closeouts tests, full repo tests, typecheck, lint, build, and `git diff --check`.
+21. Added Stash Rescue Sync Badge + Compliance Live State V1: `@pest-patrol/ui-native` now includes a shared `SyncBadge`, mobile `SyncStatusIndicator` adopts it without changing queue behavior, and `/compliance` now clarifies non-live multi-unit readiness, advisory runtime state, and audit loading/error/empty states.
+22. Kept the rescue batch provider-free and write-free: no migrations, env changes, Supabase writes, live compliance ingestion, preview mutations, production mutations, stale stash inventory changes, or stale stash closeout changes.
+23. Verified the rescue batch with focused native/mobile/compliance tests, mobile typecheck, local Browser QA on `/compliance` at desktop and narrow widths, full repo tests, typecheck, lint, build, and `git diff --check`.
 
 Previously completed launch-readiness items still matter:
 
@@ -82,6 +85,6 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 9. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
 10. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 11. Confirm manual-fallback provider smoke in an authenticated browser when webhook env names are intentionally unset; local focused tests now cover the manual-only portal, notification, and payment setup states, but browser evidence remains gated on env/access.
-12. Continue mobile primitive adoption only as small follow-up slices, such as capture-control buttons/cards or an offline badge primitive; keep broad mobile restyling deferred.
+12. Continue mobile primitive adoption only as small follow-up slices, such as capture-control buttons/cards; keep broad mobile restyling deferred.
 13. Decide whether reviewed compliance advisory evaluation, provider delivery receipts, production launch checklist work, or another smoke-proven provider-free polish slice should be next only after authenticated preview evidence is available.
 14. Keep future map-provider work deferred until token, cost, privacy, env, and provider-dashboard setup are explicitly approved.

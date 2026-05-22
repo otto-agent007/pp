@@ -23,6 +23,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useJobs } from "../../hooks/useJobs";
 import { useChemicalLogs } from "../../hooks/useInventory";
 import {
+  type ComplianceAdvisoryResponse,
   useComplianceAdvisoryAudits,
   useComplianceChunks,
   useComplianceDocuments,
@@ -44,6 +45,8 @@ const emptyChunks: ComplianceChunk[] = [];
 const emptyAudits: ComplianceAdvisoryAudit[] = [];
 const emptyJobs: Job[] = [];
 const emptyLogs: ChemicalLog[] = [];
+
+type ComplianceRuntime = ComplianceAdvisoryResponse["runtime"];
 
 function formatWorkflow(value: ComplianceWorkflow) {
   return workflowOptions.find((workflow) => workflow.value === value)?.label ?? value;
@@ -72,6 +75,16 @@ function statusTone(status: ComplianceAdvisory["status"]) {
   return "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg";
 }
 
+function runtimeCopy(runtime: ComplianceRuntime) {
+  if (runtime.available) {
+    return "Runtime: OpenAI retrieval available.";
+  }
+
+  return `Runtime: RAG disabled - ${
+    runtime.reason ?? `${runtime.requiredEnvName} is not configured`
+  }.`;
+}
+
 function EmptyState({ children }: { children: string }) {
   return (
     <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
@@ -94,6 +107,8 @@ export function ComplianceClient() {
     "Review this workflow for missing California structural pest compliance evidence.",
   );
   const [advisory, setAdvisory] = useState<ComplianceAdvisory | null>(null);
+  const [advisoryRuntime, setAdvisoryRuntime] =
+    useState<ComplianceRuntime | null>(null);
   const [advisorySetup, setAdvisorySetup] =
     useState<ComplianceSetupReadiness | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -164,8 +179,10 @@ export function ComplianceClient() {
       });
 
       setAdvisory(result.advisory);
+      setAdvisoryRuntime(result.runtime);
       setAdvisorySetup(result.setup ?? null);
     } catch (caught) {
+      setAdvisoryRuntime(null);
       setError(
         caught instanceof Error
           ? caught.message
@@ -327,9 +344,11 @@ export function ComplianceClient() {
             {multiUnitSummary.totalUnits} units modeled
           </p>
           <p className="mt-2 text-sm text-theme-text-secondary">
-            {setupReadiness
-              ? "Schema setup is pending for unit roster and per-unit treatment evidence."
-              : "Schema is ready for unit roster and per-unit treatment evidence."}
+            {multiUnitSummary.totalUnits === 0
+              ? "Not live yet - unit roster and per-unit treatment hooks are deferred."
+              : setupReadiness
+                ? "Schema setup is pending for unit roster and per-unit treatment evidence."
+                : "Schema is ready for unit roster and per-unit treatment evidence."}
           </p>
         </article>
       </section>
@@ -432,6 +451,11 @@ export function ComplianceClient() {
                 {advisory.status.replace(/_/g, " ")}
               </p>
               <p className="text-sm text-theme-text-secondary">{advisory.summary}</p>
+              {advisoryRuntime ? (
+                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm text-theme-text-secondary">
+                  {runtimeCopy(advisoryRuntime)}
+                </p>
+              ) : null}
               {advisory.review_task ? (
                 <p className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3 text-sm text-status-alert-warning-fg">
                   {advisory.review_task}
@@ -515,7 +539,11 @@ export function ComplianceClient() {
             Audit trail
           </h2>
           <div className="mt-4 flex flex-col gap-3">
-            {audits.length === 0 ? (
+            {auditsQuery.isLoading ? (
+              <EmptyState>Loading advisory audits</EmptyState>
+            ) : auditsQuery.error ? (
+              <EmptyState>Advisory audits unavailable; setup or retry required.</EmptyState>
+            ) : audits.length === 0 ? (
               <EmptyState>No advisory audits recorded</EmptyState>
             ) : (
               audits.slice(0, 6).map((audit) => (

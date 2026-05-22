@@ -5,6 +5,7 @@ import {
   getOfflineQueueSummary,
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
+import { SyncBadge, type SyncBadgeTone } from "@pest-patrol/ui-native";
 
 import {
   getMobileSyncTone,
@@ -67,11 +68,13 @@ export function SyncStatusIndicator() {
     hasSyncHistory,
     isOffline,
   });
-  const statusColor = hasFailures
-    ? mobileRouteShellPalette.signalDanger
+  const statusBadgeTone: SyncBadgeTone = hasFailures
+    ? "danger"
     : isOffline || hasPendingItems
-      ? mobileRouteShellPalette.signalQueued
-      : mobileRouteShellPalette.signalSynced;
+      ? "warning"
+      : hasSyncHistory
+        ? "success"
+        : "neutral";
   const statusLabel =
     activity === "syncing"
       ? "Syncing now"
@@ -119,9 +122,12 @@ export function SyncStatusIndicator() {
       }}
     >
       <View style={{ gap: 4 }}>
-        <Text style={{ color: statusColor, fontSize: 13, fontWeight: "800" }}>
+        <SyncBadge
+          count={summary.pending > 0 ? summary.pending : undefined}
+          tone={statusBadgeTone}
+        >
           {statusLabel}
-        </Text>
+        </SyncBadge>
         <Text
           style={{
             color: mobileRouteShellPalette.secondaryText,
