@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AdminNav } from "./admin-nav";
+import { AdminNav, AdminShell } from "./admin-nav";
 
 const usePathname = vi.fn();
 const signOut = vi.fn();
@@ -45,7 +45,7 @@ describe("AdminNav", () => {
     signOut.mockReset();
   });
 
-  it("renders admin navigation and marks the active route", () => {
+  it("renders a UI Kit left rail with grouped admin navigation and marks the active route", () => {
     usePathname.mockReturnValue("/payments");
 
     render(<AdminNav />);
@@ -53,20 +53,28 @@ describe("AdminNav", () => {
     expect(
       screen.getByRole("link", { name: "Pest Patrol OS — Home" }),
     ).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Customers" })).toHaveAttribute(
+    expect(screen.getByText("Operations")).toBeInTheDocument();
+    expect(screen.getAllByText("Customers").length).toBeGreaterThan(0);
+    expect(screen.getByText("Billing")).toBeInTheDocument();
+    expect(screen.getByText("System")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
-      "/customers",
+      "/",
     );
     expect(screen.getByRole("link", { name: "Technicians" })).toHaveAttribute(
       "href",
       "/technicians",
     );
     expect(screen.getByRole("link", { name: "Payments" })).toHaveAttribute(
+      "href",
+      "/payments",
+    );
+    expect(screen.getByRole("link", { name: "Payments" })).toHaveAttribute(
       "aria-current",
       "page",
     );
     expect(screen.getByText("Field command")).toBeInTheDocument();
-    expect(screen.getByText("admin")).toBeInTheDocument();
+    expect(screen.getAllByText("admin").length).toBeGreaterThan(0);
   });
 
   it("renders the Wordmark inside the home link", () => {
@@ -102,5 +110,18 @@ describe("AdminNav", () => {
     render(<AdminNav />);
 
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("wraps signed-in admin routes with the responsive admin shell", () => {
+    usePathname.mockReturnValue("/dispatch");
+
+    render(
+      <AdminShell>
+        <main>Dispatch content</main>
+      </AdminShell>,
+    );
+
+    expect(screen.getByRole("navigation")).toHaveClass("md:h-screen");
+    expect(screen.getByText("Dispatch content")).toBeInTheDocument();
   });
 });

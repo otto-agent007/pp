@@ -1,7 +1,7 @@
 import "./globals.css";
 import { Providers } from "./providers";
 import { fontSans } from "./fonts";
-import { AdminNav } from "./admin-nav";
+import { AdminShell } from "./admin-nav";
 import { AdminAuthGate } from "./admin-auth-gate";
 import { AdminAuthProvider } from "./admin-auth-context";
 
@@ -21,8 +21,7 @@ export default function RootLayout({
         <Providers>
           <AdminAuthProvider>
             <AdminAuthGate>
-              <AdminNav />
-              {children}
+              <AdminShell>{children}</AdminShell>
             </AdminAuthGate>
           </AdminAuthProvider>
         </Providers>
