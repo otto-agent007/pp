@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Text, TextInput, View } from "react-native";
 import type { ChemicalInventoryItem } from "@pest-patrol/types";
+import { CaptureButton, CaptureSection } from "@pest-patrol/ui-native";
 
 import { useChemicalInventory } from "../store/useChemicalInventory";
 import { useChemicalLogs } from "../store/useChemicalLogs";
@@ -54,7 +55,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
   }
 
   return (
-    <View style={mobileCaptureControlStyles.section}>
+    <CaptureSection>
       <Text style={mobileCaptureControlStyles.title}>
         {copy.chemical.title}
       </Text>
@@ -87,16 +88,14 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
             const isActive = draft.chemicalId === item.id;
 
             return (
-              <Pressable
+              <CaptureButton
                 key={item.id}
                 onPress={() => {
                   setDraftField(jobId, "chemicalId", item.id);
                   setError(null);
                 }}
+                variant={isActive ? "primary" : "secondary"}
                 style={{
-                  ...(isActive
-                    ? mobileCaptureControlStyles.primaryButton
-                    : mobileCaptureControlStyles.secondaryButton),
                   minHeight: 40,
                 }}
               >
@@ -109,7 +108,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
                 >
                   {chemicalLabel(item)}
                 </Text>
-              </Pressable>
+              </CaptureButton>
             );
           })}
         </View>
@@ -149,19 +148,16 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         </Text>
       ) : null}
 
-      <Pressable
+      <CaptureButton
         disabled={items.length === 0}
         onPress={handleQueue}
-        style={
-          items.length === 0
-            ? mobileCaptureControlStyles.disabledButton
-            : mobileCaptureControlStyles.primaryButton
-        }
+        style={items.length === 0 ? mobileCaptureControlStyles.disabledButton : undefined}
+        variant="primary"
       >
         <Text style={mobileCaptureControlStyles.primaryButtonText}>
           {copy.chemical.queueButton}
         </Text>
-      </Pressable>
-    </View>
+      </CaptureButton>
+    </CaptureSection>
   );
 }

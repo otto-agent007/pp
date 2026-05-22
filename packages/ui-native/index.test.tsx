@@ -15,6 +15,9 @@ import {
   Avatar,
   Button,
   Card,
+  CaptureButton,
+  CaptureCard,
+  CaptureSection,
   Eyebrow,
   StatTile,
   StatusPill,
@@ -207,6 +210,48 @@ describe("ui-native primitives", () => {
         fontSize: fontSize.xs,
         fontWeight: fontWeight.bold,
         textTransform: "uppercase",
+      }),
+    );
+  });
+
+  it("renders capture sections, cards, and buttons as field-friendly native primitives", () => {
+    const element = (
+      <CaptureSection>
+        <CaptureCard tone="warning">Check proof before closeout</CaptureCard>
+        <CaptureButton disabled fullWidth variant="secondary">
+          Queue treatment
+        </CaptureButton>
+      </CaptureSection>
+    );
+    const views = collectElementsByType(element, "View").map((item) =>
+      mergedStyles(item.props.style),
+    );
+    const pressable = collectElementsByType(element, "Pressable")[0];
+    const defaultStyles = Object.assign({}, ...pressableStyles(pressable));
+
+    expect(collectText(element)).toEqual(
+      expect.arrayContaining(["Check proof before closeout", "Queue treatment"]),
+    );
+    expect(views).toContainEqual(
+      expect.objectContaining({
+        borderColor: lightTheme.border.subtle,
+        borderTopWidth: 1,
+        gap: spacing[3],
+      }),
+    );
+    expect(views).toContainEqual(
+      expect.objectContaining({
+        backgroundColor: status.alert.warning.bg,
+        borderColor: status.alert.warning.border,
+      }),
+    );
+    expect(pressable.props.disabled).toBe(true);
+    expect(defaultStyles).toEqual(
+      expect.objectContaining({
+        alignSelf: "stretch",
+        backgroundColor: lightTheme.background.surface,
+        minHeight: 44,
+        opacity: 0.5,
       }),
     );
   });

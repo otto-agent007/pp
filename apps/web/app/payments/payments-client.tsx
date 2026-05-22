@@ -12,11 +12,13 @@ import {
   getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
+  getProviderReadinessCopy,
   type InvoiceReconciliationStatus,
   type InvoiceStatusFilter,
 } from "@pest-patrol/domain";
 import type { Invoice, Job } from "@pest-patrol/types";
 import {
+  CountTile,
   SearchableSelect,
   StatusPill,
   type StatusPillTone,
@@ -279,6 +281,7 @@ export function PaymentsClient() {
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? jobs.find((job) => job.id === closeoutHandoffJobId) ?? null
       : null;
+  const paymentProviderCopy = getProviderReadinessCopy("payment");
 
   async function submitInvoice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -319,6 +322,14 @@ export function PaymentsClient() {
     }
 
     voidInvoice.mutate(invoiceId);
+  }
+
+  function applyPaymentFilter(
+    invoiceStatus: InvoiceStatusFilter,
+    reconciliation: ReconciliationFilter = "all",
+  ) {
+    setStatus(invoiceStatus);
+    setReconciliationStatus(reconciliation);
   }
 
   return (
@@ -396,67 +407,54 @@ export function PaymentsClient() {
           Setup
         </p>
         <h2 className="mt-1 text-xl font-semibold text-neutralDark">
-          Stripe test-mode readiness
+          Payment provider readiness
         </h2>
         <p className="mt-2 text-sm text-theme-text-secondary">
-          Payment links need server-only STRIPE_SECRET_KEY. Stripe webhooks need
-          STRIPE_WEBHOOK_SECRET.
+          {paymentProviderCopy.label}
         </p>
         <p className="mt-2 text-sm text-theme-text-secondary">
-          Stripe can stay unset for customer, job, closeout, and portal demos.
+          {paymentProviderCopy.summary}
         </p>
         <p className="mt-2 text-sm text-theme-text-secondary">
-          Invoices and manual paid status still work for non-payment demos
-          without Stripe.
+          {paymentProviderCopy.detail}
         </p>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-5">
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Draft
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {summary.draftCount}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Sent
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {summary.sentCount}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Open
-          </p>
-          <p className="mt-2 text-2xl font-bold text-primary">
-            {formatMoney(summary.openCents)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Paid
-          </p>
-          <p className="mt-2 text-2xl font-bold text-accent">
-            {formatMoney(summary.paidCents)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Needs review
-          </p>
-          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">
-            {reconciliationSummary.needsReviewCount}
-          </p>
-          <p className="mt-1 text-xs font-medium text-theme-text-muted">
-            {reconciliationSummary.needsReviewCount === 1
-              ? "1 invoice"
-              : `${reconciliationSummary.needsReviewCount} invoices`}
-          </p>
-        </div>
+        <CountTile
+          active={status === "draft" && reconciliationStatus === "all"}
+          count={summary.draftCount}
+          label="Draft"
+          onClick={() => applyPaymentFilter("draft")}
+        />
+        <CountTile
+          active={status === "sent" && reconciliationStatus === "all"}
+          count={summary.sentCount}
+          label="Sent"
+          onClick={() => applyPaymentFilter("sent")}
+          tone="info"
+        />
+        <CountTile
+          active={status === "sent" && reconciliationStatus === "awaiting_payment"}
+          count={formatMoney(summary.openCents)}
+          label="Open"
+          onClick={() => applyPaymentFilter("sent", "awaiting_payment")}
+          tone="info"
+        />
+        <CountTile
+          active={status === "paid" && reconciliationStatus === "all"}
+          count={formatMoney(summary.paidCents)}
+          label="Paid"
+          onClick={() => applyPaymentFilter("paid")}
+          tone="success"
+        />
+        <CountTile
+          active={status === "all" && reconciliationStatus === "needs_review"}
+          count={reconciliationSummary.needsReviewCount}
+          label="Needs review"
+          onClick={() => applyPaymentFilter("all", "needs_review")}
+          tone="danger"
+        />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">

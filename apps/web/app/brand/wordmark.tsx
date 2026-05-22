@@ -29,6 +29,15 @@ export interface WordmarkProps {
 
 const ASPECT_RATIO = 96 / 420;
 
+export const WORDMARK_PROMOTION_READINESS = {
+  activeAssetBoundary: "packages/assets/brand/wordmark.svg",
+  mobileLockupBehavior:
+    "Use the logomark below 156px full-lockup width; do not squeeze the full wordmark.",
+  minimumFullLockupWidthPx: 156,
+  productionTitleText: "Pest Patrol",
+  referenceDraftBoundary: "docs/design-system/assets/wordmark-options/v3/",
+} as const;
+
 /**
  * Pest Patrol full wordmark lockup — shield + "PEST PATROL" + tagline.
  *

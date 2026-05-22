@@ -16,6 +16,7 @@ import {
   getNotificationRetryPolicyLabel,
   getNotificationRetryPolicyState,
   getPendingDeliverableNotifications,
+  getProviderReadinessCopy,
   previewNotificationTemplateCopy,
   validateAutomationRuleInput,
   validateNotificationEventInput,
@@ -418,6 +419,10 @@ export function AutomationClient() {
     [jobs, notifications, rules, schedulerPreviewNow],
   );
   const providerStatus = providerStatusQuery.data;
+  const providerReadinessCopy = getProviderReadinessCopy(
+    "notification",
+    providerStatus,
+  );
 
   async function submitRule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -926,7 +931,7 @@ export function AutomationClient() {
                 </p>
                 {providerStatus?.provider === "webhook" ? (
                   <p className="mt-1 text-xs text-theme-text-muted">
-                    Webhook secret{" "}
+                    Provider credential{" "}
                     {providerStatus.webhook_secret_configured
                       ? "configured"
                       : "not configured"}
@@ -935,22 +940,14 @@ export function AutomationClient() {
                 {providerStatusQuery.isLoading ? null : (
                   <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
                     <p className="text-sm font-semibold text-neutralDark">
-                      {providerStatus?.provider === "webhook"
-                        ? "Webhook delivery is active"
-                        : "Manual fallback is active"}
+                      {providerReadinessCopy.label}
                     </p>
                     <p className="mt-1 text-xs text-theme-text-secondary">
-                      {providerStatus?.provider === "webhook"
-                        ? "Uses server-only NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET."
-                        : "Set NOTIFICATION_DELIVERY_WEBHOOK_URL and NOTIFICATION_DELIVERY_WEBHOOK_SECRET to enable webhook delivery."}
+                      {providerReadinessCopy.summary}
                     </p>
-                    {providerStatus?.provider === "webhook" ? null : (
-                      <p className="mt-1 text-xs text-theme-text-secondary">
-                        Manual scheduler runs and manual notification follow-up
-                        stay available without browser-side cron or webhook
-                        secrets.
-                      </p>
-                    )}
+                    <p className="mt-1 text-xs text-theme-text-secondary">
+                      {providerReadinessCopy.action}
+                    </p>
                   </div>
                 )}
                 {sendBulkNotifications.data ? (

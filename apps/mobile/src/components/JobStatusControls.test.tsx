@@ -67,6 +67,58 @@ vi.mock("react-native", async () => {
   };
 });
 
+vi.mock("@pest-patrol/ui-native", async () => {
+  const ReactModule = await import("react");
+  const { mobileRouteShellPalette } = await import("../styles/routeShellStyles");
+
+  return {
+    CaptureButton: ({
+      children,
+      onPress,
+      style,
+      variant,
+    }: {
+      children?: ReactNode;
+      onPress?: () => void;
+      style?: unknown;
+      variant?: string;
+    }) =>
+      ReactModule.createElement(
+        "Pressable",
+        {
+          onPress,
+          style: [
+            {
+              backgroundColor:
+                variant === "primary" || variant === "warning"
+                  ? mobileRouteShellPalette.rail
+                  : mobileRouteShellPalette.surface,
+            },
+            style,
+          ],
+          variant,
+        },
+        children,
+      ),
+    CaptureCard: ({
+      children,
+      style,
+      tone,
+    }: {
+      children?: ReactNode;
+      style?: unknown;
+      tone?: string;
+    }) => ReactModule.createElement("CaptureCard", { style, tone }, children),
+    CaptureSection: ({
+      children,
+      style,
+    }: {
+      children?: ReactNode;
+      style?: unknown;
+    }) => ReactModule.createElement("CaptureSection", { style }, children),
+  };
+});
+
 const job = {
   id: "job-1",
   customer_id: "customer-1",
@@ -263,9 +315,6 @@ describe("JobStatusControls", () => {
     queueItems.value = [];
 
     const element = <JobStatusControls job={job} />;
-    const viewStyles = collectElementsByType(element, "View").flatMap((item) =>
-      flattenStyles(item.props.style),
-    );
     const pressableStyles = collectElementsByType(element, "Pressable").flatMap(
       (item) => flattenStyles(item.props.style),
     );
@@ -273,11 +322,15 @@ describe("JobStatusControls", () => {
       flattenStyles(item.props.style),
     );
 
-    expect(viewStyles).toContainEqual(
-      expect.objectContaining(mobileCaptureControlStyles.section),
+    expect(collectElementsByType(element, "CaptureSection")).toHaveLength(1);
+    expect(collectElementsByType(element, "CaptureCard").length).toBeGreaterThan(
+      0,
     );
-    expect(viewStyles).toContainEqual(
-      expect.objectContaining(mobileRouteShellTone.visit.pending),
+    expect(collectElementsByType(element, "CaptureCard")[0].props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining(mobileCaptureControlStyles.warningCard),
+        expect.objectContaining(mobileRouteShellTone.visit.pending),
+      ]),
     );
     expect(pressableStyles).toContainEqual(
       expect.objectContaining({
@@ -287,6 +340,23 @@ describe("JobStatusControls", () => {
     expect(textStyles).toContainEqual(
       expect.objectContaining(mobileCaptureControlStyles.warningTitle),
     );
+  });
+
+  it("adopts shared native capture primitives without changing completion behavior", () => {
+    queueStatusUpdate.mockReset();
+    queueItems.value = [];
+
+    const element = <JobStatusControls job={job} />;
+
+    expect(collectElementsByType(element, "CaptureSection")).toHaveLength(1);
+    expect(collectElementsByType(element, "CaptureCard").length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      collectElementsByType(element, "Pressable").filter(
+        (item) => item.props.variant === "primary",
+      ).length,
+    ).toBeGreaterThan(0);
   });
 });
 

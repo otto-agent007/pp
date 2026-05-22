@@ -468,9 +468,17 @@ describe("CloseoutsClient", () => {
     expect(screen.getByRole("button", { name: /GPS review 1/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Needs invoice 1/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Billing ready 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Proof ready 2/i })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     await user.click(screen.getByRole("button", { name: /Missing captures 1/i }));
 
+    expect(screen.getByRole("button", { name: /Missing captures 1/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByText("Needs photo and signature")).toBeInTheDocument();
     expect(screen.getByText("Missing: photo · signature")).toBeInTheDocument();
     expect(

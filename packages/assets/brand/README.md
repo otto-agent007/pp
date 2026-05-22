@@ -31,6 +31,19 @@ Web app shell usage lives in `apps/web/app/brand`. The React wrappers inline the
 static SVG strings and suffix internal SVG IDs per instance so gradients and
 filters do not collide when multiple marks render on one page.
 
+Promotion readiness decisions:
+
+- Production `<title>` text: `Pest Patrol`.
+- Minimum full-lockup width: 156px on light or dark surfaces.
+- Mobile lockup behavior: Use the logomark below 156px full-lockup width; do not
+  squeeze the full wordmark.
+- Active asset boundary: `packages/assets/brand/wordmark.svg`,
+  `packages/assets/brand/wordmark-on-dark.svg`, and
+  `packages/assets/brand/logomark.svg` remain the only app-chrome sources.
+- Reference asset boundary: v3 drafts under
+  `docs/design-system/assets/wordmark-options/v3/` stay reference-only until a
+  separate explicit promotion slice.
+
 For meaningful header or login use, keep root-level `role="img"` and
 `aria-labelledby="title desc"` with product-facing title text. Do not add
 per-path labels for individual wordmark layers. For decorative watermark or

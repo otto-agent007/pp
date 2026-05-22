@@ -9,6 +9,9 @@ handoff, not as live production app chrome.
   transforms.
 - Current live app assets remain in `packages/assets/brand/` until a separate
   explicit promotion slice.
+- Reference-only boundary: these drafts must not be imported by
+  `apps/web/app/brand`, package exports, app chrome, metadata, or favicons until
+  explicit promotion approval.
 
 Pre-promotion gates remain: type/craft review, trademark/legal diligence, a
 production `<title>` text decision, mobile lockup/minimum-size rules, and a

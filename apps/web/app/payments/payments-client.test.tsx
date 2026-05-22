@@ -226,24 +226,49 @@ describe("PaymentsClient", () => {
 
     expect(screen.getByText("Apex Homes")).toBeInTheDocument();
     expect(screen.getByText("$125.00")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Draft 1/i })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Search invoices"), "missing");
 
     expect(screen.getByText("No invoices found")).toBeInTheDocument();
   });
 
+  it("uses shared count tiles for payment filters without changing invoice data", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [invoice, reconciledInvoice, needsReviewInvoice],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    await user.click(screen.getByRole("button", { name: /Paid \$200\.00/i }));
+
+    expect(screen.getByText("20 Oak Avenue")).toBeInTheDocument();
+    expect(screen.queryByText("10 Pine Street")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Paid \$200\.00/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: /Needs review 1/i }));
+
+    expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
+    expect(screen.queryByText("20 Oak Avenue")).not.toBeInTheDocument();
+  });
+
   it("shows Stripe test-mode setup guidance without exposing secrets", () => {
     render(<PaymentsClient />);
 
-    expect(screen.getByText("Stripe test-mode readiness")).toBeInTheDocument();
+    expect(screen.getByText("Payment provider readiness")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Payment links need server-only STRIPE_SECRET_KEY. Stripe webhooks need STRIPE_WEBHOOK_SECRET.",
+        "Manual payment fallback is active for provider-free demos.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Stripe can stay unset for customer, job, closeout, and portal demos.",
+        "Payment links and webhook receipts stay deferred until provider setup is approved.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -252,6 +277,7 @@ describe("PaymentsClient", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/sk_test_/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/STRIPE_/i)).not.toBeInTheDocument();
   });
 
   it("shows a closeouts handoff strip with billing queue counts", () => {
@@ -311,7 +337,7 @@ describe("PaymentsClient", () => {
           element.className.includes("text-status-alert-danger-fg"),
         ),
     ).toBe(true);
-    expect(screen.getByText("1 invoice")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Needs review 1/i })).toBeInTheDocument();
     expect(screen.getAllByText("Reconciled paid").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Manually marked paid").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();

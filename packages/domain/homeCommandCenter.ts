@@ -7,6 +7,7 @@ import type {
 } from "@pest-patrol/types";
 
 import { getDemoWorkflowSteps } from "./demoReadiness";
+import { getProviderReadinessCopy } from "./providerReadiness";
 
 export type HomeCommandCenterSeverity = "good" | "neutral" | "urgent" | "warning";
 
@@ -182,9 +183,7 @@ function buildPortalProviderLabel(
     return "Portal provider checking";
   }
 
-  return status.provider === "webhook"
-    ? "Webhook portal delivery"
-    : "Manual portal sharing";
+  return getProviderReadinessCopy("portal", status).label;
 }
 
 function buildLaunchReadiness(
@@ -194,6 +193,10 @@ function buildLaunchReadiness(
     portalProviderStatus?.provider === "webhook" &&
     portalProviderStatus.webhook_configured &&
     portalProviderStatus.webhook_secret_configured;
+  const providerCopy = getProviderReadinessCopy(
+    "portal",
+    portalProviderStatus,
+  );
 
   return [
     {
@@ -232,24 +235,22 @@ function buildLaunchReadiness(
     },
     webhookReady
       ? {
-          action:
-            "Use approved preview smoke to prove provider delivery before adding receipt or retry follow-ups.",
+          action: providerCopy.action,
           href: "/customers",
           id: "provider-mode",
           label: "Portal delivery mode",
           severity: "good",
-          stateLabel: "Webhook configured",
-          summary: "Delivery receipts remain evidence-gated until provider smoke passes.",
+          stateLabel: providerCopy.stateLabel,
+          summary: providerCopy.summary,
         }
       : {
-          action:
-            "Confirm copy/manual portal handoff in customer links and keep receipt work deferred until webhook-backed evidence exists.",
+          action: providerCopy.action,
           href: "/customers",
           id: "provider-mode",
           label: "Portal delivery mode",
           severity: "good",
-          stateLabel: "Manual fallback accepted",
-          summary: "Provider-free demos can proceed without mutating webhook settings.",
+          stateLabel: providerCopy.stateLabel,
+          summary: providerCopy.summary,
         },
   ];
 }

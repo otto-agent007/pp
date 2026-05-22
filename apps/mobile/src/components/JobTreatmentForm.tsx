@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { defaultTreatmentFormTemplate } from "@pest-patrol/domain";
 import type { FormField, FormValue } from "@pest-patrol/types";
+import { CaptureButton, CaptureSection } from "@pest-patrol/ui-native";
 
 import { useFormDrafts } from "../store/useFormDrafts";
 import { useLanguage } from "../store/useLanguage";
@@ -31,10 +32,10 @@ function FieldInput({
     const checked = value === true;
 
     return (
-      <Pressable
+      <CaptureButton
         onPress={() => onChange(!checked)}
+        variant="secondary"
         style={{
-          ...mobileCaptureControlStyles.secondaryButton,
           alignItems: "center",
           borderColor: checked
             ? mobileRouteShellPalette.rail
@@ -74,7 +75,7 @@ function FieldInput({
         <Text style={mobileCaptureControlStyles.secondaryButtonText}>
           {field.label}
         </Text>
-      </Pressable>
+      </CaptureButton>
     );
   }
 
@@ -120,7 +121,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
   }
 
   return (
-    <View style={mobileCaptureControlStyles.section}>
+    <CaptureSection>
       <View>
         <Text style={mobileCaptureControlStyles.title}>
           {copy.treatment.title}
@@ -158,14 +159,14 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
         </Text>
       ) : null}
 
-      <Pressable
+      <CaptureButton
         onPress={handleSubmit}
-        style={mobileCaptureControlStyles.primaryButton}
+        variant="primary"
       >
         <Text style={mobileCaptureControlStyles.primaryButtonText}>
           {copy.treatment.queueButton}
         </Text>
-      </Pressable>
-    </View>
+      </CaptureButton>
+    </CaptureSection>
   );
 }

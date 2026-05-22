@@ -468,7 +468,9 @@ describe("CustomerPortalLinks", () => {
     );
 
     expect(
-      screen.getByText("Portal delivery provider is manual-only. Share links manually."),
+      screen.getByText(
+        "Manual fallback accepted. Copy and share links manually; provider sends stay hidden until webhook mode is approved.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {

@@ -3,6 +3,7 @@ import { Text, TextInput, View } from "react-native";
 import SignatureCanvas, {
   type SignatureViewRef,
 } from "react-native-signature-canvas";
+import { CaptureSection } from "@pest-patrol/ui-native";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobSignatures } from "../store/useJobSignatures";
@@ -68,7 +69,7 @@ export function JobSignatureCaptureForm({
   }
 
   return (
-    <View style={mobileCaptureControlStyles.section}>
+    <CaptureSection>
       <Text style={mobileCaptureControlStyles.title}>
         {copy.signature.title}
       </Text>
@@ -116,6 +117,6 @@ export function JobSignatureCaptureForm({
           {copy.signature.queuedForSync}
         </Text>
       ) : null}
-    </View>
+    </CaptureSection>
   );
 }

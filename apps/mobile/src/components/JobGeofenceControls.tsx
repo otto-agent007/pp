@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import * as Location from "expo-location";
 import type { Job, JobGeofenceEventType } from "@pest-patrol/types";
+import { CaptureButton, CaptureSection } from "@pest-patrol/ui-native";
 
 import { useJobGeofencing } from "../store/useJobGeofencing";
 import { useLanguage } from "../store/useLanguage";
@@ -108,7 +109,7 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
   }
 
   return (
-    <View style={mobileCaptureControlStyles.section}>
+    <CaptureSection>
       <Text style={mobileCaptureControlStyles.title}>
         {copy.title}
       </Text>
@@ -135,14 +136,12 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
 
       <View style={{ flexDirection: "row", gap: 8 }}>
         {(["arrival", "departure"] as const).map((eventType) => (
-          <Pressable
+          <CaptureButton
             disabled={Boolean(activeEvent)}
             key={eventType}
             onPress={() => void captureEvent(eventType)}
+            variant={eventType === "arrival" ? "primary" : "secondary"}
             style={{
-              ...(eventType === "arrival"
-                ? mobileCaptureControlStyles.primaryButton
-                : mobileCaptureControlStyles.secondaryButton),
               flex: 1,
               opacity: activeEvent ? 0.7 : 1,
             }}
@@ -166,9 +165,9 @@ export function JobGeofenceControls({ job }: JobGeofenceControlsProps) {
                 {eventLabel(eventType, copy)}
               </Text>
             )}
-          </Pressable>
+          </CaptureButton>
         ))}
       </View>
-    </View>
+    </CaptureSection>
   );
 }

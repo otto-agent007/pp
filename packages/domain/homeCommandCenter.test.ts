@@ -110,13 +110,13 @@ describe("home command center", () => {
     });
     expect(state.launchReadiness).toContainEqual({
       action:
-        "Confirm copy/manual portal handoff in customer links and keep receipt work deferred until webhook-backed evidence exists.",
+        "Use manual portal sharing for provider-free demos; keep delivery receipts deferred until webhook-backed evidence exists.",
       href: "/customers",
       id: "provider-mode",
       label: "Portal delivery mode",
       severity: "good",
       stateLabel: "Manual fallback accepted",
-      summary: "Provider-free demos can proceed without mutating webhook settings.",
+      summary: "Portal links can be copied and shared manually without changing provider settings.",
     });
     expect(state.smokeChecklist[0]).toEqual({
       action: "Add the customer, primary contact, and first service address.",
@@ -173,7 +173,7 @@ describe("home command center", () => {
       label: "Portal delivery mode",
       severity: "good",
       stateLabel: "Webhook configured",
-      summary: "Delivery receipts remain evidence-gated until provider smoke passes.",
+      summary: "Provider delivery is configured, but receipts remain evidence-gated until provider smoke passes.",
     });
   });
 });

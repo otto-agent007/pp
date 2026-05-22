@@ -1,9 +1,11 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { Logomark } from "./logomark";
-import { Wordmark } from "./wordmark";
+import { WORDMARK_PROMOTION_READINESS, Wordmark } from "./wordmark";
 
 describe("Wordmark", () => {
   it("renders the light variant with an accessible label by default", () => {
@@ -62,6 +64,41 @@ describe("Wordmark", () => {
     render(<Wordmark label="decorative" />);
 
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it("documents promotion readiness without importing inactive v3 drafts", () => {
+    expect(WORDMARK_PROMOTION_READINESS).toEqual({
+      activeAssetBoundary: "packages/assets/brand/wordmark.svg",
+      mobileLockupBehavior:
+        "Use the logomark below 156px full-lockup width; do not squeeze the full wordmark.",
+      minimumFullLockupWidthPx: 156,
+      productionTitleText: "Pest Patrol",
+      referenceDraftBoundary:
+        "docs/design-system/assets/wordmark-options/v3/",
+    });
+
+    const repoRoot = existsSync(
+      join(process.cwd(), "packages/assets/brand/README.md"),
+    )
+      ? process.cwd()
+      : join(process.cwd(), "../..");
+    const packageReadme = readFileSync(
+      join(repoRoot, "packages/assets/brand/README.md"),
+      "utf8",
+    );
+    const v3Readme = readFileSync(
+      join(repoRoot, "docs/design-system/assets/wordmark-options/v3/README.md"),
+      "utf8",
+    );
+
+    expect(packageReadme).toContain("Production `<title>` text: `Pest Patrol`.");
+    expect(packageReadme).toContain(
+      "Use the logomark below 156px full-lockup width",
+    );
+    expect(v3Readme).toContain("Reference-only boundary");
+    expect(v3Readme).toMatch(
+      /must not be imported by\s+`apps\/web\/app\/brand`/,
+    );
   });
 });
 
