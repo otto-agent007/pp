@@ -4,6 +4,24 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Admin Shell + Overview UI Kit Alignment V1 moved signed-in admin routes into
+  a dark left-rail desktop shell with grouped operations/customer/billing/system
+  navigation, mobile top brand row plus horizontal route strip, approved active
+  wordmark usage, active route state, and unchanged public-route hiding.
+- `/` now presents a dense dashboard overview with operations header,
+  profile-aware greeting, loaded-data search, compact KPI cards, today's
+  schedule, provider-free static dispatch map, jobs needing attention, low
+  inventory, recent activity, smoke-readiness gates, demo controls, and guided
+  smoke links while keeping hooks/domain contracts provider-free.
+- Focused shell/home tests, `corepack pnpm test`, `corepack pnpm typecheck`,
+  `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check` passed.
+- Local `next dev` compiled the changed admin overview route, but authenticated
+  Browser QA remained blocked in this session because the Browser plugin did
+  not expose a callable browser tool and fallback Chrome headless/CDP attempts
+  were unstable from the local shell.
+- The slice kept migrations, provider setup, env changes, Supabase writes, live
+  compliance ingestion, preview/production mutations, shared UI exports, and
+  inactive brand asset swaps out of scope.
 - Provider-Free Polish Next Five V1 graduated capture-control native
   primitives, shared CountTile reuse, wordmark promotion-readiness docs,
   fixture-backed compliance advisory evaluation, and manual-fallback provider

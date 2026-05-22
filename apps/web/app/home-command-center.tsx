@@ -1,26 +1,31 @@
 "use client";
 
 import {
+  buildDispatchRouteIntelligence,
+  buildDispatchStaticMapState,
   buildHomeCommandCenterState,
+  type DispatchStaticMapPoint,
   type HomeCommandCenterSeverity,
 } from "@pest-patrol/domain";
 import {
   Card,
   Eyebrow,
-  StatTile,
   StatusPill,
   buttonClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
+import type { ChemicalInventoryItem, Invoice, Job } from "@pest-patrol/types";
 import Link from "next/link";
+import { useState } from "react";
 
+import { useAdminAuth } from "./admin-auth-context";
+import { DemoSeedControls } from "./demo-seed-controls";
 import { useCustomerPortalProviderStatus } from "../hooks/useCustomerPortalAccess";
 import { useCustomers } from "../hooks/useCustomers";
 import { useJobs } from "../hooks/useJobs";
 import { useChemicalInventory } from "../hooks/useInventory";
 import { useInvoices } from "../hooks/usePayments";
 import { useTechnicians } from "../hooks/useTechnicians";
-import { DemoSeedControls } from "./demo-seed-controls";
 
 const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
   good: "success",
@@ -29,13 +34,254 @@ const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
   warning: "warning",
 };
 
+const openInvoiceStatuses = new Set(["draft", "sent"]);
+
 function serviceLabel(notes: string | null | undefined) {
   const trimmed = notes?.trim();
 
   return trimmed || "Service visit";
 }
 
+function dateKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function firstName(name: string | null | undefined) {
+  const trimmed = name?.trim();
+
+  if (!trimmed) {
+    return "operator";
+  }
+
+  return trimmed.split(/\s+/)[0] ?? "operator";
+}
+
+function greetingLabel(now: Date) {
+  const hour = now.getHours();
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 17) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
+}
+
+function operationsDateLabel(now: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+    year: "numeric",
+  })
+    .format(now)
+    .toUpperCase();
+}
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function inventoryUnit(item: Pick<ChemicalInventoryItem, "unit"> | { unit?: string }) {
+  return item.unit ? String(item.unit) : "units";
+}
+
+function mapPointClassName(point: DispatchStaticMapPoint) {
+  if (point.status_state === "completed") {
+    return "border-status-alert-success-border bg-status-alert-success-solid";
+  }
+
+  if (point.evidence_state !== "complete") {
+    return "border-status-alert-warning-border bg-status-alert-warning-solid text-primitive-navy-950";
+  }
+
+  return "border-status-alert-info-border bg-status-alert-info-solid";
+}
+
+function DashboardMetricCard({
+  detail,
+  label,
+  tone,
+  value,
+}: {
+  detail: string;
+  label: string;
+  tone: StatusPillTone;
+  value: string;
+}) {
+  return (
+    <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <Eyebrow>{label}</Eyebrow>
+        <span
+          aria-hidden="true"
+          className={`mt-1 h-2 w-2 rounded-full ${
+            tone === "success"
+              ? "bg-status-alert-success-solid"
+              : tone === "danger"
+                ? "bg-status-alert-danger-solid"
+                : tone === "warning"
+                  ? "bg-status-alert-warning-solid"
+                  : "bg-status-alert-neutral-solid"
+          }`}
+        />
+      </div>
+      <p className="mt-3 text-3xl font-extrabold tabular-nums text-primitive-navy-950">
+        {value}
+      </p>
+      <p className="mt-1 text-sm font-bold text-theme-text-secondary">{detail}</p>
+    </div>
+  );
+}
+
+function DashboardMap({
+  liveTechCount,
+  mapState,
+}: {
+  liveTechCount: number;
+  mapState: ReturnType<typeof buildDispatchStaticMapState>;
+}) {
+  return (
+    <Card
+      className="overflow-hidden"
+      padding="none"
+    >
+      <div className="flex items-start justify-between gap-3 border-b border-theme-border-subtle px-4 py-3">
+        <div>
+          <Eyebrow tone="accent">Live map</Eyebrow>
+          <h2 className="mt-1 text-lg font-bold">Live map</h2>
+          <p className="text-sm font-semibold text-theme-text-secondary">
+            {liveTechCount} techs live
+          </p>
+        </div>
+        <Link
+          className={buttonClassName({ size: "sm", variant: "ghost" })}
+          href="/dispatch"
+        >
+          Open map
+        </Link>
+      </div>
+      <div
+        className="relative min-h-60 overflow-hidden bg-primitive-sky-100"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.42) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.42) 1px, transparent 1px)",
+          backgroundSize: "88px 88px",
+        }}
+      >
+        <div className="absolute left-0 top-1/2 h-px w-full -rotate-6 bg-primitive-sky-500/30" />
+        <div className="absolute left-1/4 top-0 h-full w-px bg-primitive-sky-500/25" />
+        <div className="absolute bottom-8 right-8 h-24 w-24 rounded-full border border-primitive-sky-500/25 bg-primitive-sky-500/10" />
+        <div className="absolute left-14 top-10 h-20 w-20 rounded-full border border-primitive-sky-500/25 bg-theme-background-surface/25" />
+        {mapState.points.map((point) => (
+          <Link
+            aria-label={`${point.label} ${point.customer_label}`}
+            className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-theme-background-surface text-[10px] font-extrabold text-theme-text-inverse shadow-sm ${mapPointClassName(
+              point,
+            )}`}
+            href={`/jobs/${point.job_id}`}
+            key={point.job_id}
+            style={{
+              left: `${point.x_percent}%`,
+              top: `${point.y_percent}%`,
+            }}
+          >
+            {point.label.replace("Stop ", "")}
+          </Link>
+        ))}
+        {mapState.points.length === 0 ? (
+          <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 rounded-md border border-dashed border-theme-border-default bg-theme-background-surface/90 p-3 text-sm font-semibold text-theme-text-secondary">
+            Add service coordinates to plot today&apos;s route.
+          </p>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-3 divide-x divide-theme-border-subtle border-t border-theme-border-subtle text-center text-xs font-bold text-theme-text-secondary">
+        <p className="px-2 py-2">
+          {mapState.summary.plotted_stops} plotted
+        </p>
+        <p className="px-2 py-2">
+          {mapState.summary.missing_coordinates_count} missing GPS
+        </p>
+        <p className="px-2 py-2">{mapState.bounds.label}</p>
+      </div>
+    </Card>
+  );
+}
+
+function buildRecentActivity(
+  jobs: Job[],
+  invoices: Invoice[],
+  inventory: ChemicalInventoryItem[],
+) {
+  const completedJobs = jobs
+    .filter((job) => job.status === "completed")
+    .map((job) => ({
+      href: `/jobs/${job.id}`,
+      label: `${job.customer?.name ?? "Customer"} completed ${serviceLabel(
+        job.service_notes,
+      )}`,
+      meta: "Field workflow",
+    }));
+  const invoiceItems = invoices.slice(0, 2).map((invoice) => ({
+    href: "/payments",
+    label: `${formatCurrency(invoice.total_cents)} invoice ${invoice.status}`,
+    meta: "Billing",
+  }));
+  const lowStockItems = inventory
+    .filter(
+      (item) =>
+        item.reorder_level !== null &&
+        item.reorder_level !== undefined &&
+        item.current_stock <= item.reorder_level,
+    )
+    .map((item) => ({
+      href: "/inventory",
+      label: `${item.name} is below reorder level`,
+      meta: "Inventory",
+    }));
+
+  return [...completedJobs, ...invoiceItems, ...lowStockItems].slice(0, 5);
+}
+
+function buildSearchItems({
+  inventory,
+  invoices,
+  jobs,
+}: {
+  inventory: ChemicalInventoryItem[];
+  invoices: Invoice[];
+  jobs: Job[];
+}) {
+  return [
+    ...jobs.map((job) => ({
+      href: `/jobs/${job.id}`,
+      label: job.customer?.name ?? serviceLabel(job.service_notes),
+      meta: [serviceLabel(job.service_notes), job.location?.address, job.status]
+        .filter(Boolean)
+        .join(" · "),
+    })),
+    ...inventory.map((item) => ({
+      href: "/inventory",
+      label: item.name,
+      meta: `${item.current_stock} ${inventoryUnit(item)} in stock`,
+    })),
+    ...invoices.map((invoice) => ({
+      href: "/payments",
+      label: `${formatCurrency(invoice.total_cents)} invoice`,
+      meta: invoice.status,
+    })),
+  ];
+}
+
 export function HomeCommandCenter() {
+  const [search, setSearch] = useState("");
+  const { profile } = useAdminAuth();
   const customersQuery = useCustomers();
   const jobsQuery = useJobs();
   const techniciansQuery = useTechnicians();
@@ -43,28 +289,40 @@ export function HomeCommandCenter() {
   const invoicesQuery = useInvoices();
   const portalProviderQuery = useCustomerPortalProviderStatus();
 
+  const now = new Date();
+  const today = dateKey(now);
+  const jobs = jobsQuery.data ?? [];
+  const technicians = techniciansQuery.data ?? [];
+  const inventory = inventoryQuery.data ?? [];
+  const invoices = invoicesQuery.data ?? [];
+  const routeIntelligence = buildDispatchRouteIntelligence(jobs, today, "all", {
+    now,
+  });
+  const mapState = buildDispatchStaticMapState(routeIntelligence.stops);
+
   const state = buildHomeCommandCenterState({
     customers: customersQuery.data?.map((customer) => ({
       status: customer.status,
     })),
-    inventory: inventoryQuery.data?.map((item) => ({
+    inventory: inventory.map((item) => ({
       current_stock: item.current_stock,
       name: item.name,
       reorder_level: item.reorder_level,
     })),
-    invoices: invoicesQuery.data?.map((invoice) => ({
+    invoices: invoices.map((invoice) => ({
       status: invoice.status,
       total_cents: invoice.total_cents,
     })),
-    jobs: jobsQuery.data?.map((job) => ({
+    jobs: jobs.map((job) => ({
       customerName: job.customer?.name,
       id: job.id,
       scheduled_start: job.scheduled_start,
       serviceLabel: serviceLabel(job.service_notes),
       status: job.status,
     })),
+    now,
     portalProviderStatus: portalProviderQuery.data,
-    technicians: techniciansQuery.data?.map((technician) => ({
+    technicians: technicians.map((technician) => ({
       status: technician.status,
     })),
   });
@@ -76,206 +334,389 @@ export function HomeCommandCenter() {
     inventoryQuery.isLoading ||
     invoicesQuery.isLoading ||
     portalProviderQuery.isLoading;
+  const lowInventory = inventory
+    .filter(
+      (item) =>
+        item.reorder_level !== null &&
+        item.reorder_level !== undefined &&
+        item.current_stock <= item.reorder_level,
+    )
+    .slice(0, 3);
+  const recentActivity = buildRecentActivity(jobs, invoices, inventory);
+  const query = search.trim().toLowerCase();
+  const searchResults = query
+    ? buildSearchItems({ inventory, invoices, jobs })
+        .filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(query))
+        .slice(0, 5)
+    : [];
+  const openInvoices = invoices.filter((invoice) =>
+    openInvoiceStatuses.has(invoice.status),
+  );
 
   return (
     <main className="min-h-screen bg-theme-background-canvas text-theme-text-primary">
-      <section className="bg-theme-background-inverse text-theme-text-inverse">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <Eyebrow tone="inverse">Pest Patrol OS</Eyebrow>
-              <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
-                Field command center
+      <section className="border-b border-theme-border-subtle bg-theme-background-surface">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="grid gap-3 lg:grid-cols-[1fr_minmax(18rem,26rem)_auto] lg:items-center">
+            <div>
+              <Eyebrow tone="accent">Operations</Eyebrow>
+              <h1 className="mt-1 text-2xl font-extrabold text-primitive-navy-950">
+                Dashboard overview
               </h1>
-              <p className="mt-3 text-sm font-bold uppercase text-primitive-sky-100">
-                Live operations snapshot
-              </p>
-              <p className="mt-1 max-w-2xl text-sm text-primitive-sky-100 sm:text-base">
-                Dispatch, demo readiness, billing, and field workflow handoff.
+              <p className="mt-1 text-xs font-bold uppercase text-theme-text-muted">
+                {operationsDateLabel(now)} · SAN DIEGO DISPATCH
               </p>
             </div>
-            <div className="grid gap-2 text-sm sm:grid-cols-2 lg:min-w-96">
+            <label className="block">
+              <span className="sr-only">Search overview</span>
+              <input
+                className="min-h-10 w-full rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-semibold outline-none transition placeholder:text-theme-text-muted focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search customers, jobs, addresses..."
+                type="search"
+                value={search}
+              />
+            </label>
+            <div className="flex gap-2">
               <Link
-                className={buttonClassName({ fullWidth: true, size: "lg" })}
-                href={state.nextAction.href}
-              >
-                {state.nextAction.label}
-              </Link>
-              <Link
-                className={buttonClassName({
-                  fullWidth: true,
-                  size: "lg",
-                  variant: "inverse",
-                })}
+                className={buttonClassName({ size: "sm", variant: "ghost" })}
                 href="/dispatch"
               >
                 Open dispatch
               </Link>
+              <Link
+                className={buttonClassName({ size: "sm" })}
+                href="/jobs"
+              >
+                New job
+              </Link>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {state.kpis.map((kpi) => (
-              <StatTile
-                detail={kpi.detail}
-                key={kpi.id}
-                label={kpi.label}
-                tone={severityTones[kpi.severity]}
-                value={kpi.value}
-              />
-            ))}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-2xl font-extrabold text-primitive-navy-950">
+                {greetingLabel(now)}, {firstName(profile?.display_name ?? profile?.email)}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                {loading ? "Refreshing operations snapshot" : state.nextAction.summary}
+              </p>
+            </div>
+            <StatusPill tone={loading ? "neutral" : "info"}>
+              {loading ? "Refreshing" : state.portalProviderLabel}
+            </StatusPill>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[1.35fr_.9fr] lg:px-8">
-        <Card>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <Eyebrow tone="accent">Live dispatch</Eyebrow>
-              <h2 className="mt-1 text-xl font-bold">Today&apos;s schedule</h2>
+      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:px-8">
+        {query ? (
+          <Card>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Eyebrow tone="accent">Search focus</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">Search focus</h2>
+              </div>
+              <StatusPill tone="neutral">{searchResults.length} matches</StatusPill>
             </div>
-            <StatusPill tone="warning">
-              {loading ? "Refreshing live snapshot" : state.portalProviderLabel}
-            </StatusPill>
-          </div>
+            <div className="mt-3 divide-y divide-theme-border-subtle">
+              {searchResults.length > 0 ? (
+                searchResults.map((item) => (
+                  <Link
+                    className="block py-3 text-sm transition hover:bg-theme-background-subtle"
+                    href={item.href}
+                    key={`${item.href}-${item.label}`}
+                  >
+                    <p className="font-bold text-primitive-navy-950">{item.label}</p>
+                    <p className="mt-1 text-theme-text-secondary">{item.meta}</p>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                  No dashboard matches for that search.
+                </p>
+              )}
+            </div>
+          </Card>
+        ) : null}
 
-          <div className="mt-4 divide-y divide-primitive-slate-100">
-            {state.schedule.length > 0 ? (
-              state.schedule.map((job) => {
-                return (
+        <section
+          aria-label="Dashboard metrics"
+          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          {state.kpis.map((kpi) => (
+            <DashboardMetricCard
+              detail={kpi.detail}
+              key={kpi.id}
+              label={kpi.label}
+              tone={severityTones[kpi.severity]}
+              value={kpi.value}
+            />
+          ))}
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1.35fr_.95fr]">
+          <Card>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Eyebrow tone="accent">Today&apos;s dispatch</Eyebrow>
+                <h2 className="mt-1 text-xl font-bold">Today&apos;s schedule</h2>
+                <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                  {state.schedule.length} jobs · {technicians.length} technicians
+                </p>
+              </div>
+              <Link
+                className={buttonClassName({ size: "sm", variant: "ghost" })}
+                href="/dispatch"
+              >
+                View dispatch
+              </Link>
+            </div>
+
+            <div className="mt-4 divide-y divide-theme-border-subtle">
+              {state.schedule.length > 0 ? (
+                state.schedule.map((job) => (
                   <Link
                     className="grid gap-3 py-3 transition hover:bg-theme-background-subtle sm:grid-cols-[5rem_1fr_auto]"
                     href={job.href}
                     key={job.id}
                   >
-                    <p className="text-sm font-bold">{job.timeLabel}</p>
+                    <p className="text-sm font-extrabold tabular-nums text-primitive-navy-950">
+                      {job.timeLabel}
+                    </p>
                     <div>
-                      <p className="font-bold">{job.serviceLabel}</p>
-                      <p className="text-sm text-theme-text-secondary">{job.customerName}</p>
+                      <p className="font-bold text-primitive-navy-950">
+                        {job.serviceLabel}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                        {job.customerName}
+                      </p>
                     </div>
                     <StatusPill tone={severityTones[job.statusSeverity]}>
                       {job.statusLabel}
                     </StatusPill>
                   </Link>
-                );
-              })
-            ) : (
-              <div className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
-                No jobs scheduled for today yet. Seed the demo story or create a
-                job to populate the dispatch list.
-              </div>
-            )}
-          </div>
-        </Card>
+                ))
+              ) : (
+                <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm font-semibold text-theme-text-secondary">
+                  No jobs scheduled for today yet. Seed the demo story or create a
+                  job to populate the dispatch list.
+                </p>
+              )}
+            </div>
+          </Card>
 
-        <div className="grid content-start gap-4">
+          <DashboardMap
+            liveTechCount={technicians.length}
+            mapState={mapState}
+          />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-3">
           <Card>
-            <Eyebrow tone="accent">Command brief</Eyebrow>
-            <h2 className="mt-1 text-xl font-bold">Next best action</h2>
-            <p className="mt-2 text-sm text-theme-text-secondary">
-              {state.nextAction.summary}
-            </p>
-            <div className="mt-4 grid gap-2">
-              {state.alerts.map((alert) => {
-                const tone = severityTones[alert.severity];
-
-                return (
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Eyebrow tone="danger">Work queue</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">Jobs needing attention</h2>
+              </div>
+              <StatusPill tone={state.alerts.length > 0 ? "warning" : "success"}>
+                {state.alerts.length > 0 ? `${state.alerts.length} open` : "Clear"}
+              </StatusPill>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {state.alerts.length > 0 ? (
+                state.alerts.map((alert) => (
                   <div
                     className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                     key={alert.id}
                   >
-                    <StatusPill tone={tone}>{alert.label}</StatusPill>
-                    <p className="mt-1 text-sm text-theme-text-secondary">{alert.detail}</p>
+                    <StatusPill tone={severityTones[alert.severity]}>
+                      {alert.label}
+                    </StatusPill>
+                    <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
+                      {alert.detail}
+                    </p>
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                  Active route and launch checks are clear for the loaded demo data.
+                </p>
+              )}
+              <Link
+                className={buttonClassName({
+                  fullWidth: true,
+                  size: "sm",
+                  variant: "ghost",
+                })}
+                href={state.nextAction.href}
+              >
+                {state.nextAction.label}
+              </Link>
             </div>
           </Card>
+
           <Card>
-            <Eyebrow tone="danger">Launch gates</Eyebrow>
-            <h2 className="mt-1 text-xl font-bold">Smoke readiness</h2>
-            <div className="mt-4 divide-y divide-primitive-slate-100">
-              {state.launchReadiness.map((item) => {
-                return (
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Eyebrow tone="danger">Low inventory</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">Low inventory</h2>
+              </div>
+              <StatusPill tone={lowInventory.length > 0 ? "warning" : "success"}>
+                {lowInventory.length > 0 ? "Review" : "Stocked"}
+              </StatusPill>
+            </div>
+            <div className="mt-4 divide-y divide-theme-border-subtle">
+              {lowInventory.length > 0 ? (
+                lowInventory.map((item) => (
+                  <Link
+                    className="block py-3 transition hover:bg-theme-background-subtle"
+                    href="/inventory"
+                    key={item.id ?? item.name}
+                  >
+                    <p className="text-sm font-bold text-primitive-navy-950">
+                      {item.name}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                      {item.current_stock} {inventoryUnit(item)} on hand · reorder at{" "}
+                      {item.reorder_level}
+                    </p>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                  No loaded chemicals are below reorder level.
+                </p>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Eyebrow tone="accent">Recent activity</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">Recent activity</h2>
+              </div>
+              <StatusPill tone={openInvoices.length > 0 ? "danger" : "success"}>
+                {openInvoices.length} unpaid
+              </StatusPill>
+            </div>
+            <div className="mt-4 divide-y divide-theme-border-subtle">
+              {recentActivity.length > 0 ? (
+                recentActivity.map((item) => (
                   <Link
                     className="block py-3 transition hover:bg-theme-background-subtle"
                     href={item.href}
-                    key={item.id}
+                    key={`${item.href}-${item.label}`}
                   >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-primitive-navy-950">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-sm text-theme-text-secondary">
-                          {item.summary}
-                        </p>
-                      </div>
-                      <StatusPill tone={severityTones[item.severity]}>
-                        {item.stateLabel}
-                      </StatusPill>
-                    </div>
-                    <p className="mt-2 text-xs font-semibold text-theme-text-muted">
-                      {item.action}
+                    <p className="text-sm font-bold text-primitive-navy-950">
+                      {item.label}
                     </p>
-                    {item.command ? (
-                      <p className="mt-2 rounded-md bg-primitive-slate-100 px-2 py-1 font-mono text-xs text-theme-text-secondary">
-                        {item.command}
-                      </p>
-                    ) : null}
+                    <p className="mt-1 text-xs font-bold uppercase text-theme-text-muted">
+                      {item.meta}
+                    </p>
                   </Link>
-                );
-              })}
+                ))
+              ) : (
+                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                  Activity appears after demo jobs, invoices, or inventory changes load.
+                </p>
+              )}
+            </div>
+          </Card>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1fr_.8fr]">
+          <Card>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <Eyebrow tone="danger">Launch gates</Eyebrow>
+                <h2 className="mt-1 text-xl font-bold">Smoke readiness</h2>
+              </div>
+              <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
+                Operator checks stay provider-free until approved env and access are
+                available.
+              </p>
+            </div>
+            <div className="mt-4 divide-y divide-theme-border-subtle">
+              {state.launchReadiness.map((item) => (
+                <Link
+                  className="block py-3 transition hover:bg-theme-background-subtle"
+                  href={item.href}
+                  key={item.id}
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-primitive-navy-950">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                        {item.summary}
+                      </p>
+                    </div>
+                    <StatusPill tone={severityTones[item.severity]}>
+                      {item.stateLabel}
+                    </StatusPill>
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-theme-text-muted">
+                    {item.action}
+                  </p>
+                  {item.command ? (
+                    <p className="mt-2 rounded-md bg-primitive-slate-100 px-2 py-1 font-mono text-xs text-theme-text-secondary">
+                      {item.command}
+                    </p>
+                  ) : null}
+                </Link>
+              ))}
             </div>
           </Card>
           <DemoSeedControls />
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-        <Card>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <Eyebrow tone="danger">Demo readiness</Eyebrow>
-              <h2 className="mt-1 text-xl font-bold">Guided demo smoke</h2>
+        <section>
+          <Card>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <Eyebrow tone="danger">Demo readiness</Eyebrow>
+                <h2 className="mt-1 text-xl font-bold">Guided demo smoke</h2>
+              </div>
+              <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
+                Route links and evidence prompts are operator aids only. They do
+                not store checklist state or require production customer data.
+              </p>
             </div>
-            <p className="max-w-xl text-sm text-theme-text-secondary">
-              Route links and evidence prompts are operator aids only. They do
-              not store checklist state or require production customer data.
-            </p>
-          </div>
-          <div className="mt-4 grid gap-3 lg:grid-cols-5">
-            {state.smokeChecklist.map((item, index) => (
-              <Link
-                className="flex min-h-64 flex-col gap-4 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4 transition hover:border-primitive-sky-500 hover:bg-theme-background-surface hover:shadow-sm"
-                href={item.href}
-                key={item.id}
-              >
-                <div>
-                  <p className="text-xs font-bold uppercase text-theme-text-muted">
-                    Step {index + 1}
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-primitive-navy-950">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 text-xs font-bold uppercase text-primitive-sky-500">
-                    {item.routeLabel}
-                  </p>
-                </div>
-                <div className="flex flex-1 flex-col justify-end gap-3 text-sm">
-                  <p className="text-theme-text-secondary">{item.action}</p>
-                  <p className="font-semibold text-theme-text-secondary">
-                    Success: {item.successSignal}
-                  </p>
-                  <p className="text-xs font-semibold text-theme-text-muted">
-                    {item.evidencePrompt}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Card>
-      </section>
+            <div className="mt-4 grid gap-3 lg:grid-cols-5">
+              {state.smokeChecklist.map((item, index) => (
+                <Link
+                  className="flex min-h-64 flex-col gap-4 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4 transition hover:border-primitive-sky-500 hover:bg-theme-background-surface hover:shadow-sm"
+                  href={item.href}
+                  key={item.id}
+                >
+                  <div>
+                    <p className="text-xs font-bold uppercase text-theme-text-muted">
+                      Step {index + 1}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-primitive-navy-950">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-xs font-bold uppercase text-primitive-sky-500">
+                      {item.routeLabel}
+                    </p>
+                  </div>
+                  <div className="flex flex-1 flex-col justify-end gap-3 text-sm">
+                    <p className="text-theme-text-secondary">{item.action}</p>
+                    <p className="font-semibold text-theme-text-secondary">
+                      Success: {item.successSignal}
+                    </p>
+                    <p className="text-xs font-semibold text-theme-text-muted">
+                      {item.evidencePrompt}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </section>
+      </div>
     </main>
   );
 }
