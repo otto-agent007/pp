@@ -9,7 +9,6 @@ import {
   formatMissingCaptureList,
   getAdminCloseoutProofReview,
   getBillingQueueCounts,
-  getBillingQueueItemSummary,
   getCloseoutProofHandoffSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
@@ -76,6 +75,22 @@ function formatDateMedium(value: string | null | undefined) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
     new Date(value),
   );
+}
+
+function formatMissingCaptureMicroLine(items: string[]) {
+  const lowered = items.map((item) => item.toLowerCase());
+
+  if (lowered.length === 0) {
+    return null;
+  }
+
+  if (lowered.length <= 3) {
+    return `Missing: ${lowered.join(" · ")}`;
+  }
+
+  return `Missing: ${lowered.slice(0, 2).join(" · ")} · + ${
+    lowered.length - 2
+  } more`;
 }
 
 function formatMoney(cents: number, currency = "usd") {
@@ -300,7 +315,7 @@ function QueueRow({
         pill={pill}
         summary={
           item.state === "needsCaptures"
-            ? getBillingQueueItemSummary(item)
+            ? formatMissingCaptureMicroLine(item.readiness.missing)
             : item.job.service_notes
         }
       />
@@ -452,6 +467,9 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
         <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
         </p>
+        <p className="mt-2 text-xs font-medium text-theme-text-muted">
+          Invoice will include GPS + form evidence.
+        </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {actions.map((action) => (
             <a
@@ -479,6 +497,9 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
         <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
         </p>
+        <p className="mt-2 text-xs font-medium text-theme-text-muted">
+          Billing handoff is blocked until captures sync.
+        </p>
       </Card>
     );
   }
@@ -504,6 +525,12 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
     sent: `Awaiting payment. Balance ${formatMoney(balance, invoice.currency)}.`,
     void: "Invoice was voided. Reissue if needed.",
   };
+  const contextCueByStatus = {
+    draft: "Review and finalize line items before sharing with the customer.",
+    paid: "Job is closed. Archive or move to the next stop.",
+    sent: "Awaiting customer payment. No action needed until paid or overdue.",
+    void: "Reissue a new invoice if this job needs to be rebilled.",
+  };
 
   return (
     <Card
@@ -515,6 +542,9 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
       </p>
       <p className="mt-1 text-sm text-theme-text-secondary">
         {bodyByStatus[invoice.status]}
+      </p>
+      <p className="mt-2 text-xs font-medium text-theme-text-muted">
+        {contextCueByStatus[invoice.status]}
       </p>
       <a
         className={buttonClassName({ className: "mt-4", size: "md" })}
@@ -580,8 +610,12 @@ function ProofHandoffCard({
   const proof = review;
   const completionLabel = proof?.completion_label ?? "Needs review";
   const completionTone = proofCompletionTone(completionLabel);
-  const arrivalTone = evidence?.latest_arrival ? "success" : "warning";
-  const departureTone = evidence?.latest_departure ? "success" : "warning";
+  const arrivalTone: StatusPillTone = evidence?.latest_arrival
+    ? "success"
+    : "warning";
+  const departureTone: StatusPillTone = evidence?.latest_departure
+    ? "success"
+    : "warning";
   const gpsLabel = proof?.gps_label ?? handoff.gps_label;
   const gpsTone: StatusPillTone =
     gpsLabel.includes("missing") || gpsLabel.includes("Partial")
@@ -596,6 +630,59 @@ function ProofHandoffCard({
     : "neutral";
   const syncTone: StatusPillTone =
     proof?.sync_confidence_label === "High sync confidence" ? "success" : "warning";
+  const locationEvidencePills: Array<{
+    countsAsMissingEvidence?: boolean;
+    label: string;
+    tone: StatusPillTone;
+  }> = [
+    { label: arrivalLabel, tone: arrivalTone },
+    { label: departureLabel, tone: departureTone },
+    { label: handoff.gps_label, tone: gpsTone },
+  ];
+  const billingCapturePills: Array<{
+    countsAsMissingEvidence?: boolean;
+    label: string;
+    tone: StatusPillTone;
+  }> = [
+    {
+      label: proof?.billing_label ?? handoff.proof_label,
+      tone: billingTone,
+    },
+    {
+      countsAsMissingEvidence: Boolean(invoice),
+      label:
+        proof?.invoice_label ??
+        (invoice ? `Invoice ${invoice.status}` : "No invoice yet"),
+      tone: invoiceTone,
+    },
+    {
+      label: proof?.sync_confidence_label ?? "Review synced field evidence",
+      tone: syncTone,
+    },
+  ];
+  const reviewItemCount = [
+    ...locationEvidencePills,
+    ...billingCapturePills,
+  ].filter(
+    (pill) =>
+      pill.tone !== "success" && pill.countsAsMissingEvidence !== false,
+  ).length;
+  const proofUnblockCopy =
+    completionLabel === "Ready"
+      ? invoice
+        ? invoice.status === "draft"
+          ? "All proof captured. Review invoice draft before sharing."
+          : invoice.status === "sent"
+            ? "All proof captured. Watch payment status before closing."
+            : invoice.status === "paid"
+              ? "All proof captured and invoice paid."
+              : "All proof captured. Reissue invoice if this job needs rebilling."
+        : "All proof captured. Create invoice to close out."
+      : completionLabel === "Missing evidence"
+        ? `${reviewItemCount} item${reviewItemCount === 1 ? "" : "s"} ${
+            reviewItemCount === 1 ? "needs" : "need"
+          } review before billing handoff.`
+        : "Review evidence before billing handoff.";
 
   return (
     <Card
@@ -613,29 +700,33 @@ function ProofHandoffCard({
           <p className="mt-1 text-sm text-theme-text-secondary">
             {handoff.proof_summary}
           </p>
+          <p className="mt-2 text-sm font-medium text-theme-text-secondary">
+            {proofUnblockCopy}
+          </p>
         </div>
         <StatusPill tone={completionTone}>{completionLabel}</StatusPill>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <StatusPill dot={false} tone={arrivalTone}>
-          {arrivalLabel}
-        </StatusPill>
-        <StatusPill dot={false} tone={departureTone}>
-          {departureLabel}
-        </StatusPill>
-        <StatusPill dot={false} tone={gpsTone}>
-          {handoff.gps_label}
-        </StatusPill>
-        <StatusPill dot={false} tone={billingTone}>
-          {proof?.billing_label ?? handoff.proof_label}
-        </StatusPill>
-        <StatusPill dot={false} tone={invoiceTone}>
-          {proof?.invoice_label ??
-            (invoice ? `Invoice ${invoice.status}` : "No invoice yet")}
-        </StatusPill>
-        <StatusPill dot={false} tone={syncTone}>
-          {proof?.sync_confidence_label ?? "Review synced field evidence"}
-        </StatusPill>
+      <div className="mt-4 grid gap-3">
+        <div>
+          <Eyebrow tone="muted">Location evidence</Eyebrow>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {locationEvidencePills.map((pill) => (
+              <StatusPill dot={false} key={pill.label} tone={pill.tone}>
+                {pill.label}
+              </StatusPill>
+            ))}
+          </div>
+        </div>
+        <div>
+          <Eyebrow tone="muted">Billing captures</Eyebrow>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {billingCapturePills.map((pill) => (
+              <StatusPill dot={false} key={pill.label} tone={pill.tone}>
+                {pill.label}
+              </StatusPill>
+            ))}
+          </div>
+        </div>
       </div>
       <ul className="mt-3 grid gap-1 text-xs font-medium text-theme-text-secondary sm:grid-cols-2">
         {handoff.gps_items.map((item) => (

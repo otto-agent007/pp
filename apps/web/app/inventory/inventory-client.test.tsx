@@ -45,6 +45,13 @@ const archivedChemical = {
   name: "Old Spray",
   status: "archived",
 } as const;
+const noLogChemical = {
+  ...activeChemical,
+  current_stock: 8,
+  id: "chemical-3",
+  name: "Dust",
+  reorder_level: 2,
+} as const;
 const job = {
   id: "job-1",
   customer_id: "customer-1",
@@ -79,6 +86,66 @@ const job = {
     updated_at: now,
   },
 } as const;
+const chemicalLogs = [
+  {
+    id: "log-1",
+    job_id: "job-1",
+    chemical_id: "chemical-1",
+    amount_used: 2.5,
+    notes: null,
+    created_at: "2026-05-07T12:00:00Z",
+    chemical: activeChemical,
+    job,
+  },
+  {
+    id: "log-2",
+    job_id: "job-1",
+    chemical_id: "chemical-1",
+    amount_used: 1,
+    notes: null,
+    created_at: "2026-05-06T12:00:00Z",
+    chemical: activeChemical,
+    job: {
+      ...job,
+      customer: {
+        ...job.customer,
+        name: "Rivera Cafe",
+      },
+    },
+  },
+  {
+    id: "log-3",
+    job_id: "job-1",
+    chemical_id: "chemical-1",
+    amount_used: 3,
+    notes: null,
+    created_at: "2026-05-05T12:00:00Z",
+    chemical: activeChemical,
+    job: {
+      ...job,
+      customer: {
+        ...job.customer,
+        name: "Nguyen Residence",
+      },
+    },
+  },
+  {
+    id: "log-4",
+    job_id: "job-1",
+    chemical_id: "chemical-1",
+    amount_used: 4,
+    notes: null,
+    created_at: "2026-05-04T12:00:00Z",
+    chemical: activeChemical,
+    job: {
+      ...job,
+      customer: {
+        ...job.customer,
+        name: "Park Apartments",
+      },
+    },
+  },
+] as const;
 
 async function chooseSearchableOption(
   user: ReturnType<typeof userEvent.setup>,
@@ -246,5 +313,33 @@ describe("InventoryClient", () => {
       amount_used: 2,
       notes: null,
     });
+  });
+
+  it("shows per-chemical usage counts and expands the last three uses", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [activeChemical, noLogChemical],
+      isLoading: false,
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: chemicalLogs,
+      isLoading: false,
+    } as never);
+
+    render(<InventoryClient />);
+
+    expect(screen.getByText("4 uses logged")).toBeInTheDocument();
+    expect(screen.getByText("No uses logged yet")).toBeInTheDocument();
+    expect(screen.getByText("Last used May 7, 2026 - Apex Homes")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "View uses for Bait Gel" }));
+
+    expect(screen.getByText("Recent uses")).toBeInTheDocument();
+    expect(screen.getByText("Apex Homes")).toBeInTheDocument();
+    expect(screen.getByText("Rivera Cafe")).toBeInTheDocument();
+    expect(screen.getByText("Nguyen Residence")).toBeInTheDocument();
+    expect(screen.queryByText("Park Apartments")).not.toBeInTheDocument();
+    expect(screen.getByText("2.5 oz - May 7, 2026")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse uses for Bait Gel" })).toBeInTheDocument();
   });
 });

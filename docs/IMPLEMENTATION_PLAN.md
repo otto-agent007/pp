@@ -29,6 +29,10 @@ Completed in this batch:
 14. Refreshed current Vercel discovery: latest Ready preview is `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app` and latest Ready production deployment is `https://pest-patrol-5sw483rdk-ottoagent007-gmailcoms-projects.vercel.app`; real seed/reset remains blocked in this shell before writes on missing approved Supabase env names.
 15. Added Mobile UI Native Primitives V1: `@pest-patrol/ui-native` now provides token-driven `Button`, `Card`, `Eyebrow`, `StatusPill`, `StatTile`, and `Avatar` primitives for the Expo technician app.
 16. Migrated the targeted mobile proof points only: `AssignedJobCard` uses the shared native `StatusPill`, and `MobileTechnicianHeader` uses the shared native `Button` for Language and Sign Out controls while preserving the existing route-shell styles and offline-first flow.
+17. Added Inventory Usage + Closeout Proof States V1: `/inventory` now derives per-chemical usage counts, low-stock usage recency, and inline recent-use strips from already loaded chemical logs.
+18. Refined `/closeouts` proof-state UI with missing-capture micro-lines, grouped location/billing evidence, and next-action cues for blocked, ready, invoiced, sent, paid, and voided jobs.
+19. Preserved existing hooks, data flow, API contracts, schema, providers, env, seed/reset writes, preview state, and production state for the 014 relay implementation.
+20. Verified the 014 slice with focused inventory/closeouts tests, full repo tests, typecheck, lint, build, and `git diff --check`.
 
 Previously completed launch-readiness items still matter:
 

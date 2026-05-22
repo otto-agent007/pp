@@ -1,5 +1,12 @@
 # Done
 
+## Inventory Usage + Closeout Proof States V1
+
+- Added per-chemical usage counts, low-stock last-used recency, and an expandable last-3-use strip on `/inventory` using already loaded chemical logs
+- Added closeout queue missing-capture micro-lines, grouped location/billing proof evidence, and next-action context cues on `/closeouts`
+- Preserved existing hooks, data flow, API contracts, schema, providers, env, seed/reset writes, preview state, and production state
+- Verified with focused inventory/closeouts tests, full repo tests, typecheck, lint, build, and `git diff --check`
+
 ## Mobile UI Native Primitives V1
 
 - Added `@pest-patrol/ui-native` with token-driven React Native primitives for `Button`, `Card`, `Eyebrow`, `StatusPill`, `StatTile`, and `Avatar`
