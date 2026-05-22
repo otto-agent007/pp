@@ -7,6 +7,14 @@
 - Preserved existing hooks, data flow, API contracts, schema, providers, env, seed/reset writes, preview state, and production state
 - Verified with focused inventory/closeouts tests, full repo tests, typecheck, lint, build, and `git diff --check`
 
+## Mobile UI Native Primitives V1
+
+- Added `@pest-patrol/ui-native` with token-driven React Native primitives for `Button`, `Card`, `Eyebrow`, `StatusPill`, `StatTile`, and `Avatar`
+- Wired the package into the workspace TypeScript paths, mobile dependencies, lockfile, and Turbo build configuration without moving shared tone types into `packages/types`
+- Migrated `AssignedJobCard` to the shared native `StatusPill` and `MobileTechnicianHeader` language/sign-out controls to the shared native `Button`
+- Kept `routeShellStyles.ts`, `mobileCaptureControlStyles`, migrations, provider setup, env changes, preview/production mutations, auth changes, and app chrome unchanged
+- Verified with focused `@pest-patrol/ui-native` and mobile component tests plus full repo test, typecheck, lint, build, and whitespace gates
+
 ## Demo-Visible Fixture Smoke V1
 
 - Fixed local fixture demo status/actions so the dashboard no longer calls the authenticated `/api/demo-seed` route or shows `Authentication is required` when Supabase env values are intentionally absent

@@ -45,6 +45,9 @@ vi.mock("react-native", async () => {
       onPress?: () => void;
       style?: unknown;
     }) => ReactModule.createElement("Pressable", { onPress, style }, children),
+    StyleSheet: {
+      create: <T,>(styles: T) => styles,
+    },
     Text: ({
       children,
       style,
