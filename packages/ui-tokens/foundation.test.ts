@@ -71,7 +71,7 @@ describe("Pest Patrol design token foundation", () => {
     expect(semantic).toBe(lightTheme);
     expect(lightTheme).toMatchObject({
       background: {
-        canvas: primitive.cream[50],
+        canvas: primitive.white,
         surface: primitive.white,
         subtle: primitive.slate[50],
         inverse: primitive.navy[950],

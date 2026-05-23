@@ -1,17 +1,30 @@
 # Implementation Plan
 
-## Current Priority: Provider-Free Demo Reliability + California Compliance RAG
+## Current Priority: Launch Readiness Evidence + White App Canvas
 
-The current launch-readiness track includes the customer/admin shared-primitives
-closeout, brand app-shell intake, operator-facing launch gate guidance, repo
-audit cleanup, and a repo-side Vercel packaging fix for the password recovery
-route alongside the advisory-only California Compliance RAG baseline and
-provider-free demo handoff path. It keeps protected-preview smoke gated on
-operator env/access and does not apply migrations, mutate preview or production
-data, configure providers, add Google Maps/Mapbox, add background tracking, or
-expose server-only keys to browser/mobile clients.
+The current launch-readiness track is evidence-first after PR #53 merged:
+post-merge GitHub/Vercel/Supabase/compliance checks are refreshed, migration
+application remains operator-approved only, and the app shell now reads as a
+white canvas instead of sand/cream while preserving dark rail chrome, cards,
+status tones, and semantic state colors. It keeps protected-preview smoke gated
+on operator env/access and does not apply migrations, mutate preview or
+production data, configure providers, add Google Maps/Mapbox, add background
+tracking, or expose server-only keys to browser/mobile clients.
 
 Completed in this batch:
+
+1. Synced local `main` to the PR #53 merge commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3` and opened `codex/launch-readiness-white-canvas` for the next readiness batch, leaving the prior branch's extra post-merge dispatch evidence commit untouched.
+2. Refreshed GitHub and Vercel readiness evidence: PR #53 is merged, GitHub checks reported `verify` success plus Vercel success, the latest Ready preview is `https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`, and latest Ready production deployment is `https://pest-patrol-m084wbv4s-ottoagent007-gmailcoms-projects.vercel.app`.
+3. Reran read-only local and preview `demo:smoke` preflights; both remain blocked before seed/reset or authenticated preview browser smoke because approved Supabase env names are not loaded in this shell, and preview also remains gated on operator-approved protected-preview access/sign-in.
+4. Reran `corepack pnpm compliance:ingest -- --dry-run --no-embed`; it planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+5. Reaudited pending launch-sensitive migrations through `20260518021520_portal_send_succeeded_event.sql` without applying them; `private.has_admin_access()` still precedes dependent portal/compliance policies, RLS remains enabled, and compliance grants stay explicit for `authenticated` and `service_role`.
+6. Confirmed local Supabase target inspection is still blocked until Docker Desktop's Linux engine pipe and local Postgres on `127.0.0.1:54322` are reachable.
+7. Changed the light app canvas token and legacy `neutralLight` alias from cream to white, and documented that `primitive/cream/50` is historical only and should not be used for app canvas backgrounds.
+8. Ran local fixture browser smoke on `/`, `/dispatch`, `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal` at `1440x1000` and `390x900`; the temp Playwright Firefox spec found expected fixture content, no signed-out/loading auth gate, no console/page errors, no document-level horizontal overflow, and white sampled canvas pixels on every route.
+9. Confirmed the served app CSS no longer includes `#F6F2EA`, `#f6f2ea`, or `246, 242, 234` for the local fixture app.
+10. Kept seed/reset writes, migrations, Supabase/Vercel/provider/env changes, live compliance ingestion, preview mutations, production mutations, and API contract changes out of scope.
+
+Previously completed in this broader launch-readiness track:
 
 1. Added Demo Media Proof V1 on a fresh branch from `origin/main`: the seeded San Diego demo story now includes richer Rivera Cafe proof context, expanded treatment-form fields, 3 chemical logs, 2 form submissions, 6 inventory items, and 3 synthetic proof media records.
 2. Extended seed/reset execution so demo media is uploaded to the `job-media` storage bucket, inserted into `job_media`, removed from storage during reset, and counted in CLI/dashboard/smoke-preflight summaries.
@@ -75,13 +88,13 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 ## Next Decision Points
 
 1. Verify the approved local/preview migration target before applying pending local migration files, including the compliance RAG schema and `20260518021520_portal_send_succeeded_event.sql`.
-2. If using local Supabase for that target verification, start or repair Docker Desktop's Linux engine and local Postgres before rerunning `supabase status -o env` and `supabase migration list --local`; the later May 20, 2026 check could not inspect local containers or migration history.
-3. After explicit migration approval, run `corepack pnpm compliance:ingest` against an approved local or preview Supabase environment before treating `/compliance` as source-backed; the May 20, 2026 dry-run/no-embed preflight passed locally without Supabase writes or OpenAI calls.
+2. If using local Supabase for that target verification, start or repair Docker Desktop's Linux engine and local Postgres before rerunning `supabase status -o env` and `supabase migration list --local`; the May 23, 2026 check could not inspect local containers or migration history.
+3. After explicit migration approval, run `corepack pnpm compliance:ingest` against an approved local or preview Supabase environment before treating `/compliance` as source-backed; the May 23, 2026 dry-run/no-embed preflight passed locally without Supabase writes or OpenAI calls.
 4. If local Windows Vercel packaging remains required, resolve the remaining symlink permission/tooling blocker. The `/auth/update-password` lambda mapping issue is fixed, but `corepack pnpm dlx vercel build --yes` now fails after serverless function creation with `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
 5. For local fixture demos, start `corepack pnpm --filter @pest-patrol/web dev --turbopack -p 3000` and use the no-auth `Local fixture demo` path; real Supabase seed/reset is unnecessary for fixture presentation.
-6. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` only before real local seed/reset; the May 21, 2026 read-only pass is still blocked on the required env names.
+6. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` only before real local seed/reset; the May 23, 2026 read-only pass is still blocked on the required env names.
 7. Run real local seed/reset only after the local preflight is ready, then smoke `/`, `/dispatch`, `/closeouts`, `/customers`, `/compliance`, the mobile route flow, and tokened portal surfaces with sanitized notes, including the seeded proof photos and synthetic signature.
-8. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app` or the newest Ready preview discovered at execution time; the May 21, 2026 read-only pass against the latest Ready preview is still blocked on the required env names and operator-approved protected-preview access.
+8. Operator loads approved preview Supabase credentials in their shell, then runs `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app` or the newest Ready preview discovered at execution time; the May 23, 2026 read-only pass against the latest Ready preview is still blocked on the required env names and operator-approved protected-preview access.
 9. Operator optionally sets `DEMO_TECH_PASSWORD` and passes `--tech-password-env DEMO_TECH_PASSWORD` to both smoke preflight and preview seed commands when technician login demos are needed.
 10. Run protected-preview browser smoke only after approved preview access and admin/dispatcher sign-in path are available, then record sanitized findings in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 11. Confirm manual-fallback provider smoke in an authenticated browser when webhook env names are intentionally unset; local focused tests now cover the manual-only portal, notification, and payment setup states, but browser evidence remains gated on env/access.

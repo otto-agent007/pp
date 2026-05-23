@@ -79,10 +79,20 @@ Apply all migrations in timestamp order for a new preview database. The latest l
 - `20260512043439_portal_token_audit_events_v1.sql`
 - `20260513120000_portal_send_audit_events_v1.sql`
 - `20260516175724_california_compliance_rag_v1.sql` (operator-approved compliance RAG proposal; not applied by Codex)
+- `20260518021520_portal_send_succeeded_event.sql` (portal send-event proposal; not applied by Codex)
 
-Before applying migrations, the operator should confirm the target Supabase project, backup/rollback comfort, and whether any migrations have already been applied. The compliance migration is currently a proposal with explicit Data API grants plus RLS policies; Codex should not run migration apply commands without explicit approval.
+Before applying migrations, the operator should confirm the target Supabase project/environment, backup/rollback comfort, and whether any migrations have already been applied. Inspect remote migration history before any apply, then apply pending files strictly in timestamp order. The compliance and portal send-event migrations are currently proposals; Codex should not run migration apply commands without explicit approval.
 
 RLS/Data API note: apply migrations strictly in timestamp order. The compliance RAG and portal audit migrations depend on `20260507220000_supabase_security_hardening_v1.sql` because their policies call `private.has_admin_access()`; do not apply them as standalone SQL to a target missing that hardening migration. The compliance tables deliberately grant Data API reachability to `authenticated` and `service_role`, not `anon`; RLS remains the row-level boundary for authenticated users. `service_role` access is server/tooling-only, bypasses RLS, and must never be exposed as `NEXT_PUBLIC_*` or `EXPO_PUBLIC_*`.
+
+Apply-readiness checklist for local vs preview target:
+
+- Confirm whether the intended target is local Supabase or the protected preview project before loading any env values.
+- Inspect target migration history first; do not infer it from local files alone.
+- If using local Supabase, make Docker Desktop's Linux engine and local Postgres on `127.0.0.1:54322` reachable before relying on local migration history.
+- If using preview Supabase, use only an operator-approved shell or dashboard session and do not paste secrets, bypass values, or raw portal tokens into docs/chat.
+- Apply pending migrations strictly in timestamp order through `20260518021520_portal_send_succeeded_event.sql`.
+- After migration approval and application, rerun `corepack pnpm demo:smoke -- --target local|preview`, then `corepack pnpm compliance:ingest -- --dry-run --no-embed`, before seed/reset or live ingestion.
 
 ## Preview Smoke Run
 
@@ -90,7 +100,7 @@ Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
 For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
-Latest local preflight note: the later May 20, 2026 readiness pass found the latest Ready preview at `https://pest-patrol-9p9xhuitd-ottoagent007-gmailcoms-projects.vercel.app` and verified the protected app shell through `vercel curl`. Vercel Preview env names exist for Supabase and scheduler secrets, but the local shell still lacks `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, so local and preview `demo:smoke` preflights remain blocked before seed/reset or browser smoke. Local Supabase target inspection is also blocked until Docker Desktop's Linux engine pipe and local Postgres on `127.0.0.1:54322` are reachable for `supabase status -o env` and `supabase migration list --local`. No seed/reset, browser login, provider dashboard mutation, environment mutation, migration, live compliance ingestion, or production data action was attempted during this pass.
+Latest local preflight note: the May 23, 2026 readiness pass found the latest Ready preview at `https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app` and latest Ready production deployment at `https://pest-patrol-m084wbv4s-ottoagent007-gmailcoms-projects.vercel.app`; `vercel inspect` reported the preview Ready and `vercel curl` verified the protected app shell. Vercel Preview env names exist for Supabase and scheduler secrets, but the local shell still lacks `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, so local and preview `demo:smoke` preflights remain blocked before seed/reset or authenticated preview browser smoke. Local Supabase target inspection is also blocked until Docker Desktop's Linux engine pipe and local Postgres on `127.0.0.1:54322` are reachable for `supabase status -o env` and `supabase migration list --local`. Local fixture browser smoke on `http://localhost:3000` did pass for `/`, `/dispatch`, `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal` at desktop and narrow widths with a white sampled canvas, no horizontal overflow, and no console/page errors. No seed/reset, browser login, provider dashboard mutation, environment mutation, migration, live compliance ingestion, preview mutation, or production data action was attempted during this pass.
 
 Run these in order after the preview deployment has the approved environment variables:
 

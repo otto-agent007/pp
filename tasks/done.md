@@ -1,5 +1,17 @@
 # Done
 
+## Launch Readiness White Canvas V1
+
+- Synced local `main` to the PR #53 merge commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3` and created `codex/launch-readiness-white-canvas` for the readiness batch
+- Refreshed GitHub/Vercel evidence: PR #53 is merged, GitHub checks reported `verify` success plus Vercel success, latest Ready preview is `https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`, and latest Ready production deployment is `https://pest-patrol-m084wbv4s-ottoagent007-gmailcoms-projects.vercel.app`
+- Reran read-only local and preview `demo:smoke` preflights; both remain blocked before seed/reset or authenticated preview browser smoke on missing approved Supabase env names, and preview remains gated on operator-approved protected-preview access/sign-in
+- Reran compliance dry-run/no-embed; it planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls
+- Reaudited launch-sensitive migration files through `20260518021520_portal_send_succeeded_event.sql` without applying them, and refreshed the operator-safe local/preview migration checklist
+- Changed the light app canvas token and legacy `neutralLight` alias from cream to white while preserving dark rail chrome, cards, status tones, and semantic state colors
+- Documented `primitive/cream/50` as a historical warm neutral that should not be used for app canvas backgrounds
+- Verified local fixture routes `/`, `/dispatch`, `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal` at desktop and narrow widths with a temp Playwright Firefox smoke: expected fixture content, no signed-out/loading auth gate, no console/page errors, no document-level horizontal overflow, and white sampled canvas pixels on every route
+- Kept seed/reset writes, migrations, Supabase/Vercel/provider/env changes, live compliance ingestion, preview mutations, production mutations, and API contract changes out of scope
+
 ## Stash Rescue Sync Badge + Compliance Live State V1
 
 - Added a token-driven `SyncBadge` primitive to `@pest-patrol/ui-native` with tone, optional dot, and pending-count support

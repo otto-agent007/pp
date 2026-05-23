@@ -2,6 +2,59 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-23 Launch Readiness White Canvas
+
+Status: local `main` was synced to the PR #53 merge commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3`, this evidence pass ran on `codex/launch-readiness-white-canvas`, and no Supabase, Vercel, provider, environment, preview, production, seed/reset, migration, or live-ingest mutation was performed.
+
+Post-merge readiness evidence:
+- Command: `gh pr view 53 --json ...`
+- Result: pass; PR #53 is merged, merge commit is `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3`, and GitHub checks reported `verify` success, Vercel success, Vercel Preview Comments success, and Supabase Preview skipped.
+- Command: `gh pr status`
+- Result: pass; no pull request is associated with the new local readiness branch.
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: pass; latest Ready preview is `https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`, and latest Ready production deployment is `https://pest-patrol-m084wbv4s-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel inspect https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; deployment `dpl_BGh3WekatHRUeG1wgDcvqY6HLTi4` is Ready, target `preview`, with alias `https://pest-patrol-os-git-codex-a053b6-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel curl / --deployment https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; the protected preview returned the Pest Patrol OS app shell with `Checking admin access...`.
+- Command: `corepack pnpm dlx vercel env ls`
+- Result: pass; Preview env names exist for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and `AUTOMATION_CRON_SECRET`. Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list.
+
+Read-only local and preview gates:
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before real local seed/reset.
+- Missing setup names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated preview browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+- Command: `supabase status -o env`
+- Result: blocked before local target env export because Docker Desktop's Linux engine pipe was unavailable.
+- Command: `supabase migration list --local`
+- Result: blocked before local migration history inspection because local Postgres on `127.0.0.1:54322` refused the connection. No migration apply command was run.
+
+Migration target verification package:
+- Command: migration/RLS grep audit through `20260518021520_portal_send_succeeded_event.sql`
+- Result: pass; `private.has_admin_access()` is defined before dependent portal/compliance policies, portal token audit history enables RLS, compliance RAG tables enable RLS, compliance Data API grants remain explicit for `authenticated` and `service_role`, and the portal send succeeded proposal adds `send_succeeded` without Codex applying it.
+- Operator checklist: confirm the exact Supabase target and backup/rollback comfort, inspect remote migration history before apply, apply pending files strictly in timestamp order, do not apply compliance or portal audit SQL standalone on a target missing `20260507220000_supabase_security_hardening_v1.sql`, and rerun read-only smoke plus compliance dry-run before seed/reset or live ingest.
+
+White-canvas local fixture browser smoke:
+- Command: `corepack pnpm --filter @pest-patrol/web dev --turbopack -p 3000`
+- Result: pass; local fixture app served on `http://localhost:3000`.
+- Command: temporary Playwright Firefox route smoke with local fixture session enabled.
+- Routes: `/`, `/dispatch`, `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal`.
+- Result: pass at `1440x1000` and `390x900`; each route rendered expected fixture text, had no signed-out/loading auth gate, reported no browser console errors or page errors, had no document-level horizontal overflow, and sampled the main canvas as `rgb(255, 255, 255)`.
+- Command: Firefox screenshot capture for the same route set at desktop and narrow widths.
+- Result: pass; screenshots were stored only in the local temp folder and confirmed the app reads white rather than beige, while dark rail chrome, cards, status tones, and semantic states remained intact.
+- Command: local HTTP route status check for the same route set.
+- Result: pass; every route returned HTTP 200.
+- Command: served CSS scan for `#F6F2EA`, `#f6f2ea`, and `246, 242, 234`.
+- Result: pass; the served app CSS did not include the cream canvas value.
+
+No real seed/reset write, browser credential capture, provider dashboard mutation, environment mutation, migration application, live compliance ingestion, raw portal token disclosure, protected-preview access value, webhook payload, preview data mutation, or production data action was performed.
+
 ## 2026-05-21 Demo-Visible Fixture Smoke
 
 Status: Local fixture demo visibility is verified on `http://localhost:3000` without Supabase env values, seed/reset writes, provider setup, migration application, preview mutation, or production mutation. Real local and preview seed/reset remain gated on approved Supabase env names and operator access.
