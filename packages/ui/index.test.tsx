@@ -13,6 +13,9 @@ import {
   StatTile,
   StatusPill,
   buttonClassName,
+  formControlClassName,
+  formLabelClassName,
+  formTextareaClassName,
 } from "./index";
 
 describe("@pest-patrol/ui", () => {
@@ -30,13 +33,23 @@ describe("@pest-patrol/ui", () => {
     const button = screen.getByRole("button", { name: "Escalate" });
 
     expect(button).toBeDisabled();
-    expect(button).toHaveClass("bg-theme-action-danger", "text-theme-text-inverse");
+    expect(button).toHaveClass(
+      "bg-theme-action-danger",
+      "text-theme-text-inverse",
+    );
     expect(buttonClassName({ variant: "ghost", size: "sm" })).toContain(
       "border-theme-border-default",
     );
     expect(buttonClassName({ variant: "inverse" })).toContain(
       "text-theme-text-inverse",
     );
+  });
+
+  it("exports semantic form helpers for app screens", () => {
+    expect(formLabelClassName).toContain("text-theme-text-primary");
+    expect(formControlClassName).toContain("bg-theme-background-surface");
+    expect(formControlClassName).toContain("focus:border-theme-action-primary");
+    expect(formTextareaClassName).toContain("min-h-24");
   });
 
   it("renders cards and eyebrows with semantic token classes", () => {
@@ -68,7 +81,9 @@ describe("@pest-patrol/ui", () => {
       "bg-status-alert-warning-bg",
       "text-status-alert-warning-fg",
     );
-    expect(screen.getByText("Synced").querySelector("[aria-hidden='true']")).toBeNull();
+    expect(
+      screen.getByText("Synced").querySelector("[aria-hidden='true']"),
+    ).toBeNull();
   });
 
   it("renders stat tiles with tabular values and tone-aware detail", () => {
@@ -156,7 +171,15 @@ describe("@pest-patrol/ui", () => {
     );
 
     await user.click(screen.getByRole("combobox", { name: "Route job" }));
-    await user.type(screen.getByRole("combobox", { name: "Route job" }), "pine");
+
+    expect(screen.getByText("Job").parentElement).toHaveClass(
+      "text-theme-text-primary",
+    );
+
+    await user.type(
+      screen.getByRole("combobox", { name: "Route job" }),
+      "pine",
+    );
     await user.keyboard("{Enter}");
 
     expect(handleChange).toHaveBeenCalledWith("job-2");
@@ -187,11 +210,12 @@ describe("@pest-patrol/ui", () => {
     expect(input).toHaveClass("min-h-9", "text-xs");
 
     await user.click(input);
-    expect(screen.getByRole("option", { name: "Unassigned" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Inactive Tech" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    expect(
+      screen.getByRole("option", { name: "Unassigned" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Inactive Tech" }),
+    ).toHaveAttribute("aria-disabled", "true");
 
     await user.clear(input);
     await user.type(input, "missing");

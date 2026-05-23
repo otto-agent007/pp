@@ -1088,3 +1088,13 @@
 - Tightened status colors for inventory low stock, payment reconciliation, closeout compliance, GPS evidence, billing readiness, invoice state, and sync-confidence states
 - Kept the slice presentation-only: no migrations, provider setup, env changes, preview/production mutations, direct Supabase calls from UI, or domain/API contract changes
 - Verified with focused UI/web tests, Browser QA on `/automation`, `/dispatch`, `/jobs`, `/inventory`, `/payments`, and `/closeouts` at desktop and narrow widths, full repo verification, and `git diff --check`
+
+## Demo Flow UI Polish V1
+
+- Aligned `/technicians` and `/jobs` with shared Patrol UI cards, buttons, stat tiles, status pills, and route-level labels while preserving invite, schedule, edit, cancel, and dispatch handoff behavior
+- Polished tokened `/portal` customer-safe service, billing, proof, timeline, search, empty/loading/error, and invoice display states without exposing exact GPS, raw tokens, provider metadata, storage paths, or internal notes
+- Tightened `/payments`, `/automation`, and `/compliance` operator hierarchy with shared stat cards, readiness panels, provider/manual-fallback copy, scheduler/advisory surfaces, and confirmation affordances without changing providers, RAG, scheduler, env, migrations, or API contracts
+- Added mobile capture continuity by adopting existing `@pest-patrol/ui-native` `CaptureButton` ownership for high-visibility photo, chemical, and treatment actions while preserving route shell styles, stores, offline queue contracts, and sync behavior
+- Added admin UI consistency and density polish across sign-in, nav, dashboard, dispatch, jobs, customers, and payments using shared form helpers, compact disclosure surfaces, safer archive confirmation, clearer empty/helper states, and responsive overflow fixes
+- Added Claude Design relay briefs for portal customer polish and automation/compliance operator clarity
+- Verified with focused route/mobile/admin tests, Browser QA on `/technicians`, `/jobs`, tokened `/portal`, `/payments`, `/automation`, `/compliance`, `/`, `/dispatch`, `/customers`, and admin sign-in at desktop and narrow widths, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm test`, `corepack pnpm build`, and `git diff --check`

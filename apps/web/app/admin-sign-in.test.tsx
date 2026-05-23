@@ -44,9 +44,28 @@ describe("AdminSignIn", () => {
 
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(screen.getByText("Email and password are required."))
-      .toBeInTheDocument();
+    expect(
+      screen.getByText("Email and password are required."),
+    ).toBeInTheDocument();
     expect(signIn).not.toHaveBeenCalled();
+  });
+
+  it("uses the themed sign-in surface and shared form controls", () => {
+    render(<AdminSignIn />);
+
+    expect(screen.getByRole("main")).toHaveClass("bg-theme-background-canvas");
+    expect(
+      screen.getByRole("img", { name: "Pest Patrol OS" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Run the day from one field-ready workspace/i),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toHaveClass(
+      "focus:border-theme-action-primary",
+    );
+    expect(screen.getByRole("button", { name: "Sign in" })).toHaveClass(
+      "bg-theme-action-primary",
+    );
   });
 
   it("submits admin credentials", async () => {
@@ -87,15 +106,17 @@ describe("AdminSignIn", () => {
     expect(prepareLocalDemoLogin).toHaveBeenCalledTimes(1);
     expect(signIn).not.toHaveBeenCalled();
     expect(signInLocalDemo).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("NEXT_PUBLIC_SUPABASE_URL is required."))
-      .not.toBeInTheDocument();
+    expect(
+      screen.queryByText("NEXT_PUBLIC_SUPABASE_URL is required."),
+    ).not.toBeInTheDocument();
   });
 
   it("links to password reset", () => {
     render(<AdminSignIn />);
 
-    expect(screen.getByRole("link", { name: "Forgot password?" }))
-      .toHaveAttribute("href", "/forgot-password");
+    expect(
+      screen.getByRole("link", { name: "Forgot password?" }),
+    ).toHaveAttribute("href", "/forgot-password");
   });
 
   it("shows auth errors", () => {
@@ -103,7 +124,8 @@ describe("AdminSignIn", () => {
 
     render(<AdminSignIn />);
 
-    expect(screen.getByText("Admin or dispatcher access is required"))
-      .toBeInTheDocument();
+    expect(
+      screen.getByText("Admin or dispatcher access is required"),
+    ).toBeInTheDocument();
   });
 });

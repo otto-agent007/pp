@@ -24,7 +24,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
 
   if (status === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-neutralLight px-6">
+      <main className="flex min-h-screen items-center justify-center bg-theme-background-canvas px-6">
         <p className="text-sm font-semibold text-theme-text-secondary">
           Checking admin access...
         </p>

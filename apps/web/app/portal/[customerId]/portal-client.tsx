@@ -16,6 +16,13 @@ import type {
   CustomerPortalMedia,
   FormValue,
 } from "@pest-patrol/types";
+import {
+  Eyebrow,
+  StatTile,
+  StatusPill,
+  buttonClassName,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import { useMemo, useState } from "react";
 
 import {
@@ -55,6 +62,22 @@ function formatMoney(cents: number, currency = "usd") {
     currency: currency.toUpperCase(),
     style: "currency",
   }).format(cents / 100);
+}
+
+function invoiceStatusTone(status: string): StatusPillTone {
+  if (status === "paid") {
+    return "success";
+  }
+
+  if (status === "void") {
+    return "neutral";
+  }
+
+  if (status === "draft") {
+    return "warning";
+  }
+
+  return "info";
 }
 
 function EmptyState({ children }: { children: string }) {
@@ -139,17 +162,19 @@ function PortalFormCard({
 }
 
 function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
+  const invoiceLabel = invoice.line_items[0]?.description ?? "Service";
+
   return (
     <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold text-neutralDark">
-              Invoice {invoice.id.slice(0, 8)}
+              {invoiceLabel} invoice
             </h2>
-            <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-theme-text-secondary">
+            <StatusPill tone={invoiceStatusTone(invoice.status)}>
               {getCustomerPortalInvoiceStatusLabel(invoice.status)}
-            </span>
+            </StatusPill>
           </div>
           <p className="mt-2 text-sm text-theme-text-secondary">
             {invoice.job?.location?.nickname ??
@@ -172,7 +197,10 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
           </p>
           {invoice.payment_url ? (
             <a
-              className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse shadow-sm hover:bg-primitive-sky-600"
+              className={buttonClassName({
+                className: "mt-3",
+                variant: "primary",
+              })}
               href={invoice.payment_url}
               rel="noreferrer"
               target="_blank"
@@ -228,7 +256,9 @@ function BillingSection({
       {isLoading ? (
         <EmptyState>Loading invoices</EmptyState>
       ) : error ? (
-        <EmptyState>{accessErrorMessage(error, "Unable to load invoices")}</EmptyState>
+        <EmptyState>
+          {accessErrorMessage(error, "Unable to load invoices")}
+        </EmptyState>
       ) : visibleInvoices.length === 0 ? (
         <EmptyState>No invoices found</EmptyState>
       ) : (
@@ -253,7 +283,7 @@ function timelineStatusLabel(item: CustomerPortalTimelineItem) {
       ? null
       : `Balance ${formatMoney(item.balance_cents, item.currency)}`;
 
-  return balance ? `Invoice ${item.invoice_status} | ${balance}` : `Invoice ${status}`;
+  return balance ? `Invoice ${status} | ${balance}` : `Invoice ${status}`;
 }
 
 function PortalTimeline({
@@ -287,7 +317,9 @@ function PortalTimeline({
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-                    {item.type === "service" ? "Service completed" : "Invoice activity"}
+                    {item.type === "service"
+                      ? "Service completed"
+                      : "Invoice activity"}
                   </p>
                   <h3 className="mt-1 text-lg font-semibold text-neutralDark">
                     {item.title}
@@ -305,7 +337,10 @@ function PortalTimeline({
                   </p>
                   {item.payment_url ? (
                     <a
-                      className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primitive-sky-600"
+                      className={buttonClassName({
+                        className: "mt-3",
+                        variant: "primary",
+                      })}
                       href={item.payment_url}
                       rel="noreferrer"
                       target="_blank"
@@ -341,7 +376,9 @@ function CloseoutCard({
             Completed service
           </p>
           <h2 className="mt-1 text-2xl font-bold text-neutralDark">
-            {closeout.job.location?.nickname ?? closeout.job.location?.address ?? "Service visit"}
+            {closeout.job.location?.nickname ??
+              closeout.job.location?.address ??
+              "Service visit"}
           </h2>
           <p className="mt-2 text-sm text-theme-text-secondary">
             {closeout.job.location?.address ?? "Service location unavailable"}
@@ -351,11 +388,15 @@ function CloseoutCard({
           </p>
           <dl className="mt-4 grid gap-2 text-sm text-theme-text-secondary sm:grid-cols-3">
             <div>
-              <dt className="font-semibold text-theme-text-primary">Location</dt>
+              <dt className="font-semibold text-theme-text-primary">
+                Location
+              </dt>
               <dd>{summary.locationLabel}</dd>
             </div>
             <div>
-              <dt className="font-semibold text-theme-text-primary">Captures</dt>
+              <dt className="font-semibold text-theme-text-primary">
+                Captures
+              </dt>
               <dd>{summary.capturesLabel}</dd>
             </div>
             <div>
@@ -398,7 +439,9 @@ function CloseoutCard({
             <p className="text-sm font-semibold text-neutralDark">
               Proof of service
             </p>
-            <p className="mt-1 text-sm text-theme-text-secondary">{proof.summary_label}</p>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              {proof.summary_label}
+            </p>
             <p className="mt-1 text-xs font-medium text-theme-text-secondary">
               {proof.privacy_label}
             </p>
@@ -406,13 +449,13 @@ function CloseoutCard({
               {proof.next_step_label}
             </p>
           </div>
-          <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold uppercase text-status-alert-success-fg">
-            {proof.completion_label}
-          </span>
+          <StatusPill tone="success">{proof.completion_label}</StatusPill>
         </div>
         <dl className="mt-3 grid gap-2 text-sm text-theme-text-secondary sm:grid-cols-3">
           <div>
-            <dt className="font-semibold text-theme-text-primary">Service date</dt>
+            <dt className="font-semibold text-theme-text-primary">
+              Service date
+            </dt>
             <dd>{proof.service_date_label}</dd>
           </div>
           <div>
@@ -420,19 +463,25 @@ function CloseoutCard({
             <dd>{proof.location_label}</dd>
           </div>
           <div>
-            <dt className="font-semibold text-theme-text-primary">Customer proof</dt>
+            <dt className="font-semibold text-theme-text-primary">
+              Customer proof
+            </dt>
             <dd>
-              {proof.capture_counts.forms} forms, {proof.capture_counts.photos} photos,{" "}
-              {proof.capture_counts.signatures} signatures
+              {proof.capture_counts.forms} forms, {proof.capture_counts.photos}{" "}
+              photos, {proof.capture_counts.signatures} signatures
             </dd>
           </div>
         </dl>
       </section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-neutralDark">Service forms</h3>
+        <h3 className="text-lg font-semibold text-neutralDark">
+          Service forms
+        </h3>
         {closeout.form_submissions.length === 0 ? (
-          <EmptyState>No service forms are available for this visit.</EmptyState>
+          <EmptyState>
+            No service forms are available for this visit.
+          </EmptyState>
         ) : (
           closeout.form_submissions.map((submission) => (
             <PortalFormCard key={submission.id} submission={submission} />
@@ -491,6 +540,14 @@ export function CustomerPortalClient({
     visibleCloseouts[0]?.job.customer?.name ??
     portal.closeouts[0]?.job.customer?.name ??
     "Customer portal";
+  const openBalanceCents = useMemo(
+    () =>
+      billing.invoices.reduce(
+        (total, invoice) => total + invoice.balance_cents,
+        0,
+      ),
+    [billing.invoices],
+  );
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8">
@@ -499,19 +556,44 @@ export function CustomerPortalClient({
           <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
             Customer portal
           </p>
-          <h1 className="text-3xl font-bold text-neutralDark">{customerName}</h1>
+          <h1 className="text-3xl font-bold text-neutralDark">
+            {customerName}
+          </h1>
           <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
             Completed service visits, invoices, forms, photos, and signatures.
           </p>
         </div>
         <input
-          aria-label="Search service visits"
+          aria-label="Search portal activity"
           className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary md:w-80"
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search visits"
+          placeholder="Search activity"
           value={search}
         />
       </header>
+
+      <section className="flex flex-col gap-3">
+        <Eyebrow tone="accent">Portal summary</Eyebrow>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatTile
+            detail="Completed visits in this portal"
+            label="Services"
+            tone="success"
+            value={portal.closeouts.length}
+          />
+          <StatTile
+            detail="Customer-safe billing activity"
+            label="Invoices"
+            value={billing.invoices.length}
+          />
+          <StatTile
+            detail="Due across visible invoices"
+            label="Open balance"
+            tone={openBalanceCents > 0 ? "warning" : "success"}
+            value={formatMoney(openBalanceCents)}
+          />
+        </div>
+      </section>
 
       <BillingSection
         error={billing.error}

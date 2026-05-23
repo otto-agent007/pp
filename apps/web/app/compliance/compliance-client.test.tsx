@@ -144,7 +144,11 @@ describe("ComplianceClient", () => {
   it("renders knowledge-base counts and workflow surfaces", () => {
     render(<ComplianceClient />);
 
-    expect(screen.getByRole("heading", { name: "Compliance RAG" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Compliance RAG" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Compliance workspace")).toBeInTheDocument();
+    expect(screen.getByText("Advisory readiness")).toBeInTheDocument();
     expect(screen.getByText("Reviewed sources")).toBeInTheDocument();
     expect(screen.getByText("Source readiness")).toBeInTheDocument();
     expect(screen.getByText(/Ready workflows:/)).toBeInTheDocument();
@@ -170,16 +174,22 @@ describe("ComplianceClient", () => {
       expect.objectContaining({ workflow: "chemical_application" }),
     );
     expect(
-      await screen.findByText("Chemical application advisory is ready with 1 cited source."),
+      await screen.findByText(
+        "Chemical application advisory is ready with 1 cited source.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Evaluation")).toBeInTheDocument();
-    expect(screen.getByText("Advisory ready for operator review")).toBeInTheDocument();
+    expect(
+      screen.getByText("Advisory ready for operator review"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "Cited advisory has 1 source, 0 missing evidence fields, and 0 operator review items.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("DPR structural recordkeeping")).toBeInTheDocument();
+    expect(
+      screen.getByText("DPR structural recordkeeping"),
+    ).toBeInTheDocument();
   });
 
   it("renders schema-unavailable setup state without raw Supabase details", () => {
@@ -256,7 +266,9 @@ describe("ComplianceClient", () => {
         "Compliance advisory runtime is unavailable. Check setup readiness and try again after approved admin configuration is available.",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Supabase is not configured")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Supabase is not configured"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders audit loading and error states without raw setup details", () => {
@@ -282,6 +294,8 @@ describe("ComplianceClient", () => {
     expect(
       screen.getByText("Advisory audits unavailable; setup or retry required."),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/compliance_advisory_audits/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/compliance_advisory_audits/),
+    ).not.toBeInTheDocument();
   });
 });

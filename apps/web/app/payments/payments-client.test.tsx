@@ -224,9 +224,14 @@ describe("PaymentsClient", () => {
     const user = userEvent.setup();
     render(<PaymentsClient />);
 
+    expect(screen.getByText("Payment workspace")).toBeInTheDocument();
+    expect(screen.getByText("Reconciliation snapshot")).toBeInTheDocument();
+    expect(screen.getByText("Manual fallback mode")).toBeInTheDocument();
     expect(screen.getByText("Apex Homes")).toBeInTheDocument();
-    expect(screen.getByText("$125.00")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Draft 1/i })).toBeInTheDocument();
+    expect(screen.getAllByText("$125.00").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: /Draft 1/i }),
+    ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Search invoices"), "missing");
 
@@ -246,10 +251,9 @@ describe("PaymentsClient", () => {
 
     expect(screen.getByText("20 Oak Avenue")).toBeInTheDocument();
     expect(screen.queryByText("10 Pine Street")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Paid \$200\.00/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", { name: /Paid \$200\.00/i }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: /Needs review 1/i }));
 
@@ -260,7 +264,11 @@ describe("PaymentsClient", () => {
   it("shows Stripe test-mode setup guidance without exposing secrets", () => {
     render(<PaymentsClient />);
 
-    expect(screen.getByText("Payment provider readiness")).toBeInTheDocument();
+    const providerReadiness = screen
+      .getByText("Payment provider readiness")
+      .closest("details");
+
+    expect(providerReadiness).not.toHaveAttribute("open");
     expect(
       screen.getByText(
         "Manual payment fallback is active for provider-free demos.",
@@ -304,10 +312,14 @@ describe("PaymentsClient", () => {
 
     expect(screen.getByText("Closeout handoff ready")).toBeInTheDocument();
     expect(
-      screen.getByText("1 ready to invoice from closeouts; 1 still needs field captures."),
+      screen.getByText(
+        "1 ready to invoice from closeouts; 1 still needs field captures.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Create invoices for ready closeouts or review the queue."),
+      screen.getByText(
+        "Create invoices for ready closeouts or review the queue.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -329,7 +341,9 @@ describe("PaymentsClient", () => {
 
     render(<PaymentsClient />);
 
-    expect(screen.getAllByText("Needs review").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Needs review").length).toBeGreaterThanOrEqual(
+      2,
+    );
     expect(
       screen
         .getAllByText("Needs review")
@@ -337,9 +351,15 @@ describe("PaymentsClient", () => {
           element.className.includes("text-status-alert-danger-fg"),
         ),
     ).toBe(true);
-    expect(screen.getByRole("button", { name: /Needs review 1/i })).toBeInTheDocument();
-    expect(screen.getAllByText("Reconciled paid").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("Manually marked paid").length).toBeGreaterThanOrEqual(2);
+    expect(
+      screen.getByRole("button", { name: /Needs review 1/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Reconciled paid").length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      screen.getAllByText("Manually marked paid").length,
+    ).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -352,20 +372,31 @@ describe("PaymentsClient", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Successful payment records cover this invoice balance."),
+      screen.getByText(
+        "Successful payment records cover this invoice balance.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Marked paid manually; no successful provider payment is attached."),
+      screen.getByText(
+        "Marked paid manually; no successful provider payment is attached.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Paid $200.00")).toBeInTheDocument();
     expect(screen.getAllByText("Balance $125.00")).toHaveLength(2);
-    expect(screen.getAllByText("Balance $0.00").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Balance $0.00").length).toBeGreaterThanOrEqual(
+      2,
+    );
     expect(screen.getByText("Latest payment May 7, 2026")).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("Reconciliation status"), "needs_review");
+    await user.selectOptions(
+      screen.getByLabelText("Reconciliation status"),
+      "needs_review",
+    );
 
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
-    expect(screen.queryByText("Latest payment May 7, 2026")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Latest payment May 7, 2026"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("20 Oak Avenue")).not.toBeInTheDocument();
   });
 
@@ -397,6 +428,12 @@ describe("PaymentsClient", () => {
       isLoading: false,
     } as never);
     render(<PaymentsClient />);
+
+    expect(
+      screen.getByText(
+        "Only completed jobs appear here so invoices start from closeout-ready work.",
+      ),
+    ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Invoice amount"), "125");
     await user.click(screen.getByRole("button", { name: "Save invoice" }));
@@ -430,14 +467,22 @@ describe("PaymentsClient", () => {
     render(<PaymentsClient />);
 
     expect(
-      (screen.getByRole("combobox", { name: "Completed job" }) as HTMLInputElement)
-        .value,
+      (
+        screen.getByRole("combobox", {
+          name: "Completed job",
+        }) as HTMLInputElement
+      ).value,
     ).toContain("20 Oak Avenue");
     expect(
       screen.getByText("From closeout: Apex Homes @ 20 Oak Avenue"),
     ).toBeInTheDocument();
 
-    await chooseSearchableOption(user, "Completed job", "pine", /10 Pine Street/);
+    await chooseSearchableOption(
+      user,
+      "Completed job",
+      "pine",
+      /10 Pine Street/,
+    );
 
     expect(
       screen.queryByText("From closeout: Apex Homes @ 20 Oak Avenue"),
@@ -477,7 +522,9 @@ describe("PaymentsClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Cancel mark paid" }));
 
-    expect(screen.queryByText("Mark this invoice paid?")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Mark this invoice paid?"),
+    ).not.toBeInTheDocument();
     expect(markPaid).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Mark paid" }));

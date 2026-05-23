@@ -53,10 +53,10 @@ describe("AdminNav", () => {
     expect(
       screen.getByRole("link", { name: "Pest Patrol OS — Home" }),
     ).toHaveAttribute("href", "/");
-    expect(screen.getByText("Operations")).toBeInTheDocument();
+    expect(screen.getByText("Operations")).toHaveClass("hidden", "md:block");
     expect(screen.getAllByText("Customers").length).toBeGreaterThan(0);
-    expect(screen.getByText("Billing")).toBeInTheDocument();
-    expect(screen.getByText("System")).toBeInTheDocument();
+    expect(screen.getByText("Billing")).toHaveClass("hidden", "md:block");
+    expect(screen.getByText("System")).toHaveClass("hidden", "md:block");
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
       "/",
@@ -73,8 +73,11 @@ describe("AdminNav", () => {
       "aria-current",
       "page",
     );
-    expect(screen.getByText("Field command")).toBeInTheDocument();
+    expect(screen.queryByText("Field command")).not.toBeInTheDocument();
     expect(screen.getAllByText("admin").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Sign out" })).toHaveClass(
+      "text-primitive-sky-100",
+    );
   });
 
   it("renders the Wordmark inside the home link", () => {

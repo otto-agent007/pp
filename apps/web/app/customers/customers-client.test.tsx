@@ -252,12 +252,18 @@ describe("CustomersClient", () => {
   it("renders portal link management for active customers", () => {
     render(<CustomersClient />);
 
-    expect(
-      screen.getByText((_content, element) =>
+    const portalLinks = screen.getByText(
+      (_content, element) =>
         element?.textContent ===
         "Portal links for customer-1 (555-1111 / owner@example.com)",
-      ),
-    ).toBeInTheDocument();
+    );
+    const ledger = screen.getByText("Account ledger");
+
+    expect(portalLinks).toBeInTheDocument();
+    expect(
+      portalLinks.compareDocumentPosition(ledger) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("renders a compact ledger summary without provider payment metadata", () => {
@@ -272,7 +278,9 @@ describe("CustomersClient", () => {
     expect(screen.getByText("Partial payment")).toBeInTheDocument();
     expect(screen.getByText("Service completed")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("pi_secret_should_not_render");
-    expect(document.body).not.toHaveTextContent("plink_secret_should_not_render");
+    expect(document.body).not.toHaveTextContent(
+      "plink_secret_should_not_render",
+    );
   });
 
   it("expands the customer ledger and filters service activity", async () => {
@@ -288,7 +296,9 @@ describe("CustomersClient", () => {
 
     render(<CustomersClient />);
 
-    expect(screen.queryByRole("link", { name: "View closeout" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View closeout" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Show all activity" }));
 
@@ -333,20 +343,22 @@ describe("CustomersClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Show all activity" }));
 
-    expect(screen.getAllByRole("link", { name: "Review payment" })[0]).toHaveAttribute(
-      "href",
-      "/payments?invoice_id=invoice-review",
-    );
+    expect(
+      screen.getAllByRole("link", { name: "Review payment" })[0],
+    ).toHaveAttribute("href", "/payments?invoice_id=invoice-review");
     expect(screen.getByRole("link", { name: "View receipt" })).toHaveAttribute(
       "href",
       "/payments?invoice_id=invoice-paid",
     );
-    expect(screen.getAllByRole("link", { name: "Open invoice" })[0]).toHaveAttribute(
-      "href",
-      "/payments?invoice_id=invoice-draft",
+    expect(
+      screen.getAllByRole("link", { name: "Open invoice" })[0],
+    ).toHaveAttribute("href", "/payments?invoice_id=invoice-draft");
+    expect(document.body).not.toHaveTextContent(
+      "pi_pending_secret_should_not_render",
     );
-    expect(document.body).not.toHaveTextContent("pi_pending_secret_should_not_render");
-    expect(document.body).not.toHaveTextContent("pi_paid_secret_should_not_render");
+    expect(document.body).not.toHaveTextContent(
+      "pi_paid_secret_should_not_render",
+    );
     expect(document.body).not.toHaveTextContent("Balance $0.00");
   });
 
@@ -366,22 +378,25 @@ describe("CustomersClient", () => {
     await user.click(screen.getByRole("button", { name: "Show all activity" }));
     await user.click(screen.getByRole("tab", { name: /Review0/ }));
 
-    expect(screen.getByText("No review entries for this customer.")).toBeInTheDocument();
+    expect(
+      screen.getByText("No review entries for this customer."),
+    ).toBeInTheDocument();
   });
 
   it("shows demo data entry guidance for the next workflow step", () => {
     render(<CustomersClient />);
 
-    expect(
-      screen.getByText("Customer setup demo tip"),
-    ).toBeInTheDocument();
+    const helper = screen.getByText("Customer setup notes").closest("details");
+    expect(helper).not.toHaveAttribute("open");
     expect(
       screen.getByText(
         "Save the customer with one active service location, then schedule the first job.",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Use portal links after closeout and billing are ready."),
+      screen.getByText(
+        "Use portal links after closeout and billing are ready.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Schedule job" })).toHaveAttribute(
       "href",
@@ -393,11 +408,16 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
-    await user.selectOptions(screen.getByLabelText("Customer status"), "archived");
+    await user.selectOptions(
+      screen.getByLabelText("Customer status"),
+      "archived",
+    );
 
     expect(screen.getByText("Archived Shop")).toBeInTheDocument();
     expect(screen.queryByText("Apex Homes")).not.toBeInTheDocument();
-    expect(screen.queryByText("Portal links for customer-1")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Portal links for customer-1"),
+    ).not.toBeInTheDocument();
   });
 
   it("validates required customer and location fields", async () => {
@@ -409,7 +429,9 @@ describe("CustomersClient", () => {
 
     await user.type(screen.getByLabelText("Name"), "New Customer");
     await user.click(screen.getByRole("button", { name: "Save customer" }));
-    expect(screen.getByText("Location address is required")).toBeInTheDocument();
+    expect(
+      screen.getByText("Location address is required"),
+    ).toBeInTheDocument();
   });
 
   it("adds and removes inline locations before saving", async () => {
@@ -482,6 +504,11 @@ describe("CustomersClient", () => {
     render(<CustomersClient />);
 
     await user.click(screen.getByRole("button", { name: "Archive" }));
+
+    expect(mutateArchive).not.toHaveBeenCalled();
+    expect(screen.getByText("Archive this customer?")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Confirm archive" }));
 
     expect(mutateArchive).toHaveBeenCalledWith("customer-1");
   });

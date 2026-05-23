@@ -3,6 +3,7 @@
 import type * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { buttonClassName } from "@pest-patrol/ui";
 import { Wordmark } from "./brand";
 import { useAdminAuth } from "./admin-auth-context";
 
@@ -63,11 +64,7 @@ function adminLinkClassName(active: boolean) {
   ].join(" ");
 }
 
-function MobileBrandRow({
-  role,
-}: {
-  role: string | null | undefined;
-}) {
+function MobileBrandRow({ role }: { role: string | null | undefined }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-theme-text-inverse/10 px-3 py-2 md:block md:border-0 md:px-0 md:py-0">
       <Link
@@ -75,18 +72,11 @@ function MobileBrandRow({
         className="inline-flex items-center rounded-md bg-primitive-navy-900 px-2 py-1"
         href="/"
       >
-        <Wordmark
-          label="decorative"
-          variant="dark"
-          width={156}
-        />
+        <Wordmark label="decorative" variant="dark" width={156} />
       </Link>
       <div className="hidden min-w-0 flex-col md:mt-3 md:flex">
         <span className="text-xs font-bold uppercase text-primitive-sky-100">
           Admin console
-        </span>
-        <span className="mt-1 w-fit rounded-md bg-primitive-yellow-400 px-2 py-1 text-xs font-bold uppercase text-primitive-navy-950">
-          Field command
         </span>
       </div>
       <div className="flex items-center gap-2 md:hidden">
@@ -117,7 +107,7 @@ export function AdminNav() {
             className="flex shrink-0 items-center gap-1 md:block"
             key={group.label}
           >
-            <p className="px-2 text-[10px] font-bold uppercase text-primitive-sky-100 md:mb-1">
+            <p className="hidden px-2 text-[10px] font-bold uppercase text-primitive-sky-100 md:mb-1 md:block">
               {group.label}
             </p>
             <div className="flex gap-1 md:flex-col">
@@ -134,7 +124,9 @@ export function AdminNav() {
                     <span
                       aria-hidden="true"
                       className={`h-1.5 w-1.5 rounded-full ${
-                        active ? "bg-theme-text-inverse" : "bg-primitive-sky-100/35"
+                        active
+                          ? "bg-theme-text-inverse"
+                          : "bg-primitive-sky-100/35"
                       }`}
                     />
                     {route.label}
@@ -155,7 +147,13 @@ export function AdminNav() {
           </p>
         ) : null}
         <button
-          className="mt-3 w-full rounded-md border border-theme-text-inverse/15 px-3 py-2 text-left text-sm font-bold text-theme-text-inverse transition hover:bg-primitive-navy-800"
+          className={buttonClassName({
+            className:
+              "mt-3 justify-start border-transparent px-2 text-primitive-sky-100 hover:bg-primitive-navy-800 hover:text-theme-text-inverse",
+            fullWidth: true,
+            size: "sm",
+            variant: "inverse",
+          })}
           onClick={() => void signOut()}
           type="button"
         >
