@@ -18,9 +18,17 @@ import {
 } from "@pest-patrol/domain";
 import type { Invoice, Job } from "@pest-patrol/types";
 import {
+  Button,
+  Card,
   CountTile,
+  Eyebrow,
   SearchableSelect,
+  StatTile,
   StatusPill,
+  buttonClassName,
+  formControlClassName,
+  formLabelClassName,
+  formTextareaClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import { useSearchParams } from "next/navigation";
@@ -98,7 +106,9 @@ function jobLabel(job: Job) {
 }
 
 function invoiceTitle(invoice: Invoice) {
-  return invoice.customer?.name ?? invoice.job?.customer?.name ?? "Unknown customer";
+  return (
+    invoice.customer?.name ?? invoice.job?.customer?.name ?? "Unknown customer"
+  );
 }
 
 const reconciliationToneByStatus: Record<
@@ -145,11 +155,13 @@ function InvoiceHandoff({
 
   return (
     <div className="mt-4 rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-3">
-      <p className="text-sm font-semibold text-neutralDark">Customer handoff</p>
+      <p className="text-sm font-semibold text-theme-text-primary">
+        Customer handoff
+      </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {actions.map((action) => (
           <a
-            className="rounded-md bg-theme-background-surface px-3 py-2 text-sm font-semibold text-primary hover:bg-primitive-sky-100"
+            className="rounded-md bg-theme-background-surface px-3 py-2 text-sm font-semibold text-theme-action-primary hover:bg-primitive-sky-100"
             href={action.href}
             key={action.id}
           >
@@ -187,20 +199,12 @@ export function PaymentsClient() {
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
   const completedJobIds = useMemo(
-    () =>
-      jobs
-        .filter((job) => job.status === "completed")
-        .map((job) => job.id),
+    () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
     [jobs],
   );
   const summariesQuery = useCloseoutCaptureSummaries(completedJobIds);
   const billingQueue = useMemo(
-    () =>
-      buildBillingQueue(
-        jobs,
-        invoices,
-        summariesQuery.data ?? [],
-      ),
+    () => buildBillingQueue(jobs, invoices, summariesQuery.data ?? []),
     [invoices, jobs, summariesQuery.data],
   );
   const billingQueueCounts = useMemo(
@@ -231,32 +235,29 @@ export function PaymentsClient() {
     ],
     [completedJobs],
   );
-  const visibleInvoices = useMemo(
-    () => {
-      const filtered = filterInvoices(invoices, search, status).filter(
-        (invoice) =>
-          reconciliationStatus === "all" ||
-          getInvoiceReconciliation(invoice).status === reconciliationStatus,
-      );
+  const visibleInvoices = useMemo(() => {
+    const filtered = filterInvoices(invoices, search, status).filter(
+      (invoice) =>
+        reconciliationStatus === "all" ||
+        getInvoiceReconciliation(invoice).status === reconciliationStatus,
+    );
 
-      if (!highlightedInvoiceId) {
-        return filtered;
+    if (!highlightedInvoiceId) {
+      return filtered;
+    }
+
+    return [...filtered].sort((left, right) => {
+      if (left.id === highlightedInvoiceId) {
+        return -1;
       }
 
-      return [...filtered].sort((left, right) => {
-        if (left.id === highlightedInvoiceId) {
-          return -1;
-        }
+      if (right.id === highlightedInvoiceId) {
+        return 1;
+      }
 
-        if (right.id === highlightedInvoiceId) {
-          return 1;
-        }
-
-        return 0;
-      });
-    },
-    [highlightedInvoiceId, invoices, reconciliationStatus, search, status],
-  );
+      return 0;
+    });
+  }, [highlightedInvoiceId, invoices, reconciliationStatus, search, status]);
   const summary = useMemo(() => getInvoiceSummary(invoices), [invoices]);
   const reconciliationSummary = useMemo(
     () => getInvoiceReconciliationSummary(invoices),
@@ -276,10 +277,12 @@ export function PaymentsClient() {
     ],
   );
   const selectedJob =
-    completedJobs.find((job) => job.id === form.job_id) ?? completedJobs[0] ?? null;
+    completedJobs.find((job) => job.id === form.job_id) ??
+    completedJobs[0] ??
+    null;
   const closeoutHandoffJob =
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
-      ? jobs.find((job) => job.id === closeoutHandoffJobId) ?? null
+      ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
       : null;
   const paymentProviderCopy = getProviderReadinessCopy("payment");
 
@@ -313,7 +316,10 @@ export function PaymentsClient() {
     }
   }
 
-  function confirmInvoiceAction(invoiceId: string, action: "mark_paid" | "void") {
+  function confirmInvoiceAction(
+    invoiceId: string,
+    action: "mark_paid" | "void",
+  ) {
     setActionConfirmation(null);
 
     if (action === "mark_paid") {
@@ -336,22 +342,22 @@ export function PaymentsClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Admin
-          </p>
-          <h1 className="text-3xl font-bold text-neutralDark">Payments</h1>
+          <Eyebrow tone="accent">Admin</Eyebrow>
+          <h1 className="text-3xl font-bold text-theme-text-primary">
+            Payments
+          </h1>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <input
             aria-label="Search invoices"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={formControlClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search invoices"
             value={search}
           />
           <select
             aria-label="Invoice status"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={formControlClassName}
             onChange={(event) =>
               setStatus(event.target.value as InvoiceStatusFilter)
             }
@@ -365,9 +371,11 @@ export function PaymentsClient() {
           </select>
           <select
             aria-label="Reconciliation status"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={formControlClassName}
             onChange={(event) =>
-              setReconciliationStatus(event.target.value as ReconciliationFilter)
+              setReconciliationStatus(
+                event.target.value as ReconciliationFilter,
+              )
             }
             value={reconciliationStatus}
           >
@@ -385,7 +393,9 @@ export function PaymentsClient() {
 
       <section className="flex flex-col gap-3 rounded-md border border-theme-border-subtle bg-theme-background-surface px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-semibold text-neutralDark">{closeoutHandoff.label}</p>
+          <p className="font-semibold text-theme-text-primary">
+            {closeoutHandoff.label}
+          </p>
           <p className="mt-1 text-theme-text-secondary">
             {closeoutHandoff.summary}
           </p>
@@ -393,32 +403,74 @@ export function PaymentsClient() {
             {closeoutHandoff.nextStep}
           </p>
           <p className="mt-1 text-xs font-medium text-theme-text-muted">
-            Use closeouts to confirm proof handoff, GPS evidence, and customer-safe
-            portal readiness before invoicing.
+            Use closeouts to confirm proof handoff, GPS evidence, and
+            customer-safe portal readiness before invoicing.
           </p>
         </div>
-        <a className="font-semibold text-primary hover:underline" href="/closeouts">
+        <a className={buttonClassName({ variant: "ghost" })} href="/closeouts">
           View queue
         </a>
       </section>
 
-      <section className="rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg p-5 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Setup
-        </p>
-        <h2 className="mt-1 text-xl font-semibold text-neutralDark">
-          Payment provider readiness
-        </h2>
-        <p className="mt-2 text-sm text-theme-text-secondary">
-          {paymentProviderCopy.label}
-        </p>
-        <p className="mt-2 text-sm text-theme-text-secondary">
-          {paymentProviderCopy.summary}
-        </p>
-        <p className="mt-2 text-sm text-theme-text-secondary">
-          {paymentProviderCopy.detail}
-        </p>
+      <section className="flex flex-col gap-3">
+        <div>
+          <Eyebrow tone="accent">Payment workspace</Eyebrow>
+          <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
+            Reconciliation snapshot
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatTile
+            detail="Requires operator review"
+            label="Needs review"
+            tone={
+              reconciliationSummary.needsReviewCount > 0 ? "danger" : "success"
+            }
+            value={reconciliationSummary.needsReviewCount}
+          />
+          <StatTile
+            detail="Reconciled or manually recorded"
+            label="Paid activity"
+            tone="success"
+            value={formatMoney(reconciliationSummary.paidCents)}
+          />
+          <StatTile
+            detail="Remaining balance before provider receipts"
+            label="Open balance"
+            tone={
+              reconciliationSummary.remainingCents > 0 ? "warning" : "success"
+            }
+            value={formatMoney(reconciliationSummary.remainingCents)}
+          />
+        </div>
       </section>
+
+      <details className="group rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg shadow-sm">
+        <summary className="cursor-pointer px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <Eyebrow tone="danger">Manual fallback mode</Eyebrow>
+              <h2 className="mt-1 text-lg font-semibold text-theme-text-primary">
+                Payment provider readiness
+              </h2>
+            </div>
+            <StatusPill tone="warning">
+              {paymentProviderCopy.stateLabel}
+            </StatusPill>
+          </div>
+        </summary>
+        <div className="hidden border-t border-status-alert-warning-border px-4 py-3 group-open:block">
+          <p className="text-sm text-theme-text-secondary">
+            {paymentProviderCopy.label}
+          </p>
+          <p className="mt-2 text-sm text-theme-text-secondary">
+            {paymentProviderCopy.summary}
+          </p>
+          <p className="mt-2 text-sm text-theme-text-secondary">
+            {paymentProviderCopy.detail}
+          </p>
+        </div>
+      </details>
 
       <section className="grid gap-3 sm:grid-cols-5">
         <CountTile
@@ -435,7 +487,9 @@ export function PaymentsClient() {
           tone="info"
         />
         <CountTile
-          active={status === "sent" && reconciliationStatus === "awaiting_payment"}
+          active={
+            status === "sent" && reconciliationStatus === "awaiting_payment"
+          }
           count={formatMoney(summary.openCents)}
           label="Open"
           onClick={() => applyPaymentFilter("sent", "awaiting_payment")}
@@ -467,9 +521,13 @@ export function PaymentsClient() {
             visibleInvoices.map((invoice) => {
               const reconciliation = getInvoiceReconciliation(invoice);
               const guidance = getInvoiceReconciliationGuidance(invoice);
-              const latestPaidAt = formatPaymentDate(reconciliation.latestPaidAt);
+              const latestPaidAt = formatPaymentDate(
+                reconciliation.latestPaidAt,
+              );
               const invoiceJob =
-                invoice.job ?? jobs.find((job) => job.id === invoice.job_id) ?? null;
+                invoice.job ??
+                jobs.find((job) => job.id === invoice.job_id) ??
+                null;
               const confirmingAction =
                 actionConfirmation?.invoiceId === invoice.id
                   ? actionConfirmation.action
@@ -479,183 +537,206 @@ export function PaymentsClient() {
               } · ${formatMoney(invoice.total_cents, invoice.currency)}`;
 
               return (
-                <article
-                  className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-                  key={invoice.id}
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-semibold text-neutralDark">
-                          {invoiceTitle(invoice)}
-                        </h2>
-                        <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
-                          {invoice.status}
-                        </span>
-                        <StatusPill tone={reconciliationToneByStatus[reconciliation.status]}>
-                          {reconciliation.label}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-2 text-sm text-theme-text-secondary">
-                        {invoice.job?.location?.address ?? "No location"}
-                      </p>
-                      <p className="mt-1 text-sm text-theme-text-secondary">
-                        Due {formatDate(invoice.due_date)}
-                      </p>
-                      {reconciliation.reviewLabel ? (
-                        <p className="mt-2 text-sm font-semibold text-status-alert-danger-fg">
-                          {reconciliation.reviewLabel}
-                        </p>
-                      ) : null}
-                      <p className="mt-2 text-sm text-theme-text-secondary">
-                        {guidance.summary}
-                      </p>
-                      <p className="mt-1 text-sm text-theme-text-secondary">
-                        {guidance.nextStep}
-                      </p>
-                      {latestPaidAt ? (
-                        <p className="mt-2 text-sm text-theme-text-secondary">
-                          Latest payment {latestPaidAt}
-                        </p>
-                      ) : null}
-                      {invoice.notes ? (
-                        <p className="mt-2 text-sm text-theme-text-secondary">{invoice.notes}</p>
-                      ) : null}
-                      {invoice.payment_url ? (
-                        <a
-                          className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
-                          href={invoice.payment_url}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          Open payment link
-                        </a>
-                      ) : null}
-                      <InvoiceHandoff invoice={invoice} job={invoiceJob} />
-                    </div>
-                    <div className="flex min-w-52 flex-col gap-3">
-                      <p className="text-right text-2xl font-bold text-neutralDark">
-                        {formatMoney(invoice.total_cents, invoice.currency)}
-                      </p>
-                      <div className="text-right text-xs font-medium text-theme-text-muted">
-                        <p>
-                          Paid{" "}
-                          {formatMoney(
-                            reconciliation.paidCents,
-                            invoice.currency,
-                          )}
-                        </p>
-                        <p>
-                          Balance{" "}
-                          {formatMoney(
-                            reconciliation.balanceCents,
-                            invoice.currency,
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {invoice.status === "draft" ? (
-                          <button
-                            className="min-h-10 rounded-md bg-primary px-3 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:opacity-60"
-                            disabled={createPaymentLink.isPending}
-                            onClick={() => createPaymentLink.mutate(invoice)}
-                            type="button"
-                          >
-                            Create link
-                          </button>
-                        ) : null}
-                        {invoice.status !== "paid" && invoice.status !== "void" ? (
-                          <button
-                            className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
-                            disabled={markPaid.isPending}
-                            onClick={() =>
-                              setActionConfirmation({
-                                action: "mark_paid",
-                                invoiceId: invoice.id,
-                              })
+                <article key={invoice.id}>
+                  <Card padding="lg">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg font-semibold text-theme-text-primary">
+                            {invoiceTitle(invoice)}
+                          </h2>
+                          <StatusPill
+                            tone={
+                              invoice.status === "paid" ? "success" : "neutral"
                             }
-                            type="button"
                           >
-                            Mark paid
-                          </button>
-                        ) : null}
-                        {invoice.status !== "void" && invoice.status !== "paid" ? (
-                          <button
-                            className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
-                            disabled={voidInvoice.isPending}
-                            onClick={() =>
-                              setActionConfirmation({
-                                action: "void",
-                                invoiceId: invoice.id,
-                              })
+                            {invoice.status}
+                          </StatusPill>
+                          <StatusPill
+                            tone={
+                              reconciliationToneByStatus[reconciliation.status]
                             }
-                            type="button"
                           >
-                            Void
-                          </button>
-                        ) : null}
-                      </div>
-                      {confirmingAction ? (
-                        <div
-                          aria-label={
-                            confirmingAction === "mark_paid"
-                              ? `Confirm mark paid for ${invoiceTitle(invoice)}`
-                              : `Confirm void for ${invoiceTitle(invoice)}`
-                          }
-                          className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg px-3 py-2 text-left"
-                          role="group"
-                        >
-                          <p className="text-sm font-semibold text-neutralDark">
-                            {confirmingAction === "mark_paid"
-                              ? "Mark this invoice paid?"
-                              : "Void this invoice?"}
-                          </p>
-                          <p className="mt-1 text-xs text-theme-text-secondary">
-                            {confirmationContext}
-                          </p>
-                          <p className="mt-2 text-xs text-theme-text-secondary">
-                            {confirmingAction === "mark_paid"
-                              ? guidance.markPaidConfirmation
-                              : guidance.voidConfirmation}
-                          </p>
-                          <div className="mt-3 flex flex-wrap justify-end gap-2">
-                            <button
-                              aria-label={
-                                confirmingAction === "mark_paid"
-                                  ? "Cancel mark paid"
-                                  : "Cancel void"
-                              }
-                              className="min-h-8 rounded-md border border-theme-border-default px-3 text-xs font-semibold text-neutralDark hover:bg-theme-background-subtle"
-                              onClick={() => setActionConfirmation(null)}
-                              type="button"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              className={
-                                confirmingAction === "mark_paid"
-                                  ? "min-h-8 rounded-md bg-status-alert-success-solid px-3 text-xs font-semibold text-theme-text-inverse hover:bg-status-alert-success-fg disabled:opacity-60"
-                                  : "min-h-8 rounded-md bg-status-alert-danger-solid px-3 text-xs font-semibold text-theme-text-inverse hover:bg-primitive-red-600 disabled:opacity-60"
-                              }
-                              disabled={
-                                confirmingAction === "mark_paid"
-                                  ? markPaid.isPending
-                                  : voidInvoice.isPending
-                              }
-                              onClick={() =>
-                                confirmInvoiceAction(invoice.id, confirmingAction)
-                              }
-                              type="button"
-                            >
-                              {confirmingAction === "mark_paid"
-                                ? "Confirm mark paid"
-                                : "Confirm void"}
-                            </button>
-                          </div>
+                            {reconciliation.label}
+                          </StatusPill>
                         </div>
-                      ) : null}
+                        <p className="mt-2 text-sm text-theme-text-secondary">
+                          {invoice.job?.location?.address ?? "No location"}
+                        </p>
+                        <p className="mt-1 text-sm text-theme-text-secondary">
+                          Due {formatDate(invoice.due_date)}
+                        </p>
+                        {reconciliation.reviewLabel ? (
+                          <p className="mt-2 text-sm font-semibold text-status-alert-danger-fg">
+                            {reconciliation.reviewLabel}
+                          </p>
+                        ) : null}
+                        <p className="mt-2 text-sm text-theme-text-secondary">
+                          {guidance.summary}
+                        </p>
+                        <p className="mt-1 text-sm text-theme-text-secondary">
+                          {guidance.nextStep}
+                        </p>
+                        {latestPaidAt ? (
+                          <p className="mt-2 text-sm text-theme-text-secondary">
+                            Latest payment {latestPaidAt}
+                          </p>
+                        ) : null}
+                        {invoice.notes ? (
+                          <p className="mt-2 text-sm text-theme-text-secondary">
+                            {invoice.notes}
+                          </p>
+                        ) : null}
+                        {invoice.payment_url ? (
+                          <a
+                            className={buttonClassName({
+                              className: "mt-3",
+                              size: "sm",
+                              variant: "ghost",
+                            })}
+                            href={invoice.payment_url}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            Open payment link
+                          </a>
+                        ) : null}
+                        <InvoiceHandoff invoice={invoice} job={invoiceJob} />
+                      </div>
+                      <div className="flex min-w-52 flex-col gap-3">
+                        <p className="text-right text-2xl font-bold text-theme-text-primary">
+                          {formatMoney(invoice.total_cents, invoice.currency)}
+                        </p>
+                        <div className="text-right text-xs font-medium text-theme-text-muted">
+                          <p>
+                            Paid{" "}
+                            {formatMoney(
+                              reconciliation.paidCents,
+                              invoice.currency,
+                            )}
+                          </p>
+                          <p>
+                            Balance{" "}
+                            {formatMoney(
+                              reconciliation.balanceCents,
+                              invoice.currency,
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {invoice.status === "draft" ? (
+                            <Button
+                              disabled={createPaymentLink.isPending}
+                              onClick={() => createPaymentLink.mutate(invoice)}
+                              size="sm"
+                            >
+                              Create link
+                            </Button>
+                          ) : null}
+                          {invoice.status !== "paid" &&
+                          invoice.status !== "void" ? (
+                            <Button
+                              className="border-status-alert-success-border text-status-alert-success-fg hover:bg-status-alert-success-bg"
+                              disabled={markPaid.isPending}
+                              onClick={() =>
+                                setActionConfirmation({
+                                  action: "mark_paid",
+                                  invoiceId: invoice.id,
+                                })
+                              }
+                              size="sm"
+                              variant="ghost"
+                            >
+                              Mark paid
+                            </Button>
+                          ) : null}
+                          {invoice.status !== "void" &&
+                          invoice.status !== "paid" ? (
+                            <Button
+                              disabled={voidInvoice.isPending}
+                              onClick={() =>
+                                setActionConfirmation({
+                                  action: "void",
+                                  invoiceId: invoice.id,
+                                })
+                              }
+                              size="sm"
+                              variant="danger"
+                            >
+                              Void
+                            </Button>
+                          ) : null}
+                        </div>
+                        {confirmingAction ? (
+                          <div
+                            aria-label={
+                              confirmingAction === "mark_paid"
+                                ? `Confirm mark paid for ${invoiceTitle(invoice)}`
+                                : `Confirm void for ${invoiceTitle(invoice)}`
+                            }
+                            className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg px-3 py-2 text-left"
+                            role="group"
+                          >
+                            <p className="text-sm font-semibold text-theme-text-primary">
+                              {confirmingAction === "mark_paid"
+                                ? "Mark this invoice paid?"
+                                : "Void this invoice?"}
+                            </p>
+                            <p className="mt-1 text-xs text-theme-text-secondary">
+                              {confirmationContext}
+                            </p>
+                            <p className="mt-2 text-xs text-theme-text-secondary">
+                              {confirmingAction === "mark_paid"
+                                ? guidance.markPaidConfirmation
+                                : guidance.voidConfirmation}
+                            </p>
+                            <div className="mt-3 flex flex-wrap justify-end gap-2">
+                              <Button
+                                aria-label={
+                                  confirmingAction === "mark_paid"
+                                    ? "Cancel mark paid"
+                                    : "Cancel void"
+                                }
+                                onClick={() => setActionConfirmation(null)}
+                                size="sm"
+                                variant="ghost"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                className={
+                                  confirmingAction === "mark_paid"
+                                    ? "bg-status-alert-success-solid hover:bg-status-alert-success-fg"
+                                    : undefined
+                                }
+                                disabled={
+                                  confirmingAction === "mark_paid"
+                                    ? markPaid.isPending
+                                    : voidInvoice.isPending
+                                }
+                                onClick={() =>
+                                  confirmInvoiceAction(
+                                    invoice.id,
+                                    confirmingAction,
+                                  )
+                                }
+                                size="sm"
+                                variant={
+                                  confirmingAction === "mark_paid"
+                                    ? "primary"
+                                    : "danger"
+                                }
+                              >
+                                {confirmingAction === "mark_paid"
+                                  ? "Confirm mark paid"
+                                  : "Confirm void"}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
+                  </Card>
                 </article>
               );
             })
@@ -666,10 +747,13 @@ export function PaymentsClient() {
           className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           onSubmit={submitInvoice}
         >
-          <h2 className="text-xl font-semibold text-neutralDark">Create invoice</h2>
+          <h2 className="text-xl font-semibold text-theme-text-primary">
+            Create invoice
+          </h2>
           {closeoutHandoffJob ? (
             <p className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-3 text-sm text-status-alert-info-fg">
-              From closeout: {closeoutHandoffJob.customer?.name ?? "Unknown customer"} @{" "}
+              From closeout:{" "}
+              {closeoutHandoffJob.customer?.name ?? "Unknown customer"} @{" "}
               {closeoutHandoffJob.location?.address ?? "No location"}
             </p>
           ) : null}
@@ -690,25 +774,32 @@ export function PaymentsClient() {
             options={completedJobOptions}
             value={form.job_id || selectedJob?.id || ""}
           />
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <p className="-mt-2 text-xs font-semibold text-theme-text-secondary">
+            Only completed jobs appear here so invoices start from
+            closeout-ready work.
+          </p>
+          <label className={formLabelClassName}>
             Amount
             <input
               aria-label="Invoice amount"
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+              className={formControlClassName}
               min="0"
               onChange={(event) =>
-                setForm((current) => ({ ...current, amount: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  amount: event.target.value,
+                }))
               }
               step="0.01"
               type="number"
               value={form.amount}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Description
             <input
               aria-label="Line item description"
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+              className={formControlClassName}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -718,36 +809,38 @@ export function PaymentsClient() {
               value={form.description}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Due date
             <input
               aria-label="Due date"
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+              className={formControlClassName}
               onChange={(event) =>
-                setForm((current) => ({ ...current, due_date: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  due_date: event.target.value,
+                }))
               }
               type="date"
               value={form.due_date}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Notes
             <textarea
               aria-label="Invoice notes"
-              className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
+              className={formTextareaClassName}
               onChange={(event) =>
-                setForm((current) => ({ ...current, notes: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
               }
               value={form.notes}
             />
           </label>
-          <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={createInvoice.isPending}
-            type="submit"
-          >
+          <Button disabled={createInvoice.isPending} type="submit">
             Save invoice
-          </button>
+          </Button>
         </form>
       </section>
     </main>

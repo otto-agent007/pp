@@ -86,6 +86,9 @@ describe("TechniciansClient", () => {
     const user = userEvent.setup();
     render(<TechniciansClient />);
 
+    expect(screen.getByText("Technician roster")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch-ready crew")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Testnician" })).toBeInTheDocument();
     expect(screen.getByText("Testnician")).toBeInTheDocument();
     expect(screen.getByText("testnician@example.com")).toBeInTheDocument();
     expect(screen.getByText("1 today")).toBeInTheDocument();

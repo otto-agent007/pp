@@ -39,7 +39,16 @@ import type {
   AutomationRule,
   AutomationSchedulerRun,
 } from "@pest-patrol/types";
-import { SearchableSelect } from "@pest-patrol/ui";
+import {
+  Button,
+  Card,
+  CountTile,
+  Eyebrow,
+  SearchableSelect,
+  StatTile,
+  StatusPill,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useCustomers } from "../../hooks/useCustomers";
@@ -167,7 +176,9 @@ function schedulerPreviewTarget(
     return `${customer} - ${location}`;
   }
 
-  const customer = customers.find((item) => item.id === notification.customer_id);
+  const customer = customers.find(
+    (item) => item.id === notification.customer_id,
+  );
 
   return customer?.name ?? "No target";
 }
@@ -186,6 +197,24 @@ function EmptyState({ children }: { children: string }) {
       {children}
     </p>
   );
+}
+
+function deliveryTone(
+  status: NotificationEvent["delivery_status"],
+): StatusPillTone {
+  if (status === "sent") {
+    return "success";
+  }
+
+  if (status === "failed") {
+    return "danger";
+  }
+
+  if (status === "sending") {
+    return "warning";
+  }
+
+  return "neutral";
 }
 
 export function AutomationClient() {
@@ -231,7 +260,9 @@ export function AutomationClient() {
     new Date().toISOString(),
   );
   const [ruleError, setRuleError] = useState<string | null>(null);
-  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [notificationError, setNotificationError] = useState<string | null>(
+    null,
+  );
   const [templateError, setTemplateError] = useState<string | null>(null);
   const rules = rulesQuery.data ?? emptyRules;
   const notifications = notificationsQuery.data ?? emptyNotifications;
@@ -246,8 +277,7 @@ export function AutomationClient() {
     [templates],
   );
   const matchingRuleTemplates = useMemo(
-    () =>
-      activeTemplates.filter((template) => template.type === ruleForm.type),
+    () => activeTemplates.filter((template) => template.type === ruleForm.type),
     [activeTemplates, ruleForm.type],
   );
   const activeCustomers = useMemo(
@@ -288,9 +318,11 @@ export function AutomationClient() {
     () => [
       { label: "No customer", value: "" },
       ...activeCustomers.map((customer) => ({
-        keywords: [customer.email, customer.phone, customer.service_notes].filter(
-          (value): value is string => Boolean(value),
-        ),
+        keywords: [
+          customer.email,
+          customer.phone,
+          customer.service_notes,
+        ].filter((value): value is string => Boolean(value)),
         label: customer.name,
         value: customer.id,
       })),
@@ -336,7 +368,12 @@ export function AutomationClient() {
         message: notificationForm.message,
         title: notificationForm.title,
       }),
-    [notificationForm.message, notificationForm.title, selectedNotificationCustomer, selectedNotificationJob],
+    [
+      notificationForm.message,
+      notificationForm.title,
+      selectedNotificationCustomer,
+      selectedNotificationJob,
+    ],
   );
   const templatePreviewJob = jobs[0] ?? null;
   const templatePreviewCustomer =
@@ -351,7 +388,12 @@ export function AutomationClient() {
         message: templateForm.message,
         title: templateForm.title,
       }),
-    [templateForm.message, templateForm.title, templatePreviewCustomer, templatePreviewJob],
+    [
+      templateForm.message,
+      templateForm.title,
+      templatePreviewCustomer,
+      templatePreviewJob,
+    ],
   );
   const visibleRules = useMemo(
     () => filterAutomationRules(rules, ruleSearch, ruleStatus),
@@ -381,7 +423,8 @@ export function AutomationClient() {
     [visibleNotifications],
   );
   const visibleTemplates = useMemo(
-    () => filterNotificationTemplates(templates, templateSearch, templateStatus),
+    () =>
+      filterNotificationTemplates(templates, templateSearch, templateStatus),
     [templates, templateSearch, templateStatus],
   );
   const summary = useMemo(
@@ -460,7 +503,9 @@ export function AutomationClient() {
     setNotificationError(null);
 
     try {
-      const rule = activeRules.find((item) => item.id === notificationForm.rule_id);
+      const rule = activeRules.find(
+        (item) => item.id === notificationForm.rule_id,
+      );
       const copy = previewNotificationTemplateCopy({
         context: {
           customer: selectedNotificationCustomer,
@@ -492,12 +537,13 @@ export function AutomationClient() {
     setTemplateError(null);
 
     try {
-      const input: NotificationTemplateInput = validateNotificationTemplateInput({
-        name: templateForm.name,
-        type: templateForm.type,
-        title: templateForm.title,
-        message: templateForm.message,
-      });
+      const input: NotificationTemplateInput =
+        validateNotificationTemplateInput({
+          name: templateForm.name,
+          type: templateForm.type,
+          title: templateForm.title,
+          message: templateForm.message,
+        });
 
       if (templateForm.id) {
         await updateTemplate.mutateAsync({
@@ -546,7 +592,7 @@ export function AutomationClient() {
       offset_days: rule.offset_days === null ? "" : String(rule.offset_days),
       template_id:
         rule.template?.status === "active" && rule.template.type === rule.type
-          ? rule.template_id ?? ""
+          ? (rule.template_id ?? "")
           : "",
       type: rule.type,
     });
@@ -563,46 +609,26 @@ export function AutomationClient() {
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Active rules
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {summary.activeRules}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Recurring
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {summary.recurringRules}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Pending
-          </p>
-          <p className="mt-2 text-2xl font-bold text-primary">
-            {summary.pendingNotifications}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Overdue
-          </p>
-          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">
-            {summary.overdueNotifications}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Failed delivery
-          </p>
-          <p className="mt-2 text-2xl font-bold text-status-alert-danger-fg">
-            {summary.failedDeliveries}
-          </p>
+      <section className="flex flex-col gap-3">
+        <Eyebrow tone="accent">Operator snapshot</Eyebrow>
+        <div className="grid gap-3 sm:grid-cols-5">
+          <StatTile label="Active rules" value={summary.activeRules} />
+          <StatTile label="Recurring" value={summary.recurringRules} />
+          <StatTile
+            label="Pending"
+            tone="info"
+            value={summary.pendingNotifications}
+          />
+          <StatTile
+            label="Overdue"
+            tone={summary.overdueNotifications > 0 ? "danger" : "success"}
+            value={summary.overdueNotifications}
+          />
+          <StatTile
+            label="Failed delivery"
+            tone={summary.failedDeliveries > 0 ? "danger" : "success"}
+            value={summary.failedDeliveries}
+          />
         </div>
       </section>
 
@@ -621,8 +647,8 @@ export function AutomationClient() {
               </p>
             ) : schedulerStatus.lastRun ? (
               <p className="mt-2 text-sm text-theme-text-secondary">
-                Last run {formatDateTime(schedulerStatus.lastRun.finished_at)} by{" "}
-                {formatSchedulerTrigger(schedulerStatus.lastRun)}
+                Last run {formatDateTime(schedulerStatus.lastRun.finished_at)}{" "}
+                by {formatSchedulerTrigger(schedulerStatus.lastRun)}
                 {schedulerStatus.lastRun.triggered_by_user_id
                   ? ` (${schedulerStatus.lastRun.triggered_by_user_id})`
                   : ""}
@@ -647,21 +673,20 @@ export function AutomationClient() {
                 Unable to run scheduler
               </p>
             ) : null}
-            <button
-              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-theme-text-inverse shadow-sm hover:bg-primitive-sky-600 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
+            <Button
+              className="mt-4"
               disabled={runScheduler.isPending}
               onClick={() => runScheduler.mutate()}
-              type="button"
             >
               {runScheduler.isPending ? "Running scheduler" : "Run scheduler"}
-            </button>
-            <button
-              className="ml-2 mt-4 rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-neutralDark shadow-sm hover:bg-theme-background-subtle"
+            </Button>
+            <Button
+              className="ml-2 mt-4"
               onClick={() => setSchedulerPreviewNow(new Date().toISOString())}
-              type="button"
+              variant="ghost"
             >
               Refresh preview
-            </button>
+            </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
             <div className="rounded-md bg-theme-background-subtle p-3">
@@ -791,22 +816,24 @@ export function AutomationClient() {
             <EmptyState>No generated notifications yet</EmptyState>
           ) : (
             <div className="mt-3 grid gap-3 lg:grid-cols-3">
-              {schedulerStatus.generatedNotifications.slice(0, 3).map((item) => (
-                <article
-                  className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
-                  key={item.id}
-                >
-                  <p className="text-sm font-semibold text-neutralDark">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-xs font-medium text-primary">
-                    {formatType(item.type)}
-                  </p>
-                  <p className="mt-1 text-xs text-theme-text-secondary">
-                    Generated {formatDateTime(item.created_at)}
-                  </p>
-                </article>
-              ))}
+              {schedulerStatus.generatedNotifications
+                .slice(0, 3)
+                .map((item) => (
+                  <article
+                    className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
+                    key={item.id}
+                  >
+                    <p className="text-sm font-semibold text-neutralDark">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-primary">
+                      {formatType(item.type)}
+                    </p>
+                    <p className="mt-1 text-xs text-theme-text-secondary">
+                      Generated {formatDateTime(item.created_at)}
+                    </p>
+                  </article>
+                ))}
             </div>
           )}
         </div>
@@ -873,47 +900,50 @@ export function AutomationClient() {
               </select>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
+              <CountTile
+                active={notificationDeliveryStatus === "failed"}
+                aria-label={`Failed (${deliveryTriageSummary.failed})`}
+                count={deliveryTriageSummary.failed}
+                label={`Failed (${deliveryTriageSummary.failed})`}
                 onClick={() => {
                   setNotificationStatus("all");
                   setNotificationDeliveryStatus("failed");
                 }}
-                type="button"
-              >
-                Failed ({deliveryTriageSummary.failed})
-              </button>
-              <button
-                className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
+                tone="danger"
+              />
+              <CountTile
+                active={notificationDeliveryStatus === "retryable"}
+                aria-label={`Retryable (${deliveryTriageSummary.retryable})`}
+                count={deliveryTriageSummary.retryable}
+                label={`Retryable (${deliveryTriageSummary.retryable})`}
                 onClick={() => {
                   setNotificationStatus("pending");
                   setNotificationDeliveryStatus("retryable");
                 }}
-                type="button"
-              >
-                Retryable ({deliveryTriageSummary.retryable})
-              </button>
-              <span className="rounded-md bg-primitive-slate-100 px-3 py-2 text-sm font-semibold text-theme-text-secondary">
+                tone="info"
+              />
+              <StatusPill dot={false} tone="neutral">
                 Not sent {deliveryTriageSummary.not_sent}
-              </span>
-              <span className="rounded-md bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
+              </StatusPill>
+              <StatusPill dot={false} tone="success">
                 Sent {deliveryTriageSummary.sent}
-              </span>
-              <span className="rounded-md bg-status-alert-warning-bg px-3 py-2 text-sm font-semibold text-status-alert-warning-fg">
+              </StatusPill>
+              <StatusPill dot={false} tone="warning">
                 Manual review {deliveryTriageSummary.manual_review}
-              </span>
-              <span className="rounded-md bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
+              </StatusPill>
+              <StatusPill dot={false} tone="success">
                 Reachable {recipientReadinessSummary.reachable}
-              </span>
-              <span className="rounded-md bg-status-alert-warning-bg px-3 py-2 text-sm font-semibold text-status-alert-warning-fg">
+              </StatusPill>
+              <StatusPill dot={false} tone="warning">
                 Missing contact {recipientReadinessSummary.missing}
-              </span>
-              <span className="rounded-md bg-primitive-slate-100 px-3 py-2 text-sm font-semibold text-theme-text-secondary">
+              </StatusPill>
+              <StatusPill dot={false} tone="neutral">
                 Attempts {deliveryAttemptSummary.total_attempts}
-              </span>
+              </StatusPill>
             </div>
-            <div className="flex flex-col gap-2 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <Card className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
+                <Eyebrow tone="accent">Delivery health</Eyebrow>
                 <p className="text-sm font-semibold text-neutralDark">
                   Visible pending reminders
                 </p>
@@ -952,8 +982,8 @@ export function AutomationClient() {
                 )}
                 {sendBulkNotifications.data ? (
                   <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
-                    Bulk delivery sent {sendBulkNotifications.data.sent_count} and
-                    failed {sendBulkNotifications.data.failed_count}
+                    Bulk delivery sent {sendBulkNotifications.data.sent_count}{" "}
+                    and failed {sendBulkNotifications.data.failed_count}
                   </p>
                 ) : null}
                 {sendBulkNotifications.isError ? (
@@ -962,8 +992,7 @@ export function AutomationClient() {
                   </p>
                 ) : null}
               </div>
-              <button
-                className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-theme-text-muted/70"
+              <Button
                 disabled={
                   deliverableVisibleNotifications.length === 0 ||
                   sendBulkNotifications.isPending
@@ -975,13 +1004,12 @@ export function AutomationClient() {
                     ),
                   )
                 }
-                type="button"
               >
                 {sendBulkNotifications.isPending
                   ? "Sending visible"
                   : "Send visible pending"}
-              </button>
-            </div>
+              </Button>
+            </Card>
             {notificationsQuery.isLoading ? (
               <EmptyState>Loading notifications</EmptyState>
             ) : visibleNotifications.length === 0 ? (
@@ -1002,14 +1030,16 @@ export function AutomationClient() {
                           <h2 className="text-lg font-semibold text-neutralDark">
                             {notification.title}
                           </h2>
-                          <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
+                          <StatusPill tone="neutral">
                             {notification.status}
-                          </span>
-                          <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-xs font-semibold uppercase text-primary">
+                          </StatusPill>
+                          <StatusPill
+                            tone={deliveryTone(notification.delivery_status)}
+                          >
                             {getNotificationDeliveryLabel(
                               notification.delivery_status,
                             )}
-                          </span>
+                          </StatusPill>
                           {retryPolicyState !== "not_applicable" ? (
                             <span
                               className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
@@ -1127,7 +1157,9 @@ export function AutomationClient() {
                 aria-label="Automation rule status"
                 className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
                 onChange={(event) =>
-                  setRuleStatus(event.target.value as AutomationRuleStatusFilter)
+                  setRuleStatus(
+                    event.target.value as AutomationRuleStatusFilter,
+                  )
                 }
                 value={ruleStatus}
               >
@@ -1167,7 +1199,9 @@ export function AutomationClient() {
                         : `${rule.offset_days} days after trigger`}
                     </p>
                     {rule.message ? (
-                      <p className="mt-2 text-sm text-theme-text-secondary">{rule.message}</p>
+                      <p className="mt-2 text-sm text-theme-text-secondary">
+                        {rule.message}
+                      </p>
                     ) : null}
                     {rule.template ? (
                       <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
@@ -1331,7 +1365,9 @@ export function AutomationClient() {
               <div className="flex flex-wrap gap-2">
                 <button
                   className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={createTemplate.isPending || updateTemplate.isPending}
+                  disabled={
+                    createTemplate.isPending || updateTemplate.isPending
+                  }
                   type="submit"
                 >
                   {templateForm.id ? "Update template" : "Save template"}
@@ -1449,7 +1485,9 @@ export function AutomationClient() {
             className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitNotification}
           >
-            <h2 className="text-xl font-semibold text-neutralDark">Create reminder</h2>
+            <h2 className="text-xl font-semibold text-neutralDark">
+              Create reminder
+            </h2>
             {notificationError ? (
               <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
                 {notificationError}

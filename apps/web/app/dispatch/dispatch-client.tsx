@@ -32,6 +32,8 @@ import {
   SearchableSelect,
   StatusPill,
   buttonClassName,
+  formControlClassName,
+  formLabelClassName,
 } from "@pest-patrol/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -65,9 +67,11 @@ function todayKey() {
 }
 
 function decorateJob(job: Job, customers: Customer[]) {
-  const customer = job.customer ?? customers.find((item) => item.id === job.customer_id);
+  const customer =
+    job.customer ?? customers.find((item) => item.id === job.customer_id);
   const location =
-    job.location ?? customer?.locations?.find((item) => item.id === job.location_id);
+    job.location ??
+    customer?.locations?.find((item) => item.id === job.location_id);
 
   return {
     ...job,
@@ -95,7 +99,9 @@ function gpsEventLabel(eventType: DispatchLocationEvidenceEvent["event_type"]) {
 }
 
 function accuracyLabel(value: number | null) {
-  return value === null ? "Accuracy unavailable" : `Accuracy ${Math.round(value)} m`;
+  return value === null
+    ? "Accuracy unavailable"
+    : `Accuracy ${Math.round(value)} m`;
 }
 
 function plural(count: number, singular: string, pluralLabel = `${singular}s`) {
@@ -167,9 +173,9 @@ function GpsEvidenceEventRow({
   return (
     <Card padding="sm">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-neutralDark">{label}</p>
+        <p className="text-xs font-semibold text-theme-text-primary">{label}</p>
         <a
-          className="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+          className="text-xs font-semibold text-theme-action-primary underline-offset-2 hover:underline"
           href={event.map_url}
           rel="noreferrer"
           target="_blank"
@@ -180,7 +186,9 @@ function GpsEvidenceEventRow({
       <p className="mt-1 text-xs text-theme-text-secondary">
         {formatCapturedTime(event.captured_at)} - {event.radius_label}
       </p>
-      <p className="mt-1 text-xs text-theme-text-muted">{accuracyLabel(event.accuracy_m)}</p>
+      <p className="mt-1 text-xs text-theme-text-muted">
+        {accuracyLabel(event.accuracy_m)}
+      </p>
     </Card>
   );
 }
@@ -239,7 +247,9 @@ function RouteIntelligencePanel({
   triage: DispatchRouteTriageFilter;
 }) {
   const summary = intelligence.summary;
-  const exceptionSummary = buildDispatchRouteExceptionSummary(intelligence.stops);
+  const exceptionSummary = buildDispatchRouteExceptionSummary(
+    intelligence.stops,
+  );
 
   return (
     <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 text-sm text-status-alert-info-fgStrong">
@@ -247,8 +257,8 @@ function RouteIntelligencePanel({
         <div>
           <p className="font-semibold">Technician daily route companion</p>
           <p className="mt-1">
-            Technician mobile routes use the same assigned jobs, status priority,
-            and scheduled order shown here.
+            Technician mobile routes use the same assigned jobs, status
+            priority, and scheduled order shown here.
           </p>
           <p className="mt-1">
             <span>{summary.provider_label}</span>
@@ -269,10 +279,18 @@ function RouteIntelligencePanel({
             {plural(summary.completed_stops, "completed", "completed")}
           </StatusPill>
           <StatusPill dot={false} tone="info">
-            {plural(summary.missing_coordinates_count, "missing coordinates", "missing coordinates")}
+            {plural(
+              summary.missing_coordinates_count,
+              "missing coordinates",
+              "missing coordinates",
+            )}
           </StatusPill>
           <StatusPill dot={false} tone="info">
-            {plural(summary.missing_evidence_count, "missing GPS evidence", "missing GPS evidence")}
+            {plural(
+              summary.missing_evidence_count,
+              "missing GPS evidence",
+              "missing GPS evidence",
+            )}
           </StatusPill>
           <StatusPill dot={false} tone="info">
             {plural(summary.at_risk_stops, "at risk", "at risk")}
@@ -303,7 +321,9 @@ function RouteIntelligencePanel({
                 <p className="text-xs text-status-alert-info-fgStrong">
                   {plural(item.count, "stop")}
                 </p>
-                <p className="mt-1 text-xs text-status-alert-info-fg">{item.summary}</p>
+                <p className="mt-1 text-xs text-status-alert-info-fg">
+                  {item.summary}
+                </p>
               </Card>
             ))}
           </div>
@@ -332,7 +352,9 @@ function RouteIntelligencePanel({
   );
 }
 
-function mapPointSourceLabel(source: DispatchStaticMapState["points"][number]["source"]) {
+function mapPointSourceLabel(
+  source: DispatchStaticMapState["points"][number]["source"],
+) {
   return source === "service_location" ? "Service coordinates" : "Latest GPS";
 }
 
@@ -344,7 +366,12 @@ function SanDiegoMapBackdrop() {
       fill="none"
       viewBox="0 0 640 380"
     >
-      <rect className="fill-primitive-navy-950" height="380" rx="24" width="640" />
+      <rect
+        className="fill-primitive-navy-950"
+        height="380"
+        rx="24"
+        width="640"
+      />
       <path
         className="fill-primitive-slate-800"
         d="M214 0h426v380H244c-17-26-21-55-11-86 9-29 4-55-17-78-22-24-22-48 0-72 18-20 20-42 6-66-14-25-17-51-8-78z"
@@ -451,13 +478,36 @@ function SanDiegoMapBackdrop() {
         />
       </g>
       <g className="stroke-primitive-slate-300" opacity="0.26">
-        <path d="M252 112c64 18 129 15 194-8" strokeLinecap="round" strokeWidth="2" />
-        <path d="M238 187c43 11 86 9 130-6" strokeLinecap="round" strokeWidth="2" />
-        <path d="M285 255c35 20 75 24 119 13" strokeLinecap="round" strokeWidth="2" />
-        <path d="M373 40c-8 38-4 75 13 111" strokeLinecap="round" strokeWidth="2" />
-        <path d="M472 80c-14 46-12 89 8 130" strokeLinecap="round" strokeWidth="2" />
+        <path
+          d="M252 112c64 18 129 15 194-8"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M238 187c43 11 86 9 130-6"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M285 255c35 20 75 24 119 13"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M373 40c-8 38-4 75 13 111"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M472 80c-14 46-12 89 8 130"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
       </g>
-      <g className="fill-primitive-slate-300 stroke-primitive-sky-200" strokeWidth="2">
+      <g
+        className="fill-primitive-slate-300 stroke-primitive-sky-200"
+        strokeWidth="2"
+      >
         <circle cx="225" cy="220" r="13" />
         <circle cx="411" cy="70" r="13" />
         <circle cx="332" cy="173" r="13" />
@@ -467,46 +517,102 @@ function SanDiegoMapBackdrop() {
         className="fill-primitive-navy-950 text-[10px] font-bold"
         textAnchor="middle"
       >
-        <text x="225" y="224">8</text>
-        <text x="411" y="74">78</text>
-        <text x="332" y="177">52</text>
-        <text x="512" y="300">94</text>
+        <text x="225" y="224">
+          8
+        </text>
+        <text x="411" y="74">
+          78
+        </text>
+        <text x="332" y="177">
+          52
+        </text>
+        <text x="512" y="300">
+          94
+        </text>
       </g>
       <g
         className="fill-theme-text-inverse stroke-primitive-navy-950 font-semibold"
         paintOrder="stroke"
         strokeWidth="3"
       >
-        <text className="text-[12px]" x="178" y="16">Oceanside</text>
-        <text className="text-[12px]" x="198" y="38">Carlsbad</text>
-        <text className="text-[12px]" x="213" y="92">Encinitas</text>
-        <text className="text-[12px]" x="310" y="38">San Marcos</text>
-        <text className="text-[12px]" x="330" y="70">Escondido</text>
-        <text className="text-[12px]" x="415" y="113">Ramona</text>
-        <text className="text-[12px]" x="316" y="139">Poway</text>
-        <text className="text-[12px]" x="348" y="187">Santee</text>
-        <text className="text-[12px]" x="345" y="216">El Cajon</text>
-        <text className="text-[12px]" x="310" y="236">La Mesa</text>
-        <text className="text-[13px]" x="255" y="286">Chula Vista</text>
-        <text className="text-[12px]" x="516" y="167">Descanso</text>
-        <text className="text-[12px]" x="530" y="318">Tecate</text>
-        <text className="text-[12px]" x="173" y="334">La Jolla</text>
-        <text className="text-[10px]" x="178" y="213">Mission Bay</text>
-        <text className="text-[10px]" x="216" y="342">Point Loma</text>
-        <text className="text-[10px]" x="260" y="330">San Diego Bay</text>
-        <text className="text-[11px]" x="118" y="100">Pacific</text>
-        <text className="text-[10px]" x="258" y="164">I-5</text>
-        <text className="text-[10px]" x="318" y="119">I-805</text>
-        <text className="text-[10px]" x="426" y="92">I-15</text>
-        <text className="text-[10px]" x="451" y="206">I-8</text>
+        <text className="text-[12px]" x="178" y="16">
+          Oceanside
+        </text>
+        <text className="text-[12px]" x="198" y="38">
+          Carlsbad
+        </text>
+        <text className="text-[12px]" x="213" y="92">
+          Encinitas
+        </text>
+        <text className="text-[12px]" x="310" y="38">
+          San Marcos
+        </text>
+        <text className="text-[12px]" x="330" y="70">
+          Escondido
+        </text>
+        <text className="text-[12px]" x="415" y="113">
+          Ramona
+        </text>
+        <text className="text-[12px]" x="316" y="139">
+          Poway
+        </text>
+        <text className="text-[12px]" x="348" y="187">
+          Santee
+        </text>
+        <text className="text-[12px]" x="345" y="216">
+          El Cajon
+        </text>
+        <text className="text-[12px]" x="310" y="236">
+          La Mesa
+        </text>
+        <text className="text-[13px]" x="255" y="286">
+          Chula Vista
+        </text>
+        <text className="text-[12px]" x="516" y="167">
+          Descanso
+        </text>
+        <text className="text-[12px]" x="530" y="318">
+          Tecate
+        </text>
+        <text className="text-[12px]" x="173" y="334">
+          La Jolla
+        </text>
+        <text className="text-[10px]" x="178" y="213">
+          Mission Bay
+        </text>
+        <text className="text-[10px]" x="216" y="342">
+          Point Loma
+        </text>
+        <text className="text-[10px]" x="260" y="330">
+          San Diego Bay
+        </text>
+        <text className="text-[11px]" x="118" y="100">
+          Pacific
+        </text>
+        <text className="text-[10px]" x="258" y="164">
+          I-5
+        </text>
+        <text className="text-[10px]" x="318" y="119">
+          I-805
+        </text>
+        <text className="text-[10px]" x="426" y="92">
+          I-15
+        </text>
+        <text className="text-[10px]" x="451" y="206">
+          I-8
+        </text>
       </g>
       <g
         className="fill-theme-text-inverse stroke-primitive-navy-950 font-bold"
         paintOrder="stroke"
         strokeWidth="4"
       >
-        <text className="text-[30px]" x="208" y="254">San Diego</text>
-        <text className="text-[28px]" x="282" y="344">Tijuana</text>
+        <text className="text-[30px]" x="208" y="254">
+          San Diego
+        </text>
+        <text className="text-[28px]" x="282" y="344">
+          Tijuana
+        </text>
       </g>
     </svg>
   );
@@ -518,16 +624,13 @@ function DispatchStaticMapPanel({
   mapState: DispatchStaticMapState;
 }) {
   return (
-    <Card
-      aria-label="Provider-free San Diego dispatch map"
-      tone="subtle"
-    >
+    <Card aria-label="Provider-free San Diego dispatch map" tone="subtle">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Provider-free still map
           </p>
-          <h2 className="mt-1 text-sm font-semibold text-neutralDark">
+          <h2 className="mt-1 text-sm font-semibold text-theme-text-primary">
             San Diego dispatch map
           </h2>
           <p className="mt-1 text-xs text-theme-text-secondary">
@@ -566,7 +669,7 @@ function DispatchStaticMapPanel({
           {mapState.points.map((point) => (
             <span
               aria-label={`Map pin ${point.label}: ${point.customer_label}`}
-              className="absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-theme-background-surface bg-primary px-1 text-xs font-bold text-theme-background-surface shadow-sm"
+              className="absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-theme-background-surface bg-theme-action-primary px-1 text-xs font-bold text-theme-background-surface shadow-sm"
               key={point.job_id}
               role="img"
               style={{
@@ -587,16 +690,13 @@ function DispatchStaticMapPanel({
             </p>
           ) : (
             mapState.points.map((point) => (
-              <Card
-                key={`${point.job_id}-summary`}
-                padding="sm"
-              >
+              <Card key={`${point.job_id}-summary`} padding="sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-secondary">
+                    <p className="text-xs font-semibold text-theme-text-muted">
                       {point.label}
                     </p>
-                    <h3 className="text-sm font-semibold text-neutralDark">
+                    <h3 className="text-sm font-semibold text-theme-text-primary">
                       {point.customer_label}
                     </h3>
                   </div>
@@ -616,14 +716,21 @@ function DispatchStaticMapPanel({
   );
 }
 
-function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) {
+function RouteGroupSummaryCard({
+  group,
+}: {
+  group: DispatchRouteGroupSummary;
+}) {
   return (
     <Card padding="sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-neutralDark">{group.label}</h3>
+          <h3 className="text-sm font-semibold text-theme-text-primary">
+            {group.label}
+          </h3>
           <p className="mt-1 text-xs text-theme-text-muted">
-            {plural(group.total_stops, "stop")} across {plural(group.days.length, "day")}
+            {plural(group.total_stops, "stop")} across{" "}
+            {plural(group.days.length, "day")}
           </p>
         </div>
         <StatusPill dot={false} tone="info">
@@ -659,10 +766,16 @@ function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) 
       </div>
       <div className="mt-3 space-y-1">
         {group.days.map((day) => (
-          <p className="text-xs text-theme-text-secondary" key={`${group.id}-${day.date}`}>
-            <span className="font-semibold text-neutralDark">{day.label}</span>
+          <p
+            className="text-xs text-theme-text-secondary"
+            key={`${group.id}-${day.date}`}
+          >
+            <span className="font-semibold text-theme-text-primary">
+              {day.label}
+            </span>
             {": "}
-            {plural(day.total_stops, "stop")}, {plural(day.active_stops, "active", "active")},{" "}
+            {plural(day.total_stops, "stop")},{" "}
+            {plural(day.active_stops, "active", "active")},{" "}
             {plural(day.completed_stops, "completed", "completed")}
           </p>
         ))}
@@ -671,16 +784,12 @@ function RouteGroupSummaryCard({ group }: { group: DispatchRouteGroupSummary }) 
   );
 }
 
-function RouteGroupsPanel({
-  groups,
-}: {
-  groups: DispatchRouteGroupSummary[];
-}) {
+function RouteGroupsPanel({ groups }: { groups: DispatchRouteGroupSummary[] }) {
   return (
     <Card tone="subtle">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-neutralDark">
+          <h2 className="text-sm font-semibold text-theme-text-primary">
             Route groups by technician
           </h2>
           <p className="text-xs text-theme-text-secondary">
@@ -770,7 +879,10 @@ export function DispatchClient() {
   }, [technicians, techniciansQuery.isLoading]);
 
   const decoratedJobs = useMemo(
-    () => (jobsQuery.data ?? []).map((job) => decorateJob(job, customersQuery.data ?? [])),
+    () =>
+      (jobsQuery.data ?? []).map((job) =>
+        decorateJob(job, customersQuery.data ?? []),
+      ),
     [customersQuery.data, jobsQuery.data],
   );
   const weekStart = getDispatchWeekStart(anchorDate);
@@ -870,14 +982,14 @@ export function DispatchClient() {
       <header className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-              Admin
-            </p>
-            <h1 className="text-3xl font-bold text-neutralDark">Dispatch Calendar</h1>
+            <Eyebrow tone="accent">Admin</Eyebrow>
+            <h1 className="text-3xl font-bold text-theme-text-primary">
+              Dispatch Calendar
+            </h1>
             <div className="mt-3 max-w-3xl space-y-1 text-sm text-theme-text-secondary">
               <p>
-                Scheduled jobs stay visible for the week so the demo can show routing,
-                assignment, and status changes.
+                Scheduled jobs stay visible for the week so the demo can show
+                routing, assignment, and status changes.
               </p>
               <p>
                 Completed jobs stay on dispatch for the handoff, then appear in
@@ -886,44 +998,37 @@ export function DispatchClient() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => moveWeek(-1)}
-              variant="ghost"
-            >
-              Previous
+            <Button onClick={() => moveWeek(-1)} variant="subtle">
+              Previous week
             </Button>
-            <Button
-              onClick={() => setAnchorDate(todayKey())}
-              variant="ghost"
-            >
+            <Button onClick={() => setAnchorDate(todayKey())} variant="primary">
               Today
             </Button>
-            <Button
-              onClick={() => moveWeek(1)}
-              variant="ghost"
-            >
-              Next
+            <Button onClick={() => moveWeek(1)} variant="subtle">
+              Next week
             </Button>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Week of
             <input
               aria-label="Week of"
-              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+              className={formControlClassName}
               onChange={(event) => setAnchorDate(event.target.value)}
               type="date"
               value={anchorDate}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Status
             <select
               aria-label="Dispatch status"
-              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
-              onChange={(event) => setStatus(event.target.value as StatusFilter)}
+              className={formControlClassName}
+              onChange={(event) =>
+                setStatus(event.target.value as StatusFilter)
+              }
               value={status}
             >
               <option value="all">All statuses</option>
@@ -942,11 +1047,11 @@ export function DispatchClient() {
             options={technicianFilterOptions}
             value={technician}
           />
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Triage
             <select
               aria-label="Dispatch triage"
-              className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+              className={formControlClassName}
               onChange={(event) =>
                 setTriage(event.target.value as DispatchRouteTriageFilter)
               }
@@ -961,49 +1066,69 @@ export function DispatchClient() {
           </label>
         </div>
 
-        <p className="text-sm text-theme-text-secondary">Week starting {weekStart}</p>
-
-        <RouteIntelligencePanel
-          intelligence={visibleRouteIntelligence}
-          triage={triage}
-        />
-        <DispatchStaticMapPanel mapState={dispatchStaticMapState} />
-        <RouteGroupsPanel groups={routeGroups} />
-        <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 shadow-sm">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-info-fg">
-                Recurring-route compliance
-              </p>
-              <p className="mt-1 text-sm text-status-alert-info-fgStrong">
-                {
-                  recurringCompliancePreview.required_fields.filter(
-                    (field) => field.status === "missing",
-                  ).length
-                } route evidence fields need review before a cited
-                recurring-service advisory.
-              </p>
-            </div>
-            <a
-              className={buttonClassName({
-                className:
-                  "border-status-alert-info-border bg-theme-background-surface text-status-alert-info-fgStrong hover:bg-primitive-sky-100 hover:text-status-alert-info-fgStrong",
-                variant: "ghost",
-              })}
-              href="/compliance"
-            >
-              Review rules
-            </a>
-          </div>
-        </section>
+        <p className="text-sm text-theme-text-secondary">
+          Week starting {weekStart}
+        </p>
       </header>
+
+      <section aria-label="Dispatch intelligence" className="grid gap-4">
+        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+            Route intelligence
+          </summary>
+          <div className="hidden gap-4 border-t border-theme-border-subtle p-4 group-open:grid">
+            <RouteIntelligencePanel
+              intelligence={visibleRouteIntelligence}
+              triage={triage}
+            />
+            <DispatchStaticMapPanel mapState={dispatchStaticMapState} />
+          </div>
+        </details>
+
+        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+            Route groups and compliance
+          </summary>
+          <div className="hidden gap-4 border-t border-theme-border-subtle p-4 group-open:grid">
+            <RouteGroupsPanel groups={routeGroups} />
+            <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 shadow-sm">
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-status-alert-info-fg">
+                    Recurring-route compliance
+                  </p>
+                  <p className="mt-1 text-sm text-status-alert-info-fgStrong">
+                    {
+                      recurringCompliancePreview.required_fields.filter(
+                        (field) => field.status === "missing",
+                      ).length
+                    }{" "}
+                    route evidence fields need review before a cited
+                    recurring-service advisory.
+                  </p>
+                </div>
+                <a
+                  className={buttonClassName({
+                    className:
+                      "border-status-alert-info-border bg-theme-background-surface text-status-alert-info-fgStrong hover:bg-primitive-sky-100 hover:text-status-alert-info-fgStrong",
+                    variant: "ghost",
+                  })}
+                  href="/compliance"
+                >
+                  Review rules
+                </a>
+              </div>
+            </section>
+          </div>
+        </details>
+      </section>
 
       {jobsQuery.isLoading ? (
         <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
           Loading dispatch calendar
         </p>
       ) : (
-        <section className="grid gap-3 lg:grid-cols-7">
+        <section className="grid gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
           {visibleCalendarDays.map((day) => (
             <Card
               className="flex min-h-64 flex-col gap-3"
@@ -1011,16 +1136,20 @@ export function DispatchClient() {
               padding="sm"
             >
               <header className="border-b border-primitive-slate-100 pb-2">
-                <h2 className="text-sm font-semibold text-neutralDark">{day.label}</h2>
-                <p className="text-xs text-theme-text-muted">{day.jobs.length} jobs</p>
+                <h2 className="text-sm font-semibold text-theme-text-primary">
+                  {day.label}
+                </h2>
+                <p className="text-xs text-theme-text-muted">
+                  {day.jobs.length} jobs
+                </p>
               </header>
 
               {day.jobs.length === 0 ? (
                 <div className="space-y-1 text-sm text-theme-text-muted">
                   <p>No jobs scheduled</p>
                   <p>
-                    Create or schedule jobs, then use dispatch to assign a technician
-                    and move work through completion.
+                    Create or schedule jobs, then use dispatch to assign a
+                    technician and move work through completion.
                   </p>
                 </div>
               ) : (
@@ -1055,10 +1184,10 @@ export function DispatchClient() {
                       ))}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                         {formatTime(job.scheduled_start)}
                       </p>
-                      <h3 className="mt-1 text-sm font-semibold text-neutralDark">
+                      <h3 className="mt-1 text-sm font-semibold text-theme-text-primary">
                         {job.customer?.name ?? "Unknown customer"}
                       </h3>
                       <p className="mt-1 text-xs text-theme-text-secondary">
@@ -1066,8 +1195,11 @@ export function DispatchClient() {
                       </p>
                       {routeStopsByJobId[job.id]?.location_map_url ? (
                         <a
-                          className="mt-2 inline-flex text-xs font-semibold text-primary underline-offset-2 hover:underline"
-                          href={routeStopsByJobId[job.id].location_map_url ?? undefined}
+                          className="mt-2 inline-flex text-xs font-semibold text-theme-action-primary underline-offset-2 hover:underline"
+                          href={
+                            routeStopsByJobId[job.id].location_map_url ??
+                            undefined
+                          }
                           rel="noreferrer"
                           target="_blank"
                         >
@@ -1082,11 +1214,11 @@ export function DispatchClient() {
                       jobId={job.id}
                     />
 
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutralDark">
+                    <label className="flex flex-col gap-1 text-xs font-medium text-theme-text-primary">
                       Status
                       <select
                         aria-label={`Status for ${job.id}`}
-                        className="min-h-9 rounded-md border border-theme-border-default bg-theme-background-surface px-2 text-xs outline-none focus:border-primary"
+                        className="min-h-9 rounded-md border border-theme-border-default bg-theme-background-surface px-2 text-xs text-theme-text-primary outline-none focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20"
                         disabled={isUpdating}
                         onChange={(event) =>
                           changeStatus.mutate({

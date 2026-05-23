@@ -6,6 +6,15 @@ import {
   validateTechnicianInviteInput,
 } from "@pest-patrol/domain";
 import type { TechnicianInviteInput } from "@pest-patrol/types";
+import {
+  Avatar,
+  Button,
+  Card,
+  Eyebrow,
+  StatusPill,
+  buttonClassName,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
@@ -18,6 +27,10 @@ const emptyForm: TechnicianInviteInput = {
   email: "",
   display_name: "",
 };
+
+function technicianStatusTone(status: string): StatusPillTone {
+  return status === "active" ? "success" : "neutral";
+}
 
 export function TechniciansClient() {
   const techniciansQuery = useTechnicianDirectory();
@@ -106,64 +119,73 @@ export function TechniciansClient() {
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
+          <div>
+            <Eyebrow tone="accent">Technician roster</Eyebrow>
+            <h2 className="mt-1 text-2xl font-bold text-neutralDark">
+              Dispatch-ready crew
+            </h2>
+          </div>
           {techniciansQuery.isLoading ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               Loading technicians
-            </p>
+            </Card>
           ) : visibleTechnicians.length === 0 ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               No technicians found
-            </p>
+            </Card>
           ) : (
             visibleTechnicians.map((technician) => {
               const routeLoad = routeLoadByTechnician.get(technician.id);
 
               return (
-                <article
-                  className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-                  key={technician.id}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <h2 className="text-lg font-semibold text-neutralDark">
-                        {getTechnicianLabel(technician)}
-                      </h2>
-                      <p className="mt-1 text-sm text-theme-text-secondary">
-                        {technician.email ?? "No email saved"}
-                      </p>
-                      <p className="mt-2 text-xs text-theme-text-muted">
-                        ID {technician.id}
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-neutralDark">
-                        <span className="rounded-md bg-status-alert-info-bg px-2 py-1 text-status-alert-info-fg">
-                          {routeLoad?.today_assigned_job_count ?? 0} today
-                        </span>
-                        <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-theme-text-secondary">
-                          {routeLoad?.upcoming_assigned_job_count ?? 0} upcoming
-                        </span>
-                        <span className="rounded-md bg-status-alert-warning-bg px-2 py-1 text-status-alert-warning-fg">
-                          {routeLoad?.route_status_label ?? "No route today"}
-                        </span>
+                <article key={technician.id}>
+                  <Card padding="lg">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 gap-3">
+                        <Avatar
+                          name={getTechnicianLabel(technician)}
+                          size="lg"
+                        />
+                        <div className="min-w-0">
+                          <h2 className="text-lg font-semibold text-neutralDark">
+                            {getTechnicianLabel(technician)}
+                          </h2>
+                          <p className="mt-1 text-sm text-theme-text-secondary">
+                            {technician.email ?? "No email saved"}
+                          </p>
+                          <p className="mt-2 text-xs text-theme-text-muted">
+                            ID {technician.id}
+                          </p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <StatusPill dot={false} tone="info">
+                              {routeLoad?.today_assigned_job_count ?? 0} today
+                            </StatusPill>
+                            <StatusPill dot={false} tone="neutral">
+                              {routeLoad?.upcoming_assigned_job_count ?? 0}{" "}
+                              upcoming
+                            </StatusPill>
+                            <StatusPill dot={false} tone="warning">
+                              {routeLoad?.route_status_label ??
+                                "No route today"}
+                            </StatusPill>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-start gap-3 sm:items-end">
+                        <StatusPill
+                          tone={technicianStatusTone(technician.status)}
+                        >
+                          {technician.status}
+                        </StatusPill>
+                        <a
+                          className={buttonClassName({ variant: "ghost" })}
+                          href={`/dispatch?technician=${encodeURIComponent(technician.id)}`}
+                        >
+                          Open in dispatch
+                        </a>
                       </div>
                     </div>
-                    <div className="flex flex-col items-start gap-3 sm:items-end">
-                      <span
-                        className={`w-fit rounded-md px-2 py-1 text-xs font-semibold capitalize ${
-                          technician.status === "active"
-                            ? "bg-status-alert-success-bg text-status-alert-success-fg"
-                            : "bg-primitive-slate-100 text-theme-text-secondary"
-                        }`}
-                      >
-                        {technician.status}
-                      </span>
-                      <a
-                        className="min-h-10 rounded-md border border-theme-border-default px-3 py-2 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                        href={`/dispatch?technician=${encodeURIComponent(technician.id)}`}
-                      >
-                        Open in dispatch
-                      </a>
-                    </div>
-                  </div>
+                  </Card>
                 </article>
               );
             })
@@ -219,13 +241,9 @@ export function TechniciansClient() {
             />
           </label>
 
-          <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={inviteTechnician.isPending}
-            type="submit"
-          >
+          <Button disabled={inviteTechnician.isPending} type="submit">
             {inviteTechnician.isPending ? "Inviting..." : "Send invite"}
-          </button>
+          </Button>
         </form>
       </section>
     </main>

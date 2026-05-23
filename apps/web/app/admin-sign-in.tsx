@@ -6,13 +6,21 @@ import {
   DEMO_SEED_ADMIN_EMAIL,
   DEMO_SEED_ADMIN_PASSWORD,
 } from "@pest-patrol/domain";
+import {
+  Button,
+  formControlClassName,
+  formLabelClassName,
+} from "@pest-patrol/ui";
 import { usePrepareLocalDemoLogin } from "../hooks/useDemoSeed";
 import { useAdminAuth } from "./admin-auth-context";
+import { Wordmark } from "./brand";
 
 const showLocalDemoShortcut = process.env.NODE_ENV !== "production";
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Unable to prepare demo login";
+  return error instanceof Error
+    ? error.message
+    : "Unable to prepare demo login";
 }
 
 export function AdminSignIn() {
@@ -57,18 +65,20 @@ export function AdminSignIn() {
   }
 
   return (
-    <main className="min-h-screen bg-neutralLight px-6 py-16">
+    <main className="min-h-screen bg-theme-background-canvas px-6 py-16 text-theme-text-primary">
       <section className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
         <div className="space-y-5">
-          <p className="text-sm font-bold uppercase text-secondary">
-            Pest Patrol OS
+          <Wordmark label="Pest Patrol OS" width={220} />
+          <p className="text-sm font-bold uppercase text-primitive-sky-600">
+            Field-ready operations
           </p>
-          <h1 className="text-4xl font-bold text-neutralDark">
+          <h1 className="text-4xl font-bold text-theme-text-primary">
             Admin operations sign-in
           </h1>
           <p className="max-w-2xl text-base leading-7 text-theme-text-secondary">
-            Dispatch, customer, billing, inventory, automation, and closeout
-            workflows are available to admin and dispatcher profiles.
+            Run the day from one field-ready workspace: dispatch routes,
+            customer context, billing handoffs, inventory, automation, and
+            closeout proof stay connected for the office and technicians.
           </p>
         </div>
 
@@ -77,39 +87,29 @@ export function AdminSignIn() {
           onSubmit={handleSubmit}
         >
           <div className="space-y-5">
-            <div>
-              <label
-                className="text-sm font-semibold text-neutralDark"
-                htmlFor="admin-email"
-              >
-                Email
-              </label>
+            <label className={formLabelClassName} htmlFor="admin-email">
+              Email
               <input
                 autoComplete="email"
-                className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className={formControlClassName}
                 id="admin-email"
                 onChange={(event) => setEmail(event.target.value)}
                 type="email"
                 value={email}
               />
-            </div>
+            </label>
 
-            <div>
-              <label
-                className="text-sm font-semibold text-neutralDark"
-                htmlFor="admin-password"
-              >
-                Password
-              </label>
+            <label className={formLabelClassName} htmlFor="admin-password">
+              Password
               <input
                 autoComplete="current-password"
-                className="mt-2 w-full rounded-md border border-theme-border-default px-3 py-2 text-sm text-neutralDark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className={formControlClassName}
                 id="admin-password"
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
                 value={password}
               />
-            </div>
+            </label>
 
             {formError || error ? (
               <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg px-3 py-2 text-sm font-semibold text-status-alert-danger-fg">
@@ -125,27 +125,25 @@ export function AdminSignIn() {
                 <p className="mt-1 text-sm text-theme-text-secondary">
                   {DEMO_SEED_ADMIN_EMAIL} / {DEMO_SEED_ADMIN_PASSWORD}
                 </p>
-                <button
-                  className="mt-3 w-full rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-neutralDark transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+                <Button
+                  className="mt-3"
                   disabled={submitting}
+                  fullWidth
                   onClick={signInDemo}
+                  variant="ghost"
                   type="button"
                 >
                   {submitting ? "Logging in..." : "Log in as demo"}
-                </button>
+                </Button>
               </div>
             ) : null}
 
-            <button
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-theme-text-inverse transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={submitting}
-              type="submit"
-            >
+            <Button disabled={submitting} fullWidth type="submit">
               {submitting ? "Signing in..." : "Sign in"}
-            </button>
+            </Button>
 
             <Link
-              className="block text-center text-sm font-semibold text-primary transition hover:text-primary/80"
+              className="block text-center text-sm font-semibold text-theme-action-primary transition hover:text-theme-action-primaryStrong"
               href="/forgot-password"
             >
               Forgot password?

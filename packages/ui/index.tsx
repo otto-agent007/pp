@@ -37,14 +37,12 @@ const buttonVariantClasses: Record<ButtonVariant, string> = {
     "border-theme-border-default bg-transparent text-theme-text-primary hover:bg-theme-background-subtle",
   inverse:
     "border-theme-text-inverse/20 bg-transparent text-theme-text-inverse hover:bg-theme-background-surface/10 hover:text-theme-text-inverse",
-  navy:
-    "border-transparent bg-theme-background-inverse text-theme-text-inverse hover:bg-primitive-navy-800",
+  navy: "border-transparent bg-theme-background-inverse text-theme-text-inverse hover:bg-primitive-navy-800",
   primary:
     "border-transparent bg-theme-action-primary text-theme-text-inverse hover:bg-theme-action-primaryStrong",
   subtle:
     "border-theme-border-subtle bg-theme-background-subtle text-theme-text-primary hover:bg-theme-background-surface",
-  text:
-    "border-transparent bg-transparent text-theme-text-secondary hover:bg-theme-background-subtle hover:text-theme-text-primary",
+  text: "border-transparent bg-transparent text-theme-text-secondary hover:bg-theme-background-subtle hover:text-theme-text-primary",
 };
 
 export function buttonClassName({
@@ -66,6 +64,14 @@ export function buttonClassName({
     className,
   );
 }
+
+export const formLabelClassName =
+  "flex flex-col gap-1 text-sm font-medium text-theme-text-primary";
+
+export const formControlClassName =
+  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20 disabled:cursor-not-allowed disabled:opacity-60";
+
+export const formTextareaClassName = cx(formControlClassName, "min-h-24 py-2");
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
@@ -262,14 +268,16 @@ export function SearchableSelect({
   return (
     <div
       className={cx(
-        "relative flex min-w-0 flex-col gap-1 font-medium text-neutralDark",
+        "relative flex min-w-0 flex-col gap-1 font-medium text-theme-text-primary",
         sizeClasses.root,
       )}
     >
       <label htmlFor={inputId}>{label}</label>
       <input
         aria-activedescendant={
-          isOpen && activeOption ? `${activeOptionId}-${activeIndex}` : undefined
+          isOpen && activeOption
+            ? `${activeOptionId}-${activeIndex}`
+            : undefined
         }
         aria-autocomplete="list"
         aria-controls={listboxId}
@@ -297,7 +305,7 @@ export function SearchableSelect({
         onKeyDown={handleKeyDown}
         ref={inputRef}
         role="combobox"
-        value={isOpen ? query : selectedOption?.label ?? ""}
+        value={isOpen ? query : (selectedOption?.label ?? "")}
       />
       {isOpen && !disabled ? (
         <div
@@ -440,28 +448,23 @@ const statusPillToneClasses: Record<
 > = {
   danger: {
     dot: "bg-status-alert-danger-solid",
-    root:
-      "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg",
+    root: "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg",
   },
   info: {
     dot: "bg-status-alert-info-solid",
-    root:
-      "border-status-alert-info-border bg-status-alert-info-bg text-status-alert-info-fg",
+    root: "border-status-alert-info-border bg-status-alert-info-bg text-status-alert-info-fg",
   },
   neutral: {
     dot: "bg-status-alert-neutral-solid",
-    root:
-      "border-status-alert-neutral-border bg-status-alert-neutral-bg text-status-alert-neutral-fg",
+    root: "border-status-alert-neutral-border bg-status-alert-neutral-bg text-status-alert-neutral-fg",
   },
   success: {
     dot: "bg-status-alert-success-solid",
-    root:
-      "border-status-alert-success-border bg-status-alert-success-bg text-status-alert-success-fg",
+    root: "border-status-alert-success-border bg-status-alert-success-bg text-status-alert-success-fg",
   },
   warning: {
     dot: "bg-status-alert-warning-solid",
-    root:
-      "border-status-alert-warning-border bg-status-alert-warning-bg text-status-alert-warning-fg",
+    root: "border-status-alert-warning-border bg-status-alert-warning-bg text-status-alert-warning-fg",
   },
 };
 
@@ -591,7 +594,7 @@ export function CountTile({
       {...props}
     >
       <Eyebrow>{label}</Eyebrow>
-      <div className="mt-2 text-2xl font-bold tabular-nums text-neutralDark">
+      <div className="mt-2 text-2xl font-bold tabular-nums text-theme-text-primary">
         {count}
       </div>
     </button>

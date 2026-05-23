@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -154,6 +154,12 @@ async function chooseSearchableOption(
   await user.click(await screen.findByRole("option", { name: optionName }));
 }
 
+function openDispatchDisclosure(
+  name: "Route intelligence" | "Route groups and compliance",
+) {
+  fireEvent.click(screen.getByText(name));
+}
+
 describe("DispatchClient", () => {
   const changeStatusMutate = vi.fn();
   const assignTechnicianMutate = vi.fn();
@@ -209,6 +215,7 @@ describe("DispatchClient", () => {
 
   it("explains scheduled job visibility and completed handoff", () => {
     render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
 
     expect(
       screen.getByText(
@@ -239,34 +246,68 @@ describe("DispatchClient", () => {
     } as never);
 
     render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
+    openDispatchDisclosure("Route groups and compliance");
 
-    expect(screen.getByText("Provider-free scheduled order")).toBeInTheDocument();
+    expect(
+      screen.getByText("Provider-free scheduled order"),
+    ).toBeInTheDocument();
     expect(screen.getByText("3 stops")).toBeInTheDocument();
     expect(screen.getByText("2 active")).toBeInTheDocument();
     expect(screen.getAllByText("1 completed").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("1 missing coordinates").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1 missing coordinates").length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText("2 missing GPS evidence")).toBeInTheDocument();
     expect(screen.getByText("0 at risk")).toBeInTheDocument();
     expect(screen.getByText("3 stops need review")).toBeInTheDocument();
-    expect(screen.getAllByText("Missing GPS evidence").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Missing GPS evidence").length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText("Stop 1")).toBeInTheDocument();
     expect(screen.getByText("Stop 2")).toBeInTheDocument();
-    expect(screen.getAllByText("Service coordinates ready").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Missing service coordinates").length)
-      .toBeGreaterThan(0);
-    expect(screen.getAllByText("Arrival and departure synced").length)
-      .toBeGreaterThan(0);
-    expect(screen.getAllByText("No synced GPS evidence").length)
-      .toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Service coordinates ready").length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Missing service coordinates").length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Arrival and departure synced").length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("No synced GPS evidence").length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText("Route groups by technician")).toBeInTheDocument();
     expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Unassigned").length).toBeGreaterThan(0);
     expect(screen.getByText("1 GPS captured")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open service map for job-1" }))
-      .toHaveAttribute(
-        "href",
-        "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
-      );
+    expect(
+      screen.getByRole("link", { name: "Open service map for job-1" }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+    );
+  });
+
+  it("keeps route intelligence in compact disclosure panels with stronger week navigation", () => {
+    render(<DispatchClient />);
+
+    const intelligencePanel = screen
+      .getByText("Route intelligence")
+      .closest("details");
+    const routeGroupsPanel = screen
+      .getByText("Route groups and compliance")
+      .closest("details");
+
+    expect(intelligencePanel).not.toHaveAttribute("open");
+    expect(routeGroupsPanel).not.toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: "Previous week" })).toHaveClass(
+      "border-theme-border-subtle",
+    );
+    expect(screen.getByRole("button", { name: "Next week" })).toHaveClass(
+      "border-theme-border-subtle",
+    );
   });
 
   it("renders a provider-free San Diego map with filtered route pins", () => {
@@ -280,21 +321,30 @@ describe("DispatchClient", () => {
     } as never);
 
     render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
 
-    const mapPanel = screen.getByLabelText("Provider-free San Diego dispatch map");
+    const mapPanel = screen.getByLabelText(
+      "Provider-free San Diego dispatch map",
+    );
 
-    expect(screen.getByRole("heading", { name: "San Diego dispatch map" }))
-      .toBeInTheDocument();
-    expect(within(mapPanel).getByText("Provider-free still map")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "San Diego dispatch map" }),
+    ).toBeInTheDocument();
+    expect(
+      within(mapPanel).getByText("Provider-free still map"),
+    ).toBeInTheDocument();
     expect(within(mapPanel).getByText("San Diego Bay")).toBeInTheDocument();
     expect(within(mapPanel).getByText("Point Loma")).toBeInTheDocument();
     expect(within(mapPanel).getByText("I-5")).toBeInTheDocument();
     expect(within(mapPanel).getByText("Escondido")).toBeInTheDocument();
     expect(within(mapPanel).getByText("Tijuana")).toBeInTheDocument();
     expect(within(mapPanel).getByText("1 plotted")).toBeInTheDocument();
-    expect(within(mapPanel).getByText("1 missing coordinates")).toBeInTheDocument();
-    expect(screen.getByLabelText("Map pin Stop 2: Downtown Cafe"))
-      .toBeInTheDocument();
+    expect(
+      within(mapPanel).getByText("1 missing coordinates"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Map pin Stop 2: Downtown Cafe"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Open service map for job-san-diego" }),
     ).toHaveAttribute(
@@ -314,15 +364,22 @@ describe("DispatchClient", () => {
     } as never);
 
     render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
 
-    const mapPanel = screen.getByLabelText("Provider-free San Diego dispatch map");
+    const mapPanel = screen.getByLabelText(
+      "Provider-free San Diego dispatch map",
+    );
 
-    expect(screen.getByRole("heading", { name: "San Diego dispatch map" }))
-      .toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "San Diego dispatch map" }),
+    ).toBeInTheDocument();
     expect(within(mapPanel).getByText("0 plotted")).toBeInTheDocument();
-    expect(within(mapPanel).getByText("1 missing coordinates")).toBeInTheDocument();
-    expect(within(mapPanel).getByText("No stops are pinned in the San Diego view."))
-      .toBeInTheDocument();
+    expect(
+      within(mapPanel).getByText("1 missing coordinates"),
+    ).toBeInTheDocument();
+    expect(
+      within(mapPanel).getByText("No stops are pinned in the San Diego view."),
+    ).toBeInTheDocument();
   });
 
   it("updates route intelligence when technician filter changes", async () => {
@@ -336,10 +393,16 @@ describe("DispatchClient", () => {
     } as never);
 
     render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
 
     expect(screen.getAllByText("2 stops").length).toBeGreaterThan(0);
 
-    await chooseSearchableOption(user, "Dispatch technician", "test", "Testnician");
+    await chooseSearchableOption(
+      user,
+      "Dispatch technician",
+      "test",
+      "Testnician",
+    );
 
     expect(screen.getByText("1 stop")).toBeInTheDocument();
   });
@@ -352,6 +415,7 @@ describe("DispatchClient", () => {
     } as never);
 
     render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
 
     await user.selectOptions(
       screen.getByLabelText("Dispatch triage"),
@@ -365,7 +429,9 @@ describe("DispatchClient", () => {
       screen.getByLabelText("Status for job-missing-coordinates"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
-    expect(screen.getByText("Showing missing gps evidence.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Showing missing gps evidence."),
+    ).toBeInTheDocument();
   });
 
   it("guides users when no jobs are scheduled for a day", () => {
@@ -388,8 +454,16 @@ describe("DispatchClient", () => {
     const user = userEvent.setup();
     render(<DispatchClient />);
 
-    await user.selectOptions(screen.getByLabelText("Dispatch status"), "completed");
-    await chooseSearchableOption(user, "Dispatch technician", "test", "Testnician");
+    await user.selectOptions(
+      screen.getByLabelText("Dispatch status"),
+      "completed",
+    );
+    await chooseSearchableOption(
+      user,
+      "Dispatch technician",
+      "test",
+      "Testnician",
+    );
 
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
@@ -399,9 +473,13 @@ describe("DispatchClient", () => {
     const user = userEvent.setup();
     render(<DispatchClient />);
 
-    await user.click(screen.getByRole("combobox", { name: "Dispatch technician" }));
+    await user.click(
+      screen.getByRole("combobox", { name: "Dispatch technician" }),
+    );
 
-    expect(screen.getByRole("option", { name: "Testnician" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Testnician" }),
+    ).toBeInTheDocument();
   });
 
   it("preselects a matching technician from the query string", () => {
@@ -409,9 +487,9 @@ describe("DispatchClient", () => {
 
     render(<DispatchClient />);
 
-    expect(screen.getByRole("combobox", { name: "Dispatch technician" })).toHaveValue(
-      "Testnician",
-    );
+    expect(
+      screen.getByRole("combobox", { name: "Dispatch technician" }),
+    ).toHaveValue("Testnician");
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
   });
@@ -419,21 +497,25 @@ describe("DispatchClient", () => {
   it("keeps all technicians selected when the query string omits technician", () => {
     render(<DispatchClient />);
 
-    expect(screen.getByRole("combobox", { name: "Dispatch technician" })).toHaveValue(
-      "All technicians",
-    );
+    expect(
+      screen.getByRole("combobox", { name: "Dispatch technician" }),
+    ).toHaveValue("All technicians");
     expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
   });
 
   it("ignores unknown technician query string values", () => {
-    window.history.replaceState({}, "", "/dispatch?technician=technician-missing");
+    window.history.replaceState(
+      {},
+      "",
+      "/dispatch?technician=technician-missing",
+    );
 
     render(<DispatchClient />);
 
-    expect(screen.getByRole("combobox", { name: "Dispatch technician" })).toHaveValue(
-      "All technicians",
-    );
+    expect(
+      screen.getByRole("combobox", { name: "Dispatch technician" }),
+    ).toHaveValue("All technicians");
     expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
     expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
   });
@@ -442,7 +524,7 @@ describe("DispatchClient", () => {
     const user = userEvent.setup();
     render(<DispatchClient />);
 
-    await user.click(screen.getByRole("button", { name: "Next" }));
+    await user.click(screen.getByRole("button", { name: "Next week" }));
 
     expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
   });
@@ -451,8 +533,16 @@ describe("DispatchClient", () => {
     const user = userEvent.setup();
     render(<DispatchClient />);
 
-    await user.selectOptions(screen.getByLabelText("Status for job-1"), "en_route");
-    await chooseSearchableOption(user, "Technician for job-1", "test", "Testnician");
+    await user.selectOptions(
+      screen.getByLabelText("Status for job-1"),
+      "en_route",
+    );
+    await chooseSearchableOption(
+      user,
+      "Technician for job-1",
+      "test",
+      "Testnician",
+    );
 
     expect(changeStatusMutate).toHaveBeenCalledWith({
       job: scheduledJob,

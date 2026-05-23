@@ -11,8 +11,45 @@ interface JobPhotoUploadFormProps {
   jobId: string;
 }
 
+interface PhotoActionButtonsProps {
+  cameraLabel: string;
+  libraryLabel: string;
+  onCamera: () => void;
+  onLibrary: () => void;
+}
+
 function getAssetFileName(asset: ImagePicker.ImagePickerAsset) {
   return asset.fileName ?? asset.uri.split("/").pop() ?? "photo.jpg";
+}
+
+export function PhotoActionButtons({
+  cameraLabel,
+  libraryLabel,
+  onCamera,
+  onLibrary,
+}: PhotoActionButtonsProps) {
+  return (
+    <View style={{ flexDirection: "row", gap: 8 }}>
+      <CaptureButton
+        onPress={onCamera}
+        variant="primary"
+        style={{
+          flex: 1,
+        }}
+      >
+        {cameraLabel}
+      </CaptureButton>
+      <CaptureButton
+        onPress={onLibrary}
+        variant="secondary"
+        style={{
+          flex: 1,
+        }}
+      >
+        {libraryLabel}
+      </CaptureButton>
+    </View>
+  );
 }
 
 export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
@@ -34,7 +71,9 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       setError(null);
     } catch (photoError) {
       setError(
-        photoError instanceof Error ? photoError.message : copy.photos.fallbackError,
+        photoError instanceof Error
+          ? photoError.message
+          : copy.photos.fallbackError,
       );
     }
   }
@@ -113,30 +152,12 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
         </Text>
       ) : null}
 
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <CaptureButton
-          onPress={() => void handleCamera()}
-          variant="primary"
-          style={{
-            flex: 1,
-          }}
-        >
-          <Text style={mobileCaptureControlStyles.primaryButtonText}>
-            {copy.photos.camera}
-          </Text>
-        </CaptureButton>
-        <CaptureButton
-          onPress={() => void handleLibrary()}
-          variant="secondary"
-          style={{
-            flex: 1,
-          }}
-        >
-          <Text style={mobileCaptureControlStyles.secondaryButtonText}>
-            {copy.photos.library}
-          </Text>
-        </CaptureButton>
-      </View>
+      <PhotoActionButtons
+        cameraLabel={copy.photos.camera}
+        libraryLabel={copy.photos.library}
+        onCamera={() => void handleCamera()}
+        onLibrary={() => void handleLibrary()}
+      />
     </CaptureSection>
   );
 }

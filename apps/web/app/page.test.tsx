@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "./page";
@@ -134,34 +134,63 @@ describe("HomePage", () => {
       screen.getByRole("heading", { name: "Dashboard overview" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Good .* Carlos/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Search customers, jobs, addresses/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/Search customers, jobs, addresses/i),
+    ).toBeInTheDocument();
     expect(screen.getByText("Today's jobs")).toBeInTheDocument();
     expect(screen.getByText("1 active today")).toBeInTheDocument();
     expect(screen.getByText("$285.00")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Today's schedule" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Live map" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Today's schedule" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Live map" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Live map")).toHaveLength(1);
+    expect(screen.getByText("Today's route")).toBeInTheDocument();
     expect(screen.getByText("2 techs live")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Jobs needing attention" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Low inventory" })).toBeInTheDocument();
-    expect(screen.getAllByText(/Demo - Ant Bait Stations/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "Recent activity" })).toBeInTheDocument();
-    expect(screen.getByText("Demo data controls")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Jobs needing attention" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Low inventory" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/Demo - Ant Bait Stations/).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: "Recent activity" }),
+    ).toBeInTheDocument();
+    const toolsPanel = screen
+      .getByText("Launch readiness tools")
+      .closest("details");
+    expect(toolsPanel).not.toHaveAttribute("open");
+    expect(
+      within(toolsPanel as HTMLElement).getByText("Demo data controls"),
+    ).toBeInTheDocument();
   });
 
   it("filters loaded overview items from the dashboard search", () => {
     render(<HomePage />);
 
-    fireEvent.change(screen.getByPlaceholderText(/Search customers, jobs, addresses/i), {
-      target: { value: "Rivera" },
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText(/Search customers, jobs, addresses/i),
+      {
+        target: { value: "Rivera" },
+      },
+    );
 
-    expect(screen.getByRole("heading", { name: "Search focus" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Search results" }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText(/Demo - Rivera Cafe/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/No dashboard matches/)).not.toBeInTheDocument();
   });
 
   it("renders guided smoke links with sanitized evidence prompts", () => {
     render(<HomePage />);
+
+    fireEvent.click(screen.getByText("Launch readiness tools"));
 
     expect(
       screen.getByRole("heading", { name: "Guided demo smoke" }),
@@ -180,11 +209,15 @@ describe("HomePage", () => {
     expect(
       screen.getByText(/Success: Customer appears active/i),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/seed fake production data/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/seed fake production data/i),
+    ).not.toBeInTheDocument();
   });
 
   it("renders provider-free launch gate guidance without secret values", () => {
     render(<HomePage />);
+
+    fireEvent.click(screen.getByText("Launch readiness tools"));
 
     expect(
       screen.getByRole("heading", { name: "Smoke readiness" }),
@@ -199,7 +232,9 @@ describe("HomePage", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("corepack pnpm compliance:ingest -- --dry-run --no-embed"),
+      screen.getByText(
+        "corepack pnpm compliance:ingest -- --dry-run --no-embed",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/service-role key/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/webhook secret/i)).not.toBeInTheDocument();

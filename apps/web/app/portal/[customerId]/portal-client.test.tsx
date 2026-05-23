@@ -123,7 +123,10 @@ describe("CustomerPortalClient", () => {
 
   it("renders customer-safe completed service details and media", () => {
     render(
-      <CustomerPortalClient accessToken="portal-token" customerId="customer-1" />,
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
     );
 
     expect(useCustomerPortalCloseouts).toHaveBeenCalledWith(
@@ -134,8 +137,13 @@ describe("CustomerPortalClient", () => {
       "customer-1",
       "portal-token",
     );
-    expect(screen.getByRole("heading", { name: "Apex Homes" })).toBeInTheDocument();
-    expect(screen.getByText("Invoice invoice-")).toBeInTheDocument();
+    expect(screen.getByText("Portal summary")).toBeInTheDocument();
+    expect(screen.getByText("Services")).toBeInTheDocument();
+    expect(screen.getByText("Open balance")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Apex Homes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Quarterly service invoice")).toBeInTheDocument();
     expect(screen.getByText("Quarterly service")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Pay invoice" })).toHaveAttribute(
       "href",
@@ -143,7 +151,9 @@ describe("CustomerPortalClient", () => {
     );
     expect(screen.getByText("Account timeline")).toBeInTheDocument();
     expect(screen.getByText("Service completed")).toBeInTheDocument();
-    expect(screen.getByText("Invoice open | Balance $125.00")).toBeInTheDocument();
+    expect(
+      screen.getByText("Invoice Open | Balance $125.00"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Main house")).toHaveLength(5);
     expect(screen.getAllByText("May 6, 2026").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1 form, 1 photo, 1 signature")).toHaveLength(2);
@@ -168,7 +178,10 @@ describe("CustomerPortalClient", () => {
 
   it("does not render admin-only service notes or chemical internals", () => {
     render(
-      <CustomerPortalClient accessToken="portal-token" customerId="customer-1" />,
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
     );
 
     expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();
@@ -184,12 +197,17 @@ describe("CustomerPortalClient", () => {
   it("filters completed service visits", async () => {
     const user = userEvent.setup();
     render(
-      <CustomerPortalClient accessToken="portal-token" customerId="customer-1" />,
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
     );
 
-    await user.type(screen.getByLabelText("Search service visits"), "missing");
+    await user.type(screen.getByLabelText("Search portal activity"), "missing");
 
-    expect(screen.getByText("No completed service visits found")).toBeInTheDocument();
+    expect(
+      screen.getByText("No completed service visits found"),
+    ).toBeInTheDocument();
   });
 
   it("renders invoice-only portal timeline entries", () => {
@@ -200,16 +218,20 @@ describe("CustomerPortalClient", () => {
     } as never);
 
     render(
-      <CustomerPortalClient accessToken="portal-token" customerId="customer-1" />,
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
     );
 
     expect(screen.getByText("Account timeline")).toBeInTheDocument();
     expect(screen.getByText("Invoice activity")).toBeInTheDocument();
-    expect(screen.getByText("Invoice open | Balance $125.00")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Pay from timeline" })).toHaveAttribute(
-      "href",
-      "https://pay.stripe.com/test",
-    );
+    expect(
+      screen.getByText("Invoice Open | Balance $125.00"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Pay from timeline" }),
+    ).toHaveAttribute("href", "https://pay.stripe.com/test");
   });
 
   it("renders empty capture states", () => {
@@ -227,13 +249,18 @@ describe("CustomerPortalClient", () => {
     } as never);
 
     render(
-      <CustomerPortalClient accessToken="portal-token" customerId="customer-1" />,
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
     );
 
     expect(
       screen.getByText("No service forms are available for this visit."),
     ).toBeInTheDocument();
-    expect(screen.getByText("No photos are available for this visit.")).toBeInTheDocument();
+    expect(
+      screen.getByText("No photos are available for this visit."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("No signatures are available for this visit."),
     ).toBeInTheDocument();
@@ -248,6 +275,8 @@ describe("CustomerPortalClient", () => {
 
     render(<CustomerPortalClient accessToken="" customerId="customer-1" />);
 
-    expect(screen.getAllByText("Portal access token is required").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Portal access token is required").length,
+    ).toBeGreaterThan(0);
   });
 });

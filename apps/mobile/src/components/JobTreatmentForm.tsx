@@ -16,7 +16,9 @@ interface JobTreatmentFormProps {
 }
 
 function fieldValueToText(value: FormValue) {
-  return typeof value === "string" || typeof value === "number" ? String(value) : "";
+  return typeof value === "string" || typeof value === "number"
+    ? String(value)
+    : "";
 }
 
 function FieldInput({
@@ -159,13 +161,8 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
         </Text>
       ) : null}
 
-      <CaptureButton
-        onPress={handleSubmit}
-        variant="primary"
-      >
-        <Text style={mobileCaptureControlStyles.primaryButtonText}>
-          {copy.treatment.queueButton}
-        </Text>
+      <CaptureButton onPress={handleSubmit} variant="primary">
+        {copy.treatment.queueButton}
       </CaptureButton>
     </CaptureSection>
   );

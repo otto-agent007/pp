@@ -167,12 +167,19 @@ describe("JobsClient", () => {
     await user.type(screen.getByLabelText("Search jobs"), "missing");
 
     expect(screen.getByText("No jobs found")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Create first job" }),
+    ).toHaveAttribute("href", "#job-form");
   });
 
   it("shows demo scheduling helpers without creating records", () => {
     render(<JobsClient />);
 
-    expect(screen.getByText("Job scheduling demo tip")).toBeInTheDocument();
+    expect(screen.getByText("Job queue")).toBeInTheDocument();
+    expect(screen.getByText("Ready for dispatch")).toBeInTheDocument();
+    expect(screen.getByText("Scheduled jobs")).toBeInTheDocument();
+    const helper = screen.getByText("Job setup notes").closest("details");
+    expect(helper).not.toHaveAttribute("open");
     expect(
       screen.getByText(
         "Select a customer first so the location list only shows that customer active service addresses.",
@@ -187,10 +194,9 @@ describe("JobsClient", () => {
       "href",
       "/customers",
     );
-    expect(screen.getByRole("link", { name: "Review dispatch" })).toHaveAttribute(
-      "href",
-      "/dispatch",
-    );
+    expect(
+      screen.getByRole("link", { name: "Review dispatch" }),
+    ).toHaveAttribute("href", "/dispatch");
   });
 
   it("labels technician options by display name", () => {
@@ -214,8 +220,9 @@ describe("JobsClient", () => {
   it("renders Z-suffixed scheduled timestamps as wall-clock job time", () => {
     render(<JobsClient />);
 
-    expect(screen.getAllByText(/May 6, 2026, 9:00 AM/).length)
-      .toBeGreaterThan(0);
+    expect(screen.getAllByText(/May 6, 2026, 9:00 AM/).length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("validates required create fields", async () => {
@@ -256,10 +263,9 @@ describe("JobsClient", () => {
         "Job created. Review dispatch to confirm assignment and route handoff.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open dispatch review" })).toHaveAttribute(
-      "href",
-      "/dispatch",
-    );
+    expect(
+      screen.getByRole("link", { name: "Open dispatch review" }),
+    ).toHaveAttribute("href", "/dispatch");
   });
 
   it("edits an existing job", async () => {

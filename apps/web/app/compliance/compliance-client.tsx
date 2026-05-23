@@ -19,6 +19,13 @@ import type {
   ComplianceWorkflow,
   Job,
 } from "@pest-patrol/types";
+import {
+  Button,
+  Eyebrow,
+  StatTile,
+  StatusPill,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
@@ -50,7 +57,9 @@ const emptyLogs: ChemicalLog[] = [];
 type ComplianceRuntime = ComplianceAdvisoryResponse["runtime"];
 
 function formatWorkflow(value: ComplianceWorkflow) {
-  return workflowOptions.find((workflow) => workflow.value === value)?.label ?? value;
+  return (
+    workflowOptions.find((workflow) => workflow.value === value)?.label ?? value
+  );
 }
 
 function formatDate(value: string) {
@@ -90,6 +99,18 @@ function evaluationTone(
   return "border-status-alert-danger-border bg-status-alert-danger-bg text-status-alert-danger-fg";
 }
 
+function readinessTone(status: string): StatusPillTone {
+  if (status === "ready" || status === "advisory_ready") {
+    return "success";
+  }
+
+  if (status === "rag_disabled" || status === "operator_review_required") {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
 function runtimeCopy(runtime: ComplianceRuntime) {
   if (runtime.available) {
     return "Runtime: OpenAI retrieval available.";
@@ -102,7 +123,9 @@ function runtimeCopy(runtime: ComplianceRuntime) {
 
 function advisoryErrorCopy(caught: unknown) {
   const message =
-    caught instanceof Error ? caught.message : "Unable to create compliance advisory";
+    caught instanceof Error
+      ? caught.message
+      : "Unable to create compliance advisory";
 
   if (
     /supabase|schema|relation|service-role|service role|OPENAI_API_KEY/i.test(
@@ -131,8 +154,9 @@ export function ComplianceClient() {
   const jobsQuery = useJobs();
   const logsQuery = useChemicalLogs();
   const createAdvisory = useCreateComplianceAdvisory();
-  const [workflow, setWorkflow] =
-    useState<ComplianceWorkflow>("chemical_application");
+  const [workflow, setWorkflow] = useState<ComplianceWorkflow>(
+    "chemical_application",
+  );
   const [prompt, setPrompt] = useState(
     "Review this workflow for missing California structural pest compliance evidence.",
   );
@@ -151,9 +175,9 @@ export function ComplianceClient() {
   ].some(isComplianceSchemaUnavailableError);
   const setupReadiness =
     schemaUnavailableFromQuery || advisorySetup?.status === "schema_unavailable"
-      ? (advisorySetup?.status === "schema_unavailable"
-          ? advisorySetup
-          : getComplianceSchemaUnavailableReadiness())
+      ? advisorySetup?.status === "schema_unavailable"
+        ? advisorySetup
+        : getComplianceSchemaUnavailableReadiness()
       : null;
   const sources = sourcesQuery.data ?? emptySources;
   const documents = documentsQuery.data ?? emptyDocuments;
@@ -251,38 +275,13 @@ export function ComplianceClient() {
         </section>
       ) : null}
 
-      <section className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Reviewed sources
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {reviewedSources.length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Documents
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {documents.length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Chunks
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {chunks.length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Advisory audits
-          </p>
-          <p className="mt-2 text-2xl font-bold text-neutralDark">
-            {audits.length}
-          </p>
+      <section className="flex flex-col gap-3">
+        <Eyebrow tone="accent">Compliance workspace</Eyebrow>
+        <div className="grid gap-3 md:grid-cols-4">
+          <StatTile label="Reviewed sources" value={reviewedSources.length} />
+          <StatTile label="Documents" value={documents.length} />
+          <StatTile label="Chunks" value={chunks.length} />
+          <StatTile label="Advisory audits" value={audits.length} />
         </div>
       </section>
 
@@ -297,9 +296,9 @@ export function ComplianceClient() {
               advisories; draft and archived material stays visible for review.
             </p>
           </div>
-          <div className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
+          <StatusPill tone="success">
             Ready workflows: {knowledgeBaseReadiness.readyWorkflowCount}
-          </div>
+          </StatusPill>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {knowledgeBaseReadiness.workflows.map((item) => (
@@ -311,7 +310,9 @@ export function ComplianceClient() {
                 {formatWorkflow(item.workflow)}
               </p>
               <p className="mt-1 text-xs uppercase tracking-wide text-theme-text-muted">
-                {item.status.replace(/_/g, " ")}
+                <StatusPill tone={readinessTone(item.status)}>
+                  {item.status.replace(/_/g, " ")}
+                </StatusPill>
               </p>
               <p className="mt-2 text-theme-text-secondary">
                 {item.reviewedSources} reviewed, {item.draftSources} draft
@@ -327,60 +328,69 @@ export function ComplianceClient() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-4">
-        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Chemical review
-          </p>
-          <p className="mt-2 text-sm font-semibold text-neutralDark">
-            {chemicalReadiness.status === "advisory_ready"
-              ? "Citations available"
-              : "Needs reviewed citations"}
-          </p>
-          <p className="mt-2 text-sm text-theme-text-secondary">
-            {chemicalReadiness.required_fields.filter((field) => field.status === "missing").length} missing fields from {logs.length} chemical logs.
-          </p>
-        </article>
-        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Recurring routes
-          </p>
-          <p className="mt-2 text-sm font-semibold text-neutralDark">
-            {jobs.filter((job) => job.status === "completed").length} completed jobs
-          </p>
-          <p className="mt-2 text-sm text-theme-text-secondary">
-            {recurringReadiness.status === "advisory_ready"
-              ? "Ready for cited prompt review."
-              : "Awaiting cited route rules."}
-          </p>
-        </article>
-        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            WDO / Branch 3
-          </p>
-          <p className="mt-2 text-sm font-semibold text-neutralDark">
-            SPCB source lane
-          </p>
-          <p className="mt-2 text-sm text-theme-text-secondary">
-            Inspection reports and damaged-member evidence stay advisory until
-            reviewed source chunks are ingested.
-          </p>
-        </article>
-        <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-            Multi-unit audits
-          </p>
-          <p className="mt-2 text-sm font-semibold text-neutralDark">
-            {multiUnitSummary.totalUnits} units modeled
-          </p>
-          <p className="mt-2 text-sm text-theme-text-secondary">
-            {multiUnitSummary.totalUnits === 0
-              ? "Not live yet - unit roster and per-unit treatment hooks are deferred."
-              : setupReadiness
-                ? "Schema setup is pending for unit roster and per-unit treatment evidence."
-                : "Schema is ready for unit roster and per-unit treatment evidence."}
-          </p>
-        </article>
+      <section className="flex flex-col gap-3">
+        <Eyebrow tone="accent">Advisory readiness</Eyebrow>
+        <div className="grid gap-4 lg:grid-cols-4">
+          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+              Chemical review
+            </p>
+            <p className="mt-2 text-sm font-semibold text-neutralDark">
+              {chemicalReadiness.status === "advisory_ready"
+                ? "Citations available"
+                : "Needs reviewed citations"}
+            </p>
+            <p className="mt-2 text-sm text-theme-text-secondary">
+              {
+                chemicalReadiness.required_fields.filter(
+                  (field) => field.status === "missing",
+                ).length
+              }{" "}
+              missing fields from {logs.length} chemical logs.
+            </p>
+          </article>
+          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+              Recurring routes
+            </p>
+            <p className="mt-2 text-sm font-semibold text-neutralDark">
+              {jobs.filter((job) => job.status === "completed").length}{" "}
+              completed jobs
+            </p>
+            <p className="mt-2 text-sm text-theme-text-secondary">
+              {recurringReadiness.status === "advisory_ready"
+                ? "Ready for cited prompt review."
+                : "Awaiting cited route rules."}
+            </p>
+          </article>
+          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+              WDO / Branch 3
+            </p>
+            <p className="mt-2 text-sm font-semibold text-neutralDark">
+              SPCB source lane
+            </p>
+            <p className="mt-2 text-sm text-theme-text-secondary">
+              Inspection reports and damaged-member evidence stay advisory until
+              reviewed source chunks are ingested.
+            </p>
+          </article>
+          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+              Multi-unit audits
+            </p>
+            <p className="mt-2 text-sm font-semibold text-neutralDark">
+              {multiUnitSummary.totalUnits} units modeled
+            </p>
+            <p className="mt-2 text-sm text-theme-text-secondary">
+              {multiUnitSummary.totalUnits === 0
+                ? "Not live yet - unit roster and per-unit treatment hooks are deferred."
+                : setupReadiness
+                  ? "Schema setup is pending for unit roster and per-unit treatment evidence."
+                  : "Schema is ready for unit roster and per-unit treatment evidence."}
+            </p>
+          </article>
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -427,8 +437,7 @@ export function ComplianceClient() {
                 {error}
               </p>
             ) : null}
-            <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primaryDark disabled:cursor-not-allowed disabled:bg-theme-border-default"
+            <Button
               disabled={createAdvisory.isPending || Boolean(setupReadiness)}
               type="submit"
             >
@@ -437,7 +446,7 @@ export function ComplianceClient() {
                 : createAdvisory.isPending
                   ? "Reviewing"
                   : "Run advisory"}
-            </button>
+            </Button>
           </div>
         </form>
 
@@ -480,7 +489,9 @@ export function ComplianceClient() {
               >
                 {advisory.status.replace(/_/g, " ")}
               </p>
-              <p className="text-sm text-theme-text-secondary">{advisory.summary}</p>
+              <p className="text-sm text-theme-text-secondary">
+                {advisory.summary}
+              </p>
               {advisoryEvaluation ? (
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm">
                   <h3 className="font-semibold text-neutralDark">Evaluation</h3>
@@ -540,7 +551,9 @@ export function ComplianceClient() {
                       <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
                         {field.status}
                       </span>
-                      <p className="mt-1 text-theme-text-secondary">{field.reason}</p>
+                      <p className="mt-1 text-theme-text-secondary">
+                        {field.reason}
+                      </p>
                     </li>
                   ))}
                 </ul>
@@ -562,7 +575,9 @@ export function ComplianceClient() {
                         <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
                           {finding.severity}
                         </span>
-                        <p className="mt-1 text-theme-text-secondary">{finding.message}</p>
+                        <p className="mt-1 text-theme-text-secondary">
+                          {finding.message}
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -587,7 +602,9 @@ export function ComplianceClient() {
                         >
                           {citation.source_title}
                         </a>
-                        <p className="mt-1 text-theme-text-secondary">{citation.excerpt}</p>
+                        <p className="mt-1 text-theme-text-secondary">
+                          {citation.excerpt}
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -605,7 +622,9 @@ export function ComplianceClient() {
             {auditsQuery.isLoading ? (
               <EmptyState>Loading advisory audits</EmptyState>
             ) : auditsQuery.error ? (
-              <EmptyState>Advisory audits unavailable; setup or retry required.</EmptyState>
+              <EmptyState>
+                Advisory audits unavailable; setup or retry required.
+              </EmptyState>
             ) : audits.length === 0 ? (
               <EmptyState>No advisory audits recorded</EmptyState>
             ) : (

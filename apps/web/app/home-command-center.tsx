@@ -88,7 +88,9 @@ function formatCurrency(cents: number) {
   }).format(cents / 100);
 }
 
-function inventoryUnit(item: Pick<ChemicalInventoryItem, "unit"> | { unit?: string }) {
+function inventoryUnit(
+  item: Pick<ChemicalInventoryItem, "unit"> | { unit?: string },
+) {
   return item.unit ? String(item.unit) : "units";
 }
 
@@ -135,7 +137,9 @@ function DashboardMetricCard({
       <p className="mt-3 text-3xl font-extrabold tabular-nums text-primitive-navy-950">
         {value}
       </p>
-      <p className="mt-1 text-sm font-bold text-theme-text-secondary">{detail}</p>
+      <p className="mt-1 text-sm font-bold text-theme-text-secondary">
+        {detail}
+      </p>
     </div>
   );
 }
@@ -148,13 +152,10 @@ function DashboardMap({
   mapState: ReturnType<typeof buildDispatchStaticMapState>;
 }) {
   return (
-    <Card
-      className="overflow-hidden"
-      padding="none"
-    >
+    <Card className="overflow-hidden" padding="none">
       <div className="flex items-start justify-between gap-3 border-b border-theme-border-subtle px-4 py-3">
         <div>
-          <Eyebrow tone="accent">Live map</Eyebrow>
+          <Eyebrow tone="accent">Today&apos;s route</Eyebrow>
           <h2 className="mt-1 text-lg font-bold">Live map</h2>
           <p className="text-sm font-semibold text-theme-text-secondary">
             {liveTechCount} techs live
@@ -202,9 +203,7 @@ function DashboardMap({
         ) : null}
       </div>
       <div className="grid grid-cols-3 divide-x divide-theme-border-subtle border-t border-theme-border-subtle text-center text-xs font-bold text-theme-text-secondary">
-        <p className="px-2 py-2">
-          {mapState.summary.plotted_stops} plotted
-        </p>
+        <p className="px-2 py-2">{mapState.summary.plotted_stops} plotted</p>
         <p className="px-2 py-2">
           {mapState.summary.missing_coordinates_count} missing GPS
         </p>
@@ -346,7 +345,9 @@ export function HomeCommandCenter() {
   const query = search.trim().toLowerCase();
   const searchResults = query
     ? buildSearchItems({ inventory, invoices, jobs })
-        .filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(query))
+        .filter((item) =>
+          `${item.label} ${item.meta}`.toLowerCase().includes(query),
+        )
         .slice(0, 5)
     : [];
   const openInvoices = invoices.filter((invoice) =>
@@ -384,10 +385,7 @@ export function HomeCommandCenter() {
               >
                 Open dispatch
               </Link>
-              <Link
-                className={buttonClassName({ size: "sm" })}
-                href="/jobs"
-              >
+              <Link className={buttonClassName({ size: "sm" })} href="/jobs">
                 New job
               </Link>
             </div>
@@ -395,10 +393,13 @@ export function HomeCommandCenter() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-2xl font-extrabold text-primitive-navy-950">
-                {greetingLabel(now)}, {firstName(profile?.display_name ?? profile?.email)}
+                {greetingLabel(now)},{" "}
+                {firstName(profile?.display_name ?? profile?.email)}
               </p>
-              <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-                {loading ? "Refreshing operations snapshot" : state.nextAction.summary}
+              <p className="mt-1 min-h-5 text-sm font-semibold text-theme-text-secondary">
+                {loading
+                  ? "Refreshing operations snapshot"
+                  : state.nextAction.summary}
               </p>
             </div>
             <StatusPill tone={loading ? "neutral" : "info"}>
@@ -413,10 +414,12 @@ export function HomeCommandCenter() {
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="accent">Search focus</Eyebrow>
-                <h2 className="mt-1 text-lg font-bold">Search focus</h2>
+                <Eyebrow tone="accent">Search</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">Search results</h2>
               </div>
-              <StatusPill tone="neutral">{searchResults.length} matches</StatusPill>
+              <StatusPill tone="neutral">
+                {searchResults.length} matches
+              </StatusPill>
             </div>
             <div className="mt-3 divide-y divide-theme-border-subtle">
               {searchResults.length > 0 ? (
@@ -426,8 +429,12 @@ export function HomeCommandCenter() {
                     href={item.href}
                     key={`${item.href}-${item.label}`}
                   >
-                    <p className="font-bold text-primitive-navy-950">{item.label}</p>
-                    <p className="mt-1 text-theme-text-secondary">{item.meta}</p>
+                    <p className="font-bold text-primitive-navy-950">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-theme-text-secondary">
+                      {item.meta}
+                    </p>
                   </Link>
                 ))
               ) : (
@@ -459,9 +466,12 @@ export function HomeCommandCenter() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Eyebrow tone="accent">Today&apos;s dispatch</Eyebrow>
-                <h2 className="mt-1 text-xl font-bold">Today&apos;s schedule</h2>
+                <h2 className="mt-1 text-xl font-bold">
+                  Today&apos;s schedule
+                </h2>
                 <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-                  {state.schedule.length} jobs · {technicians.length} technicians
+                  {state.schedule.length} jobs · {technicians.length}{" "}
+                  technicians
                 </p>
               </div>
               <Link
@@ -498,8 +508,8 @@ export function HomeCommandCenter() {
                 ))
               ) : (
                 <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm font-semibold text-theme-text-secondary">
-                  No jobs scheduled for today yet. Seed the demo story or create a
-                  job to populate the dispatch list.
+                  No jobs scheduled for today yet. Seed the demo story or create
+                  a job to populate the dispatch list.
                 </p>
               )}
             </div>
@@ -515,11 +525,17 @@ export function HomeCommandCenter() {
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="danger">Work queue</Eyebrow>
-                <h2 className="mt-1 text-lg font-bold">Jobs needing attention</h2>
+                <Eyebrow tone="accent">Work queue</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">
+                  Jobs needing attention
+                </h2>
               </div>
-              <StatusPill tone={state.alerts.length > 0 ? "warning" : "success"}>
-                {state.alerts.length > 0 ? `${state.alerts.length} open` : "Clear"}
+              <StatusPill
+                tone={state.alerts.length > 0 ? "warning" : "success"}
+              >
+                {state.alerts.length > 0
+                  ? `${state.alerts.length} open`
+                  : "Clear"}
               </StatusPill>
             </div>
             <div className="mt-4 grid gap-3">
@@ -539,7 +555,8 @@ export function HomeCommandCenter() {
                 ))
               ) : (
                 <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
-                  Active route and launch checks are clear for the loaded demo data.
+                  Active route and launch checks are clear for the loaded demo
+                  data.
                 </p>
               )}
               <Link
@@ -558,10 +575,12 @@ export function HomeCommandCenter() {
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="danger">Low inventory</Eyebrow>
+                <Eyebrow tone="accent">Low inventory</Eyebrow>
                 <h2 className="mt-1 text-lg font-bold">Low inventory</h2>
               </div>
-              <StatusPill tone={lowInventory.length > 0 ? "warning" : "success"}>
+              <StatusPill
+                tone={lowInventory.length > 0 ? "warning" : "success"}
+              >
                 {lowInventory.length > 0 ? "Review" : "Stocked"}
               </StatusPill>
             </div>
@@ -577,8 +596,8 @@ export function HomeCommandCenter() {
                       {item.name}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-                      {item.current_stock} {inventoryUnit(item)} on hand · reorder at{" "}
-                      {item.reorder_level}
+                      {item.current_stock} {inventoryUnit(item)} on hand ·
+                      reorder at {item.reorder_level}
                     </p>
                   </Link>
                 ))
@@ -618,104 +637,125 @@ export function HomeCommandCenter() {
                 ))
               ) : (
                 <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
-                  Activity appears after demo jobs, invoices, or inventory changes load.
+                  Activity appears after demo jobs, invoices, or inventory
+                  changes load.
                 </p>
               )}
             </div>
           </Card>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1fr_.8fr]">
-          <Card>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
+          <summary className="cursor-pointer px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <Eyebrow tone="danger">Launch gates</Eyebrow>
-                <h2 className="mt-1 text-xl font-bold">Smoke readiness</h2>
+                <Eyebrow tone="muted">Admin tools</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">
+                  Launch readiness tools
+                </h2>
               </div>
-              <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
-                Operator checks stay provider-free until approved env and access are
-                available.
-              </p>
+              <StatusPill tone="neutral">Provider-free checks</StatusPill>
             </div>
-            <div className="mt-4 divide-y divide-theme-border-subtle">
-              {state.launchReadiness.map((item) => (
-                <Link
-                  className="block py-3 transition hover:bg-theme-background-subtle"
-                  href={item.href}
-                  key={item.id}
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-primitive-navy-950">
-                        {item.label}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-                        {item.summary}
-                      </p>
-                    </div>
-                    <StatusPill tone={severityTones[item.severity]}>
-                      {item.stateLabel}
-                    </StatusPill>
-                  </div>
-                  <p className="mt-2 text-xs font-semibold text-theme-text-muted">
-                    {item.action}
-                  </p>
-                  {item.command ? (
-                    <p className="mt-2 rounded-md bg-primitive-slate-100 px-2 py-1 font-mono text-xs text-theme-text-secondary">
-                      {item.command}
-                    </p>
-                  ) : null}
-                </Link>
-              ))}
-            </div>
-          </Card>
-          <DemoSeedControls />
-        </section>
-
-        <section>
-          <Card>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <Eyebrow tone="danger">Demo readiness</Eyebrow>
-                <h2 className="mt-1 text-xl font-bold">Guided demo smoke</h2>
-              </div>
-              <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
-                Route links and evidence prompts are operator aids only. They do
-                not store checklist state or require production customer data.
-              </p>
-            </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-5">
-              {state.smokeChecklist.map((item, index) => (
-                <Link
-                  className="flex min-h-64 flex-col gap-4 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4 transition hover:border-primitive-sky-500 hover:bg-theme-background-surface hover:shadow-sm"
-                  href={item.href}
-                  key={item.id}
-                >
+          </summary>
+          <div className="hidden gap-4 border-t border-theme-border-subtle p-4 group-open:grid">
+            <section className="grid gap-4 xl:grid-cols-[1fr_.8fr]">
+              <Card className="shadow-none">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase text-theme-text-muted">
-                      Step {index + 1}
-                    </p>
-                    <p className="mt-2 text-sm font-bold text-primitive-navy-950">
-                      {item.label}
-                    </p>
-                    <p className="mt-2 text-xs font-bold uppercase text-primitive-sky-500">
-                      {item.routeLabel}
-                    </p>
+                    <Eyebrow tone="muted">Launch gates</Eyebrow>
+                    <h2 className="mt-1 text-xl font-bold">Smoke readiness</h2>
                   </div>
-                  <div className="flex flex-1 flex-col justify-end gap-3 text-sm">
-                    <p className="text-theme-text-secondary">{item.action}</p>
-                    <p className="font-semibold text-theme-text-secondary">
-                      Success: {item.successSignal}
-                    </p>
-                    <p className="text-xs font-semibold text-theme-text-muted">
-                      {item.evidencePrompt}
-                    </p>
+                  <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
+                    Operator checks stay provider-free until approved env and
+                    access are available.
+                  </p>
+                </div>
+                <div className="mt-4 divide-y divide-theme-border-subtle">
+                  {state.launchReadiness.map((item) => (
+                    <Link
+                      className="block py-3 transition hover:bg-theme-background-subtle"
+                      href={item.href}
+                      key={item.id}
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-primitive-navy-950">
+                            {item.label}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                            {item.summary}
+                          </p>
+                        </div>
+                        <StatusPill tone={severityTones[item.severity]}>
+                          {item.stateLabel}
+                        </StatusPill>
+                      </div>
+                      <p className="mt-2 text-xs font-semibold text-theme-text-muted">
+                        {item.action}
+                      </p>
+                      {item.command ? (
+                        <p className="mt-2 rounded-md bg-primitive-slate-100 px-2 py-1 font-mono text-xs text-theme-text-secondary">
+                          {item.command}
+                        </p>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              </Card>
+              <DemoSeedControls />
+            </section>
+
+            <section>
+              <Card className="shadow-none">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <Eyebrow tone="muted">Demo readiness</Eyebrow>
+                    <h2 className="mt-1 text-xl font-bold">
+                      Guided demo smoke
+                    </h2>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </Card>
-        </section>
+                  <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
+                    Route links and evidence prompts are operator aids only.
+                    They do not store checklist state or require production
+                    customer data.
+                  </p>
+                </div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-5">
+                  {state.smokeChecklist.map((item, index) => (
+                    <Link
+                      className="flex min-h-64 flex-col gap-4 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4 transition hover:border-primitive-sky-500 hover:bg-theme-background-surface hover:shadow-sm"
+                      href={item.href}
+                      key={item.id}
+                    >
+                      <div>
+                        <p className="text-xs font-bold uppercase text-theme-text-muted">
+                          Step {index + 1}
+                        </p>
+                        <p className="mt-2 text-sm font-bold text-primitive-navy-950">
+                          {item.label}
+                        </p>
+                        <p className="mt-2 text-xs font-bold uppercase text-primitive-sky-500">
+                          {item.routeLabel}
+                        </p>
+                      </div>
+                      <div className="flex flex-1 flex-col justify-end gap-3 text-sm">
+                        <p className="text-theme-text-secondary">
+                          {item.action}
+                        </p>
+                        <p className="font-semibold text-theme-text-secondary">
+                          Success: {item.successSignal}
+                        </p>
+                        <p className="text-xs font-semibold text-theme-text-muted">
+                          {item.evidencePrompt}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </Card>
+            </section>
+          </div>
+        </details>
       </div>
     </main>
   );

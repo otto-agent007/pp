@@ -229,7 +229,9 @@ function chooseSearchableOption(
   );
 
   expect(listbox).toBeInTheDocument();
-  fireEvent.mouseDown(within(listbox!).getByRole("option", { name: optionName }));
+  fireEvent.mouseDown(
+    within(listbox!).getByRole("option", { name: optionName }),
+  );
   fireEvent.blur(input);
 }
 
@@ -360,23 +362,33 @@ describe("AutomationClient", () => {
   it("renders summaries and filters notifications", () => {
     render(<AutomationClient />);
 
+    expect(screen.getByText("Operator snapshot")).toBeInTheDocument();
+    expect(screen.getByText("Delivery health")).toBeInTheDocument();
     expect(screen.getByText("Call Apex")).toBeInTheDocument();
     expect(screen.getByText("Notification templates")).toBeInTheDocument();
     expect(screen.getAllByText("Follow-up call").length).toBeGreaterThan(0);
     expect(screen.getByText("Notification generation")).toBeInTheDocument();
-    expect(screen.getByText("Provider: Webhook configured")).toBeInTheDocument();
-    expect(screen.getByText("Provider credential configured")).toBeInTheDocument();
-    expect(screen.getByText("Webhook notification delivery")).toBeInTheDocument();
+    expect(
+      screen.getByText("Provider: Webhook configured"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Provider credential configured"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Webhook notification delivery"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "Provider delivery is configured, but receipts remain evidence-gated until provider smoke passes.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Follow up with Apex Homes").length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      screen.getAllByText("Follow up with Apex Homes").length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText("success")).toBeInTheDocument();
-    expect(screen.getByText(/Last run .* by Manual \(admin-1\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Last run .* by Manual \(admin-1\)/),
+    ).toBeInTheDocument();
     expect(screen.getByText("Duplicates")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Post-service follow-up" }),
@@ -412,8 +424,12 @@ describe("AutomationClient", () => {
         "Webhook delivery and receipts remain deferred until provider setup is approved.",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/https:\/\/provider.example/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/NOTIFICATION_DELIVERY_/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/https:\/\/provider.example/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/NOTIFICATION_DELIVERY_/i),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/webhook secret/i)).not.toBeInTheDocument();
   });
 
@@ -443,9 +459,7 @@ describe("AutomationClient", () => {
     expect(
       screen.getByText("Provider message: provider-message-1"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Last attempt May 6, 2026/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Last attempt May 6, 2026/)).toBeInTheDocument();
 
     await user.selectOptions(
       screen.getByLabelText("Notification delivery status"),
@@ -529,7 +543,9 @@ describe("AutomationClient", () => {
       screen.getByText("Recipient: Apex Homes | Email missing | Phone ready"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Recipient: No customer | Email missing | Phone missing"),
+      screen.getByText(
+        "Recipient: No customer | Email missing | Phone missing",
+      ),
     ).toBeInTheDocument();
 
     await user.selectOptions(
@@ -571,7 +587,9 @@ describe("AutomationClient", () => {
     render(<AutomationClient />);
 
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
-    expect(screen.getByRole("heading", { name: "Edit rule" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Edit rule" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Rule template")).toHaveValue("template-1");
     fireEvent.change(screen.getByLabelText("Rule name"), {
       target: { value: "Updated follow-up" },
@@ -595,7 +613,10 @@ describe("AutomationClient", () => {
     const user = userEvent.setup();
     render(<AutomationClient />);
 
-    await user.selectOptions(screen.getByLabelText("Rule template"), "template-1");
+    await user.selectOptions(
+      screen.getByLabelText("Rule template"),
+      "template-1",
+    );
     await user.selectOptions(
       screen.getByLabelText("Rule type"),
       "recurring_service_prompt",
@@ -665,9 +686,9 @@ describe("AutomationClient", () => {
     expect(section.getByLabelText("Template preview title")).toHaveTextContent(
       "Call Apex Homes",
     );
-    expect(section.getByLabelText("Template preview message")).toHaveTextContent(
-      "Visit 10 Pine Street on May 6, 2026",
-    );
+    expect(
+      section.getByLabelText("Template preview message"),
+    ).toHaveTextContent("Visit 10 Pine Street on May 6, 2026");
 
     fireEvent.change(screen.getByLabelText("Reminder title"), {
       target: { value: variableTemplate.title },
@@ -747,7 +768,9 @@ describe("AutomationClient", () => {
     render(<AutomationClient />);
 
     chooseSearchableOption("Reminder template", "follow", "Follow-up call");
-    expect(screen.getByLabelText("Reminder title")).toHaveValue("Call customer");
+    expect(screen.getByLabelText("Reminder title")).toHaveValue(
+      "Call customer",
+    );
     chooseSearchableOption("Reminder rule", "post", "Post-service follow-up");
     chooseSearchableOption("Reminder customer", "apex", "Apex Homes");
     fireEvent.change(screen.getByLabelText("Reminder due"), {
@@ -755,7 +778,9 @@ describe("AutomationClient", () => {
     });
     await user.click(screen.getByRole("button", { name: "Save reminder" }));
     await user.click(screen.getAllByRole("button", { name: "Send" })[0]);
-    await user.click(screen.getAllByRole("button", { name: "Mark handled" })[0]);
+    await user.click(
+      screen.getAllByRole("button", { name: "Mark handled" })[0],
+    );
     await user.click(screen.getAllByRole("button", { name: "Dismiss" })[0]);
 
     expect(createNotification).toHaveBeenCalledWith(
@@ -775,7 +800,9 @@ describe("AutomationClient", () => {
     const user = userEvent.setup();
     render(<AutomationClient />);
 
-    expect(screen.getByText("2 ready to send from the current list")).toBeInTheDocument();
+    expect(
+      screen.getByText("2 ready to send from the current list"),
+    ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Send visible pending" }),

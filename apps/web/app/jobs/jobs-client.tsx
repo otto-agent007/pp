@@ -7,7 +7,19 @@ import {
   validateJobInput,
 } from "@pest-patrol/domain";
 import type { Customer, Job, JobInput, JobStatus } from "@pest-patrol/types";
-import { SearchableSelect } from "@pest-patrol/ui";
+import {
+  Button,
+  Card,
+  Eyebrow,
+  SearchableSelect,
+  StatTile,
+  StatusPill,
+  buttonClassName,
+  formControlClassName,
+  formLabelClassName,
+  formTextareaClassName,
+  type StatusPillTone,
+} from "@pest-patrol/ui";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -40,6 +52,22 @@ const statusLabels: Record<JobStatus, string> = {
   canceled: "Canceled",
 };
 
+function jobStatusTone(status: JobStatus): StatusPillTone {
+  if (status === "completed") {
+    return "success";
+  }
+
+  if (status === "canceled") {
+    return "danger";
+  }
+
+  if (status === "en_route" || status === "in_progress") {
+    return "warning";
+  }
+
+  return "info";
+}
+
 function toDateTimeInput(value: string | null | undefined) {
   if (!value) {
     return "";
@@ -67,9 +95,11 @@ function jobToInput(job: Job): JobInput {
 }
 
 function decorateJob(job: Job, customers: Customer[]) {
-  const customer = job.customer ?? customers.find((item) => item.id === job.customer_id);
+  const customer =
+    job.customer ?? customers.find((item) => item.id === job.customer_id);
   const location =
-    job.location ?? customer?.locations?.find((item) => item.id === job.location_id);
+    job.location ??
+    customer?.locations?.find((item) => item.id === job.location_id);
 
   return {
     ...job,
@@ -102,7 +132,10 @@ export function JobsClient() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const activeCustomers = useMemo(
-    () => (customersQuery.data ?? []).filter((customer) => customer.status === "active"),
+    () =>
+      (customersQuery.data ?? []).filter(
+        (customer) => customer.status === "active",
+      ),
     [customersQuery.data],
   );
   const selectedCustomer = useMemo(
@@ -111,7 +144,9 @@ export function JobsClient() {
   );
   const availableLocations = useMemo(
     () =>
-      selectedCustomer?.locations?.filter((location) => location.status === "active") ?? [],
+      selectedCustomer?.locations?.filter(
+        (location) => location.status === "active",
+      ) ?? [],
     [selectedCustomer],
   );
   const customerOptions = useMemo(
@@ -157,8 +192,24 @@ export function JobsClient() {
     [techniciansQuery.data],
   );
   const decoratedJobs = useMemo(
-    () => (jobsQuery.data ?? []).map((job) => decorateJob(job, customersQuery.data ?? [])),
+    () =>
+      (jobsQuery.data ?? []).map((job) =>
+        decorateJob(job, customersQuery.data ?? []),
+      ),
     [customersQuery.data, jobsQuery.data],
+  );
+  const jobCounts = useMemo(
+    () => ({
+      canceled: decoratedJobs.filter((job) => job.status === "canceled").length,
+      completed: decoratedJobs.filter((job) => job.status === "completed")
+        .length,
+      enRoute: decoratedJobs.filter(
+        (job) => job.status === "en_route" || job.status === "in_progress",
+      ).length,
+      scheduled: decoratedJobs.filter((job) => job.status === "scheduled")
+        .length,
+    }),
+    [decoratedJobs],
   );
   const visibleJobs = useMemo(
     () => filterJobs(decoratedJobs, search, status, dateFrom, dateTo),
@@ -180,10 +231,14 @@ export function JobsClient() {
   }
 
   function selectCustomer(customerId: string) {
-    const nextCustomer = activeCustomers.find((customer) => customer.id === customerId);
-    const nextLocation = nextCustomer?.locations?.find(
-      (location) => location.status === "active" && location.is_primary,
-    ) ?? nextCustomer?.locations?.find((location) => location.status === "active");
+    const nextCustomer = activeCustomers.find(
+      (customer) => customer.id === customerId,
+    );
+    const nextLocation =
+      nextCustomer?.locations?.find(
+        (location) => location.status === "active" && location.is_primary,
+      ) ??
+      nextCustomer?.locations?.find((location) => location.status === "active");
 
     updateForm({
       customer_id: customerId,
@@ -218,7 +273,9 @@ export function JobsClient() {
       resetForm();
       setSaveMessage(nextMessage);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save job");
+      setFormError(
+        error instanceof Error ? error.message : "Unable to save job",
+      );
     }
   }
 
@@ -226,23 +283,23 @@ export function JobsClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Admin
-          </p>
-          <h1 className="text-3xl font-bold text-neutralDark">Jobs</h1>
+          <Eyebrow tone="accent">Admin</Eyebrow>
+          <h1 className="text-3xl font-bold text-theme-text-primary">Jobs</h1>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
             aria-label="Search jobs"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={formControlClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Job status"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
-            onChange={(event) => setStatus(event.target.value as JobStatusFilter)}
+            className={formControlClassName}
+            onChange={(event) =>
+              setStatus(event.target.value as JobStatusFilter)
+            }
             value={status}
           >
             <option value="all">All statuses</option>
@@ -254,14 +311,14 @@ export function JobsClient() {
           </select>
           <input
             aria-label="Date from"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={formControlClassName}
             onChange={(event) => setDateFrom(event.target.value)}
             type="date"
             value={dateFrom}
           />
           <input
             aria-label="Date to"
-            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+            className={formControlClassName}
             onChange={(event) => setDateTo(event.target.value)}
             type="date"
             value={dateTo}
@@ -269,62 +326,108 @@ export function JobsClient() {
         </div>
       </header>
 
+      <section className="flex flex-col gap-3">
+        <div>
+          <Eyebrow tone="accent">Job queue</Eyebrow>
+          <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
+            Ready for dispatch
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-4">
+          <StatTile
+            detail="Awaiting assignment or route review"
+            label="Scheduled jobs"
+            value={jobCounts.scheduled}
+          />
+          <StatTile
+            detail="Technician is moving through the route"
+            label="En route"
+            tone="warning"
+            value={jobCounts.enRoute}
+          />
+          <StatTile
+            detail="Ready for closeout handoff"
+            label="Completed"
+            tone="success"
+            value={jobCounts.completed}
+          />
+          <StatTile
+            detail="Removed from dispatch"
+            label="Canceled"
+            tone="danger"
+            value={jobCounts.canceled}
+          />
+        </div>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {jobsQuery.isLoading ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
               Loading jobs
-            </p>
+            </Card>
           ) : visibleJobs.length === 0 ? (
-            <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
-              No jobs found
-            </p>
+            <Card className="text-sm text-theme-text-secondary" padding="lg">
+              <h2 className="text-lg font-bold text-theme-text-primary">
+                No jobs found
+              </h2>
+              <p className="mt-2">
+                Adjust the filters or start a new service visit from the job
+                form.
+              </p>
+              <a
+                className={buttonClassName({
+                  className: "mt-4",
+                  size: "sm",
+                  variant: "ghost",
+                })}
+                href="#job-form"
+              >
+                Create first job
+              </a>
+            </Card>
           ) : (
             visibleJobs.map((job) => (
-              <article
-                className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-                key={job.id}
-              >
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-lg font-semibold text-neutralDark">
-                        {job.customer?.name ?? "Unknown customer"}
-                      </h2>
-                      <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-medium text-theme-text-secondary">
-                        {statusLabels[job.status]}
-                      </span>
+              <article key={job.id}>
+                <Card padding="lg">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg font-semibold text-theme-text-primary">
+                          {job.customer?.name ?? "Unknown customer"}
+                        </h2>
+                        <StatusPill tone={jobStatusTone(job.status)}>
+                          {statusLabels[job.status]}
+                        </StatusPill>
+                      </div>
+                      <p className="mt-2 text-sm text-theme-text-secondary">
+                        {formatSchedule(job.scheduled_start)}
+                      </p>
+                      <p className="mt-1 text-sm text-theme-text-secondary">
+                        {job.location?.address ?? "No location saved"}
+                      </p>
+                      {job.service_notes ? (
+                        <p className="mt-3 text-sm text-theme-text-secondary">
+                          {job.service_notes}
+                        </p>
+                      ) : null}
                     </div>
-                    <p className="mt-2 text-sm text-theme-text-secondary">
-                      {formatSchedule(job.scheduled_start)}
-                    </p>
-                    <p className="mt-1 text-sm text-theme-text-secondary">
-                      {job.location?.address ?? "No location saved"}
-                    </p>
-                    {job.service_notes ? (
-                      <p className="mt-3 text-sm text-theme-text-secondary">{job.service_notes}</p>
-                    ) : null}
+                    <div className="flex gap-2">
+                      <Button onClick={() => editJob(job)} variant="ghost">
+                        Edit
+                      </Button>
+                      {job.status !== "canceled" ? (
+                        <Button
+                          disabled={cancelJob.isPending}
+                          onClick={() => cancelJob.mutate(job.id)}
+                          variant="danger"
+                        >
+                          Cancel
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                      onClick={() => editJob(job)}
-                      type="button"
-                    >
-                      Edit
-                    </button>
-                    {job.status !== "canceled" ? (
-                      <button
-                        className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-medium text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
-                        disabled={cancelJob.isPending}
-                        onClick={() => cancelJob.mutate(job.id)}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
+                </Card>
               </article>
             ))
           )}
@@ -332,50 +435,57 @@ export function JobsClient() {
 
         <form
           className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
+          id="job-form"
           onSubmit={submitJob}
         >
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-neutralDark">
+            <h2 className="text-xl font-semibold text-theme-text-primary">
               {editingJob ? "Edit job" : "Create job"}
             </h2>
             {editingJob ? (
-              <button
-                className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-medium text-neutralDark hover:bg-theme-background-subtle"
-                onClick={resetForm}
-                type="button"
-              >
+              <Button onClick={resetForm} variant="ghost">
                 New
-              </button>
+              </Button>
             ) : null}
           </div>
 
-          <div className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3">
-            <p className="text-sm font-semibold text-status-alert-warning-fg">
-              Job scheduling demo tip
-            </p>
-            <p className="mt-1 text-sm text-status-alert-warning-fg">
-              Select a customer first so the location list only shows that
-              customer active service addresses.
-            </p>
-            <p className="mt-1 text-sm text-status-alert-warning-fg">
-              Technician assignment is optional; unassigned jobs can still move
-              to dispatch review.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                className="inline-flex min-h-10 items-center rounded-md border border-status-alert-warning-border px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
-                href="/customers"
-              >
-                Add customer
-              </Link>
-              <Link
-                className="inline-flex min-h-10 items-center rounded-md border border-status-alert-warning-border px-3 text-sm font-semibold text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg"
-                href="/dispatch"
-              >
-                Review dispatch
-              </Link>
+          <details className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg">
+            <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+              Job setup notes
+            </summary>
+            <div className="hidden border-t border-status-alert-warning-border p-3 group-open:block">
+              <p className="text-sm text-status-alert-warning-fg">
+                Select a customer first so the location list only shows that
+                customer active service addresses.
+              </p>
+              <p className="mt-1 text-sm text-status-alert-warning-fg">
+                Technician assignment is optional; unassigned jobs can still
+                move to dispatch review.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  className={buttonClassName({
+                    className:
+                      "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                    variant: "ghost",
+                  })}
+                  href="/customers"
+                >
+                  Add customer
+                </Link>
+                <Link
+                  className={buttonClassName({
+                    className:
+                      "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                    variant: "ghost",
+                  })}
+                  href="/dispatch"
+                >
+                  Review dispatch
+                </Link>
+              </div>
             </div>
-          </div>
+          </details>
 
           {saveMessage ? (
             <div
@@ -384,7 +494,11 @@ export function JobsClient() {
             >
               <p>{saveMessage}</p>
               <Link
-                className="mt-3 inline-flex min-h-10 items-center rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fgStrong hover:bg-status-alert-success-bg"
+                className={buttonClassName({
+                  className:
+                    "mt-3 border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
+                  variant: "ghost",
+                })}
                 href="/dispatch"
               >
                 Open dispatch review
@@ -428,31 +542,37 @@ export function JobsClient() {
           />
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={formLabelClassName}>
               Start
               <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-                onChange={(event) => updateForm({ scheduled_start: event.target.value })}
+                className={formControlClassName}
+                onChange={(event) =>
+                  updateForm({ scheduled_start: event.target.value })
+                }
                 type="datetime-local"
                 value={form.scheduled_start}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className={formLabelClassName}>
               End
               <input
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-                onChange={(event) => updateForm({ scheduled_end: event.target.value })}
+                className={formControlClassName}
+                onChange={(event) =>
+                  updateForm({ scheduled_end: event.target.value })
+                }
                 type="datetime-local"
                 value={form.scheduled_end ?? ""}
               />
             </label>
           </div>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Status
             <select
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
-              onChange={(event) => updateForm({ status: event.target.value as JobStatus })}
+              className={formControlClassName}
+              onChange={(event) =>
+                updateForm({ status: event.target.value as JobStatus })
+              }
               value={form.status ?? "scheduled"}
             >
               {Object.entries(statusLabels).map(([value, label]) => (
@@ -463,22 +583,20 @@ export function JobsClient() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className={formLabelClassName}>
             Service notes
             <textarea
-              className="min-h-28 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
-              onChange={(event) => updateForm({ service_notes: event.target.value })}
+              className={formTextareaClassName}
+              onChange={(event) =>
+                updateForm({ service_notes: event.target.value })
+              }
               value={form.service_notes ?? ""}
             />
           </label>
 
-          <button
-            className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSaving}
-            type="submit"
-          >
+          <Button disabled={isSaving} type="submit">
             Save job
-          </button>
+          </Button>
         </form>
       </section>
     </main>

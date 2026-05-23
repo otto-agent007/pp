@@ -14,6 +14,9 @@ import {
   Eyebrow,
   StatusPill,
   buttonClassName,
+  formControlClassName,
+  formLabelClassName,
+  formTextareaClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import type {
@@ -61,10 +64,8 @@ const updateSuccessMessage =
 
 type LedgerTabId = "all" | "services" | "invoices" | "open" | "review";
 
-const fieldClassName =
-  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none focus:border-theme-action-primary";
-const labelClassName =
-  "flex flex-col gap-1 text-sm font-medium text-neutralDark";
+const fieldClassName = formControlClassName;
+const labelClassName = formLabelClassName;
 
 const ledgerTabs: Array<{ id: LedgerTabId; label: string }> = [
   { id: "all", label: "All" },
@@ -271,7 +272,7 @@ function CustomerLedgerSummary({
           <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Open balance
           </dt>
-          <dd className="mt-1 text-base font-bold text-neutralDark">
+          <dd className="mt-1 text-base font-bold text-theme-text-primary">
             {formatMoney(summary.openBalanceCents)}
           </dd>
         </div>
@@ -279,7 +280,7 @@ function CustomerLedgerSummary({
           <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Paid total
           </dt>
-          <dd className="mt-1 text-base font-bold text-neutralDark">
+          <dd className="mt-1 text-base font-bold text-theme-text-primary">
             {formatMoney(summary.paidCents)}
           </dd>
         </div>
@@ -287,7 +288,7 @@ function CustomerLedgerSummary({
           <dt className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
             Latest invoice
           </dt>
-          <dd className="mt-1 text-base font-bold text-neutralDark">
+          <dd className="mt-1 text-base font-bold text-theme-text-primary">
             {formatDate(summary.latestInvoiceAt)}
           </dd>
         </div>
@@ -427,11 +428,6 @@ function CustomerAccountFollowUp({
 
   return (
     <>
-      <CustomerLedgerSummary
-        customer={customer}
-        invoices={invoices}
-        jobs={jobs}
-      />
       <CustomerPortalLinks
         accountSummary={summary}
         customerContact={{
@@ -439,6 +435,11 @@ function CustomerAccountFollowUp({
           phone: customer.phone,
         }}
         customerId={customer.id}
+      />
+      <CustomerLedgerSummary
+        customer={customer}
+        invoices={invoices}
+        jobs={jobs}
       />
     </>
   );
@@ -458,7 +459,9 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
       <div className="min-w-0">
         <p
           className={`text-sm font-semibold ${
-            entry.review ? "text-status-alert-warning-fg" : "text-neutralDark"
+            entry.review
+              ? "text-status-alert-warning-fg"
+              : "text-theme-text-primary"
           }`}
         >
           <StatusPill tone={ledgerEntryTone(entry)}>{entry.label}</StatusPill>
@@ -474,7 +477,7 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
             className={`text-xs font-semibold ${
               entry.type === "void_invoice"
                 ? "text-theme-text-muted/70 line-through"
-                : "text-neutralDark"
+                : "text-theme-text-primary"
             }`}
           >
             {amountText}
@@ -511,6 +514,9 @@ export function CustomersClient() {
   const [form, setForm] = useState<CustomerInput>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [archiveConfirmationId, setArchiveConfirmationId] = useState<
+    string | null
+  >(null);
 
   const visibleCustomers = useMemo(
     () => filterCustomers(customersQuery.data ?? [], search, status),
@@ -531,6 +537,7 @@ export function CustomersClient() {
     setForm(customerToInput(customer));
     setFormError(null);
     setSaveMessage(null);
+    setArchiveConfirmationId(null);
   }
 
   function updateLocation(
@@ -593,12 +600,19 @@ export function CustomersClient() {
     }
   }
 
+  function confirmArchive(customerId: string) {
+    setArchiveConfirmationId(null);
+    archiveCustomer.mutate(customerId);
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="accent">Admin</Eyebrow>
-          <h1 className="text-3xl font-bold text-neutralDark">Customers</h1>
+          <h1 className="text-3xl font-bold text-theme-text-primary">
+            Customers
+          </h1>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
@@ -639,7 +653,7 @@ export function CustomersClient() {
                   <div className="flex min-w-0 gap-3">
                     <Avatar name={customer.name} size="lg" />
                     <div className="min-w-0">
-                      <h2 className="text-lg font-semibold text-neutralDark">
+                      <h2 className="text-lg font-semibold text-theme-text-primary">
                         {customer.name}
                       </h2>
                       <StatusPill dot={false} tone="neutral">
@@ -663,21 +677,51 @@ export function CustomersClient() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => editCustomer(customer)}
-                      variant="ghost"
-                    >
-                      Edit
-                    </Button>
-                    {customer.status === "active" ? (
+                  <div className="flex flex-col gap-2 md:items-end">
+                    <div className="flex gap-2">
                       <Button
-                        disabled={archiveCustomer.isPending}
-                        onClick={() => archiveCustomer.mutate(customer.id)}
-                        variant="danger"
+                        onClick={() => editCustomer(customer)}
+                        variant="ghost"
                       >
-                        Archive
+                        Edit
                       </Button>
+                      {customer.status === "active" ? (
+                        <Button
+                          disabled={archiveCustomer.isPending}
+                          onClick={() => setArchiveConfirmationId(customer.id)}
+                          variant="danger"
+                        >
+                          Archive
+                        </Button>
+                      ) : null}
+                    </div>
+                    {archiveConfirmationId === customer.id ? (
+                      <div
+                        aria-label={`Confirm archive for ${customer.name}`}
+                        className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3 text-sm"
+                        role="group"
+                      >
+                        <p className="font-semibold text-status-alert-warning-fg">
+                          Archive this customer?
+                        </p>
+                        <div className="mt-3 flex flex-wrap justify-end gap-2">
+                          <Button
+                            onClick={() => setArchiveConfirmationId(null)}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            Cancel archive
+                          </Button>
+                          <Button
+                            disabled={archiveCustomer.isPending}
+                            onClick={() => confirmArchive(customer.id)}
+                            size="sm"
+                            variant="danger"
+                          >
+                            Confirm archive
+                          </Button>
+                        </div>
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -699,7 +743,7 @@ export function CustomersClient() {
             onSubmit={submitCustomer}
           >
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-neutralDark">
+              <h2 className="text-lg font-semibold text-theme-text-primary">
                 {editingCustomer ? "Edit customer" : "Create customer"}
               </h2>
               {editingCustomer ? (
@@ -709,32 +753,31 @@ export function CustomersClient() {
               ) : null}
             </div>
 
-            <Card
-              className="border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
-              padding="sm"
-            >
-              <p className="text-sm font-semibold text-status-alert-warning-fg">
-                Customer setup demo tip
-              </p>
-              <p className="mt-1 text-sm text-status-alert-warning-fg">
-                Save the customer with one active service location, then
-                schedule the first job.
-              </p>
-              <p className="mt-1 text-sm text-status-alert-warning-fg">
-                Use portal links after closeout and billing are ready.
-              </p>
-              <Link
-                className={buttonClassName({
-                  className:
-                    "mt-3 border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
-                  size: "sm",
-                  variant: "ghost",
-                })}
-                href="/jobs"
-              >
-                Schedule job
-              </Link>
-            </Card>
+            <details className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg">
+              <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+                Customer setup notes
+              </summary>
+              <div className="hidden border-t border-status-alert-warning-border p-3 group-open:block">
+                <p className="text-sm text-status-alert-warning-fg">
+                  Save the customer with one active service location, then
+                  schedule the first job.
+                </p>
+                <p className="mt-1 text-sm text-status-alert-warning-fg">
+                  Use portal links after closeout and billing are ready.
+                </p>
+                <Link
+                  className={buttonClassName({
+                    className:
+                      "mt-3 border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                    size: "sm",
+                    variant: "ghost",
+                  })}
+                  href="/jobs"
+                >
+                  Schedule job
+                </Link>
+              </div>
+            </details>
 
             <label className={labelClassName}>
               Name
@@ -792,7 +835,7 @@ export function CustomersClient() {
             <label className={labelClassName}>
               Service notes
               <textarea
-                className={`${fieldClassName} min-h-24 py-2`}
+                className={formTextareaClassName}
                 onChange={(event) =>
                   setForm({ ...form, service_notes: event.target.value })
                 }
@@ -802,7 +845,7 @@ export function CustomersClient() {
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-neutralDark">
+                <h3 className="text-sm font-semibold text-theme-text-primary">
                   Locations
                 </h3>
                 <Button
@@ -855,7 +898,7 @@ export function CustomersClient() {
                   <label className={labelClassName}>
                     Location notes
                     <textarea
-                      className={`${fieldClassName} min-h-20 py-2`}
+                      className={`${formTextareaClassName} min-h-20`}
                       onChange={(event) =>
                         updateLocation(index, {
                           service_notes: event.target.value,
@@ -865,7 +908,7 @@ export function CustomersClient() {
                     />
                   </label>
                   <div className="flex items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 text-sm font-medium text-neutralDark">
+                    <label className="flex items-center gap-2 text-sm font-medium text-theme-text-primary">
                       <input
                         checked={Boolean(location.is_primary)}
                         onChange={(event) =>

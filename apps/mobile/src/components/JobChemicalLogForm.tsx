@@ -18,12 +18,7 @@ function chemicalLabel(item: ChemicalInventoryItem) {
 
 export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
   const copy = useLanguage((state) => state.t.jobs.fieldCopy);
-  const {
-    error: inventoryError,
-    items,
-    load,
-    status,
-  } = useChemicalInventory();
+  const { error: inventoryError, items, load, status } = useChemicalInventory();
   const { getDraft, queueLog, setDraftField } = useChemicalLogs();
   const drafts = useChemicalLogs((state) => state.drafts);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +68,9 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       ) : null}
 
       {status === "error" ? (
-        <Text style={mobileCaptureControlStyles.errorText}>{inventoryError}</Text>
+        <Text style={mobileCaptureControlStyles.errorText}>
+          {inventoryError}
+        </Text>
       ) : null}
 
       {status === "ready" && items.length === 0 ? (
@@ -99,15 +96,7 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
                   minHeight: 40,
                 }}
               >
-                <Text
-                  style={
-                    isActive
-                      ? mobileCaptureControlStyles.primaryButtonText
-                      : mobileCaptureControlStyles.secondaryButtonText
-                  }
-                >
-                  {chemicalLabel(item)}
-                </Text>
+                {chemicalLabel(item)}
               </CaptureButton>
             );
           })}
@@ -151,12 +140,14 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
       <CaptureButton
         disabled={items.length === 0}
         onPress={handleQueue}
-        style={items.length === 0 ? mobileCaptureControlStyles.disabledButton : undefined}
+        style={
+          items.length === 0
+            ? mobileCaptureControlStyles.disabledButton
+            : undefined
+        }
         variant="primary"
       >
-        <Text style={mobileCaptureControlStyles.primaryButtonText}>
-          {copy.chemical.queueButton}
-        </Text>
+        {copy.chemical.queueButton}
       </CaptureButton>
     </CaptureSection>
   );
