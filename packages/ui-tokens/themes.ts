@@ -8,7 +8,7 @@ export const lightTheme = {
     inverse: primitive.white,
   },
   background: {
-    canvas: primitive.cream[50],
+    canvas: primitive.white,
     surface: primitive.white,
     subtle: primitive.slate[50],
     inverse: primitive.navy[950],

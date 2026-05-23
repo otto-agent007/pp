@@ -4,6 +4,38 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Launch Readiness White Canvas V1 synced local `main` to the PR #53 merge
+  commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3` and opened
+  `codex/launch-readiness-white-canvas` while preserving the prior branch's
+  extra post-merge dispatch evidence commit.
+- GitHub/Vercel readiness evidence is current: PR #53 is merged, GitHub checks
+  reported `verify` success plus Vercel success, latest Ready preview is
+  `https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`,
+  and latest Ready production deployment is
+  `https://pest-patrol-m084wbv4s-ottoagent007-gmailcoms-projects.vercel.app`.
+- Read-only local and preview `demo:smoke` preflights remain blocked before
+  seed/reset or authenticated preview browser smoke on missing approved
+  Supabase env names; preview also remains gated on operator-approved
+  protected-preview access/sign-in.
+- `corepack pnpm compliance:ingest -- --dry-run --no-embed` still plans
+  6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI
+  calls.
+- Pending launch-sensitive migrations were reaudited through
+  `20260518021520_portal_send_succeeded_event.sql` without applying them; the
+  operator checklist now requires target confirmation, migration-history
+  inspection, timestamp-order apply, and post-apply dry-run checks.
+- The light app canvas token and legacy `neutralLight` alias now resolve to
+  white instead of cream, and `docs/DESIGN_SYSTEM.md` documents
+  `primitive/cream/50` as historical only for app canvas purposes.
+- Local fixture browser smoke passed on `/`, `/dispatch`, `/customers`,
+  `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`,
+  `/automation`, and tokened `/portal` at desktop and narrow widths with
+  expected fixture content, no signed-out/loading auth gate, no console/page
+  errors, no document-level horizontal overflow, and white sampled canvas
+  pixels on every route.
+- The slice kept seed/reset writes, migrations, Supabase/Vercel/provider/env
+  changes, live compliance ingestion, preview mutations, production mutations,
+  and API contract changes out of scope.
 - Admin Shell + Overview UI Kit Alignment V1 moved signed-in admin routes into
   a dark left-rail desktop shell with grouped operations/customer/billing/system
   navigation, mobile top brand row plus horizontal route strip, approved active
@@ -166,13 +198,13 @@ Follow-up candidates:
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
-- [ ] If using the local Supabase target, start or repair Docker Desktop's Linux engine and local Postgres before rerunning `supabase status -o env` and `supabase migration list --local`; the later May 20, 2026 check could not inspect local containers or migration history.
-- [ ] After explicit migration approval, run `compliance:ingest` against an approved local or preview Supabase environment before relying on source-backed `/compliance` advisories; the May 20, 2026 dry-run/no-embed preflight passed without Supabase writes or OpenAI calls.
+- [ ] If using the local Supabase target, start or repair Docker Desktop's Linux engine and local Postgres before rerunning `supabase status -o env` and `supabase migration list --local`; the May 23, 2026 check could not inspect local containers or migration history.
+- [ ] After explicit migration approval, run `compliance:ingest` against an approved local or preview Supabase environment before relying on source-backed `/compliance` advisories; the May 23, 2026 dry-run/no-embed preflight passed without Supabase writes or OpenAI calls.
 - [ ] If local Windows `vercel build` remains required, resolve the remaining Vercel CLI symlink blocker: after the `/auth/update-password` lambda mapping fix, local packaging now fails on `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
 - [ ] Operator runs local seed/reset with approved local Supabase credentials.
 - [ ] Operator runs preview seed from the dashboard or a protected shell with preview Supabase credentials.
 - [ ] Operator optionally supplies `DEMO_TECH_PASSWORD` for technician login demos.
-- [ ] Operator loads approved preview Supabase env names, then reruns preview demo preflight against the newest Ready preview discovered at execution time; the May 21, 2026 discovery was `https://pest-patrol-es7sfp699-ottoagent007-gmailcoms-projects.vercel.app`.
+- [ ] Operator loads approved preview Supabase env names, then reruns preview demo preflight against the newest Ready preview discovered at execution time; the May 23, 2026 discovery was `https://pest-patrol-2ayfmsfpw-ottoagent007-gmailcoms-projects.vercel.app`.
 - [ ] Run authenticated preview smoke against the seeded story and record sanitized findings for dispatch exceptions, mobile next actions, closeout filters, and portal handoff review.
 - [ ] Confirm manual-fallback provider smoke in an authenticated browser when webhook env names are intentionally unset.
 - [ ] Decide whether portal delivery receipts, richer provider failure states, or production launch checklist work should be next after webhook-backed evidence exists.

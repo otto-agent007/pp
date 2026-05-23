@@ -67,7 +67,7 @@ export const colors = {
   secondary: brand.secondary,
   accent: brand.accent,
   neutralDark: primitive.navy[950],
-  neutralLight: primitive.cream[50],
+  neutralLight: primitive.white,
 } as const;
 
 export type PrimitivePaletteFamily = keyof typeof primitive;

@@ -33,7 +33,7 @@ The source palette lives in `packages/ui-tokens/colors.ts` as `primitive`.
 | `primitive/green/200` | `#86EFAC` | Success borders |
 | `primitive/green/500` | `#16A34A` | Completed and success state |
 | `primitive/green/600` | `#15803D` | Strong success text |
-| `primitive/cream/50` | `#F6F2EA` | Light app canvas |
+| `primitive/cream/50` | `#F6F2EA` | Historical warm neutral; do not use for app canvas |
 | `primitive/slate/50` | `#F8FAFC` | Subtle light surfaces |
 | `primitive/slate/100` | `#F1F5F9` | Subtle fills and separators |
 | `primitive/slate/200` | `#E2E8F0` | Subtle borders |
@@ -42,7 +42,7 @@ The source palette lives in `packages/ui-tokens/colors.ts` as `primitive`.
 | `primitive/slate/700` | `#334155` | Secondary text |
 | `primitive/slate/800` | `#1E293B` | Secondary text and dark surfaces |
 | `primitive/slate/950` | `#0F172A` | Dark app canvas |
-| `primitive/white` | `#FFFFFF` | Light surfaces and inverse text |
+| `primitive/white` | `#FFFFFF` | Light app canvas, surfaces, and inverse text |
 
 Do not reintroduce generic palette families such as `blue`, `emerald`, `amber`,
 or `gray`. The old `palette` export remains only as an alias of `primitive`.
@@ -53,6 +53,11 @@ Use `lightTheme` for the default admin/web/mobile interface and `darkTheme` for
 dark contexts. `customerTheme` intentionally aliases `lightTheme` so customer
 surfaces share the same product vocabulary instead of becoming a separate visual
 system.
+
+The default light app canvas is white. Preserve cream as a primitive reference
+only; page, auth, admin shell, and route backgrounds should use
+`semantic/light/background/canvas` or `neutralLight` rather than
+`primitive/cream/50`.
 
 Core semantic paths:
 
