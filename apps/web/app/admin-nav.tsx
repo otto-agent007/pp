@@ -19,7 +19,10 @@ const adminRouteGroups = [
   },
   {
     label: "Customers",
-    routes: [{ href: "/customers", label: "Customers" }],
+    routes: [
+      { href: "/customers", label: "Customers" },
+      { href: "/escrow-re", label: "Escrow/RE" },
+    ],
   },
   {
     label: "Billing",
@@ -69,10 +72,10 @@ function MobileBrandRow({ role }: { role: string | null | undefined }) {
     <div className="flex items-center justify-between gap-3 border-b border-theme-text-inverse/10 px-3 py-2 md:block md:border-0 md:px-0 md:py-0">
       <Link
         aria-label="Pest Patrol OS — Home"
-        className="inline-flex items-center rounded-md bg-primitive-navy-900 px-2 py-1"
+        className="inline-flex items-center rounded-md bg-primitive-navy-900 px-2 py-1 md:w-full md:justify-center"
         href="/"
       >
-        <Wordmark label="decorative" variant="dark" width={156} />
+        <Wordmark label="decorative" variant="dark" width={200} />
       </Link>
       <div className="hidden min-w-0 flex-col md:mt-3 md:flex">
         <span className="text-xs font-bold uppercase text-primitive-sky-100">
@@ -99,7 +102,7 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-30 flex flex-col border-b border-primitive-navy-800 bg-primitive-navy-950 text-theme-text-inverse shadow-sm md:h-screen md:border-b-0 md:border-r md:px-3 md:py-4">
+    <nav className="sticky top-0 z-30 flex flex-col border-b border-primitive-navy-800 bg-primitive-navy-900 text-theme-text-inverse shadow-sm md:h-screen md:border-b-0 md:border-r md:px-3 md:py-4">
       <MobileBrandRow role={profile?.role} />
       <div className="flex flex-1 gap-2 overflow-x-auto px-3 py-2 md:mt-6 md:flex-col md:gap-5 md:overflow-visible md:px-0 md:py-0">
         {adminRouteGroups.map((group) => (

@@ -57,6 +57,9 @@ describe("AdminNav", () => {
     expect(screen.getAllByText("Customers").length).toBeGreaterThan(0);
     expect(screen.getByText("Billing")).toHaveClass("hidden", "md:block");
     expect(screen.getByText("System")).toHaveClass("hidden", "md:block");
+    expect(screen.getByRole("navigation")).toHaveClass(
+      "bg-primitive-navy-900",
+    );
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
       "/",
@@ -64,6 +67,10 @@ describe("AdminNav", () => {
     expect(screen.getByRole("link", { name: "Technicians" })).toHaveAttribute(
       "href",
       "/technicians",
+    );
+    expect(screen.getByRole("link", { name: "Escrow/RE" })).toHaveAttribute(
+      "href",
+      "/escrow-re",
     );
     expect(screen.getByRole("link", { name: "Payments" })).toHaveAttribute(
       "href",
@@ -93,6 +100,20 @@ describe("AdminNav", () => {
     expect(homeLink.querySelector("svg")).not.toBeNull();
     expect(container.querySelector("svg")?.getAttribute("viewBox")).toBe(
       "0 0 420 96",
+    );
+    expect(homeLink.querySelector("span")).toHaveStyle({
+      width: "200px",
+    });
+  });
+
+  it("marks the Escrow/RE route active from the sidebar", () => {
+    usePathname.mockReturnValue("/escrow-re");
+
+    render(<AdminNav />);
+
+    expect(screen.getByRole("link", { name: "Escrow/RE" })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
   });
 
