@@ -108,7 +108,11 @@ function readinessTone(status: string): StatusPillTone {
     return "warning";
   }
 
-  return "neutral";
+  if (status.includes("missing") || status.includes("not_configured")) {
+    return "danger";
+  }
+
+  return "warning";
 }
 
 function runtimeCopy(runtime: ComplianceRuntime) {
@@ -249,10 +253,8 @@ export function ComplianceClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            California compliance
-          </p>
-          <h1 className="text-3xl font-bold text-neutralDark">
+          <Eyebrow>California compliance</Eyebrow>
+          <h1 className="text-3xl font-bold text-theme-text-primary">
             Compliance RAG
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-theme-text-secondary">
@@ -288,7 +290,7 @@ export function ComplianceClient() {
       <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-neutralDark">
+            <h2 className="text-lg font-semibold text-theme-text-primary">
               Source readiness
             </h2>
             <p className="mt-1 text-sm text-theme-text-secondary">
@@ -306,7 +308,7 @@ export function ComplianceClient() {
               className="rounded-md border border-theme-border-subtle p-3 text-sm"
               key={item.workflow}
             >
-              <p className="font-semibold text-neutralDark">
+              <p className="font-semibold text-theme-text-primary">
                 {formatWorkflow(item.workflow)}
               </p>
               <p className="mt-1 text-xs uppercase tracking-wide text-theme-text-muted">
@@ -335,11 +337,15 @@ export function ComplianceClient() {
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Chemical review
             </p>
-            <p className="mt-2 text-sm font-semibold text-neutralDark">
+            <StatusPill
+              className="mt-2"
+              dot={false}
+              tone={readinessTone(chemicalReadiness.status)}
+            >
               {chemicalReadiness.status === "advisory_ready"
                 ? "Citations available"
                 : "Needs reviewed citations"}
-            </p>
+            </StatusPill>
             <p className="mt-2 text-sm text-theme-text-secondary">
               {
                 chemicalReadiness.required_fields.filter(
@@ -353,11 +359,18 @@ export function ComplianceClient() {
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Recurring routes
             </p>
-            <p className="mt-2 text-sm font-semibold text-neutralDark">
-              {jobs.filter((job) => job.status === "completed").length}{" "}
-              completed jobs
-            </p>
+            <StatusPill
+              className="mt-2"
+              dot={false}
+              tone={readinessTone(recurringReadiness.status)}
+            >
+              {recurringReadiness.status === "advisory_ready"
+                ? "Ready"
+                : "Needs cited route rules"}
+            </StatusPill>
             <p className="mt-2 text-sm text-theme-text-secondary">
+              {jobs.filter((job) => job.status === "completed").length}{" "}
+              completed jobs.{" "}
               {recurringReadiness.status === "advisory_ready"
                 ? "Ready for cited prompt review."
                 : "Awaiting cited route rules."}
@@ -367,9 +380,9 @@ export function ComplianceClient() {
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               WDO / Branch 3
             </p>
-            <p className="mt-2 text-sm font-semibold text-neutralDark">
+            <StatusPill className="mt-2" dot={false} tone="info">
               SPCB source lane
-            </p>
+            </StatusPill>
             <p className="mt-2 text-sm text-theme-text-secondary">
               Inspection reports and damaged-member evidence stay advisory until
               reviewed source chunks are ingested.
@@ -379,9 +392,19 @@ export function ComplianceClient() {
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Multi-unit audits
             </p>
-            <p className="mt-2 text-sm font-semibold text-neutralDark">
+            <StatusPill
+              className="mt-2"
+              dot={false}
+              tone={
+                multiUnitSummary.totalUnits === 0
+                  ? "info"
+                  : setupReadiness
+                    ? "warning"
+                    : "success"
+              }
+            >
               {multiUnitSummary.totalUnits} units modeled
-            </p>
+            </StatusPill>
             <p className="mt-2 text-sm text-theme-text-secondary">
               {multiUnitSummary.totalUnits === 0
                 ? "Not live yet - unit roster and per-unit treatment hooks are deferred."
@@ -400,7 +423,7 @@ export function ComplianceClient() {
         >
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-neutralDark">
+              <h2 className="text-lg font-semibold text-theme-text-primary">
                 Create advisory
               </h2>
               <p className="mt-1 text-sm text-theme-text-secondary">
@@ -408,10 +431,11 @@ export function ComplianceClient() {
                 available, the response stays explicit about that blocker.
               </p>
             </div>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Workflow
               <select
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm outline-none focus:border-primary"
+                aria-label="Advisory workflow"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setWorkflow(event.target.value as ComplianceWorkflow)
                 }
@@ -424,10 +448,10 @@ export function ComplianceClient() {
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Review prompt
               <textarea
-                className="min-h-28 rounded-md border border-theme-border-default bg-theme-background-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-28 rounded-md border border-theme-border-default bg-theme-background-surface px-3 py-2 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) => setPrompt(event.target.value)}
                 value={prompt}
               />
@@ -451,7 +475,7 @@ export function ComplianceClient() {
         </form>
 
         <aside className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-neutralDark">
+          <h2 className="text-lg font-semibold text-theme-text-primary">
             Source anchors
           </h2>
           <div className="mt-4 flex flex-col gap-3">
@@ -463,7 +487,7 @@ export function ComplianceClient() {
                 rel="noreferrer"
                 target="_blank"
               >
-                <span className="block font-semibold text-neutralDark">
+                <span className="block font-semibold text-theme-text-primary">
                   {anchor.title}
                 </span>
                 <span className="mt-1 block text-xs uppercase tracking-wide text-theme-text-muted">
@@ -477,7 +501,7 @@ export function ComplianceClient() {
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-neutralDark">
+          <h2 className="text-lg font-semibold text-theme-text-primary">
             Latest advisory
           </h2>
           {!advisory ? (
@@ -494,7 +518,7 @@ export function ComplianceClient() {
               </p>
               {advisoryEvaluation ? (
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm">
-                  <h3 className="font-semibold text-neutralDark">Evaluation</h3>
+                  <h3 className="font-semibold text-theme-text-primary">Evaluation</h3>
                   <p
                     className={`mt-2 w-fit rounded-md border px-2 py-1 text-xs font-semibold ${evaluationTone(
                       advisoryEvaluation.status,
@@ -511,7 +535,7 @@ export function ComplianceClient() {
                         className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-2"
                         key={check.id}
                       >
-                        <span className="font-semibold text-neutralDark">
+                        <span className="font-semibold text-theme-text-primary">
                           {check.label}
                         </span>
                         <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
@@ -536,7 +560,7 @@ export function ComplianceClient() {
                 </p>
               ) : null}
               <div>
-                <h3 className="text-sm font-semibold text-neutralDark">
+                <h3 className="text-sm font-semibold text-theme-text-primary">
                   Required evidence
                 </h3>
                 <ul className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -545,7 +569,7 @@ export function ComplianceClient() {
                       className="rounded-md border border-theme-border-subtle p-3 text-sm"
                       key={field.field}
                     >
-                      <span className="font-semibold text-neutralDark">
+                      <span className="font-semibold text-theme-text-primary">
                         {field.label}
                       </span>
                       <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
@@ -560,7 +584,7 @@ export function ComplianceClient() {
               </div>
               {advisory.findings.length > 0 ? (
                 <div>
-                  <h3 className="text-sm font-semibold text-neutralDark">
+                  <h3 className="text-sm font-semibold text-theme-text-primary">
                     Findings
                   </h3>
                   <ul className="mt-2 flex flex-col gap-2">
@@ -569,7 +593,7 @@ export function ComplianceClient() {
                         className="rounded-md border border-theme-border-subtle p-3 text-sm"
                         key={`${finding.title}-${finding.message}`}
                       >
-                        <span className="font-semibold text-neutralDark">
+                        <span className="font-semibold text-theme-text-primary">
                           {finding.title}
                         </span>
                         <span className="ml-2 text-xs uppercase tracking-wide text-theme-text-muted">
@@ -585,7 +609,7 @@ export function ComplianceClient() {
               ) : null}
               {advisory.citations.length > 0 ? (
                 <div>
-                  <h3 className="text-sm font-semibold text-neutralDark">
+                  <h3 className="text-sm font-semibold text-theme-text-primary">
                     Citations
                   </h3>
                   <ul className="mt-2 flex flex-col gap-2">
@@ -595,7 +619,7 @@ export function ComplianceClient() {
                         key={citation.chunk_id}
                       >
                         <a
-                          className="font-semibold text-primary hover:underline"
+                          className="font-semibold text-theme-action-primary hover:underline"
                           href={citation.url}
                           rel="noreferrer"
                           target="_blank"
@@ -615,7 +639,7 @@ export function ComplianceClient() {
         </article>
 
         <aside className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-neutralDark">
+          <h2 className="text-lg font-semibold text-theme-text-primary">
             Audit trail
           </h2>
           <div className="mt-4 flex flex-col gap-3">
@@ -633,7 +657,7 @@ export function ComplianceClient() {
                   className="rounded-md border border-theme-border-subtle p-3 text-sm"
                   key={audit.id}
                 >
-                  <p className="font-semibold text-neutralDark">
+                  <p className="font-semibold text-theme-text-primary">
                     {formatWorkflow(audit.workflow)}
                   </p>
                   <p className="mt-1 text-theme-text-secondary">

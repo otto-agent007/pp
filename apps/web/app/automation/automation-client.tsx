@@ -217,6 +217,18 @@ function deliveryTone(
   return "neutral";
 }
 
+function ruleStatusTone(status: AutomationRule["status"]): StatusPillTone {
+  if (status === "active") {
+    return "success";
+  }
+
+  if (status === "paused") {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
 export function AutomationClient() {
   const rulesQuery = useAutomationRules();
   const schedulerRunsQuery = useAutomationSchedulerRuns();
@@ -602,10 +614,8 @@ export function AutomationClient() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Admin
-          </p>
-          <h1 className="text-3xl font-bold text-neutralDark">Automation</h1>
+          <Eyebrow>Admin</Eyebrow>
+          <h1 className="text-3xl font-bold text-theme-text-primary">Automation</h1>
         </div>
       </header>
 
@@ -635,10 +645,8 @@ export function AutomationClient() {
       <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-              Scheduler
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-neutralDark">
+            <Eyebrow>Scheduler</Eyebrow>
+            <h2 className="mt-1 text-xl font-semibold text-theme-text-primary">
               Notification generation
             </h2>
             {schedulerRunsQuery.isLoading ? (
@@ -693,7 +701,7 @@ export function AutomationClient() {
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Last status
               </p>
-              <p className="mt-2 text-lg font-bold text-neutralDark">
+              <p className="mt-2 text-lg font-bold text-theme-text-primary">
                 {schedulerStatus.lastRunStatus}
               </p>
             </div>
@@ -701,7 +709,7 @@ export function AutomationClient() {
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Created
               </p>
-              <p className="mt-2 text-lg font-bold text-primary">
+              <p className="mt-2 text-lg font-bold text-theme-text-primary">
                 {schedulerStatus.lastRunGeneratedCount}
               </p>
             </div>
@@ -709,7 +717,7 @@ export function AutomationClient() {
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Duplicates
               </p>
-              <p className="mt-2 text-lg font-bold text-neutralDark">
+              <p className="mt-2 text-lg font-bold text-theme-text-primary">
                 {schedulerStatus.lastRunSkippedDuplicateCount}
               </p>
             </div>
@@ -717,7 +725,7 @@ export function AutomationClient() {
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview due
               </p>
-              <p className="mt-2 text-lg font-bold text-primary">
+              <p className="mt-2 text-lg font-bold text-theme-text-primary">
                 {schedulerPreview.items.length}
               </p>
             </div>
@@ -725,7 +733,7 @@ export function AutomationClient() {
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview rules
               </p>
-              <p className="mt-2 text-lg font-bold text-neutralDark">
+              <p className="mt-2 text-lg font-bold text-theme-text-primary">
                 {schedulerPreview.evaluated_rules}
               </p>
             </div>
@@ -733,7 +741,7 @@ export function AutomationClient() {
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview duplicates
               </p>
-              <p className="mt-2 text-lg font-bold text-neutralDark">
+              <p className="mt-2 text-lg font-bold text-theme-text-primary">
                 {schedulerPreview.duplicate_count}
               </p>
             </div>
@@ -767,25 +775,22 @@ export function AutomationClient() {
                   }
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-semibold text-neutralDark">
+                    <p className="text-sm font-semibold text-theme-text-primary">
                       {item.notification.title}
                     </p>
-                    <span
-                      className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
-                        item.is_duplicate
-                          ? "bg-status-alert-warning-bg text-status-alert-warning-fg"
-                          : "bg-status-alert-success-bg text-status-alert-success-fg"
-                      }`}
+                    <StatusPill
+                      dot={false}
+                      tone={item.is_duplicate ? "warning" : "success"}
                     >
                       {item.is_duplicate ? "Duplicate" : "New"}
-                    </span>
+                    </StatusPill>
                   </div>
                   {item.notification.message ? (
                     <p className="mt-2 text-sm text-theme-text-secondary">
                       {item.notification.message}
                     </p>
                   ) : null}
-                  <p className="mt-2 text-xs font-medium text-primary">
+                  <p className="mt-2 text-xs font-medium text-theme-text-secondary">
                     {formatType(item.notification.type)}
                   </p>
                   <p className="mt-1 text-xs text-theme-text-secondary">
@@ -823,10 +828,10 @@ export function AutomationClient() {
                     className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
                     key={item.id}
                   >
-                    <p className="text-sm font-semibold text-neutralDark">
+                    <p className="text-sm font-semibold text-theme-text-primary">
                       {item.title}
                     </p>
-                    <p className="mt-1 text-xs font-medium text-primary">
+                    <p className="mt-1 text-xs font-medium text-theme-text-secondary">
                       {formatType(item.type)}
                     </p>
                     <p className="mt-1 text-xs text-theme-text-secondary">
@@ -845,14 +850,14 @@ export function AutomationClient() {
             <div className="grid gap-3 md:grid-cols-[1fr_180px_180px_190px]">
               <input
                 aria-label="Search notifications"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) => setNotificationSearch(event.target.value)}
                 placeholder="Search notifications"
                 value={notificationSearch}
               />
               <select
                 aria-label="Notification status"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationStatus(
                     event.target.value as NotificationEventStatusFilter,
@@ -867,7 +872,7 @@ export function AutomationClient() {
               </select>
               <select
                 aria-label="Notification delivery status"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationDeliveryStatus(
                     event.target.value as NotificationDeliveryStatusFilter,
@@ -884,7 +889,7 @@ export function AutomationClient() {
               </select>
               <select
                 aria-label="Notification recipient readiness"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationRecipientFilter(
                     event.target.value as NotificationRecipientReadinessFilter,
@@ -900,6 +905,9 @@ export function AutomationClient() {
               </select>
             </div>
             <div className="flex flex-wrap gap-2">
+              <div className="basis-full">
+                <Eyebrow>Delivery health</Eyebrow>
+              </div>
               <CountTile
                 active={notificationDeliveryStatus === "failed"}
                 aria-label={`Failed (${deliveryTriageSummary.failed})`}
@@ -922,6 +930,9 @@ export function AutomationClient() {
                 }}
                 tone="info"
               />
+              <div className="basis-full pt-1">
+                <Eyebrow>Delivery breakdown</Eyebrow>
+              </div>
               <StatusPill dot={false} tone="neutral">
                 Not sent {deliveryTriageSummary.not_sent}
               </StatusPill>
@@ -943,8 +954,8 @@ export function AutomationClient() {
             </div>
             <Card className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <Eyebrow tone="accent">Delivery health</Eyebrow>
-                <p className="text-sm font-semibold text-neutralDark">
+                <Eyebrow tone="accent">Provider readiness</Eyebrow>
+                <p className="text-sm font-semibold text-theme-text-primary">
                   Visible pending reminders
                 </p>
                 <p className="mt-1 text-sm text-theme-text-secondary">
@@ -969,7 +980,7 @@ export function AutomationClient() {
                 ) : null}
                 {providerStatusQuery.isLoading ? null : (
                   <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
-                    <p className="text-sm font-semibold text-neutralDark">
+                    <p className="text-sm font-semibold text-theme-text-primary">
                       {providerReadinessCopy.label}
                     </p>
                     <p className="mt-1 text-xs text-theme-text-secondary">
@@ -1027,7 +1038,7 @@ export function AutomationClient() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-lg font-semibold text-neutralDark">
+                          <h2 className="text-lg font-semibold text-theme-text-primary">
                             {notification.title}
                           </h2>
                           <StatusPill tone="neutral">
@@ -1041,20 +1052,21 @@ export function AutomationClient() {
                             )}
                           </StatusPill>
                           {retryPolicyState !== "not_applicable" ? (
-                            <span
-                              className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
+                            <StatusPill
+                              dot={false}
+                              tone={
                                 retryPolicyState === "manual_review"
-                                  ? "bg-status-alert-warning-bg text-status-alert-warning-fg"
-                                  : "bg-status-alert-success-bg text-status-alert-success-fg"
-                              }`}
+                                  ? "warning"
+                                  : "success"
+                              }
                             >
                               {getNotificationRetryPolicyLabel(
                                 retryPolicyState,
                               )}
-                            </span>
+                            </StatusPill>
                           ) : null}
                         </div>
-                        <p className="mt-2 text-sm font-medium text-primary">
+                        <p className="mt-2 text-sm font-medium text-theme-text-secondary">
                           {formatType(notification.type)}
                         </p>
                         <p className="mt-1 text-sm text-theme-text-secondary">
@@ -1101,8 +1113,7 @@ export function AutomationClient() {
                       {notification.status === "pending" ? (
                         <div className="flex flex-wrap gap-2">
                           {notification.delivery_status !== "sent" ? (
-                            <button
-                              className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
+                            <Button
                               disabled={
                                 sendNotification.isPending ||
                                 notification.delivery_status === "sending"
@@ -1110,31 +1121,35 @@ export function AutomationClient() {
                               onClick={() =>
                                 sendNotification.mutate(notification.id)
                               }
+                              size="sm"
                               type="button"
+                              variant="ghost"
                             >
                               {notification.delivery_status === "sending"
                                 ? "Sending"
                                 : "Send"}
-                            </button>
+                            </Button>
                           ) : null}
-                          <button
-                            className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
+                          <Button
                             disabled={markHandled.isPending}
                             onClick={() => markHandled.mutate(notification.id)}
+                            size="sm"
                             type="button"
+                            variant="subtle"
                           >
                             Mark handled
-                          </button>
-                          <button
-                            className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                          </Button>
+                          <Button
                             disabled={dismissNotification.isPending}
                             onClick={() =>
                               dismissNotification.mutate(notification.id)
                             }
+                            size="sm"
                             type="button"
+                            variant="ghost"
                           >
                             Dismiss
-                          </button>
+                          </Button>
                         </div>
                       ) : null}
                     </div>
@@ -1148,14 +1163,14 @@ export function AutomationClient() {
             <div className="grid gap-3 md:grid-cols-[1fr_180px]">
               <input
                 aria-label="Search automation rules"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) => setRuleSearch(event.target.value)}
                 placeholder="Search rules"
                 value={ruleSearch}
               />
               <select
                 aria-label="Automation rule status"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setRuleStatus(
                     event.target.value as AutomationRuleStatusFilter,
@@ -1182,16 +1197,16 @@ export function AutomationClient() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h2 className="text-lg font-semibold text-neutralDark">
+                        <h2 className="text-lg font-semibold text-theme-text-primary">
                           {rule.name}
                         </h2>
-                        <p className="mt-1 text-sm font-medium text-primary">
+                        <p className="mt-1 text-sm font-medium text-theme-text-secondary">
                           {formatType(rule.type)}
                         </p>
                       </div>
-                      <span className="rounded-md bg-primitive-slate-100 px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
+                      <StatusPill dot={false} tone={ruleStatusTone(rule.status)}>
                         {rule.status}
-                      </span>
+                      </StatusPill>
                     </div>
                     <p className="mt-3 text-sm text-theme-text-secondary">
                       {rule.offset_days === null
@@ -1209,53 +1224,57 @@ export function AutomationClient() {
                       </p>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
+                      <Button
                         onClick={() => editRule(rule)}
+                        size="sm"
                         type="button"
+                        variant="ghost"
                       >
                         Edit
-                      </button>
+                      </Button>
                       {rule.status === "active" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                        <Button
                           onClick={() =>
                             updateRuleStatus.mutate({
                               id: rule.id,
                               status: "paused",
                             })
                           }
+                          size="sm"
                           type="button"
+                          variant="subtle"
                         >
                           Pause
-                        </button>
+                        </Button>
                       ) : rule.status === "paused" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
+                        <Button
                           onClick={() =>
                             updateRuleStatus.mutate({
                               id: rule.id,
                               status: "active",
                             })
                           }
+                          size="sm"
                           type="button"
+                          variant="subtle"
                         >
                           Resume
-                        </button>
+                        </Button>
                       ) : null}
                       {rule.status !== "archived" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
+                        <Button
                           onClick={() =>
                             updateRuleStatus.mutate({
                               id: rule.id,
                               status: "archived",
                             })
                           }
+                          size="sm"
                           type="button"
+                          variant="danger"
                         >
                           Archive
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   </article>
@@ -1268,10 +1287,8 @@ export function AutomationClient() {
         <div className="flex flex-col gap-6">
           <section className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-                Templates
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-neutralDark">
+              <Eyebrow>Templates</Eyebrow>
+              <h2 className="mt-1 text-xl font-semibold text-theme-text-primary">
                 Notification templates
               </h2>
             </div>
@@ -1281,11 +1298,11 @@ export function AutomationClient() {
                   {templateError}
                 </p>
               ) : null}
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
                 Template name
                 <input
                   aria-label="Template name"
-                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1295,11 +1312,11 @@ export function AutomationClient() {
                   value={templateForm.name}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
                 Template type
                 <select
                   aria-label="Template type"
-                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1314,11 +1331,11 @@ export function AutomationClient() {
                   </option>
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
                 Template title
                 <input
                   aria-label="Template title"
-                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                  className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1328,11 +1345,11 @@ export function AutomationClient() {
                   value={templateForm.title}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+              <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
                 Template message
                 <textarea
                   aria-label="Template message"
-                  className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-theme-action-primary"
                   onChange={(event) =>
                     setTemplateForm((current) => ({
                       ...current,
@@ -1344,14 +1361,14 @@ export function AutomationClient() {
               </label>
               <div
                 aria-label="Template preview"
-                className="border-l-4 border-secondary bg-theme-background-subtle p-3"
+                className="border-l-4 border-theme-action-primary bg-theme-background-subtle p-3"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   Preview
                 </p>
                 <p
                   aria-label="Template preview title"
-                  className="mt-2 text-sm font-semibold text-neutralDark"
+                  className="mt-2 text-sm font-semibold text-theme-text-primary"
                 >
                   {templatePreview.title || "Title preview"}
                 </p>
@@ -1363,37 +1380,36 @@ export function AutomationClient() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
-                  className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                <Button
                   disabled={
                     createTemplate.isPending || updateTemplate.isPending
                   }
                   type="submit"
                 >
                   {templateForm.id ? "Update template" : "Save template"}
-                </button>
+                </Button>
                 {templateForm.id ? (
-                  <button
-                    className="min-h-11 rounded-md border border-theme-border-default px-4 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                  <Button
                     onClick={() => setTemplateForm(emptyTemplateForm)}
                     type="button"
+                    variant="ghost"
                   >
                     Cancel edit
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             </form>
             <div className="grid gap-3 md:grid-cols-[1fr_140px]">
               <input
                 aria-label="Search templates"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) => setTemplateSearch(event.target.value)}
                 placeholder="Search templates"
                 value={templateSearch}
               />
               <select
                 aria-label="Template status"
-                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setTemplateStatus(
                     event.target.value as NotificationTemplateStatusFilter,
@@ -1419,18 +1435,21 @@ export function AutomationClient() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-sm font-semibold text-neutralDark">
+                        <h3 className="text-sm font-semibold text-theme-text-primary">
                           {template.name}
                         </h3>
-                        <p className="mt-1 text-xs font-medium text-primary">
+                        <p className="mt-1 text-xs font-medium text-theme-text-secondary">
                           {formatType(template.type)}
                         </p>
                       </div>
-                      <span className="rounded-md bg-theme-background-surface px-2 py-1 text-xs font-semibold uppercase text-theme-text-secondary">
+                      <StatusPill
+                        dot={false}
+                        tone={template.status === "active" ? "success" : "neutral"}
+                      >
                         {template.status}
-                      </span>
+                      </StatusPill>
                     </div>
-                    <p className="mt-2 text-sm font-medium text-neutralDark">
+                    <p className="mt-2 text-sm font-medium text-theme-text-primary">
                       {template.title}
                     </p>
                     {template.message ? (
@@ -1440,39 +1459,43 @@ export function AutomationClient() {
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                       {template.status === "active" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-status-alert-info-bg"
+                        <Button
                           onClick={() => applyTemplate(template)}
+                          size="sm"
                           type="button"
+                          variant="ghost"
                         >
                           Use
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        className="min-h-10 rounded-md border border-theme-border-default px-3 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
+                      <Button
                         onClick={() => editTemplate(template)}
+                        size="sm"
                         type="button"
+                        variant="ghost"
                       >
                         Edit
-                      </button>
+                      </Button>
                       {template.status === "active" ? (
-                        <button
-                          className="min-h-10 rounded-md border border-status-alert-danger-border px-3 text-sm font-semibold text-status-alert-danger-fg hover:bg-status-alert-danger-bg"
+                        <Button
                           disabled={archiveTemplate.isPending}
                           onClick={() => archiveTemplate.mutate(template.id)}
+                          size="sm"
                           type="button"
+                          variant="danger"
                         >
                           Archive
-                        </button>
+                        </Button>
                       ) : (
-                        <button
-                          className="min-h-10 rounded-md border border-status-alert-success-border px-3 text-sm font-semibold text-status-alert-success-fg hover:bg-status-alert-success-bg"
+                        <Button
                           disabled={restoreTemplate.isPending}
                           onClick={() => restoreTemplate.mutate(template.id)}
+                          size="sm"
                           type="button"
+                          variant="subtle"
                         >
                           Restore
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </article>
@@ -1485,7 +1508,7 @@ export function AutomationClient() {
             className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitNotification}
           >
-            <h2 className="text-xl font-semibold text-neutralDark">
+            <h2 className="text-xl font-semibold text-theme-text-primary">
               Create reminder
             </h2>
             {notificationError ? (
@@ -1527,11 +1550,11 @@ export function AutomationClient() {
               options={reminderRuleOptions}
               value={notificationForm.rule_id}
             />
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Type
               <select
                 aria-label="Reminder type"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1572,11 +1595,11 @@ export function AutomationClient() {
               options={reminderJobOptions}
               value={notificationForm.job_id}
             />
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Title
               <input
                 aria-label="Reminder title"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1586,11 +1609,11 @@ export function AutomationClient() {
                 value={notificationForm.title}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Due
               <input
                 aria-label="Reminder due"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1601,11 +1624,11 @@ export function AutomationClient() {
                 value={notificationForm.due_at}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Message
               <textarea
                 aria-label="Reminder message"
-                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setNotificationForm((current) => ({
                     ...current,
@@ -1617,14 +1640,14 @@ export function AutomationClient() {
             </label>
             <div
               aria-label="Reminder preview"
-              className="border-l-4 border-secondary bg-theme-background-subtle p-3"
+              className="border-l-4 border-theme-action-primary bg-theme-background-subtle p-3"
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview
               </p>
               <p
                 aria-label="Reminder preview title"
-                className="mt-2 text-sm font-semibold text-neutralDark"
+                className="mt-2 text-sm font-semibold text-theme-text-primary"
               >
                 {notificationPreview.title || "Title preview"}
               </p>
@@ -1635,20 +1658,19 @@ export function AutomationClient() {
                 {notificationPreview.message || "Message preview"}
               </p>
             </div>
-            <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            <Button
               disabled={createNotification.isPending}
               type="submit"
             >
               Save reminder
-            </button>
+            </Button>
           </form>
 
           <form
             className="flex h-fit flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitRule}
           >
-            <h2 className="text-xl font-semibold text-neutralDark">
+            <h2 className="text-xl font-semibold text-theme-text-primary">
               {ruleForm.id ? "Edit rule" : "Create rule"}
             </h2>
             {ruleError ? (
@@ -1656,11 +1678,11 @@ export function AutomationClient() {
                 {ruleError}
               </p>
             ) : null}
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Name
               <input
                 aria-label="Rule name"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1670,11 +1692,11 @@ export function AutomationClient() {
                 value={ruleForm.name}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Type
               <select
                 aria-label="Rule type"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1690,11 +1712,11 @@ export function AutomationClient() {
                 </option>
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Rule template
               <select
                 aria-label="Rule template"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1711,11 +1733,11 @@ export function AutomationClient() {
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Offset days
               <input
                 aria-label="Offset days"
-                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+                className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
                 min="0"
                 onChange={(event) =>
                   setRuleForm((current) => ({
@@ -1727,11 +1749,11 @@ export function AutomationClient() {
                 value={ruleForm.offset_days}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
               Message
               <textarea
                 aria-label="Rule message"
-                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-h-24 rounded-md border border-theme-border-default px-3 py-2 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) =>
                   setRuleForm((current) => ({
                     ...current,
@@ -1741,21 +1763,20 @@ export function AutomationClient() {
                 value={ruleForm.message}
               />
             </label>
-            <button
-              className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-theme-text-inverse hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            <Button
               disabled={createRule.isPending || updateRule.isPending}
               type="submit"
             >
               {ruleForm.id ? "Update rule" : "Save rule"}
-            </button>
+            </Button>
             {ruleForm.id ? (
-              <button
-                className="min-h-11 rounded-md border border-theme-border-default px-4 text-sm font-semibold text-neutralDark hover:bg-theme-background-subtle"
+              <Button
                 onClick={() => setRuleForm(emptyRuleForm)}
                 type="button"
+                variant="ghost"
               >
                 Cancel rule edit
-              </button>
+              </Button>
             ) : null}
           </form>
         </div>

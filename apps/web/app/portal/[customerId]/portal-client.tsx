@@ -99,15 +99,15 @@ function PortalMediaTile({ media }: { media: CustomerPortalMedia }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           alt={media.description ?? media.media_type}
-          className="h-48 w-full rounded-md bg-primitive-slate-100 object-cover"
+          className="h-48 w-full rounded-md bg-theme-background-subtle object-cover"
           src={media.signed_url}
         />
       ) : (
-        <div className="flex h-48 items-center justify-center rounded-md bg-primitive-slate-100 px-4 text-center text-sm text-theme-text-muted">
+        <div className="flex h-48 items-center justify-center rounded-md bg-theme-background-subtle px-4 text-center text-sm text-theme-text-muted">
           Preview unavailable
         </div>
       )}
-      <p className="mt-3 text-sm font-semibold text-neutralDark">
+      <p className="mt-3 text-sm font-semibold text-theme-text-primary">
         {media.description ?? "Job media"}
       </p>
       <p className="mt-1 text-xs text-theme-text-muted">
@@ -127,7 +127,7 @@ function PortalFormCard({
   return (
     <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-        <h3 className="text-base font-semibold text-neutralDark">
+        <h3 className="text-base font-semibold text-theme-text-primary">
           {submission.template?.name ?? "Service form"}
         </h3>
         <p className="text-xs font-medium text-theme-text-muted">
@@ -169,7 +169,7 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-neutralDark">
+            <h2 className="text-lg font-semibold text-theme-text-primary">
               {invoiceLabel} invoice
             </h2>
             <StatusPill tone={invoiceStatusTone(invoice.status)}>
@@ -189,7 +189,7 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
           </p>
         </div>
         <div className="text-left md:text-right">
-          <p className="text-2xl font-bold text-neutralDark">
+          <p className="text-2xl font-bold text-theme-text-primary">
             {formatMoney(invoice.total_cents, invoice.currency)}
           </p>
           <p className="mt-1 text-sm font-medium text-theme-text-secondary">
@@ -211,7 +211,7 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
         </div>
       </div>
       {invoice.line_items.length > 0 ? (
-        <dl className="mt-4 grid gap-3 border-t border-primitive-slate-100 pt-4 sm:grid-cols-2">
+        <dl className="mt-4 grid gap-3 border-t border-theme-border-subtle pt-4 sm:grid-cols-2">
           {invoice.line_items.map((item) => (
             <div key={item.id}>
               <dt className="text-sm font-semibold text-theme-text-primary">
@@ -248,10 +248,8 @@ function BillingSection({
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Billing
-        </p>
-        <h2 className="mt-1 text-2xl font-bold text-neutralDark">Invoices</h2>
+        <Eyebrow>Billing</Eyebrow>
+        <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">Invoices</h2>
       </div>
       {isLoading ? (
         <EmptyState>Loading invoices</EmptyState>
@@ -296,10 +294,8 @@ function PortalTimeline({
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Account timeline
-        </p>
-        <h2 className="mt-1 text-2xl font-bold text-neutralDark">
+        <Eyebrow>Account timeline</Eyebrow>
+        <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
           Service and billing history
         </h2>
       </div>
@@ -316,12 +312,12 @@ function PortalTimeline({
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-theme-text-secondary">
                     {item.type === "service"
                       ? "Service completed"
                       : "Invoice activity"}
                   </p>
-                  <h3 className="mt-1 text-lg font-semibold text-neutralDark">
+                  <h3 className="mt-1 text-lg font-semibold text-theme-text-primary">
                     {item.title}
                   </h3>
                   <p className="mt-1 text-sm text-theme-text-secondary">
@@ -332,7 +328,7 @@ function PortalTimeline({
                   </p>
                 </div>
                 <div className="text-left md:text-right">
-                  <p className="text-sm font-semibold text-neutralDark">
+                  <p className="text-sm font-semibold text-theme-text-primary">
                     {timelineStatusLabel(item)}
                   </p>
                   {item.payment_url ? (
@@ -372,10 +368,8 @@ function CloseoutCard({
     <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Completed service
-          </p>
-          <h2 className="mt-1 text-2xl font-bold text-neutralDark">
+          <Eyebrow>Completed service</Eyebrow>
+          <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
             {closeout.job.location?.nickname ??
               closeout.job.location?.address ??
               "Service visit"}
@@ -407,7 +401,7 @@ function CloseoutCard({
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-md bg-theme-background-subtle p-3">
-            <p className="text-lg font-bold text-neutralDark">
+            <p className="text-lg font-bold text-theme-text-primary">
               {closeout.form_submissions.length}
             </p>
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
@@ -415,7 +409,7 @@ function CloseoutCard({
             </p>
           </div>
           <div className="rounded-md bg-theme-background-subtle p-3">
-            <p className="text-lg font-bold text-neutralDark">
+            <p className="text-lg font-bold text-theme-text-primary">
               {closeout.photos.length}
             </p>
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
@@ -423,7 +417,7 @@ function CloseoutCard({
             </p>
           </div>
           <div className="rounded-md bg-theme-background-subtle p-3">
-            <p className="text-lg font-bold text-neutralDark">
+            <p className="text-lg font-bold text-theme-text-primary">
               {closeout.signatures.length}
             </p>
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
@@ -436,7 +430,7 @@ function CloseoutCard({
       <section className="mt-6 rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-neutralDark">
+            <p className="text-sm font-semibold text-theme-text-primary">
               Proof of service
             </p>
             <p className="mt-1 text-sm text-theme-text-secondary">
@@ -475,7 +469,7 @@ function CloseoutCard({
       </section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-neutralDark">
+        <h3 className="text-lg font-semibold text-theme-text-primary">
           Service forms
         </h3>
         {closeout.form_submissions.length === 0 ? (
@@ -490,7 +484,7 @@ function CloseoutCard({
       </section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-neutralDark">Photos</h3>
+        <h3 className="text-lg font-semibold text-theme-text-primary">Photos</h3>
         {closeout.photos.length === 0 ? (
           <EmptyState>No photos are available for this visit.</EmptyState>
         ) : (
@@ -503,7 +497,7 @@ function CloseoutCard({
       </section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-neutralDark">Signatures</h3>
+        <h3 className="text-lg font-semibold text-theme-text-primary">Signatures</h3>
         {closeout.signatures.length === 0 ? (
           <EmptyState>No signatures are available for this visit.</EmptyState>
         ) : (
@@ -553,10 +547,8 @@ export function CustomerPortalClient({
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Customer portal
-          </p>
-          <h1 className="text-3xl font-bold text-neutralDark">
+          <Eyebrow>Customer portal</Eyebrow>
+          <h1 className="text-3xl font-bold text-theme-text-primary">
             {customerName}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
@@ -565,7 +557,7 @@ export function CustomerPortalClient({
         </div>
         <input
           aria-label="Search portal activity"
-          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary md:w-80"
+          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary md:w-80"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search activity"
           value={search}
