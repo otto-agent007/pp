@@ -162,8 +162,22 @@ describe("ui-native primitives", () => {
         Language
       </Button>
     );
+    const smallButton = (
+      <Button size="sm" variant="ghost">
+        Small
+      </Button>
+    );
+    const largeButton = (
+      <Button size="lg" variant="primary">
+        Large
+      </Button>
+    );
     const pressable = collectElementsByType(element, "Pressable")[0];
+    const smallPressable = collectElementsByType(smallButton, "Pressable")[0];
+    const largePressable = collectElementsByType(largeButton, "Pressable")[0];
     const defaultStyles = Object.assign({}, ...pressableStyles(pressable));
+    const smallStyles = Object.assign({}, ...pressableStyles(smallPressable));
+    const largeStyles = Object.assign({}, ...pressableStyles(largePressable));
     const pressedStyles = Object.assign({}, ...pressableStyles(pressable, true));
 
     expect(pressable.props.disabled).toBe(true);
@@ -173,6 +187,18 @@ describe("ui-native primitives", () => {
         borderColor: lightTheme.border.default,
         minHeight: 44,
         opacity: 0.5,
+      }),
+    );
+    expect(smallStyles).toEqual(
+      expect.objectContaining({
+        minHeight: 44,
+        paddingHorizontal: spacing[3],
+      }),
+    );
+    expect(largeStyles).toEqual(
+      expect.objectContaining({
+        minHeight: 48,
+        paddingHorizontal: spacing[5],
       }),
     );
     expect(pressedStyles).toEqual(
@@ -318,6 +344,9 @@ describe("ui-native primitives", () => {
     const element = (
       <StatTile detail="2 stops need sync" label="Queued" tone="info" value={3} />
     );
+    const withoutDetail = (
+      <StatTile label="Completed" tone="neutral" value={7} />
+    );
     const valueTextStyle = mergedStyles(
       collectElementsByType(element, "Text")[0].props.style,
     );
@@ -325,6 +354,10 @@ describe("ui-native primitives", () => {
     expect(collectText(element)).toEqual(
       expect.arrayContaining(["3", "Queued", "2 stops need sync"]),
     );
+    expect(collectText(withoutDetail)).toEqual(
+      expect.arrayContaining(["7", "Completed"]),
+    );
+    expect(collectText(withoutDetail)).not.toContain("2 stops need sync");
     expect(valueTextStyle).toEqual(
       expect.objectContaining({
         color: status.alert.info.solid,
@@ -336,14 +369,22 @@ describe("ui-native primitives", () => {
 
   it("renders avatar initials, size, and palette from existing tokens", () => {
     const element = <Avatar name="Maya Torres" size="lg" />;
+    const smallAvatar = <Avatar name="Alex Kim" size="sm" />;
     const viewStyles = mergedStyles(
       collectElementsByType(element, "View")[0].props.style,
+    );
+    const smallViewStyles = mergedStyles(
+      collectElementsByType(smallAvatar, "View")[0].props.style,
     );
     const textStyles = mergedStyles(
       collectElementsByType(element, "Text")[0].props.style,
     );
+    const smallTextStyles = mergedStyles(
+      collectElementsByType(smallAvatar, "Text")[0].props.style,
+    );
 
     expect(collectText(element)).toContain("MT");
+    expect(collectText(smallAvatar)).toContain("AK");
     expect(viewStyles).toEqual(
       expect.objectContaining({
         height: 40,
@@ -355,9 +396,21 @@ describe("ui-native primitives", () => {
         backgroundColor: undefined,
       }),
     );
+    expect(smallViewStyles).toEqual(
+      expect.objectContaining({
+        height: 24,
+        width: 24,
+      }),
+    );
     expect(textStyles).toEqual(
       expect.objectContaining({
         fontSize: fontSize.base,
+        fontWeight: fontWeight.bold,
+      }),
+    );
+    expect(smallTextStyles).toEqual(
+      expect.objectContaining({
+        fontSize: fontSize.xs,
         fontWeight: fontWeight.bold,
       }),
     );

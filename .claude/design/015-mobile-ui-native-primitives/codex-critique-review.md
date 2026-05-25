@@ -1,18 +1,18 @@
 # Codex Critique Review: Mobile UI Native Primitives V1
 
-This marker processes Claude's post-implementation critique for 015. It is
-review-only: no app or package code changes are included in this relay update.
+This marker processes Claude's post-implementation critique for 015. It now
+includes the narrow package-test follow-through for the accepted findings.
 
-## Valid findings to fix in the next narrow cleanup
+## Adopted in cleanup
 
-- Add `StatTile` test coverage for the absent-detail path so a tile with only
+- Added `StatTile` test coverage for the absent-detail path so a tile with only
   value and label proves it does not render stray detail copy.
-- Add `Button` size assertions for `sm` and `lg`, especially confirming the
-  deliberate `sm` touch-target override remains `minHeight: 44` and `lg`
-  remains `minHeight: 48`.
-- Add an `Avatar` `sm` size assertion so the smallest tokenized dimensions are
+- Added `Button` size assertions for `sm` and `lg`, confirming the deliberate
+  `sm` touch-target override remains `minHeight: 44` and `lg` remains
+  `minHeight: 48`.
+- Added an `Avatar` `sm` size assertion so the smallest tokenized dimensions are
   under test.
-- Preserve the implementation decision that `Button` `sm` changes horizontal
+- Preserved the implementation decision that `Button` `sm` changes horizontal
   padding and typography, not the minimum mobile touch target.
 
 ## Deferred follow-ups
@@ -40,12 +40,15 @@ review-only: no app or package code changes are included in this relay update.
   changes, RLS changes, env changes, preview mutations, or production
   mutations.
 
-## Verification needed after fixes
+## Verification completed after fixes
 
-- Run focused `@pest-patrol/ui-native` tests after adding the missing size and
-  optional-detail assertions.
-- If package or app wiring changes, confirm `apps/mobile/package.json`,
-  `pnpm-workspace.yaml`, `turbo.json`, and TypeScript config still include the
-  native package correctly.
-- For any code follow-through, run the relevant focused tests plus the repo
-  gates required by `docs/AGENTS.md`, ending with `git diff --check`.
+- `corepack pnpm --filter @pest-patrol/ui-native test` passed after adding the
+  size and optional-detail assertions.
+- Focused web route tests for the already-implemented 014/016/017 critique
+  surfaces passed.
+- Full repo gates passed with `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
+- No package or app wiring changed, so `apps/mobile/package.json`,
+  `pnpm-workspace.yaml`, `turbo.json`, and TypeScript config remained
+  untouched.
