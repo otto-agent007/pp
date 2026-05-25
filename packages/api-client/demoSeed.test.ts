@@ -3,6 +3,7 @@ import { buildDemoSeedPlan } from "@pest-patrol/domain";
 
 import {
   getDemoSeedStatusRecord,
+  isDemoLoginRefreshUnavailableError,
   prepareLocalDemoLoginRecord,
   refreshDemoLoginSeedRecord,
   refreshDemoLoginSeedRecords,
@@ -397,5 +398,16 @@ describe("demo seed api client", () => {
         method: "POST",
       }),
     );
+  });
+
+  it("identifies production demo login refresh refusal errors", () => {
+    expect(
+      isDemoLoginRefreshUnavailableError(
+        new Error("Demo seed is disabled on production deployments."),
+      ),
+    ).toBe(true);
+    expect(
+      isDemoLoginRefreshUnavailableError(new Error("Unable to sign in")),
+    ).toBe(false);
   });
 });

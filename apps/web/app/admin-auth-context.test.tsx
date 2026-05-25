@@ -3,10 +3,20 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-async function renderAuthProbe(profileEmail: string) {
+async function renderAuthProbe(
+  profileEmail: string,
+  options: {
+    refreshError?: Error;
+  } = {},
+) {
   vi.resetModules();
 
-  const refreshDemoLoginSeedRecord = vi.fn().mockResolvedValue({});
+  const refreshDemoLoginSeedRecord = options.refreshError
+    ? vi.fn().mockRejectedValue(options.refreshError)
+    : vi.fn().mockResolvedValue({});
+  const isDemoLoginRefreshUnavailableError = vi.fn(
+    (error: unknown) => error === options.refreshError,
+  );
   const signInAdmin = vi.fn().mockResolvedValue({
     profile: {
       id: "demo-admin-user",
@@ -25,6 +35,7 @@ async function renderAuthProbe(profileEmail: string) {
   });
 
   vi.doMock("@pest-patrol/api-client", () => ({
+    isDemoLoginRefreshUnavailableError,
     refreshDemoLoginSeedRecord,
     supabase: {
       auth: {
@@ -73,7 +84,11 @@ async function renderAuthProbe(profileEmail: string) {
 
   await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-  return { refreshDemoLoginSeedRecord, signInAdmin };
+  return {
+    isDemoLoginRefreshUnavailableError,
+    refreshDemoLoginSeedRecord,
+    signInAdmin,
+  };
 }
 
 describe("AdminAuthProvider demo login refresh", () => {
@@ -90,6 +105,26 @@ describe("AdminAuthProvider demo login refresh", () => {
     await waitFor(() => expect(signInAdmin).toHaveBeenCalled());
 
     expect(refreshDemoLoginSeedRecord).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByText("signed_in")).toBeTruthy());
+  });
+
+  it("allows demo sign-in when production refuses the refresh side effect", async () => {
+    const refreshError = new Error(
+      "Demo seed is disabled on production deployments.",
+    );
+    const {
+      isDemoLoginRefreshUnavailableError,
+      refreshDemoLoginSeedRecord,
+      signInAdmin,
+    } = await renderAuthProbe("demo@email.com", { refreshError });
+
+    await waitFor(() => expect(signInAdmin).toHaveBeenCalled());
+
+    expect(refreshDemoLoginSeedRecord).toHaveBeenCalledTimes(1);
+    expect(isDemoLoginRefreshUnavailableError).toHaveBeenCalledWith(
+      refreshError,
+    );
+    await waitFor(() => expect(screen.getByText("signed_in")).toBeTruthy());
   });
 
   it("does not refresh demo data for other admins", async () => {
