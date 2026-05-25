@@ -247,9 +247,9 @@ export function buildDemoWorkflowFixtures(
   const geofenceEvents = plan.jobs.reduce<JobGeofenceEvent[]>(
     (events, job, index) => {
       const coordinates = demoGpsSignalsByJobKey.get(job.key);
-      const assignedTechnician = techniciansByKey.get(
-        job.assigned_technician_key,
-      );
+      const assignedTechnician = job.assigned_technician_key
+        ? techniciansByKey.get(job.assigned_technician_key)
+        : undefined;
 
       if (!coordinates || !assignedTechnician) {
         return events;
