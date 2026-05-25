@@ -4,6 +4,24 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Automatic Large Demo Login Refresh V1 expanded the guarded synthetic San
+  Diego demo story to 12 technicians, 18 customers, 26 locations, and 30 jobs
+  while preserving inventory, chemical logs, treatment forms, invoices,
+  payment state, and proof media.
+- `demo@email.com` sign-in now calls an authenticated login-refresh route that
+  verifies the signed-in profile email, refuses production, reuses existing
+  service-role/local-preview guardrails, refreshes demo-owned operational
+  records, and preserves the active demo admin auth user/session.
+- Manual demo admin sign-in and the local one-click demo button both trigger
+  refresh, while local fixture mode still works without Supabase env values.
+- Focused domain/API-client/web tests, full `corepack pnpm test`, typecheck,
+  lint, and `git diff --check` passed in the isolated
+  `codex/automatic-large-demo-login-refresh-v1` worktree; the build passed
+  from a temporary short-path verification worktree because the isolated
+  Windows worktree path exceeds the Hermes compiler spawn limit.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  preview mutations, production mutations, and public API contract changes out
+  of scope.
 - Launch Readiness White Canvas V1 synced local `main` to the PR #53 merge
   commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3` and opened
   `codex/launch-readiness-white-canvas` while preserving the prior branch's

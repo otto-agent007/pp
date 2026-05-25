@@ -11,12 +11,15 @@ describe("demo workflow fixtures", () => {
       now: new Date("2026-05-14T16:00:00.000Z"),
     });
 
-    expect(fixtures.customers).toHaveLength(4);
+    expect(fixtures.customers).toHaveLength(18);
     expect(fixtures.customers[0].locations).toHaveLength(2);
-    expect(fixtures.technicians).toHaveLength(3);
-    expect(fixtures.jobs).toHaveLength(5);
+    expect(fixtures.technicians).toHaveLength(12);
+    expect(fixtures.jobs).toHaveLength(30);
+    expect(fixtures.jobs.filter((job) => !job.assigned_tech_id)).toHaveLength(
+      3,
+    );
     expect(fixtures.inventory).toHaveLength(6);
-    expect(fixtures.invoices).toHaveLength(2);
+    expect(fixtures.invoices).toHaveLength(3);
     expect(fixtures.closeoutSummaries).toContainEqual({
       chemicalLogs: 3,
       forms: 2,

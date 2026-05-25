@@ -3,9 +3,10 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@pest-patrol/api-client";
+import { refreshDemoLoginSeedRecord, supabase } from "@pest-patrol/api-client";
 import type { UserProfile } from "@pest-patrol/types";
 import {
+  DEMO_SEED_ADMIN_EMAIL,
   buildDemoWorkflowFixtures,
   establishPasswordRecoverySession,
   getCurrentAdminAuth,
@@ -35,10 +36,7 @@ interface AdminAuthSnapshot extends AdminAuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signInLocalDemo: () => Promise<void>;
   signOut: () => Promise<void>;
-  updatePassword: (
-    password: string,
-    confirmPassword: string,
-  ) => Promise<void>;
+  updatePassword: (password: string, confirmPassword: string) => Promise<void>;
 }
 
 const signedOutState: AdminAuthState = {
@@ -199,6 +197,10 @@ async function signIn(email: string, password: string) {
 
     if (!record) {
       throw new Error("Unable to start admin session");
+    }
+
+    if (record.profile.email === DEMO_SEED_ADMIN_EMAIL) {
+      await refreshDemoLoginSeedRecord(supabase);
     }
 
     setAuthState({

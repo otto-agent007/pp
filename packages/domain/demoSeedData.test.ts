@@ -28,17 +28,18 @@ describe("demo seed data", () => {
         role: "admin",
       },
     ]);
-    expect(plan.customers).toHaveLength(4);
+    expect(plan.customers).toHaveLength(18);
     expect(plan.customers[0]).toMatchObject({
       key: "harbor",
       name: "Demo - Harbor Heights HOA",
       email: "demo+harbor-hoa@example.test",
     });
-    expect(plan.technicians).toHaveLength(3);
+    expect(plan.technicians).toHaveLength(12);
     expect(
       plan.technicians.every((tech) => tech.email.endsWith("@example.test")),
     ).toBe(true);
     expect(plan.inventory).toHaveLength(6);
+    expect(plan.jobs).toHaveLength(30);
     expect(plan.jobs.map((job) => job.scheduled_start)).toContain(
       "2026-05-14T09:38:00.000Z",
     );
@@ -46,12 +47,18 @@ describe("demo seed data", () => {
       "2026-05-14T10:38:00.000Z",
     );
     expect(plan.jobs.some((job) => job.status === "completed")).toBe(true);
-    expect(plan.chemicalLogs).toHaveLength(3);
-    expect(plan.formSubmissions).toHaveLength(2);
+    expect(plan.jobs.some((job) => job.status === "in_progress")).toBe(true);
+    expect(plan.jobs.some((job) => job.status === "canceled")).toBe(true);
+    expect(
+      plan.jobs.filter((job) => !job.assigned_technician_key),
+    ).toHaveLength(3);
+    expect(plan.chemicalLogs).toHaveLength(6);
+    expect(plan.formSubmissions).toHaveLength(4);
     expect(plan.media).toHaveLength(3);
     expect(plan.invoices.map((invoice) => invoice.status)).toEqual([
       "sent",
       "paid",
+      "draft",
     ]);
     expect(JSON.stringify(plan)).toContain(DEMO_SEED_MARKER);
   });
@@ -161,16 +168,16 @@ describe("demo seed data", () => {
 
     expect(getDemoSeedPlanSummary(plan)).toEqual({
       admin_users: 1,
-      chemical_logs: 3,
-      customers: 4,
-      form_submissions: 2,
+      chemical_logs: 6,
+      customers: 18,
+      form_submissions: 4,
       inventory_items: 6,
-      invoices: 2,
-      jobs: 5,
-      locations: 5,
+      invoices: 3,
+      jobs: 30,
+      locations: 26,
       media_items: 3,
       payments: 1,
-      technicians: 3,
+      technicians: 12,
     });
   });
 

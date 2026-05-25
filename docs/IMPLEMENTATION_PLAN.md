@@ -26,6 +26,7 @@ Completed in this batch:
 
 Previously completed in this broader launch-readiness track:
 
+1. Added Automatic Large Demo Login Refresh V1: the seeded San Diego demo story now includes 12 technicians, 18 customers, 26 locations, and 30 jobs, and `demo@email.com` login automatically refreshes demo-owned operational records while preserving the signed-in demo admin session.
 1. Added Demo Media Proof V1 on a fresh branch from `origin/main`: the seeded San Diego demo story now includes richer Rivera Cafe proof context, expanded treatment-form fields, 3 chemical logs, 2 form submissions, 6 inventory items, and 3 synthetic proof media records.
 2. Extended seed/reset execution so demo media is uploaded to the `job-media` storage bucket, inserted into `job_media`, removed from storage during reset, and counted in CLI/dashboard/smoke-preflight summaries.
 3. Added checked-in `/demo-media/*` SVG assets for local fixture mode so closeout and tokened portal proof surfaces can render service photos and a synthetic customer signature without Supabase storage access.

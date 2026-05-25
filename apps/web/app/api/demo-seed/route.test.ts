@@ -39,11 +39,11 @@ describe("demo seed route", () => {
     serviceClient = { from: vi.fn() };
     replaceDemoSeedRecords.mockReset();
     replaceDemoSeedRecords.mockResolvedValue({
-      reset: { customers: 4, jobs: 5 },
-      seed: { customers: 4, jobs: 5 },
+      reset: { customers: 18, jobs: 30 },
+      seed: { customers: 18, jobs: 30 },
     });
     resetDemoSeedRecords.mockReset();
-    resetDemoSeedRecords.mockResolvedValue({ customers: 4, jobs: 5 });
+    resetDemoSeedRecords.mockResolvedValue({ customers: 18, jobs: 30 });
     vi.unstubAllEnvs();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
@@ -65,12 +65,16 @@ describe("demo seed route", () => {
     const response = await GET(request());
     const body = (await response.json()) as {
       status?: { available: boolean; target: string };
-      summary?: { customers: number; jobs: number };
+      summary?: { customers: number; jobs: number; technicians: number };
     };
 
     expect(response.status).toBe(200);
     expect(body.status).toMatchObject({ available: true, target: "local" });
-    expect(body.summary).toMatchObject({ customers: 4, jobs: 5 });
+    expect(body.summary).toMatchObject({
+      customers: 18,
+      jobs: 30,
+      technicians: 12,
+    });
     expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
     expect(resetDemoSeedRecords).not.toHaveBeenCalled();
   });
@@ -110,7 +114,7 @@ describe("demo seed route", () => {
 
     expect(response.status).toBe(200);
     expect(body.action).toBe("seed");
-    expect(body.result?.seed?.jobs).toBe(5);
+    expect(body.result?.seed?.jobs).toBe(30);
     expect(replaceDemoSeedRecords).toHaveBeenCalledWith(
       serviceClient,
       expect.objectContaining({ marker: "[pest-patrol-demo-seed-v1]" }),
@@ -132,7 +136,7 @@ describe("demo seed route", () => {
 
     expect(response.status).toBe(200);
     expect(body.action).toBe("reset");
-    expect(body.result?.jobs).toBe(5);
+    expect(body.result?.jobs).toBe(30);
     expect(resetDemoSeedRecords).toHaveBeenCalledWith(
       serviceClient,
       expect.objectContaining({ marker: "[pest-patrol-demo-seed-v1]" }),

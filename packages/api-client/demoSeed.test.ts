@@ -4,6 +4,8 @@ import { buildDemoSeedPlan } from "@pest-patrol/domain";
 import {
   getDemoSeedStatusRecord,
   prepareLocalDemoLoginRecord,
+  refreshDemoLoginSeedRecord,
+  refreshDemoLoginSeedRecords,
   replaceDemoSeedRecords,
   resetDemoSeedRecords,
   runDemoSeedActionRecord,
@@ -162,16 +164,16 @@ describe("demo seed api client", () => {
 
     expect(summary).toMatchObject({
       adminUsers: 1,
-      technicians: 3,
-      customers: 4,
+      technicians: 12,
+      customers: 18,
       inventory: 6,
-      jobs: 5,
+      jobs: 30,
       media: 3,
-      invoices: 2,
+      invoices: 3,
     });
     expect(
       calls.filter((call) => call.startsWith("auth.createUser")),
-    ).toHaveLength(4);
+    ).toHaveLength(13);
     expect(calls[0]).toBe("auth.createUser:demo@email.com");
     expect(calls).toEqual(
       expect.arrayContaining([
@@ -208,12 +210,37 @@ describe("demo seed api client", () => {
       plan,
     );
 
-    expect(result.reset.jobs).toBe(5);
-    expect(result.seed.jobs).toBe(5);
+    expect(result.reset.jobs).toBe(30);
+    expect(result.seed.jobs).toBe(30);
     expect(calls.indexOf("from:payments")).toBeLessThan(
       calls.indexOf("auth.createUser:demo@email.com"),
     );
     expect(calls.indexOf("auth.createUser:demo@email.com")).toBeLessThan(
+      calls.indexOf("auth.createUser:demo+tech-maya@example.test"),
+    );
+  });
+
+  it("refreshes demo login data without deleting the signed-in demo admin", async () => {
+    const { calls, client } = createMockClient();
+    const plan = buildDemoSeedPlan({
+      now: new Date("2026-05-14T16:38:00.000Z"),
+      technicianPassword: "demo-pass-123",
+    });
+
+    const result = await refreshDemoLoginSeedRecords(
+      client as unknown as DemoSeedSupabaseClient,
+      plan,
+      "user-demo-admin",
+    );
+
+    expect(result.reset.adminUsers).toBe(0);
+    expect(result.seed.adminUsers).toBe(1);
+    expect(result.seed.jobs).toBe(30);
+    expect(calls).not.toContain("auth.deleteUser:user-demo-admin");
+    expect(calls).not.toContain("auth.createUser:demo@email.com");
+    expect(calls).toContain("auth.deleteUser:user-1");
+    expect(calls).toContain("auth.createUser:demo+tech-maya@example.test");
+    expect(calls.indexOf("from:payments")).toBeLessThan(
       calls.indexOf("auth.createUser:demo+tech-maya@example.test"),
     );
   });
@@ -271,14 +298,14 @@ describe("demo seed api client", () => {
         ok: true,
         json: vi.fn().mockResolvedValue({
           status: { available: true, target: "local" },
-          summary: { customers: 4 },
+          summary: { customers: 18 },
         }),
       })
       .mockResolvedValueOnce({
         ok: true,
         json: vi.fn().mockResolvedValue({
           action: "seed",
-          result: { seed: { customers: 4 } },
+          result: { seed: { customers: 18 } },
         }),
       });
     vi.stubGlobal("fetch", fetchMock);
@@ -329,7 +356,7 @@ describe("demo seed api client", () => {
       ok: true,
       json: vi.fn().mockResolvedValue({
         action: "seed",
-        result: { seed: { customers: 4 } },
+        result: { seed: { customers: 18 } },
       }),
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -339,6 +366,36 @@ describe("demo seed api client", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/demo-seed/local-login",
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("uses the authenticated login-refresh route for demo sign-in refresh", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        action: "seed",
+        result: { seed: { customers: 18, jobs: 30 } },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const authClient = {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({
+          data: { session: { access_token: "demo-token" } },
+          error: null,
+        }),
+      },
+    };
+
+    await refreshDemoLoginSeedRecord(authClient);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/demo-seed/login-refresh",
+      expect.objectContaining({
+        headers: { Authorization: "Bearer demo-token" },
+        method: "POST",
+      }),
     );
   });
 });

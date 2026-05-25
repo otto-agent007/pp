@@ -18,17 +18,17 @@ const status = {
     target: "local",
   },
   summary: {
-    chemical_logs: 3,
+    chemical_logs: 6,
     admin_users: 1,
-    customers: 4,
-    form_submissions: 2,
+    customers: 18,
+    form_submissions: 4,
     inventory_items: 6,
-    invoices: 2,
-    jobs: 5,
-    locations: 5,
+    invoices: 3,
+    jobs: 30,
+    locations: 26,
     media_items: 3,
     payments: 1,
-    technicians: 3,
+    technicians: 12,
   },
 };
 
@@ -58,9 +58,9 @@ describe("DemoSeedControls", () => {
       screen.getByRole("heading", { name: "Demo data" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Local demo")).toBeInTheDocument();
-    expect(screen.getByText("4 customers")).toBeInTheDocument();
-    expect(screen.getByText("5 jobs")).toBeInTheDocument();
-    expect(screen.getByText("3 technicians")).toBeInTheDocument();
+    expect(screen.getByText("18 customers")).toBeInTheDocument();
+    expect(screen.getByText("30 jobs")).toBeInTheDocument();
+    expect(screen.getByText("12 technicians")).toBeInTheDocument();
     expect(screen.getByText(/3 media items/)).toBeInTheDocument();
     expect(
       screen.getByText("Demo login: demo@email.com / password"),
