@@ -763,6 +763,55 @@ describe("AutomationClient", () => {
     expect(runScheduler).not.toHaveBeenCalled();
   });
 
+  it("uses shared primitive styling for operator clarity controls", () => {
+    const dueJob = {
+      ...job,
+      scheduled_start: "2020-01-01T12:00:00.000Z",
+      scheduled_end: null,
+    };
+
+    vi.mocked(useJobs).mockReturnValue({
+      data: [dueJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useAutomationRules).mockReturnValue({
+      data: [
+        {
+          ...rule,
+          offset_days: 0,
+          template_id: "template-variables",
+          template: variableTemplate,
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    render(<AutomationClient />);
+
+    expect(screen.getByText("Delivery breakdown")).toBeInTheDocument();
+    expect(screen.getByText("Duplicate")).toHaveClass(
+      "rounded-full",
+      "border-status-alert-warning-border",
+    );
+    expect(
+      within(
+        screen.getByRole("heading", { name: "Post-service follow-up" })
+          .closest("article")!,
+      ).getByText("active"),
+    ).toHaveClass("rounded-full", "border-status-alert-success-border");
+    expect(
+      within(screen.getByText("Call Apex").closest("article")!).getByRole(
+        "button",
+        { name: "Send" },
+      ),
+    ).toHaveClass("focus-visible:ring-theme-action-primary");
+    expect(
+      within(templatesSection()).getByRole("button", {
+        name: "Save template",
+      }),
+    ).toHaveClass("focus-visible:ring-theme-action-primary");
+  });
+
   it("creates and handles notification events", async () => {
     const user = userEvent.setup();
     render(<AutomationClient />);

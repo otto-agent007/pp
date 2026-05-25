@@ -164,6 +164,31 @@ describe("ComplianceClient", () => {
     ).toBeInTheDocument();
   });
 
+  it("uses semantic compliance polish tokens for header, form, and readiness states", () => {
+    vi.mocked(useComplianceSources).mockReturnValue({
+      data: [],
+    } as never);
+    vi.mocked(useComplianceDocuments).mockReturnValue({
+      data: [],
+    } as never);
+    vi.mocked(useComplianceChunks).mockReturnValue({
+      data: [],
+    } as never);
+
+    render(<ComplianceClient />);
+
+    expect(
+      screen.getByRole("heading", { name: "Compliance RAG" }),
+    ).toHaveClass("text-theme-text-primary");
+    expect(screen.getByLabelText("Advisory workflow")).toHaveClass(
+      "focus:border-theme-action-primary",
+    );
+    expect(screen.getByText("Needs reviewed citations")).toHaveClass(
+      "rounded-full",
+      "border-status-alert-warning-border",
+    );
+  });
+
   it("runs advisory requests through the server hook and renders citations", async () => {
     const user = userEvent.setup();
     render(<ComplianceClient />);

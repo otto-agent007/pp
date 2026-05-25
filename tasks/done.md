@@ -1098,3 +1098,11 @@
 - Added admin UI consistency and density polish across sign-in, nav, dashboard, dispatch, jobs, customers, and payments using shared form helpers, compact disclosure surfaces, safer archive confirmation, clearer empty/helper states, and responsive overflow fixes
 - Added Claude Design relay briefs for portal customer polish and automation/compliance operator clarity
 - Verified with focused route/mobile/admin tests, Browser QA on `/technicians`, `/jobs`, tokened `/portal`, `/payments`, `/automation`, `/compliance`, `/`, `/dispatch`, `/customers`, and admin sign-in at desktop and narrow widths, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm test`, `corepack pnpm build`, and `git diff --check`
+
+## Claude Polish Critique Cleanup V1
+
+- Added missing `@pest-patrol/ui-native` assertions for Button `sm`/`lg` sizing, Avatar `sm` sizing, and `StatTile` without detail copy
+- Updated the 015 Claude critique review marker from future cleanup to adopted cleanup with current verification evidence
+- Re-verified the already-implemented 014, 016, and 017 critique checklist items with targeted searches and focused tests
+- Kept migrations, providers, env changes, Supabase/Vercel state, preview mutations, production mutations, API contracts, and package wiring out of scope
+- Verified with focused native/web tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
