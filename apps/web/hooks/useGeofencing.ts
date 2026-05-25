@@ -10,6 +10,7 @@ export const jobGeofenceEventsQueryKey = ["job-geofence-events"] as const;
 export function useJobGeofenceEvents() {
   return useQuery({
     queryKey: jobGeofenceEventsQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listJobGeofenceEvents()),
+    queryFn: () =>
+      getLocalDemoFixtures()?.geofenceEvents ?? listJobGeofenceEvents(),
   });
 }

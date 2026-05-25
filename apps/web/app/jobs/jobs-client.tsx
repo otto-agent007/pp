@@ -337,6 +337,7 @@ export function JobsClient() {
           <StatTile
             detail="Awaiting assignment or route review"
             label="Scheduled jobs"
+            tone="info"
             value={jobCounts.scheduled}
           />
           <StatTile

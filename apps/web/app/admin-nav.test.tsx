@@ -59,6 +59,38 @@ describe("AdminNav", () => {
     expect(screen.getByText("System")).toHaveClass("hidden", "md:block");
     expect(screen.getByRole("navigation")).toHaveClass(
       "bg-primitive-navy-900",
+      "md:fixed",
+      "md:left-0",
+      "md:w-64",
+      "md:-translate-x-[calc(100%-1rem)]",
+      "md:hover:translate-x-0",
+      "md:focus-within:translate-x-0",
+      "motion-reduce:transition-none",
+    );
+    expect(screen.getByRole("navigation")).not.toHaveClass(
+      "md:w-[4.5rem]",
+      "md:hover:w-64",
+      "md:focus-within:w-64",
+    );
+    expect(screen.getByTestId("admin-nav-reveal-edge")).toHaveClass(
+      "hidden",
+      "w-4",
+      "md:block",
+      "md:group-hover/admin-nav:opacity-0",
+      "md:group-focus-within/admin-nav:opacity-0",
+    );
+    expect(screen.getByTestId("admin-nav-reveal-edge")).not.toHaveClass(
+      "pointer-events-none",
+    );
+    expect(screen.getByTestId("admin-nav-content")).toHaveClass(
+      "md:opacity-0",
+      "md:group-hover/admin-nav:opacity-100",
+      "md:group-focus-within/admin-nav:opacity-100",
+    );
+    expect(screen.getByTestId("admin-nav-route-strip")).toHaveClass(
+      "max-w-full",
+      "min-w-0",
+      "overflow-x-auto",
     );
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
@@ -95,13 +127,28 @@ describe("AdminNav", () => {
     const homeLink = screen.getByRole("link", {
       name: "Pest Patrol OS — Home",
     });
-    // The wordmark is decorative inside the labelled link, so we look for the
-    // inlined SVG rather than another role="img".
-    expect(homeLink.querySelector("svg")).not.toBeNull();
-    expect(container.querySelector("svg")?.getAttribute("viewBox")).toBe(
-      "0 0 420 96",
+    const compactLogomarks = homeLink.querySelectorAll(
+      'svg[viewBox="0 0 100 100"]',
     );
-    expect(homeLink.querySelector("span")).toHaveStyle({
+    const brandMarks = homeLink.querySelectorAll('span[style*="width"]');
+    // The full wordmark already includes the shield mark. Rendering the
+    // standalone desktop logomark beside it duplicates the logo when revealed.
+    expect(compactLogomarks).toHaveLength(0);
+    expect(container.querySelector('svg[viewBox="0 0 420 96"]')).not.toBeNull();
+    expect(
+      screen.queryByTestId("admin-nav-desktop-logomark"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("admin-nav-desktop-wordmark")).toHaveClass(
+      "hidden",
+      "md:block",
+    );
+    expect(screen.getByTestId("admin-nav-mobile-wordmark")).toHaveClass(
+      "md:hidden",
+    );
+    expect(brandMarks[0]).toHaveStyle({
+      width: "156px",
+    });
+    expect(brandMarks[1]).toHaveStyle({
       width: "200px",
     });
   });
@@ -145,7 +192,15 @@ describe("AdminNav", () => {
       </AdminShell>,
     );
 
+    const shell = screen.getByText("Dispatch content").parentElement
+      ?.parentElement;
     expect(screen.getByRole("navigation")).toHaveClass("md:h-screen");
+    expect(shell).toHaveClass("min-h-screen", "bg-theme-background-canvas");
+    expect(shell).not.toHaveClass(
+      "md:grid",
+      "md:grid-cols-[4.5rem_minmax(0,1fr)]",
+      "md:grid-cols-[15rem_minmax(0,1fr)]",
+    );
     expect(screen.getByText("Dispatch content")).toBeInTheDocument();
   });
 });

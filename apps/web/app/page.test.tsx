@@ -101,6 +101,42 @@ vi.mock("../hooks/useCustomerPortalAccess", () => ({
   }),
 }));
 
+vi.mock("../hooks/useGeofencing", () => ({
+  useJobGeofenceEvents: () => ({
+    data: [
+      {
+        id: "gps-1",
+        job_id: "job-1",
+        event_type: "departure",
+        latitude: 32.7422,
+        longitude: -117.1772,
+        accuracy_m: 18,
+        distance_m: null,
+        within_radius: null,
+        recorded_by: "tech-1",
+        client_event_id: "gps-client-1",
+        captured_at: "2026-05-14T16:00:00.000Z",
+        created_at: "2026-05-14T16:00:00.000Z",
+      },
+      {
+        id: "gps-2",
+        job_id: "job-2",
+        event_type: "departure",
+        latitude: 32.7157,
+        longitude: -117.1611,
+        accuracy_m: 16,
+        distance_m: null,
+        within_radius: null,
+        recorded_by: "tech-2",
+        client_event_id: "gps-client-2",
+        captured_at: "2026-05-14T16:00:00.000Z",
+        created_at: "2026-05-14T16:00:00.000Z",
+      },
+    ],
+    isLoading: false,
+  }),
+}));
+
 vi.mock("./admin-auth-context", () => ({
   useAdminAuth: () => ({
     profile: {
@@ -149,6 +185,21 @@ describe("HomePage", () => {
     expect(screen.getAllByText("Live map")).toHaveLength(1);
     expect(screen.getByText("Today's route")).toBeInTheDocument();
     expect(screen.getByText("2 techs live")).toBeInTheDocument();
+    expect(screen.getByText("San Diego Bay")).toBeInTheDocument();
+    expect(screen.getByText("Point Loma")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: /Eli Brooks GPS marker Stop 1: Demo - Rivera Cafe/,
+      }),
+    ).toHaveClass("bg-status-alert-success-solid");
+    expect(
+      screen.getByRole("link", {
+        name: /Maya Chen GPS marker Stop 2: Demo - Harbor Heights HOA/,
+      }),
+    ).toHaveClass("bg-status-alert-info-solid");
+    expect(screen.getByText("Scheduled").closest("span")).toHaveClass(
+      "bg-status-alert-info-bg",
+    );
     expect(
       screen.getByRole("heading", { name: "Jobs needing attention" }),
     ).toBeInTheDocument();

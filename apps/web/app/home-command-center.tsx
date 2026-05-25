@@ -1,10 +1,11 @@
 "use client";
 
 import {
+  buildDispatchLocationEvidenceByJob,
   buildDispatchRouteIntelligence,
   buildDispatchStaticMapState,
   buildHomeCommandCenterState,
-  type DispatchStaticMapPoint,
+  getTechnicianLabel,
   type HomeCommandCenterSeverity,
 } from "@pest-patrol/domain";
 import {
@@ -22,10 +23,16 @@ import { useAdminAuth } from "./admin-auth-context";
 import { DemoSeedControls } from "./demo-seed-controls";
 import { useCustomerPortalProviderStatus } from "../hooks/useCustomerPortalAccess";
 import { useCustomers } from "../hooks/useCustomers";
+import { useJobGeofenceEvents } from "../hooks/useGeofencing";
 import { useJobs } from "../hooks/useJobs";
 import { useChemicalInventory } from "../hooks/useInventory";
 import { useInvoices } from "../hooks/usePayments";
 import { useTechnicians } from "../hooks/useTechnicians";
+import {
+  SanDiegoMapBackdrop,
+  dispatchMapMarkerClassName,
+  mapPointSourceLabel,
+} from "./san-diego-map";
 
 const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
   good: "success",
@@ -94,16 +101,8 @@ function inventoryUnit(
   return item.unit ? String(item.unit) : "units";
 }
 
-function mapPointClassName(point: DispatchStaticMapPoint) {
-  if (point.status_state === "completed") {
-    return "border-status-alert-success-border bg-status-alert-success-solid";
-  }
-
-  if (point.evidence_state !== "complete") {
-    return "border-status-alert-warning-border bg-status-alert-warning-solid text-primitive-navy-950";
-  }
-
-  return "border-status-alert-info-border bg-status-alert-info-solid";
+function scheduleStatusTone(statusLabel: string): StatusPillTone | undefined {
+  return statusLabel === "Scheduled" ? "info" : undefined;
 }
 
 function DashboardMetricCard({
@@ -169,22 +168,15 @@ function DashboardMap({
         </Link>
       </div>
       <div
-        className="relative min-h-60 overflow-hidden bg-primitive-sky-100"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,.42) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.42) 1px, transparent 1px)",
-          backgroundSize: "88px 88px",
-        }}
+        aria-label="Provider-free San Diego live map"
+        className="relative aspect-[16/9] min-h-60 overflow-hidden bg-primitive-navy-950"
       >
-        <div className="absolute left-0 top-1/2 h-px w-full -rotate-6 bg-primitive-sky-500/30" />
-        <div className="absolute left-1/4 top-0 h-full w-px bg-primitive-sky-500/25" />
-        <div className="absolute bottom-8 right-8 h-24 w-24 rounded-full border border-primitive-sky-500/25 bg-primitive-sky-500/10" />
-        <div className="absolute left-14 top-10 h-20 w-20 rounded-full border border-primitive-sky-500/25 bg-theme-background-surface/25" />
+        <SanDiegoMapBackdrop />
         {mapState.points.map((point) => (
           <Link
-            aria-label={`${point.label} ${point.customer_label}`}
-            className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-theme-background-surface text-[10px] font-extrabold text-theme-text-inverse shadow-sm ${mapPointClassName(
-              point,
+            aria-label={`${point.technician_label} GPS marker ${point.label}: ${point.customer_label}`}
+            className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-[10px] font-extrabold shadow-sm ${dispatchMapMarkerClassName(
+              point.marker_tone,
             )}`}
             href={`/jobs/${point.job_id}`}
             key={point.job_id}
@@ -198,16 +190,22 @@ function DashboardMap({
         ))}
         {mapState.points.length === 0 ? (
           <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 rounded-md border border-dashed border-theme-border-default bg-theme-background-surface/90 p-3 text-sm font-semibold text-theme-text-secondary">
-            Add service coordinates to plot today&apos;s route.
+            Sync GPS evidence or add service coordinates to plot today&apos;s
+            route.
           </p>
         ) : null}
       </div>
-      <div className="grid grid-cols-3 divide-x divide-theme-border-subtle border-t border-theme-border-subtle text-center text-xs font-bold text-theme-text-secondary">
+      <div className="grid grid-cols-2 divide-x divide-y divide-theme-border-subtle border-t border-theme-border-subtle text-center text-xs font-bold text-theme-text-secondary sm:grid-cols-4 sm:divide-y-0">
         <p className="px-2 py-2">{mapState.summary.plotted_stops} plotted</p>
         <p className="px-2 py-2">
           {mapState.summary.missing_coordinates_count} missing GPS
         </p>
         <p className="px-2 py-2">{mapState.bounds.label}</p>
+        <p className="px-2 py-2">
+          {mapState.points[0]
+            ? mapPointSourceLabel(mapState.points[0].source)
+            : "GPS ready"}
+        </p>
       </div>
     </Card>
   );
@@ -287,6 +285,7 @@ export function HomeCommandCenter() {
   const inventoryQuery = useChemicalInventory();
   const invoicesQuery = useInvoices();
   const portalProviderQuery = useCustomerPortalProviderStatus();
+  const geofenceEventsQuery = useJobGeofenceEvents();
 
   const now = new Date();
   const today = dateKey(now);
@@ -294,10 +293,24 @@ export function HomeCommandCenter() {
   const technicians = techniciansQuery.data ?? [];
   const inventory = inventoryQuery.data ?? [];
   const invoices = invoicesQuery.data ?? [];
+  const locationEvidenceByJob = buildDispatchLocationEvidenceByJob(
+    jobs.map((job) => job.id),
+    geofenceEventsQuery.data ?? [],
+  );
+  const technicianLabels = Object.fromEntries(
+    technicians.map((technician) => [
+      technician.id,
+      getTechnicianLabel(technician),
+    ]),
+  );
   const routeIntelligence = buildDispatchRouteIntelligence(jobs, today, "all", {
+    evidenceByJob: locationEvidenceByJob,
     now,
   });
-  const mapState = buildDispatchStaticMapState(routeIntelligence.stops);
+  const mapState = buildDispatchStaticMapState(routeIntelligence.stops, {
+    evidenceByJob: locationEvidenceByJob,
+    technicianLabels,
+  });
 
   const state = buildHomeCommandCenterState({
     customers: customersQuery.data?.map((customer) => ({
@@ -329,6 +342,7 @@ export function HomeCommandCenter() {
   const loading =
     customersQuery.isLoading ||
     jobsQuery.isLoading ||
+    geofenceEventsQuery.isLoading ||
     techniciansQuery.isLoading ||
     inventoryQuery.isLoading ||
     invoicesQuery.isLoading ||
@@ -501,7 +515,12 @@ export function HomeCommandCenter() {
                         {job.customerName}
                       </p>
                     </div>
-                    <StatusPill tone={severityTones[job.statusSeverity]}>
+                    <StatusPill
+                      tone={
+                        scheduleStatusTone(job.statusLabel) ??
+                        severityTones[job.statusSeverity]
+                      }
+                    >
                       {job.statusLabel}
                     </StatusPill>
                   </Link>
