@@ -98,6 +98,11 @@ interface DemoSeedContext {
   technicianIdsByKey: Map<string, string>;
 }
 
+interface DemoSeedExecutionOptions {
+  adminUserId?: string;
+  preserveAdminUserId?: string;
+}
+
 function assertNoError(error: Error | null, action: string) {
   if (error) {
     throw new Error(`${action}: ${error.message}`);
@@ -144,16 +149,16 @@ function adminProfileRow(adminUser: DemoSeedAdminUser, userId: string) {
 }
 
 function jobRow(job: DemoSeedJob, context: DemoSeedContext) {
-  const technicianId = context.technicianIdsByKey.get(
-    job.assigned_technician_key,
-  );
+  const technicianId = job.assigned_technician_key
+    ? context.technicianIdsByKey.get(job.assigned_technician_key)
+    : null;
 
-  if (!technicianId) {
+  if (job.assigned_technician_key && !technicianId) {
     throw new Error(`Missing demo technician ${job.assigned_technician_key}`);
   }
 
   return {
-    assigned_tech_id: technicianId,
+    assigned_tech_id: technicianId ?? null,
     customer_id: job.customer_id,
     id: job.id,
     location_id: job.location_id,
@@ -273,6 +278,7 @@ export function validateDemoSeedExecution(
 export async function seedDemoRecords(
   client: DemoSeedSupabaseClient,
   plan: DemoSeedPlan,
+  options: Pick<DemoSeedExecutionOptions, "adminUserId"> = {},
 ) {
   const summary = emptySummary();
   const context: DemoSeedContext = {
@@ -283,6 +289,20 @@ export async function seedDemoRecords(
   };
 
   for (const adminUser of plan.adminUsers) {
+    if (options.adminUserId) {
+      await runSingle(
+        client
+          .from("profiles")
+          .upsert(adminProfileRow(adminUser, options.adminUserId), {
+            onConflict: "id",
+          })
+          .select("*"),
+        `Upsert demo admin profile ${adminUser.email}`,
+      );
+      summary.adminUsers += 1;
+      continue;
+    }
+
     const { data, error } = await client.auth.admin.createUser({
       email: adminUser.email,
       email_confirm: true,
@@ -446,6 +466,19 @@ export async function replaceDemoSeedRecords(
   return { reset, seed };
 }
 
+export async function refreshDemoLoginSeedRecords(
+  client: DemoSeedSupabaseClient,
+  plan: DemoSeedPlan,
+  adminUserId: string,
+) {
+  const reset = await resetDemoSeedRecords(client, plan, {
+    preserveAdminUserId: adminUserId,
+  });
+  const seed = await seedDemoRecords(client, plan, { adminUserId });
+
+  return { reset, seed };
+}
+
 function planCustomerIds(plan: DemoSeedPlan) {
   return plan.customers.map((customer) => customer.id);
 }
@@ -481,6 +514,7 @@ async function deleteByIds(
 export async function resetDemoSeedRecords(
   client: DemoSeedSupabaseClient,
   plan: DemoSeedPlan,
+  options: Pick<DemoSeedExecutionOptions, "preserveAdminUserId"> = {},
 ) {
   const customerIds = planCustomerIds(plan);
   const jobIds = planJobIds(plan);
@@ -516,10 +550,15 @@ export async function resetDemoSeedRecords(
   await deleteByIds(client, "locations", "customer_id", customerIds);
   await deleteByIds(client, "customers", "id", customerIds);
 
-  await runQuery(
-    client.from("profiles").delete().eq("email", plan.resetFilters.adminEmail),
-    "Reset demo admin profile",
-  );
+  if (!options.preserveAdminUserId) {
+    await runQuery(
+      client
+        .from("profiles")
+        .delete()
+        .eq("email", plan.resetFilters.adminEmail),
+      "Reset demo admin profile",
+    );
+  }
 
   await runQuery(
     client
@@ -534,7 +573,8 @@ export async function resetDemoSeedRecords(
 
   const demoUsers = data.users.filter(
     (user) =>
-      user.email === plan.resetFilters.adminEmail ||
+      (user.email === plan.resetFilters.adminEmail &&
+        user.id !== options.preserveAdminUserId) ||
       user.email?.startsWith(plan.resetFilters.technicianEmailPrefix),
   );
 
@@ -617,6 +657,24 @@ export async function prepareLocalDemoLoginRecord() {
 
   if (!response.ok) {
     throw new Error(await jsonError(response, "Unable to prepare demo login"));
+  }
+
+  return (await response.json()) as DemoSeedActionResponse;
+}
+
+export async function refreshDemoLoginSeedRecord(
+  client: DemoSeedAuthClient = supabase,
+) {
+  const token = await getAccessToken(client);
+  const response = await fetch("/api/demo-seed/login-refresh", {
+    headers: authHeaders(token),
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await jsonError(response, "Unable to refresh demo login data"),
+    );
   }
 
   return (await response.json()) as DemoSeedActionResponse;

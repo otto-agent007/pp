@@ -58,6 +58,15 @@ const technicianIdsByKey = new Map([
   ["maya", "00000000-0000-4000-8000-00000000b001"],
   ["eli", "00000000-0000-4000-8000-00000000b002"],
   ["sol", "00000000-0000-4000-8000-00000000b003"],
+  ["priya", "00000000-0000-4000-8000-00000000b004"],
+  ["dante", "00000000-0000-4000-8000-00000000b005"],
+  ["iris", "00000000-0000-4000-8000-00000000b006"],
+  ["noa", "00000000-0000-4000-8000-00000000b007"],
+  ["leo", "00000000-0000-4000-8000-00000000b008"],
+  ["zara", "00000000-0000-4000-8000-00000000b009"],
+  ["omar", "00000000-0000-4000-8000-00000000b010"],
+  ["nina", "00000000-0000-4000-8000-00000000b011"],
+  ["gabe", "00000000-0000-4000-8000-00000000b012"],
 ]);
 
 function timestamp(now: Date) {
@@ -203,9 +212,9 @@ export function buildDemoWorkflowFixtures(
   );
   const inventoryById = new Map(inventory.map((item) => [item.id, item]));
   const jobs: Job[] = plan.jobs.map((job) => {
-    const assignedTechnician = techniciansByKey.get(
-      job.assigned_technician_key,
-    );
+    const assignedTechnician = job.assigned_technician_key
+      ? techniciansByKey.get(job.assigned_technician_key)
+      : undefined;
 
     return {
       id: job.id,

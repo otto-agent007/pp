@@ -1,9 +1,11 @@
 import { getProfileRecord } from "@pest-patrol/api-client";
 import { validateAdminAccess } from "@pest-patrol/domain";
+import type { UserProfile } from "@pest-patrol/types";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 interface AdminAccess {
+  profile: UserProfile;
   userId: string;
 }
 
@@ -87,6 +89,7 @@ export async function getAdminAccess(request: Request): Promise<
 
     return {
       access: {
+        profile,
         userId: data.user.id,
       },
       response: null,

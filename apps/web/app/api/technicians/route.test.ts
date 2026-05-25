@@ -9,7 +9,8 @@ vi.mock("../_lib/server-auth", () => ({
 }));
 
 vi.mock("@pest-patrol/api-client", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@pest-patrol/api-client")>();
+  const actual =
+    await importOriginal<typeof import("@pest-patrol/api-client")>();
 
   return {
     ...actual,
@@ -41,7 +42,18 @@ describe("technicians route", () => {
     vi.mocked(listTechnicianProfileRecords).mockReset();
     vi.mocked(inviteTechnicianWithAdminClientRecord).mockReset();
     vi.mocked(getAdminAccess).mockResolvedValue({
-      access: { userId: "admin-user" },
+      access: {
+        profile: {
+          id: "admin-user",
+          role: "admin",
+          email: "admin@example.com",
+          display_name: "Admin User",
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        userId: "admin-user",
+      },
       response: null,
     });
   });
@@ -68,7 +80,9 @@ describe("technicians route", () => {
   });
 
   it("lists technician profiles for admins", async () => {
-    vi.mocked(listTechnicianProfileRecords).mockResolvedValue([technician] as never);
+    vi.mocked(listTechnicianProfileRecords).mockResolvedValue([
+      technician,
+    ] as never);
 
     const response = await GET(new Request("http://localhost/api/technicians"));
     const body = (await response.json()) as { technicians: unknown[] };

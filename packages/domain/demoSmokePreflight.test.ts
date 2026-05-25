@@ -27,9 +27,9 @@ describe("demo smoke preflight", () => {
     });
     expect(result.summary).toMatchObject({
       admin_users: 1,
-      customers: 4,
-      jobs: 5,
-      technicians: 3,
+      customers: 18,
+      jobs: 30,
+      technicians: 12,
     });
     expect(result.commands.map((command) => command.command)).toContain(
       `corepack pnpm demo:seed -- --target local --confirm ${DEMO_SEED_CONFIRMATION}`,

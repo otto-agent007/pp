@@ -1,5 +1,15 @@
 # Done
 
+## Automatic Large Demo Login Refresh V1
+
+- Expanded the guarded synthetic San Diego demo story to 12 technicians, 18 customers, 26 locations, and 30 jobs across scheduled, en route, in-progress, completed, canceled, late, future, and intentionally unassigned states
+- Preserved and lightly expanded the existing proof story with 6 inventory items, 6 chemical logs, 4 treatment form submissions, 3 invoices, 3 proof media records, and payment state
+- Added an authenticated `demo@email.com` login refresh path that verifies the signed-in profile email, refuses production, reuses service-role/local-preview guardrails, refreshes demo-owned operational records, and preserves the active demo admin auth user/session
+- Updated seed/reset helpers so demo refresh deletes and recreates demo-owned dependent records in dependency order without deleting non-demo users or the signed-in demo admin user
+- Triggered demo refresh after manual `demo@email.com` sign-in and the local one-click demo button while keeping local fixture mode available when Supabase env values are absent
+- Kept migrations, schema changes, provider setup, env changes, preview mutations, production mutations, and public API contract changes out of scope
+- Verified with focused domain/API-client/web tests, full `corepack pnpm test`, typecheck, lint, and `git diff --check` from the isolated worktree; `corepack pnpm build` passed from a temporary short-path verification worktree because the isolated Windows worktree path exceeds the Hermes compiler spawn limit
+
 ## Launch Readiness White Canvas V1
 
 - Synced local `main` to the PR #53 merge commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3` and created `codex/launch-readiness-white-canvas` for the readiness batch

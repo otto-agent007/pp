@@ -30,10 +30,12 @@ export {
   signOutRecord,
   updatePasswordRecord,
 } from "./auth";
-export type { AuthRecord, AuthSupabaseClient, TechnicianAuthRecord } from "./auth";
-export {
-  listCloseoutCaptureSummaryRecords,
-} from "./closeouts";
+export type {
+  AuthRecord,
+  AuthSupabaseClient,
+  TechnicianAuthRecord,
+} from "./auth";
+export { listCloseoutCaptureSummaryRecords } from "./closeouts";
 export {
   assertComplianceSchemaReady,
   createComplianceAdvisoryAuditRecord,
@@ -121,13 +123,12 @@ export {
 export {
   getDemoSeedStatusRecord,
   prepareLocalDemoLoginRecord,
+  refreshDemoLoginSeedRecord,
+  refreshDemoLoginSeedRecords,
   replaceDemoSeedRecords,
   resetDemoSeedRecords,
   runDemoSeedActionRecord,
   seedDemoRecords,
   validateDemoSeedExecution,
 } from "./demoSeed";
-export type {
-  DemoSeedSummary,
-  DemoSeedSupabaseClient,
-} from "./demoSeed";
+export type { DemoSeedSummary, DemoSeedSupabaseClient } from "./demoSeed";

@@ -24,8 +24,8 @@ describe("local demo login seed route", () => {
     serviceClient = { from: vi.fn() };
     replaceDemoSeedRecords.mockReset();
     replaceDemoSeedRecords.mockResolvedValue({
-      reset: { customers: 4, jobs: 5 },
-      seed: { adminUsers: 1, customers: 4, jobs: 5 },
+      reset: { customers: 18, jobs: 30 },
+      seed: { adminUsers: 1, customers: 18, jobs: 30 },
     });
     vi.unstubAllEnvs();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");
@@ -66,7 +66,9 @@ describe("local demo login seed route", () => {
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(403);
-    expect(body.error).toBe("Local demo login is disabled outside local development.");
+    expect(body.error).toBe(
+      "Local demo login is disabled outside local development.",
+    );
     expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
   });
 });
