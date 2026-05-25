@@ -9,7 +9,13 @@ import {
 } from "@pest-patrol/domain";
 import type { Invoice, InvoiceInput } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLocalDemoFixtures } from "./localDemoData";
+import {
+  createLocalDemoInvoice,
+  createLocalDemoInvoicePaymentLink,
+  getLocalDemoFixtures,
+  markLocalDemoInvoicePaid,
+  voidLocalDemoInvoice,
+} from "./localDemoData";
 
 export const invoicesQueryKey = ["invoices"] as const;
 
@@ -24,7 +30,10 @@ export function useCreateInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createInvoice,
+    mutationFn: (input: InvoiceInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(createLocalDemoInvoice(input))
+        : createInvoice(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: invoicesQueryKey });
     },
@@ -35,10 +44,28 @@ export function useCreateInvoicePaymentLink() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createInvoicePaymentLink,
+    mutationFn: (invoice: Invoice) => {
+      const fixtures = getLocalDemoFixtures();
+
+      if (fixtures) {
+        createLocalDemoInvoicePaymentLink(invoice);
+        const updatedInvoice = fixtures.invoices.find(
+          (current) => current.id === invoice.id,
+        );
+
+        if (!updatedInvoice) {
+          throw new Error("Invoice was not found in the local demo.");
+        }
+
+        return Promise.resolve(updatedInvoice);
+      }
+
+      return createInvoicePaymentLink(invoice);
+    },
     onMutate: async (invoice) => {
       await queryClient.cancelQueries({ queryKey: invoicesQueryKey });
-      const previous = queryClient.getQueryData<Invoice[]>(invoicesQueryKey) ?? [];
+      const previous =
+        queryClient.getQueryData<Invoice[]>(invoicesQueryKey) ?? [];
 
       queryClient.setQueryData<Invoice[]>(
         invoicesQueryKey,
@@ -62,10 +89,14 @@ export function useMarkInvoicePaid() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: markInvoicePaid,
+    mutationFn: (id: string) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(markLocalDemoInvoicePaid(id))
+        : markInvoicePaid(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: invoicesQueryKey });
-      const previous = queryClient.getQueryData<Invoice[]>(invoicesQueryKey) ?? [];
+      const previous =
+        queryClient.getQueryData<Invoice[]>(invoicesQueryKey) ?? [];
 
       queryClient.setQueryData<Invoice[]>(
         invoicesQueryKey,
@@ -89,10 +120,14 @@ export function useVoidInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: voidInvoice,
+    mutationFn: (id: string) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(voidLocalDemoInvoice(id))
+        : voidInvoice(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: invoicesQueryKey });
-      const previous = queryClient.getQueryData<Invoice[]>(invoicesQueryKey) ?? [];
+      const previous =
+        queryClient.getQueryData<Invoice[]>(invoicesQueryKey) ?? [];
 
       queryClient.setQueryData<Invoice[]>(
         invoicesQueryKey,

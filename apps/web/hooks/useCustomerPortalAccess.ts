@@ -10,10 +10,17 @@ import {
 } from "@pest-patrol/domain";
 import type {
   CustomerPortalAccessGrant,
+  CustomerPortalAccessInput,
   CustomerPortalAccessTokenSummary,
+  CustomerPortalSendInput,
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLocalDemoFixtures } from "./localDemoData";
+import {
+  createLocalDemoPortalAccessToken,
+  getLocalDemoFixtures,
+  revokeLocalDemoPortalAccessToken,
+  sendLocalDemoPortalAccessToken,
+} from "./localDemoData";
 
 export const customerPortalAccessTokensQueryKey = (customerId: string) =>
   ["customer-portal-access-tokens", customerId] as const;
@@ -68,7 +75,10 @@ export function useCreateCustomerPortalAccessToken() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createCustomerPortalAccessToken,
+    mutationFn: (input: CustomerPortalAccessInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(createLocalDemoPortalAccessToken(input))
+        : createCustomerPortalAccessToken(input),
     onSuccess: (grant: CustomerPortalAccessGrant) => {
       void queryClient.invalidateQueries({
         queryKey: customerPortalAccessTokensQueryKey(grant.customer_id),
@@ -81,13 +91,17 @@ export function useRevokeCustomerPortalAccessToken(customerId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: revokeCustomerPortalAccessToken,
+    mutationFn: (id: string) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(revokeLocalDemoPortalAccessToken(id))
+        : revokeCustomerPortalAccessToken(id),
     onMutate: async (id) => {
       const queryKey = customerPortalAccessTokensQueryKey(customerId);
       await queryClient.cancelQueries({ queryKey });
       const previous =
-        queryClient.getQueryData<CustomerPortalAccessTokenSummary[]>(queryKey) ??
-        [];
+        queryClient.getQueryData<CustomerPortalAccessTokenSummary[]>(
+          queryKey,
+        ) ?? [];
 
       queryClient.setQueryData<CustomerPortalAccessTokenSummary[]>(
         queryKey,
@@ -122,6 +136,9 @@ export function useRevokeCustomerPortalAccessToken(customerId: string) {
 
 export function useSendCustomerPortalAccessToken() {
   return useMutation({
-    mutationFn: sendCustomerPortalAccessToken,
+    mutationFn: (input: CustomerPortalSendInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(sendLocalDemoPortalAccessToken(input))
+        : sendCustomerPortalAccessToken(input),
   });
 }

@@ -4,10 +4,21 @@ No active implementation slice is currently open.
 
 Recent closure:
 
-- Automatic Large Demo Login Refresh V1 expanded the guarded synthetic San
-  Diego demo story to 12 technicians, 18 customers, 26 locations, and 30 jobs
-  while preserving inventory, chemical logs, treatment forms, invoices,
-  payment state, and proof media.
+- Large Interactive Demo Reset V1 updated the canonical demo seed and local
+  fixture demo so reuse/login resets to 16 technicians, 100 customers, 108
+  locations, 180 current-week jobs, and 14 realistic synthetic inventory items.
+- The no-env local demo now supports editable Core Ops fixture mutations for
+  customers, technicians, jobs/dispatch, inventory usage, invoices/payments,
+  and portal access token state, and resets on demo login or Demo data reset.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  preview mutations, production mutations, and public API contract changes out
+  of scope.
+- Automatic Large Demo Login Refresh V1 initially expanded the guarded
+  synthetic San Diego demo story; Large Interactive Demo Reset V1 now
+  supersedes those defaults with 16 technicians, 100 customers, 108 locations,
+  180 current-week jobs, and 14 realistic synthetic inventory items while
+  preserving chemical logs, treatment forms, invoices, payment state, and proof
+  media.
 - `demo@email.com` sign-in now calls an authenticated login-refresh route that
   verifies the signed-in profile email, refuses production, reuses existing
   service-role/local-preview guardrails, refreshes demo-owned operational
@@ -211,8 +222,8 @@ Recent closure:
 Follow-up candidates:
 
 - [ ] Consider the next mobile-native primitive adoption slice only after the
-  current shared-native package changes land; likely candidates are
-  capture-control buttons/cards, not a broad mobile restyle.
+      current shared-native package changes land; likely candidates are
+      capture-control buttons/cards, not a broad mobile restyle.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.

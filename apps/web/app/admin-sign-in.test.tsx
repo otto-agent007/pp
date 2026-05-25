@@ -111,6 +111,21 @@ describe("AdminSignIn", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses the prepared local fixture demo session without Supabase sign-in", async () => {
+    const user = userEvent.setup();
+    prepareLocalDemoLogin.mockResolvedValue({
+      status: { environment_label: "Local fixture demo" },
+    });
+
+    render(<AdminSignIn />);
+
+    await user.click(screen.getByRole("button", { name: "Log in as demo" }));
+
+    expect(prepareLocalDemoLogin).toHaveBeenCalledTimes(1);
+    expect(signIn).not.toHaveBeenCalled();
+    expect(signInLocalDemo).toHaveBeenCalledTimes(1);
+  });
+
   it("links to password reset", () => {
     render(<AdminSignIn />);
 

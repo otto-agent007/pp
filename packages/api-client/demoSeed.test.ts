@@ -165,16 +165,16 @@ describe("demo seed api client", () => {
 
     expect(summary).toMatchObject({
       adminUsers: 1,
-      technicians: 12,
-      customers: 18,
-      inventory: 6,
-      jobs: 30,
+      technicians: 16,
+      customers: 100,
+      inventory: 14,
+      jobs: 180,
       media: 3,
       invoices: 3,
     });
     expect(
       calls.filter((call) => call.startsWith("auth.createUser")),
-    ).toHaveLength(13);
+    ).toHaveLength(17);
     expect(calls[0]).toBe("auth.createUser:demo@email.com");
     expect(calls).toEqual(
       expect.arrayContaining([
@@ -211,8 +211,8 @@ describe("demo seed api client", () => {
       plan,
     );
 
-    expect(result.reset.jobs).toBe(30);
-    expect(result.seed.jobs).toBe(30);
+    expect(result.reset.jobs).toBe(180);
+    expect(result.seed.jobs).toBe(180);
     expect(calls.indexOf("from:payments")).toBeLessThan(
       calls.indexOf("auth.createUser:demo@email.com"),
     );
@@ -236,7 +236,7 @@ describe("demo seed api client", () => {
 
     expect(result.reset.adminUsers).toBe(0);
     expect(result.seed.adminUsers).toBe(1);
-    expect(result.seed.jobs).toBe(30);
+    expect(result.seed.jobs).toBe(180);
     expect(calls).not.toContain("auth.deleteUser:user-demo-admin");
     expect(calls).not.toContain("auth.createUser:demo@email.com");
     expect(calls).toContain("auth.deleteUser:user-1");
@@ -299,14 +299,14 @@ describe("demo seed api client", () => {
         ok: true,
         json: vi.fn().mockResolvedValue({
           status: { available: true, target: "local" },
-          summary: { customers: 18 },
+          summary: { customers: 100 },
         }),
       })
       .mockResolvedValueOnce({
         ok: true,
         json: vi.fn().mockResolvedValue({
           action: "seed",
-          result: { seed: { customers: 18 } },
+          result: { seed: { customers: 100 } },
         }),
       });
     vi.stubGlobal("fetch", fetchMock);
@@ -357,7 +357,7 @@ describe("demo seed api client", () => {
       ok: true,
       json: vi.fn().mockResolvedValue({
         action: "seed",
-        result: { seed: { customers: 18 } },
+        result: { seed: { customers: 100 } },
       }),
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -375,7 +375,7 @@ describe("demo seed api client", () => {
       ok: true,
       json: vi.fn().mockResolvedValue({
         action: "seed",
-        result: { seed: { customers: 18, jobs: 30 } },
+        result: { seed: { customers: 100, jobs: 180 } },
       }),
     });
     vi.stubGlobal("fetch", fetchMock);

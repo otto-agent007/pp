@@ -11,7 +11,6 @@ import {
 import type { UserProfile } from "@pest-patrol/types";
 import {
   DEMO_SEED_ADMIN_EMAIL,
-  buildDemoWorkflowFixtures,
   establishPasswordRecoverySession,
   getCurrentAdminAuth,
   requestPasswordReset as requestPasswordResetDomain,
@@ -20,6 +19,10 @@ import {
   signOutAdmin,
   updateCurrentUserPassword,
 } from "@pest-patrol/domain";
+import {
+  getLocalDemoFixtures,
+  resetLocalDemoFixtures,
+} from "../hooks/localDemoData";
 
 type AdminAuthStatus = "loading" | "signed_in" | "signed_out";
 
@@ -128,8 +131,9 @@ function writeLocalDemoSession(active: boolean) {
 }
 
 function buildLocalDemoAuthState(): AdminAuthState {
-  const fixtures = buildDemoWorkflowFixtures();
-  const profile = fixtures.adminProfile;
+  const profile =
+    getLocalDemoFixtures()?.adminProfile ??
+    resetLocalDemoFixtures().adminProfile;
   const nowSeconds = Math.floor(Date.now() / 1000);
 
   return {
@@ -233,6 +237,7 @@ async function signInLocalDemo() {
   }
 
   writeLocalDemoSession(true);
+  resetLocalDemoFixtures();
   setAuthState(buildLocalDemoAuthState());
 }
 

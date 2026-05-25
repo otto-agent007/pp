@@ -11,15 +11,15 @@ describe("demo workflow fixtures", () => {
       now: new Date("2026-05-14T16:00:00.000Z"),
     });
 
-    expect(fixtures.customers).toHaveLength(18);
+    expect(fixtures.customers).toHaveLength(100);
     expect(fixtures.customers[0].locations).toHaveLength(2);
-    expect(fixtures.technicians).toHaveLength(12);
-    expect(fixtures.jobs).toHaveLength(30);
-    expect(fixtures.jobs.filter((job) => !job.assigned_tech_id)).toHaveLength(
-      3,
-    );
+    expect(fixtures.technicians).toHaveLength(16);
+    expect(fixtures.jobs).toHaveLength(180);
+    expect(
+      fixtures.jobs.filter((job) => !job.assigned_tech_id).length,
+    ).toBeGreaterThanOrEqual(3);
     expect(fixtures.geofenceEvents).toHaveLength(4);
-    expect(fixtures.inventory).toHaveLength(6);
+    expect(fixtures.inventory).toHaveLength(14);
     expect(fixtures.invoices).toHaveLength(3);
     expect(fixtures.closeoutSummaries).toContainEqual({
       chemicalLogs: 3,
@@ -43,6 +43,17 @@ describe("demo workflow fixtures", () => {
     const harborJob = fixtures.jobs.find(
       (job) => job.id === "00000000-0000-4000-8000-00000000e001",
     );
+    const customerIds = new Set(
+      fixtures.customers.map((customer) => customer.id),
+    );
+    const locationIds = new Set(
+      fixtures.customers.flatMap((customer) =>
+        (customer.locations ?? []).map((location) => location.id),
+      ),
+    );
+    const technicianIds = new Set(
+      fixtures.technicians.map((technician) => technician.id),
+    );
 
     expect(completedJob?.customer?.name).toBe("Demo - Rivera Cafe");
     expect(completedJob?.location?.nickname).toBe("Cafe");
@@ -57,7 +68,7 @@ describe("demo workflow fixtures", () => {
     });
     expect(fixtures.formSubmissions[0].job?.id).toBe(completedJob?.id);
     expect(fixtures.chemicalLogs[0].chemical?.name).toBe(
-      "Demo - Ant Bait Stations",
+      "Demo - Ant Gel Bait Rotation A",
     );
     expect(fixtures.media[0].signed_url).toBe(
       "/demo-media/demo-rivera-cafe-dry-storage.svg",
@@ -74,6 +85,18 @@ describe("demo workflow fixtures", () => {
         recorded_by: harborJob?.assigned_tech_id,
       }),
     );
+    expect(fixtures.jobs.every((job) => customerIds.has(job.customer_id))).toBe(
+      true,
+    );
+    expect(fixtures.jobs.every((job) => locationIds.has(job.location_id))).toBe(
+      true,
+    );
+    expect(
+      fixtures.jobs.every(
+        (job) =>
+          !job.assigned_tech_id || technicianIds.has(job.assigned_tech_id),
+      ),
+    ).toBe(true);
   });
 
   it("enables local fixtures only outside production when public Supabase env is missing", () => {

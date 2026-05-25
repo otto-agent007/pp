@@ -28,18 +28,26 @@ describe("demo seed data", () => {
         role: "admin",
       },
     ]);
-    expect(plan.customers).toHaveLength(18);
+    expect(plan.customers).toHaveLength(100);
     expect(plan.customers[0]).toMatchObject({
       key: "harbor",
       name: "Demo - Harbor Heights HOA",
       email: "demo+harbor-hoa@example.test",
     });
-    expect(plan.technicians).toHaveLength(12);
+    expect(plan.technicians).toHaveLength(16);
     expect(
       plan.technicians.every((tech) => tech.email.endsWith("@example.test")),
     ).toBe(true);
-    expect(plan.inventory).toHaveLength(6);
-    expect(plan.jobs).toHaveLength(30);
+    expect(plan.inventory).toHaveLength(14);
+    expect(plan.inventory.map((item) => item.name)).toEqual(
+      expect.arrayContaining([
+        "Demo - Non-Repellent Perimeter SC",
+        "Demo - Insect Growth Regulator Concentrate",
+        "Demo - Tamper-Resistant Bait Stations",
+        "Demo - PPE Service Restock Kit",
+      ]),
+    );
+    expect(plan.jobs).toHaveLength(180);
     expect(plan.jobs.map((job) => job.scheduled_start)).toContain(
       "2026-05-14T09:38:00.000Z",
     );
@@ -50,8 +58,8 @@ describe("demo seed data", () => {
     expect(plan.jobs.some((job) => job.status === "in_progress")).toBe(true);
     expect(plan.jobs.some((job) => job.status === "canceled")).toBe(true);
     expect(
-      plan.jobs.filter((job) => !job.assigned_technician_key),
-    ).toHaveLength(3);
+      plan.jobs.filter((job) => !job.assigned_technician_key).length,
+    ).toBeGreaterThanOrEqual(3);
     expect(plan.chemicalLogs).toHaveLength(6);
     expect(plan.formSubmissions).toHaveLength(4);
     expect(plan.media).toHaveLength(3);
@@ -61,6 +69,85 @@ describe("demo seed data", () => {
       "draft",
     ]);
     expect(JSON.stringify(plan)).toContain(DEMO_SEED_MARKER);
+  });
+
+  it("keeps generated demo records unique, linked, and inside the current dispatch week", () => {
+    const plan = buildDemoSeedPlan({
+      now: new Date("2026-05-14T16:38:00.000Z"),
+    });
+    const customerIds = new Set(plan.customers.map((customer) => customer.id));
+    const locationIds = new Set(
+      plan.customers.flatMap((customer) =>
+        customer.locations.map((location) => location.id),
+      ),
+    );
+    const inventoryKeys = new Set(plan.inventory.map((item) => item.key));
+    const technicianKeys = new Set(
+      plan.technicians.map((technician) => technician.key),
+    );
+
+    expect(customerIds.size).toBe(plan.customers.length);
+    expect(new Set(plan.customers.map((customer) => customer.email)).size).toBe(
+      100,
+    );
+    expect(new Set(plan.jobs.map((job) => job.id)).size).toBe(180);
+    expect(new Set(plan.technicians.map((tech) => tech.email)).size).toBe(16);
+    expect(plan.jobs.every((job) => customerIds.has(job.customer_id))).toBe(
+      true,
+    );
+    expect(plan.jobs.every((job) => locationIds.has(job.location_id))).toBe(
+      true,
+    );
+    expect(
+      plan.jobs.every(
+        (job) => !job.inventory_key || inventoryKeys.has(job.inventory_key),
+      ),
+    ).toBe(true);
+    expect(
+      plan.inventory.every(
+        (item) =>
+          item.name.startsWith("Demo - ") &&
+          item.current_stock > 0 &&
+          item.reorder_level >= 0,
+      ),
+    ).toBe(true);
+    expect(
+      plan.jobs.every(
+        (job) =>
+          !job.assigned_technician_key ||
+          technicianKeys.has(job.assigned_technician_key),
+      ),
+    ).toBe(true);
+    expect(
+      plan.jobs.every((job) => {
+        const date = job.scheduled_start.slice(0, 10);
+
+        return date >= "2026-05-10" && date <= "2026-05-16";
+      }),
+    ).toBe(true);
+    expect(
+      plan.jobs.find((job) => job.key === "rivera-completed"),
+    ).toMatchObject({
+      customer_id: "00000000-0000-4000-8000-00000000c002",
+      status: "completed",
+    });
+  });
+
+  it("keeps every demo job inside the Sunday-Saturday dispatch week near week edges", () => {
+    [
+      new Date("2026-05-10T16:38:00.000Z"),
+      new Date("2026-05-16T16:38:00.000Z"),
+    ].forEach((now) => {
+      const plan = buildDemoSeedPlan({ now });
+
+      expect(
+        plan.jobs.every((job) => {
+          const date = job.scheduled_start.slice(0, 10);
+
+          return date >= "2026-05-10" && date <= "2026-05-16";
+        }),
+      ).toBe(true);
+    });
   });
 
   it("validates guardrails before any seed write can run", () => {
@@ -169,15 +256,15 @@ describe("demo seed data", () => {
     expect(getDemoSeedPlanSummary(plan)).toEqual({
       admin_users: 1,
       chemical_logs: 6,
-      customers: 18,
+      customers: 100,
       form_submissions: 4,
-      inventory_items: 6,
+      inventory_items: 14,
       invoices: 3,
-      jobs: 30,
-      locations: 26,
+      jobs: 180,
+      locations: 108,
       media_items: 3,
       payments: 1,
-      technicians: 12,
+      technicians: 16,
     });
   });
 
