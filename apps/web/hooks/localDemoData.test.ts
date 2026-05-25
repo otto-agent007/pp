@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  activateLocalDemoFixtureSession,
   archiveLocalDemoCustomer,
   archiveLocalDemoInventoryItem,
   assignLocalDemoJobTechnician,
@@ -11,8 +12,10 @@ import {
   createLocalDemoInvoicePaymentLink,
   createLocalDemoJob,
   createLocalDemoPortalAccessToken,
+  deactivateLocalDemoFixtureSession,
   getLocalDemoFixtures,
   inviteLocalDemoTechnician,
+  isLocalDemoFixtureMode,
   markLocalDemoInvoicePaid,
   resetLocalDemoFixtures,
   revokeLocalDemoPortalAccessToken,
@@ -24,9 +27,30 @@ import {
 
 describe("local demo editable fixture store", () => {
   beforeEach(() => {
+    deactivateLocalDemoFixtureSession();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
     resetLocalDemoFixtures();
+  });
+
+  it("can be activated for a demo session even when Supabase env exists", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://demo.supabase.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "demo-anon-key");
+
+    expect(isLocalDemoFixtureMode()).toBe(false);
+    expect(getLocalDemoFixtures()).toBeNull();
+
+    activateLocalDemoFixtureSession({ reset: true });
+
+    expect(isLocalDemoFixtureMode()).toBe(true);
+    expect(getLocalDemoFixtures()?.customers).toHaveLength(100);
+    expect(getLocalDemoFixtures()?.technicians).toHaveLength(16);
+    expect(getLocalDemoFixtures()?.jobs).toHaveLength(180);
+
+    deactivateLocalDemoFixtureSession();
+
+    expect(isLocalDemoFixtureMode()).toBe(false);
+    expect(getLocalDemoFixtures()).toBeNull();
   });
 
   it("starts from the canonical large demo and resets edits for reuse", () => {

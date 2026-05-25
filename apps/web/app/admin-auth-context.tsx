@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import {
+  getDemoSeedStatusRecord,
   isDemoLoginRefreshUnavailableError,
   refreshDemoLoginSeedRecord,
   supabase,
@@ -20,6 +21,8 @@ import {
   updateCurrentUserPassword,
 } from "@pest-patrol/domain";
 import {
+  activateLocalDemoFixtureSession,
+  deactivateLocalDemoFixtureSession,
   getLocalDemoFixtures,
   resetLocalDemoFixtures,
 } from "../hooks/localDemoData";
@@ -161,6 +164,32 @@ function buildLocalDemoAuthState(): AdminAuthState {
   };
 }
 
+function isProductionDemoSeedUnavailable(
+  status: Awaited<ReturnType<typeof getDemoSeedStatusRecord>>["status"],
+) {
+  return (
+    status.environment_label === "Production" ||
+    (status.reason?.includes("production") ?? false)
+  );
+}
+
+async function syncDemoFixtureSessionFromRuntimeStatus() {
+  try {
+    const status = await getDemoSeedStatusRecord(supabase);
+
+    if (isProductionDemoSeedUnavailable(status.status)) {
+      activateLocalDemoFixtureSession({ reset: false });
+      return;
+    }
+
+    deactivateLocalDemoFixtureSession();
+  } catch (error) {
+    if (isDemoLoginRefreshUnavailableError(error)) {
+      activateLocalDemoFixtureSession({ reset: false });
+    }
+  }
+}
+
 export async function initializeAdminAuth() {
   patchAuthState({
     error: null,
@@ -176,8 +205,15 @@ export async function initializeAdminAuth() {
     const record = await getCurrentAdminAuth(supabase);
 
     if (!record) {
+      deactivateLocalDemoFixtureSession();
       setAuthState(signedOutState);
       return;
+    }
+
+    if (record.profile.email === DEMO_SEED_ADMIN_EMAIL) {
+      await syncDemoFixtureSessionFromRuntimeStatus();
+    } else {
+      deactivateLocalDemoFixtureSession();
     }
 
     setAuthState({
@@ -210,11 +246,16 @@ async function signIn(email: string, password: string) {
     if (record.profile.email === DEMO_SEED_ADMIN_EMAIL) {
       try {
         await refreshDemoLoginSeedRecord(supabase);
+        deactivateLocalDemoFixtureSession();
       } catch (error) {
         if (!isDemoLoginRefreshUnavailableError(error)) {
           throw error;
         }
+
+        activateLocalDemoFixtureSession({ reset: true });
       }
+    } else {
+      deactivateLocalDemoFixtureSession();
     }
 
     setAuthState({
@@ -245,6 +286,7 @@ async function signOut() {
   try {
     await signOutAdmin(supabase);
   } finally {
+    deactivateLocalDemoFixtureSession();
     writeLocalDemoSession(false);
     setAuthState(signedOutState);
   }

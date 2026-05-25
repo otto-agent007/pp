@@ -6,7 +6,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 async function renderAuthProbe(
   profileEmail: string,
   options: {
+    currentAuth?: boolean;
     refreshError?: Error;
+    seedStatus?: {
+      available: boolean;
+      environment_label: string;
+      reason: string | null;
+      target: "local" | "preview";
+    };
   } = {},
 ) {
   vi.resetModules();
@@ -17,7 +24,7 @@ async function renderAuthProbe(
   const isDemoLoginRefreshUnavailableError = vi.fn(
     (error: unknown) => error === options.refreshError,
   );
-  const signInAdmin = vi.fn().mockResolvedValue({
+  const authRecord = {
     profile: {
       id: "demo-admin-user",
       role: "admin",
@@ -32,9 +39,25 @@ async function renderAuthProbe(
       refresh_token: "demo-refresh",
       user: { id: "demo-admin-user", email: profileEmail },
     },
+  };
+  const signInAdmin = vi.fn().mockResolvedValue(authRecord);
+  const getCurrentAdminAuth = vi
+    .fn()
+    .mockResolvedValue(options.currentAuth ? authRecord : null);
+  const getDemoSeedStatusRecord = vi.fn().mockResolvedValue({
+    status: options.seedStatus ?? {
+      available: true,
+      environment_label: "Protected preview demo",
+      reason: null,
+      target: "preview",
+    },
+    summary: {},
   });
+  const activateLocalDemoFixtureSession = vi.fn();
+  const deactivateLocalDemoFixtureSession = vi.fn();
 
   vi.doMock("@pest-patrol/api-client", () => ({
+    getDemoSeedStatusRecord,
     isDemoLoginRefreshUnavailableError,
     refreshDemoLoginSeedRecord,
     supabase: {
@@ -47,12 +70,20 @@ async function renderAuthProbe(
     DEMO_SEED_ADMIN_EMAIL: "demo@email.com",
     buildDemoWorkflowFixtures: vi.fn(),
     establishPasswordRecoverySession: vi.fn(),
-    getCurrentAdminAuth: vi.fn().mockResolvedValue(null),
+    getCurrentAdminAuth,
     requestPasswordReset: vi.fn(),
     shouldUseLocalDemoFixtures: vi.fn().mockReturnValue(false),
     signInAdmin,
     signOutAdmin: vi.fn(),
     updateCurrentUserPassword: vi.fn(),
+  }));
+  vi.doMock("../hooks/localDemoData", () => ({
+    activateLocalDemoFixtureSession,
+    deactivateLocalDemoFixtureSession,
+    getLocalDemoFixtures: vi.fn(),
+    resetLocalDemoFixtures: vi.fn().mockReturnValue({
+      adminProfile: authRecord.profile,
+    }),
   }));
 
   const { AdminAuthProvider, useAdminAuth } =
@@ -82,9 +113,15 @@ async function renderAuthProbe(
     </AdminAuthProvider>,
   );
 
-  await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  if (!options.currentAuth) {
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  }
 
   return {
+    activateLocalDemoFixtureSession,
+    deactivateLocalDemoFixtureSession,
+    getCurrentAdminAuth,
+    getDemoSeedStatusRecord,
     isDemoLoginRefreshUnavailableError,
     refreshDemoLoginSeedRecord,
     signInAdmin,
@@ -96,6 +133,7 @@ describe("AdminAuthProvider demo login refresh", () => {
     vi.clearAllMocks();
     vi.doUnmock("@pest-patrol/api-client");
     vi.doUnmock("@pest-patrol/domain");
+    vi.doUnmock("../hooks/localDemoData");
   });
 
   it("refreshes demo-owned records after demo@email.com signs in", async () => {
@@ -113,6 +151,7 @@ describe("AdminAuthProvider demo login refresh", () => {
       "Demo seed is disabled on production deployments.",
     );
     const {
+      activateLocalDemoFixtureSession,
       isDemoLoginRefreshUnavailableError,
       refreshDemoLoginSeedRecord,
       signInAdmin,
@@ -124,6 +163,29 @@ describe("AdminAuthProvider demo login refresh", () => {
     expect(isDemoLoginRefreshUnavailableError).toHaveBeenCalledWith(
       refreshError,
     );
+    expect(activateLocalDemoFixtureSession).toHaveBeenCalledWith({
+      reset: true,
+    });
+    await waitFor(() => expect(screen.getByText("signed_in")).toBeTruthy());
+  });
+
+  it("activates fixture-backed reads for an existing production demo session", async () => {
+    const { activateLocalDemoFixtureSession, getDemoSeedStatusRecord } =
+      await renderAuthProbe("demo@email.com", {
+        currentAuth: true,
+        seedStatus: {
+          available: false,
+          environment_label: "Production",
+          reason: "Demo seed is disabled on production deployments.",
+          target: "local",
+        },
+      });
+
+    await waitFor(() => expect(getDemoSeedStatusRecord).toHaveBeenCalled());
+
+    expect(activateLocalDemoFixtureSession).toHaveBeenCalledWith({
+      reset: false,
+    });
     await waitFor(() => expect(screen.getByText("signed_in")).toBeTruthy());
   });
 

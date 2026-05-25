@@ -48,6 +48,8 @@ function stableFixtureNow() {
 
 let localDemoFixtures = buildDemoWorkflowFixtures({ now: stableFixtureNow() });
 let localDemoIdCounter = 0;
+let localDemoFixtureSessionActive = false;
+const localDemoFixtureSessionKey = "pest-patrol-demo-fixture-session";
 
 function nowIso() {
   return new Date().toISOString();
@@ -57,6 +59,48 @@ function nextLocalId(kind: string) {
   localDemoIdCounter += 1;
 
   return `local-demo-${kind}-${String(localDemoIdCounter).padStart(4, "0")}`;
+}
+
+function getBrowserStorage() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function readLocalDemoFixtureSession() {
+  const storage = getBrowserStorage();
+
+  if (!storage) {
+    return localDemoFixtureSessionActive;
+  }
+
+  localDemoFixtureSessionActive =
+    storage.getItem(localDemoFixtureSessionKey) === "active";
+
+  return localDemoFixtureSessionActive;
+}
+
+function writeLocalDemoFixtureSession(active: boolean) {
+  localDemoFixtureSessionActive = active;
+
+  const storage = getBrowserStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  if (active) {
+    storage.setItem(localDemoFixtureSessionKey, "active");
+    return;
+  }
+
+  storage.removeItem(localDemoFixtureSessionKey);
 }
 
 function sortTechnicians(technicians: TechnicianProfile[]) {
@@ -218,11 +262,31 @@ function updateLocalJob(id: string, updater: (job: Job) => Job) {
 }
 
 export function isLocalDemoFixtureMode() {
-  return shouldUseLocalDemoFixtures({
-    nodeEnv: process.env.NODE_ENV,
-    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  });
+  return (
+    shouldUseLocalDemoFixtures({
+      nodeEnv: process.env.NODE_ENV,
+      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    }) || readLocalDemoFixtureSession()
+  );
+}
+
+export function activateLocalDemoFixtureSession({
+  reset = false,
+}: {
+  reset?: boolean;
+} = {}) {
+  writeLocalDemoFixtureSession(true);
+
+  if (reset) {
+    resetLocalDemoFixtures();
+  }
+
+  return localDemoFixtures;
+}
+
+export function deactivateLocalDemoFixtureSession() {
+  writeLocalDemoFixtureSession(false);
 }
 
 export function resetLocalDemoFixtures() {
