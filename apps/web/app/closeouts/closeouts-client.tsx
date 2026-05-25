@@ -218,8 +218,10 @@ function QueueRowBase({
 }) {
   return (
     <button
-      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-primary ${
-        isSelected ? "border-primary" : "border-theme-border-subtle"
+      className={`rounded-lg border bg-theme-background-surface p-4 text-left shadow-sm transition hover:border-theme-action-primary ${
+        isSelected
+          ? "border-theme-action-primary"
+          : "border-theme-border-subtle"
       }`}
       onClick={onSelect}
       type="button"
@@ -1040,7 +1042,7 @@ export function CloseoutsClient() {
                 ) : null}
                 <div className="mt-5 flex flex-col gap-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+                    <p className="text-sm font-semibold uppercase tracking-wide text-theme-text-secondary">
                       {selectedJob.status}
                     </p>
                     <h2 className="mt-1 break-words text-2xl font-bold text-neutralDark">

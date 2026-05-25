@@ -524,7 +524,7 @@ export function InventoryClient() {
                             className="grid gap-1 text-sm sm:grid-cols-[minmax(0,1fr)_auto]"
                             key={log.id}
                           >
-                            <p className="font-medium text-neutralDark">
+                            <p className="font-medium text-theme-text-primary">
                               {log.job?.customer?.name ?? "Unknown customer"}
                             </p>
                             <p className="text-theme-text-secondary">

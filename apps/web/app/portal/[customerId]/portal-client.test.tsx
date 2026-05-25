@@ -176,6 +176,35 @@ describe("CustomerPortalClient", () => {
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
   });
 
+  it("uses semantic portal polish tokens without nested metric cards", () => {
+    render(
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Search portal activity")).toHaveClass(
+      "focus:border-theme-action-primary",
+    );
+    expect(screen.getByRole("heading", { name: "Apex Homes" })).toHaveClass(
+      "text-theme-text-primary",
+    );
+    expect(screen.getByText("Completed service")).toHaveClass(
+      "text-xs",
+      "font-extrabold",
+      "text-theme-text-muted",
+    );
+
+    const formsMetric = screen.getByText("Forms").closest("div");
+
+    expect(formsMetric).toHaveClass("bg-theme-background-subtle");
+    expect(formsMetric).not.toHaveClass("shadow-sm");
+    expect(formsMetric?.querySelector("p")).toHaveClass(
+      "text-theme-text-primary",
+    );
+  });
+
   it("does not render admin-only service notes or chemical internals", () => {
     render(
       <CustomerPortalClient
