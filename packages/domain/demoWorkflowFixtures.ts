@@ -10,6 +10,7 @@ import type {
   Invoice,
   InvoiceLineItem,
   Job,
+  JobGeofenceEvent,
   JobFormSubmission,
   JobMedia,
   PaymentRecord,
@@ -33,6 +34,7 @@ export interface DemoWorkflowFixtures {
   closeoutSummaries: CloseoutCaptureSummary[];
   customers: Customer[];
   formSubmissions: JobFormSubmission[];
+  geofenceEvents: JobGeofenceEvent[];
   inventory: ChemicalInventoryItem[];
   invoices: Invoice[];
   jobs: Job[];
@@ -67,6 +69,15 @@ const technicianIdsByKey = new Map([
   ["omar", "00000000-0000-4000-8000-00000000b010"],
   ["nina", "00000000-0000-4000-8000-00000000b011"],
   ["gabe", "00000000-0000-4000-8000-00000000b012"],
+]);
+const demoGpsSignalsByJobKey: ReadonlyMap<
+  string,
+  { latitude: number; longitude: number }
+> = new Map([
+  ["harbor-today", { latitude: 32.7422, longitude: -117.1772 }],
+  ["rivera-completed", { latitude: 32.7157, longitude: -117.1611 }],
+  ["nguyen-today", { latitude: 32.9595, longitude: -117.1172 }],
+  ["mesa-tomorrow", { latitude: 32.9023, longitude: -117.2022 }],
 ]);
 
 function timestamp(now: Date) {
@@ -233,6 +244,37 @@ export function buildDemoWorkflowFixtures(
     };
   });
   const jobsById = new Map(jobs.map((job) => [job.id, job]));
+  const geofenceEvents = plan.jobs.reduce<JobGeofenceEvent[]>(
+    (events, job, index) => {
+      const coordinates = demoGpsSignalsByJobKey.get(job.key);
+      const assignedTechnician = techniciansByKey.get(
+        job.assigned_technician_key,
+      );
+
+      if (!coordinates || !assignedTechnician) {
+        return events;
+      }
+
+      events.push({
+        id: fixtureId("8", index + 1),
+        job_id: job.id,
+        event_type: "departure",
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        accuracy_m: 18 + index,
+        distance_m: null,
+        within_radius: null,
+        recorded_by: assignedTechnician.id,
+        client_event_id: fixtureId("9", index + 1),
+        captured_at: job.scheduled_start,
+        created_at: job.scheduled_start,
+        job: jobsById.get(job.id),
+      });
+
+      return events;
+    },
+    [],
+  );
   const chemicalLogs: ChemicalLog[] = plan.chemicalLogs.map((log, index) => {
     const chemicalId = inventoryByKey.get(log.chemical_key);
 
@@ -396,6 +438,7 @@ export function buildDemoWorkflowFixtures(
     closeoutSummaries,
     customers,
     formSubmissions,
+    geofenceEvents,
     inventory,
     invoices,
     jobs: jobs.map(cloneJob),

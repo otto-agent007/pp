@@ -301,6 +301,7 @@ export type {
   DispatchRouteStopStatusState,
   DispatchRouteTriageFilter,
   DispatchStaticMapBounds,
+  DispatchStaticMapMarkerTone,
   DispatchStaticMapPoint,
   DispatchStaticMapPointSource,
   DispatchStaticMapState,

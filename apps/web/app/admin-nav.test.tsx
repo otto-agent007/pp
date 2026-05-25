@@ -59,6 +59,9 @@ describe("AdminNav", () => {
     expect(screen.getByText("System")).toHaveClass("hidden", "md:block");
     expect(screen.getByRole("navigation")).toHaveClass(
       "bg-primitive-navy-900",
+      "md:w-[4.5rem]",
+      "md:hover:w-64",
+      "md:focus-within:w-64",
     );
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
@@ -95,14 +98,17 @@ describe("AdminNav", () => {
     const homeLink = screen.getByRole("link", {
       name: "Pest Patrol OS — Home",
     });
-    // The wordmark is decorative inside the labelled link, so we look for the
-    // inlined SVG rather than another role="img".
-    expect(homeLink.querySelector("svg")).not.toBeNull();
-    expect(container.querySelector("svg")?.getAttribute("viewBox")).toBe(
-      "0 0 420 96",
-    );
-    expect(homeLink.querySelector("span")).toHaveStyle({
-      width: "200px",
+    const brandSvgs = homeLink.querySelectorAll("svg");
+    const brandMarks = homeLink.querySelectorAll("span");
+    // The rail renders the compact logomark by default and reveals the full
+    // wordmark when the taskbar-style shell expands.
+    expect(brandSvgs.length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelector('svg[viewBox="0 0 420 96"]')).not.toBeNull();
+    expect(brandMarks[0]).toHaveStyle({
+      width: "36px",
+    });
+    expect(brandMarks[1]).toHaveStyle({
+      width: "156px",
     });
   });
 
@@ -146,6 +152,7 @@ describe("AdminNav", () => {
     );
 
     expect(screen.getByRole("navigation")).toHaveClass("md:h-screen");
+    expect(screen.getByRole("navigation")).toHaveClass("md:w-[4.5rem]");
     expect(screen.getByText("Dispatch content")).toBeInTheDocument();
   });
 });

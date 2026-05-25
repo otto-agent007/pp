@@ -178,6 +178,9 @@ describe("JobsClient", () => {
     expect(screen.getByText("Job queue")).toBeInTheDocument();
     expect(screen.getByText("Ready for dispatch")).toBeInTheDocument();
     expect(screen.getByText("Scheduled jobs")).toBeInTheDocument();
+    expect(screen.getByText("Scheduled jobs").closest(".rounded-lg")).toHaveClass(
+      "bg-status-alert-info-bg",
+    );
     const helper = screen.getByText("Job setup notes").closest("details");
     expect(helper).not.toHaveAttribute("open");
     expect(
