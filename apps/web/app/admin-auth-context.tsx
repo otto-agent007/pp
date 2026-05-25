@@ -3,7 +3,11 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { refreshDemoLoginSeedRecord, supabase } from "@pest-patrol/api-client";
+import {
+  isDemoLoginRefreshUnavailableError,
+  refreshDemoLoginSeedRecord,
+  supabase,
+} from "@pest-patrol/api-client";
 import type { UserProfile } from "@pest-patrol/types";
 import {
   DEMO_SEED_ADMIN_EMAIL,
@@ -200,7 +204,13 @@ async function signIn(email: string, password: string) {
     }
 
     if (record.profile.email === DEMO_SEED_ADMIN_EMAIL) {
-      await refreshDemoLoginSeedRecord(supabase);
+      try {
+        await refreshDemoLoginSeedRecord(supabase);
+      } catch (error) {
+        if (!isDemoLoginRefreshUnavailableError(error)) {
+          throw error;
+        }
+      }
     }
 
     setAuthState({

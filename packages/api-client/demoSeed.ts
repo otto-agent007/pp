@@ -633,6 +633,19 @@ async function jsonError(response: Response, fallback: string) {
   return body?.error ?? fallback;
 }
 
+export function isDemoLoginRefreshUnavailableError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" &&
+          error !== null &&
+          typeof (error as Record<string, unknown>).message === "string"
+        ? String((error as Record<string, unknown>).message)
+        : "";
+
+  return message.includes("Demo seed is disabled on production deployments.");
+}
+
 export async function getDemoSeedStatusRecord(
   client: DemoSeedAuthClient = supabase,
 ) {

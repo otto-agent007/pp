@@ -122,6 +122,7 @@ export {
 } from "./technicians";
 export {
   getDemoSeedStatusRecord,
+  isDemoLoginRefreshUnavailableError,
   prepareLocalDemoLoginRecord,
   refreshDemoLoginSeedRecord,
   refreshDemoLoginSeedRecords,
