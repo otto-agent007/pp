@@ -4,7 +4,7 @@ import type * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { buttonClassName } from "@pest-patrol/ui";
-import { Logomark, Wordmark } from "./brand";
+import { Wordmark } from "./brand";
 import { useAdminAuth } from "./admin-auth-context";
 
 const adminRouteGroups = [
@@ -75,15 +75,9 @@ function MobileBrandRow({ role }: { role: string | null | undefined }) {
     <div className="flex min-w-0 items-center justify-between gap-3 border-b border-theme-text-inverse/10 px-3 py-2 md:block md:border-0 md:px-0 md:py-0">
       <Link
         aria-label="Pest Patrol OS — Home"
-        className="inline-flex min-w-0 items-center rounded-md bg-primitive-navy-900 px-2 py-1 md:h-10 md:w-full md:gap-2 md:px-1"
+        className="inline-flex min-w-0 items-center rounded-md bg-primitive-navy-900 px-2 py-1 md:h-10 md:w-full md:px-1"
         href="/"
       >
-        <span
-          className="hidden shrink-0 md:inline-block"
-          data-testid="admin-nav-desktop-logomark"
-        >
-          <Logomark label="decorative" size={36} />
-        </span>
         <span
           className={`hidden shrink-0 md:block ${railRevealClassName}`}
           data-testid="admin-nav-desktop-wordmark"
