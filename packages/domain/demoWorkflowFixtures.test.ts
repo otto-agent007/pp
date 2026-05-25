@@ -15,6 +15,7 @@ describe("demo workflow fixtures", () => {
     expect(fixtures.customers[0].locations).toHaveLength(2);
     expect(fixtures.technicians).toHaveLength(3);
     expect(fixtures.jobs).toHaveLength(5);
+    expect(fixtures.geofenceEvents).toHaveLength(4);
     expect(fixtures.inventory).toHaveLength(6);
     expect(fixtures.invoices).toHaveLength(2);
     expect(fixtures.closeoutSummaries).toContainEqual({
@@ -35,6 +36,9 @@ describe("demo workflow fixtures", () => {
     );
     const paidInvoice = fixtures.invoices.find(
       (invoice) => invoice.id === "00000000-0000-4000-8000-00000000f002",
+    );
+    const harborJob = fixtures.jobs.find(
+      (job) => job.id === "00000000-0000-4000-8000-00000000e001",
     );
 
     expect(completedJob?.customer?.name).toBe("Demo - Rivera Cafe");
@@ -57,6 +61,15 @@ describe("demo workflow fixtures", () => {
     );
     expect(fixtures.media.some((item) => item.media_type === "signature")).toBe(
       true,
+    );
+    expect(fixtures.geofenceEvents).toContainEqual(
+      expect.objectContaining({
+        event_type: "departure",
+        job_id: "00000000-0000-4000-8000-00000000e001",
+        latitude: 32.7422,
+        longitude: -117.1772,
+        recorded_by: harborJob?.assigned_tech_id,
+      }),
     );
   });
 

@@ -793,14 +793,17 @@ describe("job domain", () => {
       evidence_state: "missing",
       job_id: "job-downtown",
       label: "Stop 1",
+      marker_tone: expect.any(String),
       source: "service_location",
       status_state: "active",
+      technician_id: "technician-1",
+      technician_label: "Technician technician-1",
     });
     expect(mapState.points[0].x_percent).toBeCloseTo(30.9, 1);
     expect(mapState.points[0].y_percent).toBeCloseTo(69.9, 1);
   });
 
-  it("falls back to latest GPS evidence when a stop lacks service coordinates", () => {
+  it("prefers latest GPS evidence over service coordinates when plotting stops", () => {
     const jobs = [
       {
         id: "job-gps",
@@ -831,8 +834,8 @@ describe("job domain", () => {
           nickname: null,
           service_notes: null,
           is_primary: true,
-          latitude: null,
-          longitude: null,
+          latitude: 32.7157,
+          longitude: -117.1611,
           status: "active",
           created_at: now,
           updated_at: now,
@@ -891,11 +894,106 @@ describe("job domain", () => {
     expect(mapState.points[0]).toMatchObject({
       evidence_state: "partial",
       job_id: "job-gps",
+      latitude: 32.8328,
+      longitude: -117.2713,
       source: "latest_gps",
       status_state: "completed",
     });
     expect(mapState.points[0].x_percent).toBeCloseTo(6.4, 1);
     expect(mapState.points[0].y_percent).toBeCloseTo(51.9, 1);
+  });
+
+  it("assigns stable distinct marker tones to plotted technicians", () => {
+    const jobs = [
+      {
+        id: "job-maya",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-1",
+          name: "Downtown Cafe",
+          phone: null,
+          email: null,
+          property_type: "commercial",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "500 Demo Harbor Dr, San Diego, CA 92101",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.7157,
+          longitude: -117.1611,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-eli",
+        customer_id: "customer-2",
+        location_id: "location-2",
+        assigned_tech_id: "technician-2",
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-2",
+          name: "North Park Office",
+          phone: null,
+          email: null,
+          property_type: "commercial",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-2",
+          customer_id: "customer-2",
+          address: "300 Demo University Ave, San Diego, CA 92104",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.7488,
+          longitude: -117.1376,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+    ] satisfies Job[];
+    const intelligence = buildDispatchRouteIntelligence(jobs, "2026-05-06");
+
+    const mapState = buildDispatchStaticMapState(intelligence.stops, {
+      technicianLabels: {
+        "technician-1": "Demo - Maya Chen",
+        "technician-2": "Demo - Eli Brooks",
+      },
+    });
+
+    expect(mapState.points.map((point) => point.technician_label)).toEqual([
+      "Demo - Maya Chen",
+      "Demo - Eli Brooks",
+    ]);
+    expect(mapState.points[0].marker_tone).not.toBe(
+      mapState.points[1].marker_tone,
+    );
   });
 
   it("summarizes missing and out-of-bounds stops without plotting them", () => {

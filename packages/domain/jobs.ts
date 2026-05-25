@@ -123,6 +123,12 @@ export interface DispatchRouteGroupSummaryOptions {
 }
 
 export type DispatchStaticMapPointSource = "latest_gps" | "service_location";
+export type DispatchStaticMapMarkerTone =
+  | "amber"
+  | "emerald"
+  | "navy"
+  | "rose"
+  | "sky";
 
 export interface DispatchStaticMapBounds {
   east: number;
@@ -140,8 +146,11 @@ export interface DispatchStaticMapPoint {
   label: string;
   latitude: number;
   longitude: number;
+  marker_tone: DispatchStaticMapMarkerTone;
   source: DispatchStaticMapPointSource;
   status_state: DispatchRouteStopStatusState;
+  technician_id: string | null;
+  technician_label: string;
   x_percent: number;
   y_percent: number;
 }
@@ -161,6 +170,7 @@ export interface DispatchStaticMapState {
 
 export interface DispatchStaticMapStateOptions {
   evidenceByJob?: DispatchLocationEvidenceByJob;
+  technicianLabels?: Record<string, string>;
 }
 
 export interface MobileDailyJobs {
@@ -211,6 +221,13 @@ const dispatchStaticMapBounds: DispatchStaticMapBounds = {
   south: 32.52,
   west: -117.3,
 };
+const dispatchStaticMapMarkerTones: DispatchStaticMapMarkerTone[] = [
+  "sky",
+  "emerald",
+  "amber",
+  "rose",
+  "navy",
+];
 
 function normalizeOptional(value?: string | null) {
   const normalized = value?.trim();
@@ -849,20 +866,6 @@ function stopMapCoordinate(
   stop: DispatchRouteStop,
   evidenceByJob: DispatchLocationEvidenceByJob,
 ): { latitude: number; longitude: number; source: DispatchStaticMapPointSource } | null {
-  const serviceLatitude = stop.job.location?.latitude;
-  const serviceLongitude = stop.job.location?.longitude;
-
-  if (
-    isCoordinate(serviceLatitude, -90, 90) &&
-    isCoordinate(serviceLongitude, -180, 180)
-  ) {
-    return {
-      latitude: serviceLatitude,
-      longitude: serviceLongitude,
-      source: "service_location",
-    };
-  }
-
   const latestGps = evidenceByJob[stop.job.id]?.latest_event;
 
   if (
@@ -877,7 +880,43 @@ function stopMapCoordinate(
     };
   }
 
+  const serviceLatitude = stop.job.location?.latitude;
+  const serviceLongitude = stop.job.location?.longitude;
+
+  if (
+    isCoordinate(serviceLatitude, -90, 90) &&
+    isCoordinate(serviceLongitude, -180, 180)
+  ) {
+    return {
+      latitude: serviceLatitude,
+      longitude: serviceLongitude,
+      source: "service_location",
+    };
+  }
+
   return null;
+}
+
+function buildStaticMapMarkerTones(stops: DispatchRouteStop[]) {
+  const technicianIds = Array.from(
+    new Set(
+      stops
+        .map((stop) => stop.technician_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ).sort();
+  const tonesByTechnician = new Map<string, DispatchStaticMapMarkerTone>();
+
+  for (const [index, technicianId] of technicianIds.entries()) {
+    const selected =
+      dispatchStaticMapMarkerTones[
+        index % dispatchStaticMapMarkerTones.length
+      ] ?? "sky";
+
+    tonesByTechnician.set(technicianId, selected);
+  }
+
+  return tonesByTechnician;
 }
 
 function isInsideDispatchStaticMapBounds(
@@ -918,6 +957,7 @@ export function buildDispatchStaticMapState(
   options: DispatchStaticMapStateOptions = {},
 ): DispatchStaticMapState {
   const evidenceByJob = options.evidenceByJob ?? {};
+  const markerTonesByTechnician = buildStaticMapMarkerTones(stops);
   let missingCoordinatesCount = 0;
   let outsideMapCount = 0;
   const points: DispatchStaticMapPoint[] = [];
@@ -943,8 +983,16 @@ export function buildDispatchStaticMapState(
       label: `Stop ${stop.sequence}`,
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
+      marker_tone: stop.technician_id
+        ? (markerTonesByTechnician.get(stop.technician_id) ?? "sky")
+        : "navy",
       source: coordinate.source,
       status_state: stop.status_state,
+      technician_id: stop.technician_id,
+      technician_label: dispatchRouteGroupLabel(
+        stop.technician_id,
+        options.technicianLabels ?? {},
+      ),
       ...projectDispatchStaticMapPoint(coordinate.latitude, coordinate.longitude),
     });
   }

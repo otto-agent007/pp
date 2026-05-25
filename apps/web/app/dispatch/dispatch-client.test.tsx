@@ -38,6 +38,12 @@ const technician = {
   created_at: now,
   updated_at: now,
 } as const;
+const secondTechnician = {
+  ...technician,
+  id: "technician-2",
+  email: "second@example.com",
+  display_name: "Second Tech",
+} as const;
 const customer = {
   id: "customer-1",
   name: "Apex Homes",
@@ -137,6 +143,23 @@ const sanDiegoJob = {
     address: "500 Demo Harbor Dr, San Diego, CA 92101",
     latitude: 32.7157,
     longitude: -117.1611,
+  },
+} as const;
+const secondSanDiegoJob = {
+  ...sanDiegoJob,
+  id: "job-north-park",
+  assigned_tech_id: "technician-2",
+  scheduled_start: "2026-05-06T14:00:00",
+  customer: {
+    ...customer,
+    name: "North Park Office",
+  },
+  location: {
+    ...customer.locations[0],
+    id: "location-north-park",
+    address: "300 Demo University Ave, San Diego, CA 92104",
+    latitude: 32.7488,
+    longitude: -117.1376,
   },
 } as const;
 
@@ -343,7 +366,7 @@ describe("DispatchClient", () => {
       within(mapPanel).getByText("1 missing coordinates"),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Map pin Stop 2: Downtown Cafe"),
+      screen.getByLabelText("Map pin Stop 2: Downtown Cafe, Testnician"),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Open service map for job-san-diego" }),
@@ -351,6 +374,37 @@ describe("DispatchClient", () => {
       "href",
       "https://www.google.com/maps/search/?api=1&query=32.7157%2C-117.1611",
     );
+  });
+
+  it("colors San Diego map markers by assigned technician", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [sanDiegoJob, secondSanDiegoJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useTechnicians).mockReturnValue({
+      data: [technician, secondTechnician],
+      isLoading: false,
+    } as never);
+    vi.mocked(useJobGeofenceEvents).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+    openDispatchDisclosure("Route intelligence");
+
+    const firstMarker = screen.getByLabelText(
+      "Map pin Stop 1: Downtown Cafe, Testnician",
+    );
+    const secondMarker = screen.getByLabelText(
+      "Map pin Stop 2: North Park Office, Second Tech",
+    );
+
+    expect(firstMarker).toHaveTextContent("1");
+    expect(secondMarker).toHaveTextContent("2");
+    expect(firstMarker.className).not.toBe(secondMarker.className);
+    expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Second Tech").length).toBeGreaterThan(0);
   });
 
   it("keeps the San Diego map visible when no stops can be plotted", () => {
