@@ -29,6 +29,7 @@ import {
   formControlClassName,
   formLabelClassName,
   formTextareaClassName,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import { useSearchParams } from "next/navigation";
@@ -154,7 +155,7 @@ function InvoiceHandoff({
   }
 
   return (
-    <div className="mt-4 rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-3">
+    <div className={`mt-4 rounded-md border p-3 ${statusSurfaceClassName("info")}`}>
       <p className="text-sm font-semibold text-theme-text-primary">
         Customer handoff
       </p>
@@ -445,7 +446,11 @@ export function PaymentsClient() {
         </div>
       </section>
 
-      <details className="group rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg shadow-sm">
+      <details
+        className={`group rounded-lg border shadow-sm ${statusSurfaceClassName(
+          "warning",
+        )}`}
+      >
         <summary className="cursor-pointer px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -674,7 +679,9 @@ export function PaymentsClient() {
                                 ? `Confirm mark paid for ${invoiceTitle(invoice)}`
                                 : `Confirm void for ${invoiceTitle(invoice)}`
                             }
-                            className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg px-3 py-2 text-left"
+                            className={`rounded-md border px-3 py-2 text-left ${statusSurfaceClassName(
+                              "warning",
+                            )}`}
                             role="group"
                           >
                             <p className="text-sm font-semibold text-theme-text-primary">
@@ -751,14 +758,22 @@ export function PaymentsClient() {
             Create invoice
           </h2>
           {closeoutHandoffJob ? (
-            <p className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg p-3 text-sm text-status-alert-info-fg">
+            <p
+              className={`rounded-md border p-3 text-sm text-status-alert-info-fg ${statusSurfaceClassName(
+                "info",
+              )}`}
+            >
               From closeout:{" "}
               {closeoutHandoffJob.customer?.name ?? "Unknown customer"} @{" "}
               {closeoutHandoffJob.location?.address ?? "No location"}
             </p>
           ) : null}
           {formError ? (
-            <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
+            <p
+              className={`rounded-md border p-3 text-sm text-status-alert-danger-fg ${statusSurfaceClassName(
+                "danger",
+              )}`}
+            >
               {formError}
             </p>
           ) : null}

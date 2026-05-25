@@ -413,6 +413,12 @@ describe("AutomationClient", () => {
     render(<AutomationClient />);
 
     expect(screen.getByText("Provider: Manual fallback")).toBeInTheDocument();
+    expect(
+      screen.getByText("Visible pending reminders").closest(".rounded-lg"),
+    ).toHaveClass(
+      "bg-status-alert-warning-bg",
+      "border-status-alert-warning-border",
+    );
     expect(screen.getByText("Manual fallback accepted")).toBeInTheDocument();
     expect(
       screen.getByText(

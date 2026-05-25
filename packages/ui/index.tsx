@@ -377,6 +377,7 @@ const cardToneClasses: Record<CardTone, string> = {
 
 export type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   padding?: CardPadding;
+  statusTone?: StatusPillTone;
   tone?: CardTone;
 };
 
@@ -384,6 +385,7 @@ export function Card({
   children,
   className,
   padding = "md",
+  statusTone,
   tone = "surface",
   ...props
 }: CardProps) {
@@ -392,7 +394,7 @@ export function Card({
       className={cx(
         "rounded-lg border shadow-sm",
         cardPaddingClasses[padding],
-        cardToneClasses[tone],
+        statusTone ? statusSurfaceClassName(statusTone) : cardToneClasses[tone],
         className,
       )}
       {...props}
@@ -468,6 +470,18 @@ const statusPillToneClasses: Record<
   },
 };
 
+const statusSurfaceToneClasses: Record<StatusPillTone, string> = {
+  danger: "border-status-alert-danger-border bg-status-alert-danger-bg",
+  info: "border-status-alert-info-border bg-status-alert-info-bg",
+  neutral: "border-theme-border-subtle bg-theme-background-surface",
+  success: "border-status-alert-success-border bg-status-alert-success-bg",
+  warning: "border-status-alert-warning-border bg-status-alert-warning-bg",
+};
+
+export function statusSurfaceClassName(tone: StatusPillTone = "neutral") {
+  return statusSurfaceToneClasses[tone];
+}
+
 export type StatusPillProps = React.HTMLAttributes<HTMLSpanElement> & {
   dot?: boolean;
   tone?: StatusPillTone;
@@ -517,14 +531,6 @@ const statDetailToneClasses: Record<StatusPillTone, string> = {
   warning: "text-status-alert-warning-fg",
 };
 
-const statTileToneClasses: Record<StatusPillTone, string> = {
-  danger: "border-status-alert-danger-border bg-status-alert-danger-bg",
-  info: "border-status-alert-info-border bg-status-alert-info-bg",
-  neutral: "border-theme-border-subtle bg-theme-background-surface",
-  success: "border-status-alert-success-border bg-status-alert-success-bg",
-  warning: "border-status-alert-warning-border bg-status-alert-warning-bg",
-};
-
 export function StatTile({
   className,
   detail,
@@ -534,7 +540,7 @@ export function StatTile({
   ...props
 }: StatTileProps) {
   return (
-    <Card className={cx(statTileToneClasses[tone], className)} {...props}>
+    <Card className={className} statusTone={tone} {...props}>
       <div className="flex items-start justify-between gap-3">
         <Eyebrow>{label}</Eyebrow>
         <span
@@ -584,7 +590,7 @@ export function CountTile({
       aria-pressed={active}
       className={cx(
         "rounded-lg border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        statTileToneClasses[tone],
+        statusSurfaceClassName(tone),
         active && "ring-2 ring-theme-action-primary ring-offset-1",
         !disabled && "hover:border-theme-action-primary",
         className,

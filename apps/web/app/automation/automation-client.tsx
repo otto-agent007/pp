@@ -47,6 +47,7 @@ import {
   SearchableSelect,
   StatTile,
   StatusPill,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
@@ -697,7 +698,13 @@ export function AutomationClient() {
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
-            <div className="rounded-md bg-theme-background-subtle p-3">
+            <div
+              className={`rounded-md border p-3 ${statusSurfaceClassName(
+                schedulerStatus.lastRunStatus === "failed"
+                  ? "danger"
+                  : "success",
+              )}`}
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Last status
               </p>
@@ -705,7 +712,11 @@ export function AutomationClient() {
                 {schedulerStatus.lastRunStatus}
               </p>
             </div>
-            <div className="rounded-md bg-theme-background-subtle p-3">
+            <div
+              className={`rounded-md border p-3 ${statusSurfaceClassName(
+                schedulerStatus.lastRunGeneratedCount > 0 ? "success" : "neutral",
+              )}`}
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Created
               </p>
@@ -713,7 +724,13 @@ export function AutomationClient() {
                 {schedulerStatus.lastRunGeneratedCount}
               </p>
             </div>
-            <div className="rounded-md bg-theme-background-subtle p-3">
+            <div
+              className={`rounded-md border p-3 ${statusSurfaceClassName(
+                schedulerStatus.lastRunSkippedDuplicateCount > 0
+                  ? "warning"
+                  : "neutral",
+              )}`}
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Duplicates
               </p>
@@ -721,7 +738,11 @@ export function AutomationClient() {
                 {schedulerStatus.lastRunSkippedDuplicateCount}
               </p>
             </div>
-            <div className="rounded-md bg-theme-background-subtle p-3">
+            <div
+              className={`rounded-md border p-3 ${statusSurfaceClassName(
+                schedulerPreview.items.length > 0 ? "info" : "neutral",
+              )}`}
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview due
               </p>
@@ -729,7 +750,11 @@ export function AutomationClient() {
                 {schedulerPreview.items.length}
               </p>
             </div>
-            <div className="rounded-md bg-theme-background-subtle p-3">
+            <div
+              className={`rounded-md border p-3 ${statusSurfaceClassName(
+                schedulerPreview.evaluated_rules > 0 ? "info" : "neutral",
+              )}`}
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview rules
               </p>
@@ -737,7 +762,11 @@ export function AutomationClient() {
                 {schedulerPreview.evaluated_rules}
               </p>
             </div>
-            <div className="rounded-md bg-theme-background-subtle p-3">
+            <div
+              className={`rounded-md border p-3 ${statusSurfaceClassName(
+                schedulerPreview.duplicate_count > 0 ? "warning" : "neutral",
+              )}`}
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                 Preview duplicates
               </p>
@@ -768,7 +797,9 @@ export function AutomationClient() {
             <div className="mt-3 grid gap-3 lg:grid-cols-3">
               {schedulerPreview.items.slice(0, 6).map((item) => (
                 <article
-                  className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
+                  className={`rounded-md border p-3 ${statusSurfaceClassName(
+                    item.is_duplicate ? "warning" : "success",
+                  )}`}
                   key={
                     item.notification.generated_key ??
                     `${item.notification.type}-${item.notification.due_at}`
@@ -952,7 +983,10 @@ export function AutomationClient() {
                 Attempts {deliveryAttemptSummary.total_attempts}
               </StatusPill>
             </div>
-            <Card className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <Card
+              className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+              statusTone={providerStatus?.provider === "webhook" ? "info" : "warning"}
+            >
               <div>
                 <Eyebrow tone="accent">Provider readiness</Eyebrow>
                 <p className="text-sm font-semibold text-theme-text-primary">
@@ -979,7 +1013,11 @@ export function AutomationClient() {
                   </p>
                 ) : null}
                 {providerStatusQuery.isLoading ? null : (
-                  <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
+                  <div
+                    className={`mt-3 rounded-md border p-3 ${statusSurfaceClassName(
+                      providerStatus?.provider === "webhook" ? "info" : "warning",
+                    )}`}
+                  >
                     <p className="text-sm font-semibold text-theme-text-primary">
                       {providerReadinessCopy.label}
                     </p>

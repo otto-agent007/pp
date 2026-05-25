@@ -174,8 +174,16 @@ describe("HomePage", () => {
       screen.getByPlaceholderText(/Search customers, jobs, addresses/i),
     ).toBeInTheDocument();
     expect(screen.getByText("Today's jobs")).toBeInTheDocument();
+    expect(screen.getByText("Today's jobs").closest(".rounded-lg")).toHaveClass(
+      "bg-status-alert-success-bg",
+      "border-status-alert-success-border",
+    );
     expect(screen.getByText("1 active today")).toBeInTheDocument();
     expect(screen.getByText("$285.00")).toBeInTheDocument();
+    expect(screen.getByText("$285.00").closest(".rounded-lg")).toHaveClass(
+      "bg-status-alert-danger-bg",
+      "border-status-alert-danger-border",
+    );
     expect(
       screen.getByRole("heading", { name: "Today's schedule" }),
     ).toBeInTheDocument();

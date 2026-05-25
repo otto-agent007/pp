@@ -249,9 +249,15 @@ function CustomerLedgerSummary({
     ledgerTabs.find((tab) => tab.id === activeTab)?.label.toLowerCase() ??
     "ledger";
   const showExpandButton = entries.length > recentEntries.length;
+  const ledgerTone: StatusPillTone =
+    summary.reviewCount > 0 || summary.openBalanceCents > 0
+      ? "warning"
+      : summary.paidCents > 0
+        ? "success"
+        : "neutral";
 
   return (
-    <Card className="mt-5 shadow-none" padding="md" tone="subtle">
+    <Card className="mt-5 shadow-none" padding="md" statusTone={ledgerTone}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Eyebrow tone="accent">Account ledger</Eyebrow>
@@ -295,10 +301,7 @@ function CustomerLedgerSummary({
       </dl>
 
       {summary.reviewCount > 0 ? (
-        <Card
-          className="mt-3 border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
-          padding="sm"
-        >
+        <Card className="mt-3 shadow-none" padding="sm" statusTone="warning">
           <div className="flex flex-col gap-2 text-sm font-medium text-status-alert-warning-fg sm:flex-row sm:items-center sm:justify-between">
             <p>
               {summary.reviewCount} payment
@@ -937,9 +940,10 @@ export function CustomersClient() {
             ) : null}
             {saveMessage ? (
               <Card
-                className="border-status-alert-success-border bg-status-alert-success-bg text-sm font-medium text-status-alert-success-fg shadow-none"
+                className="text-sm font-medium text-status-alert-success-fg shadow-none"
                 padding="sm"
                 role="status"
+                statusTone="success"
               >
                 {saveMessage}
               </Card>

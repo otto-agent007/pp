@@ -270,6 +270,10 @@ describe("CustomersClient", () => {
     render(<CustomersClient />);
 
     expect(screen.getByText("Account ledger")).toBeInTheDocument();
+    expect(screen.getByText("Account ledger").closest(".rounded-lg")).toHaveClass(
+      "bg-status-alert-warning-bg",
+      "border-status-alert-warning-border",
+    );
     expect(screen.getByText("Open balance")).toBeInTheDocument();
     expect(screen.getByText("$100.00")).toBeInTheDocument();
     expect(screen.getByText("Paid total")).toBeInTheDocument();
@@ -449,10 +453,16 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
-    await user.type(screen.getByLabelText("Name"), "New Customer");
-    await user.type(screen.getAllByLabelText("Address")[0], "10 Pine Street");
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "New Customer" },
+    });
+    fireEvent.change(screen.getAllByLabelText("Address")[0], {
+      target: { value: "10 Pine Street" },
+    });
     await user.click(screen.getByRole("button", { name: "Add" }));
-    await user.type(screen.getAllByLabelText("Address")[1], "20 Oak Avenue");
+    fireEvent.change(screen.getAllByLabelText("Address")[1], {
+      target: { value: "20 Oak Avenue" },
+    });
     await user.click(screen.getByRole("button", { name: "Save customer" }));
 
     expect(createMutateAsync).toHaveBeenCalledWith(
@@ -470,8 +480,12 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
-    await user.type(screen.getByLabelText("Name"), "New Customer");
-    await user.type(screen.getAllByLabelText("Address")[0], "10 Pine Street");
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "New Customer" },
+    });
+    fireEvent.change(screen.getAllByLabelText("Address")[0], {
+      target: { value: "10 Pine Street" },
+    });
     await user.click(screen.getByRole("button", { name: "Save customer" }));
 
     expect(

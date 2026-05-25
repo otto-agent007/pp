@@ -18,6 +18,7 @@ import {
   formControlClassName,
   formLabelClassName,
   formTextareaClassName,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import Link from "next/link";
@@ -450,7 +451,11 @@ export function JobsClient() {
             ) : null}
           </div>
 
-          <details className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg">
+          <details
+            className={`group rounded-md border ${statusSurfaceClassName(
+              "warning",
+            )}`}
+          >
             <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
               Job setup notes
             </summary>
@@ -490,7 +495,9 @@ export function JobsClient() {
 
           {saveMessage ? (
             <div
-              className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-3 text-sm text-status-alert-success-fg"
+              className={`rounded-md border p-3 text-sm text-status-alert-success-fg ${statusSurfaceClassName(
+                "success",
+              )}`}
               role="status"
             >
               <p>{saveMessage}</p>
@@ -508,7 +515,11 @@ export function JobsClient() {
           ) : null}
 
           {formError ? (
-            <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
+            <p
+              className={`rounded-md border p-3 text-sm text-status-alert-danger-fg ${statusSurfaceClassName(
+                "danger",
+              )}`}
+            >
               {formError}
             </p>
           ) : null}
