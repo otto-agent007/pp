@@ -10,8 +10,10 @@ import {
 import {
   Card,
   Eyebrow,
+  StatTile,
   StatusPill,
   buttonClassName,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import type { ChemicalInventoryItem, Invoice, Job } from "@pest-patrol/types";
@@ -118,29 +120,7 @@ function DashboardMetricCard({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <Eyebrow>{label}</Eyebrow>
-        <span
-          aria-hidden="true"
-          className={`mt-1 h-2 w-2 rounded-full ${
-            tone === "success"
-              ? "bg-status-alert-success-solid"
-              : tone === "danger"
-                ? "bg-status-alert-danger-solid"
-                : tone === "warning"
-                  ? "bg-status-alert-warning-solid"
-                  : "bg-status-alert-neutral-solid"
-          }`}
-        />
-      </div>
-      <p className="mt-3 text-3xl font-extrabold tabular-nums text-primitive-navy-950">
-        {value}
-      </p>
-      <p className="mt-1 text-sm font-bold text-theme-text-secondary">
-        {detail}
-      </p>
-    </div>
+    <StatTile detail={detail} label={label} tone={tone} value={value} />
   );
 }
 
@@ -542,7 +522,9 @@ export function HomeCommandCenter() {
               {state.alerts.length > 0 ? (
                 state.alerts.map((alert) => (
                   <div
-                    className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
+                    className={`rounded-md border p-3 ${statusSurfaceClassName(
+                      severityTones[alert.severity],
+                    )}`}
                     key={alert.id}
                   >
                     <StatusPill tone={severityTones[alert.severity]}>
@@ -554,7 +536,11 @@ export function HomeCommandCenter() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                <p
+                  className={`rounded-md border p-3 text-sm font-semibold text-theme-text-secondary ${statusSurfaceClassName(
+                    "success",
+                  )}`}
+                >
                   Active route and launch checks are clear for the loaded demo
                   data.
                 </p>
@@ -588,7 +574,9 @@ export function HomeCommandCenter() {
               {lowInventory.length > 0 ? (
                 lowInventory.map((item) => (
                   <Link
-                    className="block py-3 transition hover:bg-theme-background-subtle"
+                    className={`mb-3 block rounded-md border p-3 transition hover:border-theme-action-primary ${statusSurfaceClassName(
+                      "warning",
+                    )}`}
                     href="/inventory"
                     key={item.id ?? item.name}
                   >
@@ -602,7 +590,11 @@ export function HomeCommandCenter() {
                   </Link>
                 ))
               ) : (
-                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                <p
+                  className={`rounded-md border p-3 text-sm font-semibold text-theme-text-secondary ${statusSurfaceClassName(
+                    "success",
+                  )}`}
+                >
                   No loaded chemicals are below reorder level.
                 </p>
               )}
@@ -673,7 +665,9 @@ export function HomeCommandCenter() {
                 <div className="mt-4 divide-y divide-theme-border-subtle">
                   {state.launchReadiness.map((item) => (
                     <Link
-                      className="block py-3 transition hover:bg-theme-background-subtle"
+                      className={`mb-3 block rounded-md border p-3 transition hover:border-theme-action-primary ${statusSurfaceClassName(
+                        severityTones[item.severity],
+                      )}`}
                       href={item.href}
                       key={item.id}
                     >
@@ -723,7 +717,9 @@ export function HomeCommandCenter() {
                 <div className="mt-4 grid gap-3 lg:grid-cols-5">
                   {state.smokeChecklist.map((item, index) => (
                     <Link
-                      className="flex min-h-64 flex-col gap-4 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-4 transition hover:border-primitive-sky-500 hover:bg-theme-background-surface hover:shadow-sm"
+                      className={`flex min-h-64 flex-col gap-4 rounded-md border p-4 transition hover:border-theme-action-primary hover:bg-theme-background-surface hover:shadow-sm ${statusSurfaceClassName(
+                        "info",
+                      )}`}
                       href={item.href}
                       key={item.id}
                     >

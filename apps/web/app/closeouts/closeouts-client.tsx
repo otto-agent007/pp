@@ -27,6 +27,7 @@ import {
   StatTile,
   StatusPill,
   buttonClassName,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import type {
@@ -186,14 +187,6 @@ function ReviewMetric({ label, value }: { label: string; value: number }) {
     />
   );
 }
-
-const proofCardToneClasses: Record<StatusPillTone, string> = {
-  danger: "border-status-alert-danger-border bg-status-alert-danger-bg shadow-none",
-  info: "border-status-alert-info-border bg-status-alert-info-bg shadow-none",
-  neutral: "border-theme-border-subtle bg-theme-background-surface shadow-none",
-  success: "border-status-alert-success-border bg-status-alert-success-bg shadow-none",
-  warning: "border-status-alert-warning-border bg-status-alert-warning-bg shadow-none",
-};
 
 function proofCompletionTone(label: string): StatusPillTone {
   if (label === "Ready") {
@@ -435,8 +428,9 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
     return (
       <Card
-        className="border-status-alert-success-border bg-status-alert-success-bg shadow-none"
+        className="shadow-none"
         padding="md"
+        statusTone="success"
       >
         <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
         <p className="mt-1 text-sm text-theme-text-secondary">
@@ -463,8 +457,9 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
   if (!item.invoice) {
     return (
       <Card
-        className="border-status-alert-warning-border bg-status-alert-warning-bg shadow-none"
+        className="shadow-none"
         padding="md"
+        statusTone="warning"
       >
         <p className="text-sm font-semibold text-neutralDark">
           {item.readiness.label}
@@ -509,8 +504,9 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
   return (
     <Card
-      className="border-status-alert-info-border bg-status-alert-info-bg shadow-none"
+      className="shadow-none"
       padding="md"
+      statusTone="info"
     >
       <p className="text-sm font-semibold text-neutralDark">
         {titleByStatus[invoice.status]}
@@ -661,8 +657,9 @@ function ProofHandoffCard({
 
   return (
     <Card
-      className={proofCardToneClasses[completionTone]}
+      className="shadow-none"
       padding="md"
+      statusTone={completionTone}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -842,19 +839,20 @@ export function CloseoutsClient() {
       : branchComplianceNeedsReview
         ? "Source chunks are not ingested yet; keep this as advisory review before billing handoff."
         : "WDO report fields are ready for cited review once source chunks are ingested.";
+  const branchComplianceTone: StatusPillTone = branchComplianceNeedsReview
+    ? "warning"
+    : "success";
   const branchComplianceToneClasses = branchComplianceNeedsReview
     ? {
         action:
           "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
         eyebrow: "text-status-alert-warning-fg",
-        root: "border-status-alert-warning-border bg-status-alert-warning-bg shadow-sm",
         text: "text-status-alert-warning-fgStrong",
       }
     : {
         action:
           "border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
         eyebrow: "text-status-alert-success-fg",
-        root: "border-status-alert-success-border bg-status-alert-success-bg shadow-sm",
         text: "text-status-alert-success-fgStrong",
       };
   const noQueueAction = search.trim()
@@ -941,8 +939,8 @@ export function CloseoutsClient() {
       </section>
 
       <Card
-        className={branchComplianceToneClasses.root}
         padding="md"
+        statusTone={branchComplianceTone}
       >
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
@@ -1080,11 +1078,9 @@ export function CloseoutsClient() {
                 ) : null}
                 {readiness && !selectedQueueItem ? (
                   <div
-                    className={`mt-5 rounded-md border p-4 ${
-                      readiness.billingReady
-                        ? "border-status-alert-success-border bg-status-alert-success-bg"
-                        : "border-status-alert-warning-border bg-status-alert-warning-bg"
-                    }`}
+                    className={`mt-5 rounded-md border p-4 ${statusSurfaceClassName(
+                      readiness.billingReady ? "success" : "warning",
+                    )}`}
                   >
                     <p className="text-sm font-semibold text-neutralDark">
                       {readiness.label}

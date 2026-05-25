@@ -16,6 +16,7 @@ import {
   formControlClassName,
   formLabelClassName,
   formTextareaClassName,
+  statusSurfaceClassName,
 } from "./index";
 
 describe("@pest-patrol/ui", () => {
@@ -54,17 +55,29 @@ describe("@pest-patrol/ui", () => {
 
   it("renders cards and eyebrows with semantic token classes", () => {
     render(
-      <Card>
-        <Eyebrow tone="accent">Dispatch</Eyebrow>
-        <p>Today</p>
-      </Card>,
+      <div>
+        <Card>
+          <Eyebrow tone="accent">Dispatch</Eyebrow>
+          <p>Today</p>
+        </Card>
+        <Card statusTone="warning">
+          <p>Needs review</p>
+        </Card>
+      </div>,
     );
 
     expect(screen.getByText("Today").parentElement).toHaveClass(
       "bg-theme-background-surface",
       "border-theme-border-subtle",
     );
+    expect(screen.getByText("Needs review").parentElement).toHaveClass(
+      "bg-status-alert-warning-bg",
+      "border-status-alert-warning-border",
+    );
     expect(screen.getByText("Dispatch")).toHaveClass("text-primitive-sky-500");
+    expect(statusSurfaceClassName("danger")).toContain(
+      "border-status-alert-danger-border",
+    );
   });
 
   it("renders status pills with visible text and optional dots", () => {

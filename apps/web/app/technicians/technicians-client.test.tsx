@@ -92,6 +92,10 @@ describe("TechniciansClient", () => {
     expect(screen.getByText("Testnician")).toBeInTheDocument();
     expect(screen.getByText("testnician@example.com")).toBeInTheDocument();
     expect(screen.getByText("1 today")).toBeInTheDocument();
+    expect(screen.getByText("1 today").closest(".rounded-md")).toHaveClass(
+      "bg-status-alert-warning-bg",
+      "border-status-alert-warning-border",
+    );
     expect(screen.getByText("1 upcoming")).toBeInTheDocument();
     expect(screen.getByText("En route")).toBeInTheDocument();
     expect(

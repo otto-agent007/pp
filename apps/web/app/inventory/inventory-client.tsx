@@ -15,6 +15,7 @@ import {
   StatTile,
   StatusPill,
   buttonClassName,
+  statusSurfaceClassName,
 } from "@pest-patrol/ui";
 import type {
   ChemicalInventoryInput,
@@ -309,8 +310,9 @@ export function InventoryClient() {
       </section>
 
       <Card
-        className="border-status-alert-warning-border bg-status-alert-warning-bg shadow-sm"
+        className="shadow-sm"
         padding="md"
+        statusTone="warning"
       >
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
@@ -340,7 +342,9 @@ export function InventoryClient() {
             .slice(0, 3)
             .map((field) => (
               <div
-                className="rounded-md border border-status-alert-warning-border bg-theme-background-surface/80 p-3 text-sm"
+                className={`rounded-md border p-3 text-sm ${statusSurfaceClassName(
+                  "warning",
+                )}`}
                 key={field.field}
               >
                 <p className="font-semibold text-neutralDark">{field.label}</p>
@@ -372,9 +376,10 @@ export function InventoryClient() {
 
               return (
                 <Card
-                  className="border-status-alert-danger-border bg-status-alert-danger-bg shadow-none"
+                  className="shadow-none"
                   key={item.id}
                   padding="sm"
+                  statusTone="danger"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -405,7 +410,11 @@ export function InventoryClient() {
               );
             })
           ) : (
-            <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-subtle p-4 text-sm text-theme-text-secondary md:col-span-2 xl:col-span-3">
+            <p
+              className={`rounded-md border border-dashed p-4 text-sm text-theme-text-secondary md:col-span-2 xl:col-span-3 ${statusSurfaceClassName(
+                "success",
+              )}`}
+            >
               No products are at reorder level. Keep logging usage after each
               service to preserve this signal.
             </p>
@@ -560,9 +569,10 @@ export function InventoryClient() {
 
             {inventoryError ? (
               <Card
-                className="border-status-alert-danger-border bg-status-alert-danger-bg text-sm text-status-alert-danger-fg shadow-none"
+                className="text-sm text-status-alert-danger-fg shadow-none"
                 padding="sm"
                 role="alert"
+                statusTone="danger"
               >
                 {inventoryError}
               </Card>
@@ -667,9 +677,10 @@ export function InventoryClient() {
             </h2>
             {logError ? (
               <Card
-                className="border-status-alert-danger-border bg-status-alert-danger-bg text-sm text-status-alert-danger-fg shadow-none"
+                className="text-sm text-status-alert-danger-fg shadow-none"
                 padding="sm"
                 role="alert"
+                statusTone="danger"
               >
                 {logError}
               </Card>

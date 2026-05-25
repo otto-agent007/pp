@@ -34,6 +34,7 @@ import {
   buttonClassName,
   formControlClassName,
   formLabelClassName,
+  statusSurfaceClassName,
 } from "@pest-patrol/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -210,7 +211,7 @@ function LocationEvidencePanel({
   return (
     <section
       aria-label={`GPS evidence for ${jobId}`}
-      className="rounded-md border border-status-alert-info-border bg-status-alert-info-bg/70 p-3"
+      className={`rounded-md border p-3 ${statusSurfaceClassName("info")}`}
     >
       <div className="flex items-center justify-between gap-2">
         <Eyebrow className="text-status-alert-info-fgStrong">
@@ -252,7 +253,11 @@ function RouteIntelligencePanel({
   );
 
   return (
-    <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4 text-sm text-status-alert-info-fgStrong">
+    <section
+      className={`rounded-lg border p-4 text-sm text-status-alert-info-fgStrong ${statusSurfaceClassName(
+        "info",
+      )}`}
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="font-semibold">Technician daily route companion</p>
@@ -311,9 +316,9 @@ function RouteIntelligencePanel({
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {exceptionSummary.items.map((item) => (
               <Card
-                className="border-status-alert-info-border bg-status-alert-info-bg"
                 key={item.filter}
                 padding="sm"
+                statusTone="info"
               >
                 <p className="text-xs font-semibold text-status-alert-info-fgStrong">
                   {item.label}

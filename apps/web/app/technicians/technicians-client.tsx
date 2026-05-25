@@ -13,6 +13,7 @@ import {
   Eyebrow,
   StatusPill,
   buttonClassName,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
@@ -136,6 +137,12 @@ export function TechniciansClient() {
           ) : (
             visibleTechnicians.map((technician) => {
               const routeLoad = routeLoadByTechnician.get(technician.id);
+              const routeLoadTone: StatusPillTone =
+                (routeLoad?.today_assigned_job_count ?? 0) > 0
+                  ? "warning"
+                  : (routeLoad?.upcoming_assigned_job_count ?? 0) > 0
+                    ? "info"
+                    : "neutral";
 
               return (
                 <article key={technician.id}>
@@ -156,7 +163,11 @@ export function TechniciansClient() {
                           <p className="mt-2 text-xs text-theme-text-muted">
                             ID {technician.id}
                           </p>
-                          <div className="mt-4 flex flex-wrap gap-2">
+                          <div
+                            className={`mt-4 flex flex-wrap gap-2 rounded-md border p-2 ${statusSurfaceClassName(
+                              routeLoadTone,
+                            )}`}
+                          >
                             <StatusPill dot={false} tone="info">
                               {routeLoad?.today_assigned_job_count ?? 0} today
                             </StatusPill>
@@ -207,13 +218,21 @@ export function TechniciansClient() {
           </div>
 
           {formError ? (
-            <p className="rounded-md border border-status-alert-danger-border bg-status-alert-danger-bg p-3 text-sm text-status-alert-danger-fg">
+            <p
+              className={`rounded-md border p-3 text-sm text-status-alert-danger-fg ${statusSurfaceClassName(
+                "danger",
+              )}`}
+            >
               {formError}
             </p>
           ) : null}
 
           {inviteSent ? (
-            <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-3 text-sm text-status-alert-success-fg">
+            <p
+              className={`rounded-md border p-3 text-sm text-status-alert-success-fg ${statusSurfaceClassName(
+                "success",
+              )}`}
+            >
               {inviteSent}
             </p>
           ) : null}

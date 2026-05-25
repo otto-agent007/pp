@@ -24,6 +24,7 @@ import {
   Eyebrow,
   StatTile,
   StatusPill,
+  statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import { FormEvent, useMemo, useState } from "react";
@@ -265,7 +266,11 @@ export function ComplianceClient() {
       </header>
 
       {setupReadiness ? (
-        <section className="rounded-lg border border-status-alert-warning-border bg-status-alert-warning-bg p-4 text-sm text-status-alert-warning-fgStrong shadow-sm">
+        <section
+          className={`rounded-lg border p-4 text-sm text-status-alert-warning-fgStrong shadow-sm ${statusSurfaceClassName(
+            "warning",
+          )}`}
+        >
           <h2 className="text-base font-semibold text-status-alert-warning-fgStrong">
             Compliance setup required
           </h2>
@@ -305,7 +310,9 @@ export function ComplianceClient() {
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {knowledgeBaseReadiness.workflows.map((item) => (
             <article
-              className="rounded-md border border-theme-border-subtle p-3 text-sm"
+              className={`rounded-md border p-3 text-sm ${statusSurfaceClassName(
+                readinessTone(item.status),
+              )}`}
               key={item.workflow}
             >
               <p className="font-semibold text-theme-text-primary">
@@ -333,7 +340,11 @@ export function ComplianceClient() {
       <section className="flex flex-col gap-3">
         <Eyebrow tone="accent">Advisory readiness</Eyebrow>
         <div className="grid gap-4 lg:grid-cols-4">
-          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <article
+            className={`rounded-lg border p-4 shadow-sm ${statusSurfaceClassName(
+              readinessTone(chemicalReadiness.status),
+            )}`}
+          >
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Chemical review
             </p>
@@ -355,7 +366,11 @@ export function ComplianceClient() {
               missing fields from {logs.length} chemical logs.
             </p>
           </article>
-          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <article
+            className={`rounded-lg border p-4 shadow-sm ${statusSurfaceClassName(
+              readinessTone(recurringReadiness.status),
+            )}`}
+          >
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Recurring routes
             </p>
@@ -376,7 +391,11 @@ export function ComplianceClient() {
                 : "Awaiting cited route rules."}
             </p>
           </article>
-          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <article
+            className={`rounded-lg border p-4 shadow-sm ${statusSurfaceClassName(
+              "info",
+            )}`}
+          >
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               WDO / Branch 3
             </p>
@@ -388,7 +407,15 @@ export function ComplianceClient() {
               reviewed source chunks are ingested.
             </p>
           </article>
-          <article className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+          <article
+            className={`rounded-lg border p-4 shadow-sm ${statusSurfaceClassName(
+              multiUnitSummary.totalUnits === 0
+                ? "info"
+                : setupReadiness
+                  ? "warning"
+                  : "success",
+            )}`}
+          >
             <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
               Multi-unit audits
             </p>

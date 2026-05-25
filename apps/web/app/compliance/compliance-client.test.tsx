@@ -153,6 +153,16 @@ describe("ComplianceClient", () => {
     expect(screen.getByText("Source readiness")).toBeInTheDocument();
     expect(screen.getByText(/Ready workflows:/)).toBeInTheDocument();
     expect(screen.getByText("Chemical review")).toBeInTheDocument();
+    expect(screen.getByText("Chemical review").closest(".rounded-lg")).toHaveClass(
+      "bg-status-alert-success-bg",
+      "border-status-alert-success-border",
+    );
+    expect(
+      screen.getByText("Needs cited route rules").closest(".rounded-lg"),
+    ).toHaveClass(
+      "bg-status-alert-warning-bg",
+      "border-status-alert-warning-border",
+    );
     expect(screen.getAllByText("Recurring routes").length).toBeGreaterThan(0);
     expect(screen.getAllByText("WDO / Branch 3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Multi-unit audits").length).toBeGreaterThan(0);
