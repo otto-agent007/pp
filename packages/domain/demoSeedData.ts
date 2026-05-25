@@ -256,6 +256,322 @@ function markerNote(note: string) {
   return `${note} ${DEMO_SEED_MARKER}`;
 }
 
+function dispatchWeekStartParts(now: Date) {
+  const parts = pacificDateParts(now);
+  const current = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+
+  current.setUTCDate(current.getUTCDate() - current.getUTCDay());
+
+  return {
+    day: current.getUTCDate(),
+    month: current.getUTCMonth() + 1,
+    year: current.getUTCFullYear(),
+  };
+}
+
+function dispatchWeekWallClockIso(
+  now: Date,
+  weekday: number,
+  hour: number,
+  minute: number,
+) {
+  const start = dispatchWeekStartParts(now);
+  const date = new Date(
+    Date.UTC(start.year, start.month - 1, start.day + weekday),
+  );
+
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(date.getUTCDate()).padStart(2, "0")}T${String(hour).padStart(
+    2,
+    "0",
+  )}:${String(minute).padStart(2, "0")}:00.000Z`;
+}
+
+function currentWeekRelativeWallClockIso(
+  now: Date,
+  dayOffset: number,
+  hour: number,
+  minute: number,
+) {
+  const parts = pacificDateParts(now);
+  const current = new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day),
+  ).getUTCDay();
+  const weekday = Math.max(0, Math.min(6, current + dayOffset));
+
+  return dispatchWeekWallClockIso(now, weekday, hour, minute);
+}
+
+const generatedCustomerAreas = [
+  "Adams Avenue",
+  "Balboa Park",
+  "Bay Ho",
+  "Bird Rock",
+  "Carmel Valley",
+  "Clairemont",
+  "College Area",
+  "Cortez Hill",
+  "Del Cerro",
+  "Eastlake",
+  "El Cajon",
+  "Encanto",
+  "Golden Hill",
+  "Grantville",
+  "Imperial Beach",
+  "Kensington",
+  "La Mesa",
+  "Linda Vista",
+  "Little Italy",
+  "Mission Hills",
+  "Mira Mesa",
+  "Normal Heights",
+  "Ocean Beach",
+  "Old Town",
+  "Pacific Beach",
+  "Rancho Bernardo",
+  "Rancho Penasquitos",
+  "Santee",
+  "Serra Mesa",
+  "South Park",
+  "Tierrasanta",
+  "University City",
+];
+
+const generatedCustomerTypes: PropertyType[] = [
+  "commercial",
+  "residential",
+  "commercial",
+  "other",
+];
+
+function buildGeneratedCustomers(
+  startIndex: number,
+  targetCount: number,
+): DemoSeedCustomer[] {
+  return Array.from(
+    { length: Math.max(targetCount - startIndex + 1, 0) },
+    (_, offset) => {
+      const index = startIndex + offset;
+      const area =
+        generatedCustomerAreas[offset % generatedCustomerAreas.length];
+      const propertyType =
+        generatedCustomerTypes[offset % generatedCustomerTypes.length];
+      const nameSuffix =
+        propertyType === "residential"
+          ? "Residence"
+          : propertyType === "other"
+            ? "Community"
+            : offset % 3 === 0
+              ? "Market"
+              : offset % 3 === 1
+                ? "Office"
+                : "Plaza";
+
+      return {
+        email: `demo+customer-${String(index).padStart(3, "0")}@example.test`,
+        id: demoId("c", index),
+        key: `generated-${String(index).padStart(3, "0")}`,
+        locations: [
+          {
+            address: `${100 + index} Demo ${area} Rd, San Diego, CA 921${String(
+              index % 90,
+            ).padStart(2, "0")}`,
+            customer_id: demoId("c", index),
+            id: demoId("l", 26 + offset + 1),
+            is_primary: true,
+            nickname: "Primary service site",
+            service_notes: markerNote(
+              `Generated San Diego demo stop for ${area}.`,
+            ),
+            status: "active",
+          },
+        ],
+        name: `Demo - ${area} ${nameSuffix} ${String(index).padStart(3, "0")}`,
+        phone: `555-${String(1000 + index).slice(-4)}`,
+        property_type: propertyType,
+        service_notes: markerNote(
+          `Generated large-demo account for ${area} route density.`,
+        ),
+        status: "active",
+      };
+    },
+  );
+}
+
+function buildDemoTechnicians(
+  technicianPassword?: string,
+): DemoSeedTechnician[] {
+  return [
+    {
+      display_name: "Demo - Maya Chen",
+      email: "demo+tech-maya@example.test",
+      key: "maya",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Eli Brooks",
+      email: "demo+tech-eli@example.test",
+      key: "eli",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Sol Ramirez",
+      email: "demo+tech-sol@example.test",
+      key: "sol",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Priya Shah",
+      email: "demo+tech-priya@example.test",
+      key: "priya",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Dante Miller",
+      email: "demo+tech-dante@example.test",
+      key: "dante",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Iris Santos",
+      email: "demo+tech-iris@example.test",
+      key: "iris",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Noa Patel",
+      email: "demo+tech-noa@example.test",
+      key: "noa",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Leo Watkins",
+      email: "demo+tech-leo@example.test",
+      key: "leo",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Zara Kim",
+      email: "demo+tech-zara@example.test",
+      key: "zara",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Omar Castillo",
+      email: "demo+tech-omar@example.test",
+      key: "omar",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Nina Alvarez",
+      email: "demo+tech-nina@example.test",
+      key: "nina",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Gabe Foster",
+      email: "demo+tech-gabe@example.test",
+      key: "gabe",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Mira Vaughn",
+      email: "demo+tech-mira@example.test",
+      key: "mira",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Reece Turner",
+      email: "demo+tech-reece@example.test",
+      key: "reece",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Talia Morgan",
+      email: "demo+tech-talia@example.test",
+      key: "talia",
+      password: technicianPassword,
+    },
+    {
+      display_name: "Demo - Wes Ito",
+      email: "demo+tech-wes@example.test",
+      key: "wes",
+      password: technicianPassword,
+    },
+  ];
+}
+
+const generatedJobStatuses: JobStatus[] = [
+  "scheduled",
+  "scheduled",
+  "en_route",
+  "in_progress",
+  "completed",
+  "scheduled",
+  "canceled",
+];
+
+function buildGeneratedJobs({
+  customers,
+  existingCount,
+  inventory,
+  now,
+  targetCount,
+  technicians,
+}: {
+  customers: DemoSeedCustomer[];
+  existingCount: number;
+  inventory: DemoSeedInventoryItem[];
+  now: Date;
+  targetCount: number;
+  technicians: DemoSeedTechnician[];
+}): DemoSeedJob[] {
+  const technicianKeys = technicians.map((technician) => technician.key);
+
+  return Array.from(
+    { length: Math.max(targetCount - existingCount, 0) },
+    (_, offset) => {
+      const index = existingCount + offset + 1;
+      const customer = customers[(index - 1) % customers.length];
+      const location =
+        customer.locations[(index - 1) % customer.locations.length];
+      const assigned_technician_key =
+        index % 15 === 0
+          ? null
+          : technicianKeys[(index - 1) % technicianKeys.length];
+      const hour = 7 + ((index - 1) % 10);
+      const minute = [0, 15, 30, 45][(index - 1) % 4];
+
+      return {
+        assigned_technician_key,
+        customer_id: customer.id,
+        id: demoId("j", index),
+        inventory_key: inventory[(index - 1) % inventory.length]?.key,
+        key: `generated-weekly-${String(index).padStart(3, "0")}`,
+        location_id: location.id,
+        scheduled_end: dispatchWeekWallClockIso(
+          now,
+          (index - 1) % 7,
+          hour + 1,
+          minute,
+        ),
+        scheduled_start: dispatchWeekWallClockIso(
+          now,
+          (index - 1) % 7,
+          hour,
+          minute,
+        ),
+        service_notes: markerNote(
+          `Generated weekly route stop ${index} for the large editable demo.`,
+        ),
+        status: generatedJobStatuses[index % generatedJobStatuses.length],
+      };
+    },
+  );
+}
+
 const riveraCafeDryStorageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="Synthetic dry storage pest control service photo">
   <rect width="1200" height="800" fill="#eef2f7"/>
   <rect x="70" y="90" width="1060" height="610" rx="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="6"/>
@@ -899,59 +1215,133 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       status: "active",
     },
   ];
+  customers.push(...buildGeneratedCustomers(customers.length + 1, 100));
+  const technicians = buildDemoTechnicians(technicianPassword);
   const inventory: DemoSeedInventoryItem[] = [
     {
-      current_stock: 96,
-      epa_number: "432-1529",
+      current_stock: 128,
+      epa_number: "DEMO-432-1529",
       id: "00000000-0000-4000-8000-00000000a001",
       key: "perimeter",
-      name: "Demo - Perimeter Insecticide",
-      reorder_level: 24,
+      name: "Demo - Non-Repellent Perimeter SC",
+      reorder_level: 32,
       unit: "oz",
     },
     {
-      current_stock: 18,
-      epa_number: "499-548",
+      current_stock: 54,
+      epa_number: "DEMO-499-548",
       id: "00000000-0000-4000-8000-00000000a002",
       key: "bait",
-      name: "Demo - Ant Bait Stations",
+      name: "Demo - Ant Gel Bait Rotation A",
+      reorder_level: 12,
+      unit: "each",
+    },
+    {
+      current_stock: 72,
+      epa_number: "DEMO-100-1659",
+      id: "00000000-0000-4000-8000-00000000a003",
+      key: "rodent",
+      name: "Demo - Rodent Monitoring Blocks",
+      reorder_level: 18,
+      unit: "each",
+    },
+    {
+      current_stock: 28,
+      epa_number: "DEMO-352-888",
+      id: "00000000-0000-4000-8000-00000000a004",
+      key: "dust",
+      name: "Demo - Crack and Crevice Dust",
+      reorder_level: 6,
+      unit: "oz",
+    },
+    {
+      current_stock: 84,
+      epa_number: "N/A",
+      id: "00000000-0000-4000-8000-00000000a005",
+      key: "glueboard",
+      name: "Demo - Glueboard Monitor 72 Pack",
+      reorder_level: 24,
+      unit: "each",
+    },
+    {
+      current_stock: 16,
+      epa_number: "DEMO-432-1544",
+      id: "00000000-0000-4000-8000-00000000a006",
+      key: "aerosol",
+      name: "Demo - Wasp Knockdown Aerosol",
       reorder_level: 6,
       unit: "each",
     },
     {
-      current_stock: 42,
-      epa_number: "100-1659",
-      id: "00000000-0000-4000-8000-00000000a003",
-      key: "rodent",
-      name: "Demo - Rodent Monitoring Blocks",
-      reorder_level: 12,
-      unit: "each",
-    },
-    {
-      current_stock: 12,
-      epa_number: "352-888",
-      id: "00000000-0000-4000-8000-00000000a004",
-      key: "dust",
-      name: "Demo - Crack and Crevice Dust",
-      reorder_level: 4,
+      current_stock: 18,
+      epa_number: "DEMO-2724-351",
+      id: "00000000-0000-4000-8000-00000000a007",
+      key: "igr",
+      name: "Demo - Insect Growth Regulator Concentrate",
+      reorder_level: 5,
       unit: "oz",
     },
     {
-      current_stock: 6,
+      current_stock: 48,
+      epa_number: "DEMO-6218-47",
+      id: "00000000-0000-4000-8000-00000000a008",
+      key: "larvicide",
+      name: "Demo - Mosquito Larvicide Dunks",
+      reorder_level: 10,
+      unit: "each",
+    },
+    {
+      current_stock: 36,
       epa_number: "N/A",
-      id: "00000000-0000-4000-8000-00000000a005",
-      key: "glueboard",
-      name: "Demo - Glueboard Monitors",
+      id: "00000000-0000-4000-8000-00000000a009",
+      key: "fly-light-board",
+      name: "Demo - Food Plant Fly Light Boards",
       reorder_level: 12,
       unit: "each",
     },
     {
-      current_stock: 3,
-      epa_number: "432-1544",
-      id: "00000000-0000-4000-8000-00000000a006",
-      key: "aerosol",
-      name: "Demo - Wasp Knockdown Aerosol",
-      reorder_level: 5,
+      current_stock: 62,
+      epa_number: "N/A",
+      id: "00000000-0000-4000-8000-00000000a010",
+      key: "bait-station",
+      name: "Demo - Tamper-Resistant Bait Stations",
+      reorder_level: 15,
+      unit: "each",
+    },
+    {
+      current_stock: 9,
+      epa_number: "DEMO-53883-401",
+      id: "00000000-0000-4000-8000-00000000a011",
+      key: "foam",
+      name: "Demo - Foaming Crack Treatment",
+      reorder_level: 3,
+      unit: "gal",
+    },
+    {
+      current_stock: 11,
+      epa_number: "N/A",
+      id: "00000000-0000-4000-8000-00000000a012",
+      key: "drain-foam",
+      name: "Demo - Drain Line Bio Foam",
+      reorder_level: 3,
+      unit: "gal",
+    },
+    {
+      current_stock: 40,
+      epa_number: "N/A",
+      id: "00000000-0000-4000-8000-00000000a013",
+      key: "snap-trap",
+      name: "Demo - Snap Trap Service Kit",
+      reorder_level: 10,
+      unit: "each",
+    },
+    {
+      current_stock: 22,
+      epa_number: "N/A",
+      id: "00000000-0000-4000-8000-00000000a014",
+      key: "ppe-kit",
+      name: "Demo - PPE Service Restock Kit",
+      reorder_level: 8,
       unit: "each",
     },
   ];
@@ -963,8 +1353,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "harbor-today",
       location_id: demoId("l", 1),
-      scheduled_end: wallClockIso(now, 0, 10, 38),
-      scheduled_start: wallClockIso(now, 0, 9, 38),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 10, 38),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 9, 38),
       service_notes: markerNote(
         "Exterior perimeter, clubhouse kitchen, and pool room.",
       ),
@@ -977,8 +1367,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "bait",
       key: "rivera-completed",
       location_id: demoId("l", 3),
-      scheduled_end: wallClockIso(now, 0, 8, 45),
-      scheduled_start: wallClockIso(now, 0, 7, 45),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 8, 45),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 7, 45),
       service_notes: markerNote(
         "Completed cafe service with customer-safe closeout.",
       ),
@@ -990,8 +1380,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       id: demoId("j", 3),
       key: "nguyen-today",
       location_id: demoId("l", 4),
-      scheduled_end: wallClockIso(now, 0, 12, 15),
-      scheduled_start: wallClockIso(now, 0, 11, 15),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 12, 15),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 11, 15),
       service_notes: markerNote("Quarterly residential service."),
       status: "en_route",
     },
@@ -1002,8 +1392,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "rodent",
       key: "mesa-tomorrow",
       location_id: demoId("l", 5),
-      scheduled_end: wallClockIso(now, 1, 10, 30),
-      scheduled_start: wallClockIso(now, 1, 9, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 10, 30),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 9, 0),
       service_notes: markerNote("Warehouse dock-door inspection."),
       status: "scheduled",
     },
@@ -1014,8 +1404,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "dust",
       key: "harbor-followup",
       location_id: demoId("l", 2),
-      scheduled_end: wallClockIso(now, 1, 14, 0),
-      scheduled_start: wallClockIso(now, 1, 13, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 14, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 13, 0),
       service_notes: markerNote("Pool equipment room follow-up."),
       status: "scheduled",
     },
@@ -1026,8 +1416,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "glueboard",
       key: "seabreeze-building-a",
       location_id: demoId("l", 6),
-      scheduled_end: wallClockIso(now, 0, 14, 30),
-      scheduled_start: wallClockIso(now, 0, 13, 30),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 14, 30),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 13, 30),
       service_notes: markerNote("Apartment trash room and exterior stations."),
       status: "scheduled",
     },
@@ -1038,8 +1428,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "kearny-in-progress",
       location_id: demoId("l", 8),
-      scheduled_end: wallClockIso(now, 0, 11, 0),
-      scheduled_start: wallClockIso(now, 0, 10, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 11, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 10, 0),
       service_notes: markerNote("Medical office perimeter and utility closet."),
       status: "in_progress",
     },
@@ -1050,8 +1440,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "bait",
       key: "north-park-bakery",
       location_id: demoId("l", 9),
-      scheduled_end: wallClockIso(now, 0, 15, 15),
-      scheduled_start: wallClockIso(now, 0, 14, 15),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 15, 15),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 14, 15),
       service_notes: markerNote(
         "Bakery prep, drains, and shared storage check.",
       ),
@@ -1064,8 +1454,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "dust",
       key: "torrey-canceled",
       location_id: demoId("l", 11),
-      scheduled_end: wallClockIso(now, 0, 16, 0),
-      scheduled_start: wallClockIso(now, 0, 15, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 16, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 15, 0),
       service_notes: markerNote("Lab escort unavailable; reschedule required."),
       status: "canceled",
     },
@@ -1076,8 +1466,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "rodent",
       key: "chula-dining",
       location_id: demoId("l", 12),
-      scheduled_end: wallClockIso(now, 0, 17, 0),
-      scheduled_start: wallClockIso(now, 0, 16, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 17, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 16, 0),
       service_notes: markerNote("Senior living dining hall monitor review."),
       status: "scheduled",
     },
@@ -1088,8 +1478,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "la-jolla-en-route",
       location_id: demoId("l", 14),
-      scheduled_end: wallClockIso(now, 0, 9, 30),
-      scheduled_start: wallClockIso(now, 0, 8, 30),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 9, 30),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 8, 30),
       service_notes: markerNote("Coastal townhome quarterly exterior."),
       status: "en_route",
     },
@@ -1100,8 +1490,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "glueboard",
       key: "mission-brewery-completed",
       location_id: demoId("l", 15),
-      scheduled_end: wallClockIso(now, -1, 11, 0),
-      scheduled_start: wallClockIso(now, -1, 10, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, -1, 11, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, -1, 10, 0),
       service_notes: markerNote("Completed taproom and brewhouse inspection."),
       status: "completed",
     },
@@ -1112,8 +1502,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "rodent",
       key: "otay-tomorrow",
       location_id: demoId("l", 17),
-      scheduled_end: wallClockIso(now, 1, 12, 0),
-      scheduled_start: wallClockIso(now, 1, 10, 30),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 12, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 10, 30),
       service_notes: markerNote("Logistics dock-door and break room route."),
       status: "scheduled",
     },
@@ -1124,8 +1514,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "bait",
       key: "hillcrest-late",
       location_id: demoId("l", 18),
-      scheduled_end: wallClockIso(now, 0, 8, 0),
-      scheduled_start: wallClockIso(now, 0, 7, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 8, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 7, 0),
       service_notes: markerNote(
         "Late scheduled clinic review needs dispatch triage.",
       ),
@@ -1138,8 +1528,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "rodent",
       key: "point-loma-in-progress",
       location_id: demoId("l", 20),
-      scheduled_end: wallClockIso(now, 0, 13, 0),
-      scheduled_start: wallClockIso(now, 0, 12, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 13, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 12, 0),
       service_notes: markerNote("Marina office dock monitor service."),
       status: "in_progress",
     },
@@ -1150,8 +1540,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "aerosol",
       key: "bankers-unassigned",
       location_id: demoId("l", 21),
-      scheduled_end: wallClockIso(now, 0, 18, 0),
-      scheduled_start: wallClockIso(now, 0, 17, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 18, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 17, 0),
       service_notes: markerNote(
         "Restaurant service waiting on technician assignment.",
       ),
@@ -1164,8 +1554,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "del-mar-completed",
       location_id: demoId("l", 23),
-      scheduled_end: wallClockIso(now, -1, 15, 0),
-      scheduled_start: wallClockIso(now, -1, 14, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, -1, 15, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, -1, 14, 0),
       service_notes: markerNote(
         "Completed residential exterior and garage sweep.",
       ),
@@ -1178,8 +1568,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "glueboard",
       key: "poway-tomorrow",
       location_id: demoId("l", 24),
-      scheduled_end: wallClockIso(now, 1, 15, 0),
-      scheduled_start: wallClockIso(now, 1, 14, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 15, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 14, 0),
       service_notes: markerNote("School admin building and cafeteria route."),
       status: "scheduled",
     },
@@ -1190,8 +1580,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "east-village-future",
       location_id: demoId("l", 26),
-      scheduled_end: wallClockIso(now, 2, 11, 0),
-      scheduled_start: wallClockIso(now, 2, 10, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 2, 11, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 2, 10, 0),
       service_notes: markerNote("Gym locker room and perimeter service."),
       status: "scheduled",
     },
@@ -1202,8 +1592,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "glueboard",
       key: "seabreeze-laundry-completed",
       location_id: demoId("l", 7),
-      scheduled_end: wallClockIso(now, 0, 8, 30),
-      scheduled_start: wallClockIso(now, 0, 7, 30),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 8, 30),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 7, 30),
       service_notes: markerNote("Completed laundry room monitor service."),
       status: "completed",
     },
@@ -1214,8 +1604,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "bait",
       key: "north-park-storage-tomorrow",
       location_id: demoId("l", 10),
-      scheduled_end: wallClockIso(now, 1, 11, 0),
-      scheduled_start: wallClockIso(now, 1, 10, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 11, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 10, 0),
       service_notes: markerNote("Shared storage follow-up for bakery account."),
       status: "scheduled",
     },
@@ -1226,8 +1616,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "rodent",
       key: "chula-dining-en-route",
       location_id: demoId("l", 13),
-      scheduled_end: wallClockIso(now, 0, 12, 30),
-      scheduled_start: wallClockIso(now, 0, 11, 30),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 12, 30),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 11, 30),
       service_notes: markerNote("Dining hall service after breakfast."),
       status: "en_route",
     },
@@ -1238,8 +1628,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "dust",
       key: "mission-brewhouse-canceled",
       location_id: demoId("l", 16),
-      scheduled_end: wallClockIso(now, 1, 16, 0),
-      scheduled_start: wallClockIso(now, 1, 15, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 16, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 15, 0),
       service_notes: markerNote(
         "Brewhouse service canceled for maintenance closure.",
       ),
@@ -1252,8 +1642,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "bait",
       key: "hillcrest-storage-future",
       location_id: demoId("l", 19),
-      scheduled_end: wallClockIso(now, 3, 10, 0),
-      scheduled_start: wallClockIso(now, 3, 9, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 2, 10, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 2, 9, 0),
       service_notes: markerNote("Records storage inspection and monitor swap."),
       status: "scheduled",
     },
@@ -1264,8 +1654,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "bait",
       key: "bankers-basement-completed",
       location_id: demoId("l", 22),
-      scheduled_end: wallClockIso(now, 0, 10, 15),
-      scheduled_start: wallClockIso(now, 0, 9, 15),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 10, 15),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 9, 15),
       service_notes: markerNote("Completed restaurant basement proof handoff."),
       status: "completed",
     },
@@ -1276,8 +1666,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "glueboard",
       key: "poway-cafeteria-unassigned",
       location_id: demoId("l", 25),
-      scheduled_end: wallClockIso(now, 1, 13, 0),
-      scheduled_start: wallClockIso(now, 1, 12, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 1, 13, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 1, 12, 0),
       service_notes: markerNote(
         "Cafeteria service needs dispatcher assignment.",
       ),
@@ -1290,8 +1680,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "kearny-overdue",
       location_id: demoId("l", 8),
-      scheduled_end: wallClockIso(now, -1, 16, 0),
-      scheduled_start: wallClockIso(now, -1, 15, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, -1, 16, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, -1, 15, 0),
       service_notes: markerNote(
         "Overdue medical office follow-up still scheduled.",
       ),
@@ -1304,8 +1694,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "perimeter",
       key: "la-jolla-future",
       location_id: demoId("l", 14),
-      scheduled_end: wallClockIso(now, 2, 15, 30),
-      scheduled_start: wallClockIso(now, 2, 14, 30),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 2, 15, 30),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 2, 14, 30),
       service_notes: markerNote("Future townhome quarterly service."),
       status: "scheduled",
     },
@@ -1316,8 +1706,8 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "rodent",
       key: "otay-completed",
       location_id: demoId("l", 17),
-      scheduled_end: wallClockIso(now, 0, 7, 45),
-      scheduled_start: wallClockIso(now, 0, 6, 45),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 0, 7, 45),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 0, 6, 45),
       service_notes: markerNote(
         "Completed logistics hub dock-door inspection.",
       ),
@@ -1330,12 +1720,22 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       inventory_key: "aerosol",
       key: "east-village-unassigned-future",
       location_id: demoId("l", 26),
-      scheduled_end: wallClockIso(now, 4, 12, 0),
-      scheduled_start: wallClockIso(now, 4, 11, 0),
+      scheduled_end: currentWeekRelativeWallClockIso(now, 2, 12, 0),
+      scheduled_start: currentWeekRelativeWallClockIso(now, 2, 11, 0),
       service_notes: markerNote("Future gym service waiting for assignment."),
       status: "scheduled",
     },
   ];
+  jobs.push(
+    ...buildGeneratedJobs({
+      customers,
+      existingCount: jobs.length,
+      inventory,
+      now,
+      targetCount: 180,
+      technicians,
+    }),
+  );
   const invoices: DemoSeedInvoice[] = [
     {
       customer_id: demoId("c", 1),
@@ -1619,79 +2019,6 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       "invoices",
       "payments",
     ],
-    technicians: [
-      {
-        display_name: "Demo - Maya Chen",
-        email: "demo+tech-maya@example.test",
-        key: "maya",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Eli Brooks",
-        email: "demo+tech-eli@example.test",
-        key: "eli",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Sol Ramirez",
-        email: "demo+tech-sol@example.test",
-        key: "sol",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Priya Shah",
-        email: "demo+tech-priya@example.test",
-        key: "priya",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Dante Miller",
-        email: "demo+tech-dante@example.test",
-        key: "dante",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Iris Santos",
-        email: "demo+tech-iris@example.test",
-        key: "iris",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Noa Patel",
-        email: "demo+tech-noa@example.test",
-        key: "noa",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Leo Watkins",
-        email: "demo+tech-leo@example.test",
-        key: "leo",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Zara Kim",
-        email: "demo+tech-zara@example.test",
-        key: "zara",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Omar Castillo",
-        email: "demo+tech-omar@example.test",
-        key: "omar",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Nina Alvarez",
-        email: "demo+tech-nina@example.test",
-        key: "nina",
-        password: technicianPassword,
-      },
-      {
-        display_name: "Demo - Gabe Foster",
-        email: "demo+tech-gabe@example.test",
-        key: "gabe",
-        password: technicianPassword,
-      },
-    ],
+    technicians,
   };
 }

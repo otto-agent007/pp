@@ -24,8 +24,8 @@ describe("local demo login seed route", () => {
     serviceClient = { from: vi.fn() };
     replaceDemoSeedRecords.mockReset();
     replaceDemoSeedRecords.mockResolvedValue({
-      reset: { customers: 18, jobs: 30 },
-      seed: { adminUsers: 1, customers: 18, jobs: 30 },
+      reset: { customers: 100, jobs: 180 },
+      seed: { adminUsers: 1, customers: 100, jobs: 180 },
     });
     vi.unstubAllEnvs();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");

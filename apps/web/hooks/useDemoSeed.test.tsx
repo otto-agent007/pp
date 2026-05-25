@@ -59,6 +59,11 @@ describe("useDemoSeed local fixture mode", () => {
       target: "local",
     });
     expect(result.current.data?.summary.media_items).toBe(3);
+    expect(result.current.data?.summary).toMatchObject({
+      customers: 100,
+      jobs: 180,
+      technicians: 16,
+    });
     expect(result.current.error).toBeNull();
     expect(getDemoSeedStatusRecord).not.toHaveBeenCalled();
   });
@@ -85,7 +90,11 @@ describe("useDemoSeed local fixture mode", () => {
         target: "local",
       },
       summary: {
+        customers: 100,
+        inventory_items: 14,
+        jobs: 180,
         media_items: 3,
+        technicians: 16,
       },
     });
     expect(runDemoSeedActionRecord).not.toHaveBeenCalled();

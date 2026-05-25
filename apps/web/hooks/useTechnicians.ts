@@ -5,9 +5,15 @@ import {
   listTechnicianDirectory,
   listTechnicians,
 } from "@pest-patrol/domain";
-import type { TechnicianProfile } from "@pest-patrol/types";
+import type {
+  TechnicianInviteInput,
+  TechnicianProfile,
+} from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLocalDemoFixtures } from "./localDemoData";
+import {
+  getLocalDemoFixtures,
+  inviteLocalDemoTechnician,
+} from "./localDemoData";
 
 export const techniciansQueryKey = ["technicians"] as const;
 export const technicianDirectoryQueryKey = ["technician-directory"] as const;
@@ -31,7 +37,10 @@ export function useInviteTechnician() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: inviteTechnician,
+    mutationFn: (input: TechnicianInviteInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(inviteLocalDemoTechnician(input))
+        : inviteTechnician(input),
     onSuccess: (result) => {
       queryClient.setQueryData<TechnicianProfile[]>(
         technicianDirectoryQueryKey,

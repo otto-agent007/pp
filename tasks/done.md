@@ -1,9 +1,36 @@
 # Done
 
+## Large Interactive Demo Reset V1
+
+- Updated the canonical demo seed and local fixture materialization to reset to
+  16 technicians, 100 customers, 108 locations, 180 current-week jobs, and 14
+  realistic synthetic inventory items while preserving the San Diego proof
+  story, closeout media, treatment forms, invoices, payments, and portal handoff
+- Kept real Supabase demo login refresh on the authenticated
+  `demo@email.com` route so demo-owned records are replaced while the signed-in
+  demo admin session is preserved
+- Made the no-env local demo mutable for Core Ops surfaces: customers,
+  technicians, jobs/dispatch, inventory usage, invoices/payments, and portal
+  access token state now short-circuit into editable fixture state and reset on
+  demo login or Demo data reset
+- Updated Admin Tools, smoke-preflight, seed route, fixture, API-client, and
+  hook tests so the app renders the same 100/16/180 summary everywhere it reads
+  demo summary data
+- Kept migrations, schema changes, provider setup, env changes, preview
+  mutations, production mutations, and public API response-shape changes out of
+  scope
+- Verified with focused demo/domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`
+
 ## Automatic Large Demo Login Refresh V1
 
-- Expanded the guarded synthetic San Diego demo story to 12 technicians, 18 customers, 26 locations, and 30 jobs across scheduled, en route, in-progress, completed, canceled, late, future, and intentionally unassigned states
-- Preserved and lightly expanded the existing proof story with 6 inventory items, 6 chemical logs, 4 treatment form submissions, 3 invoices, 3 proof media records, and payment state
+- Expanded the guarded synthetic San Diego demo story to the previous
+  automatic-refresh baseline across scheduled, en route, in-progress,
+  completed, canceled, late, future, and intentionally unassigned states
+- Preserved and lightly expanded the existing proof story with inventory,
+  chemical logs, treatment form submissions, invoices, proof media records, and
+  payment state
 - Added an authenticated `demo@email.com` login refresh path that verifies the signed-in profile email, refuses production, reuses service-role/local-preview guardrails, refreshes demo-owned operational records, and preserves the active demo admin auth user/session
 - Updated seed/reset helpers so demo refresh deletes and recreates demo-owned dependent records in dependency order without deleting non-demo users or the signed-in demo admin user
 - Triggered demo refresh after manual `demo@email.com` sign-in and the local one-click demo button while keeping local fixture mode available when Supabase env values are absent

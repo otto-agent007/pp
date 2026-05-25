@@ -46,8 +46,8 @@ describe("demo login refresh route", () => {
     serviceClient = { from: vi.fn() };
     refreshDemoLoginSeedRecords.mockReset();
     refreshDemoLoginSeedRecords.mockResolvedValue({
-      reset: { adminUsers: 0, customers: 18, jobs: 30 },
-      seed: { adminUsers: 1, customers: 18, jobs: 30 },
+      reset: { adminUsers: 0, customers: 100, jobs: 180 },
+      seed: { adminUsers: 1, customers: 100, jobs: 180 },
     });
     vi.unstubAllEnvs();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");
@@ -98,11 +98,11 @@ describe("demo login refresh route", () => {
     };
 
     expect(response.status).toBe(200);
-    expect(body.result?.seed?.jobs).toBe(30);
+    expect(body.result?.seed?.jobs).toBe(180);
     expect(body.summary).toMatchObject({
-      customers: 18,
-      jobs: 30,
-      technicians: 12,
+      customers: 100,
+      jobs: 180,
+      technicians: 16,
     });
     expect(refreshDemoLoginSeedRecords).toHaveBeenCalledWith(
       serviceClient,

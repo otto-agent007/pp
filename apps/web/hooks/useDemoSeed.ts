@@ -12,7 +12,10 @@ import type {
   DemoSeedStatusResponse,
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { isLocalDemoFixtureMode } from "./localDemoData";
+import {
+  isLocalDemoFixtureMode,
+  resetLocalDemoFixtures,
+} from "./localDemoData";
 
 export const demoSeedStatusQueryKey = ["demo-seed-status"] as const;
 
@@ -55,11 +58,16 @@ export function useRunDemoSeedAction() {
   const queryClient = useQueryClient();
 
   return useMutation<DemoSeedActionResponse, Error, DemoSeedActionInput>({
-    mutationFn: (input: DemoSeedActionInput) =>
-      isLocalDemoFixtureMode()
-        ? Promise.resolve(localFixtureAction(input))
-        : runDemoSeedActionRecord(input),
+    mutationFn: (input: DemoSeedActionInput) => {
+      if (isLocalDemoFixtureMode()) {
+        resetLocalDemoFixtures();
+        return Promise.resolve(localFixtureAction(input));
+      }
+
+      return runDemoSeedActionRecord(input);
+    },
     onSuccess: () => {
+      void queryClient.invalidateQueries();
       void queryClient.invalidateQueries({ queryKey: demoSeedStatusQueryKey });
     },
   });
@@ -69,8 +77,22 @@ export function usePrepareLocalDemoLogin() {
   const queryClient = useQueryClient();
 
   return useMutation<DemoSeedActionResponse, Error>({
-    mutationFn: prepareLocalDemoLoginRecord,
+    mutationFn: () => {
+      if (isLocalDemoFixtureMode()) {
+        resetLocalDemoFixtures();
+
+        return Promise.resolve(
+          localFixtureAction({
+            action: "seed",
+            target: "local",
+          }),
+        );
+      }
+
+      return prepareLocalDemoLoginRecord();
+    },
     onSuccess: () => {
+      void queryClient.invalidateQueries();
       void queryClient.invalidateQueries({ queryKey: demoSeedStatusQueryKey });
     },
   });

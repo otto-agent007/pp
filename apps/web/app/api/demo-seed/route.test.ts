@@ -39,11 +39,11 @@ describe("demo seed route", () => {
     serviceClient = { from: vi.fn() };
     replaceDemoSeedRecords.mockReset();
     replaceDemoSeedRecords.mockResolvedValue({
-      reset: { customers: 18, jobs: 30 },
-      seed: { customers: 18, jobs: 30 },
+      reset: { customers: 100, jobs: 180 },
+      seed: { customers: 100, jobs: 180 },
     });
     resetDemoSeedRecords.mockReset();
-    resetDemoSeedRecords.mockResolvedValue({ customers: 18, jobs: 30 });
+    resetDemoSeedRecords.mockResolvedValue({ customers: 100, jobs: 180 });
     vi.unstubAllEnvs();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
@@ -71,9 +71,9 @@ describe("demo seed route", () => {
     expect(response.status).toBe(200);
     expect(body.status).toMatchObject({ available: true, target: "local" });
     expect(body.summary).toMatchObject({
-      customers: 18,
-      jobs: 30,
-      technicians: 12,
+      customers: 100,
+      jobs: 180,
+      technicians: 16,
     });
     expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
     expect(resetDemoSeedRecords).not.toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe("demo seed route", () => {
 
     expect(response.status).toBe(200);
     expect(body.action).toBe("seed");
-    expect(body.result?.seed?.jobs).toBe(30);
+    expect(body.result?.seed?.jobs).toBe(180);
     expect(replaceDemoSeedRecords).toHaveBeenCalledWith(
       serviceClient,
       expect.objectContaining({ marker: "[pest-patrol-demo-seed-v1]" }),
@@ -136,7 +136,7 @@ describe("demo seed route", () => {
 
     expect(response.status).toBe(200);
     expect(body.action).toBe("reset");
-    expect(body.result?.jobs).toBe(30);
+    expect(body.result?.jobs).toBe(180);
     expect(resetDemoSeedRecords).toHaveBeenCalledWith(
       serviceClient,
       expect.objectContaining({ marker: "[pest-patrol-demo-seed-v1]" }),

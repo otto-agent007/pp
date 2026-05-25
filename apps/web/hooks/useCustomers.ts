@@ -8,7 +8,12 @@ import {
 } from "@pest-patrol/domain";
 import type { Customer, CustomerInput } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLocalDemoFixtures } from "./localDemoData";
+import {
+  archiveLocalDemoCustomer,
+  createLocalDemoCustomer,
+  getLocalDemoFixtures,
+  updateLocalDemoCustomer,
+} from "./localDemoData";
 
 export const customersQueryKey = ["customers"] as const;
 
@@ -51,10 +56,14 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createCustomer,
+    mutationFn: (input: CustomerInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(createLocalDemoCustomer(input))
+        : createCustomer(input),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: customersQueryKey });
-      const previous = queryClient.getQueryData<Customer[]>(customersQueryKey) ?? [];
+      const previous =
+        queryClient.getQueryData<Customer[]>(customersQueryKey) ?? [];
       const optimisticCustomer = makeOptimisticCustomer(input);
 
       queryClient.setQueryData<Customer[]>(customersQueryKey, [
@@ -78,10 +87,13 @@ export function useUpdateCustomer() {
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CustomerInput }) =>
-      updateCustomer(id, input),
+      getLocalDemoFixtures()
+        ? Promise.resolve(updateLocalDemoCustomer(id, input))
+        : updateCustomer(id, input),
     onMutate: async ({ id, input }) => {
       await queryClient.cancelQueries({ queryKey: customersQueryKey });
-      const previous = queryClient.getQueryData<Customer[]>(customersQueryKey) ?? [];
+      const previous =
+        queryClient.getQueryData<Customer[]>(customersQueryKey) ?? [];
       const optimisticCustomer = makeOptimisticCustomer(input);
 
       queryClient.setQueryData<Customer[]>(
@@ -92,11 +104,13 @@ export function useUpdateCustomer() {
                 ...optimisticCustomer,
                 id,
                 created_at: customer.created_at,
-                locations: optimisticCustomer.locations?.map((location, index) => ({
-                  ...location,
-                  id: input.locations[index]?.id ?? location.id,
-                  customer_id: id,
-                })),
+                locations: optimisticCustomer.locations?.map(
+                  (location, index) => ({
+                    ...location,
+                    id: input.locations[index]?.id ?? location.id,
+                    customer_id: id,
+                  }),
+                ),
               }
             : customer,
         ),
@@ -117,10 +131,14 @@ export function useArchiveCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: archiveCustomer,
+    mutationFn: (id: string) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(archiveLocalDemoCustomer(id))
+        : archiveCustomer(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: customersQueryKey });
-      const previous = queryClient.getQueryData<Customer[]>(customersQueryKey) ?? [];
+      const previous =
+        queryClient.getQueryData<Customer[]>(customersQueryKey) ?? [];
 
       queryClient.setQueryData<Customer[]>(
         customersQueryKey,

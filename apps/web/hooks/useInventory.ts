@@ -15,12 +15,20 @@ import type {
   ChemicalLogInput,
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLocalDemoFixtures } from "./localDemoData";
+import {
+  archiveLocalDemoInventoryItem,
+  createLocalDemoChemicalLog,
+  createLocalDemoInventoryItem,
+  getLocalDemoFixtures,
+  updateLocalDemoInventoryItem,
+} from "./localDemoData";
 
 export const chemicalInventoryQueryKey = ["chemical-inventory"] as const;
 export const chemicalLogsQueryKey = ["chemical-logs"] as const;
 
-function makeOptimisticInventoryItem(input: ChemicalInventoryInput): ChemicalInventoryItem {
+function makeOptimisticInventoryItem(
+  input: ChemicalInventoryInput,
+): ChemicalInventoryItem {
   const now = new Date().toISOString();
 
   return {
@@ -65,24 +73,34 @@ export function useCreateChemicalInventory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createChemicalInventory,
+    mutationFn: (input: ChemicalInventoryInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(createLocalDemoInventoryItem(input))
+        : createChemicalInventory(input),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey });
       const previous =
-        queryClient.getQueryData<ChemicalInventoryItem[]>(chemicalInventoryQueryKey) ?? [];
+        queryClient.getQueryData<ChemicalInventoryItem[]>(
+          chemicalInventoryQueryKey,
+        ) ?? [];
 
-      queryClient.setQueryData<ChemicalInventoryItem[]>(chemicalInventoryQueryKey, [
-        makeOptimisticInventoryItem(input),
-        ...previous,
-      ]);
+      queryClient.setQueryData<ChemicalInventoryItem[]>(
+        chemicalInventoryQueryKey,
+        [makeOptimisticInventoryItem(input), ...previous],
+      );
 
       return { previous };
     },
     onError: (_error, _input, context) => {
-      queryClient.setQueryData(chemicalInventoryQueryKey, context?.previous ?? []);
+      queryClient.setQueryData(
+        chemicalInventoryQueryKey,
+        context?.previous ?? [],
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: chemicalInventoryQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: chemicalInventoryQueryKey,
+      });
     },
   });
 }
@@ -91,12 +109,22 @@ export function useUpdateChemicalInventory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: ChemicalInventoryInput }) =>
-      updateChemicalInventory(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: ChemicalInventoryInput;
+    }) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(updateLocalDemoInventoryItem(id, input))
+        : updateChemicalInventory(id, input),
     onMutate: async ({ id, input }) => {
       await queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey });
       const previous =
-        queryClient.getQueryData<ChemicalInventoryItem[]>(chemicalInventoryQueryKey) ?? [];
+        queryClient.getQueryData<ChemicalInventoryItem[]>(
+          chemicalInventoryQueryKey,
+        ) ?? [];
       const optimisticItem = makeOptimisticInventoryItem(input);
 
       queryClient.setQueryData<ChemicalInventoryItem[]>(
@@ -115,10 +143,15 @@ export function useUpdateChemicalInventory() {
       return { previous };
     },
     onError: (_error, _input, context) => {
-      queryClient.setQueryData(chemicalInventoryQueryKey, context?.previous ?? []);
+      queryClient.setQueryData(
+        chemicalInventoryQueryKey,
+        context?.previous ?? [],
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: chemicalInventoryQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: chemicalInventoryQueryKey,
+      });
     },
   });
 }
@@ -127,24 +160,36 @@ export function useArchiveChemicalInventory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: archiveChemicalInventory,
+    mutationFn: (id: string) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(archiveLocalDemoInventoryItem(id))
+        : archiveChemicalInventory(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey });
       const previous =
-        queryClient.getQueryData<ChemicalInventoryItem[]>(chemicalInventoryQueryKey) ?? [];
+        queryClient.getQueryData<ChemicalInventoryItem[]>(
+          chemicalInventoryQueryKey,
+        ) ?? [];
 
       queryClient.setQueryData<ChemicalInventoryItem[]>(
         chemicalInventoryQueryKey,
-        previous.map((item) => (item.id === id ? { ...item, status: "archived" } : item)),
+        previous.map((item) =>
+          item.id === id ? { ...item, status: "archived" } : item,
+        ),
       );
 
       return { previous };
     },
     onError: (_error, _id, context) => {
-      queryClient.setQueryData(chemicalInventoryQueryKey, context?.previous ?? []);
+      queryClient.setQueryData(
+        chemicalInventoryQueryKey,
+        context?.previous ?? [],
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: chemicalInventoryQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: chemicalInventoryQueryKey,
+      });
     },
   });
 }
@@ -153,15 +198,21 @@ export function useCreateChemicalLog() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createChemicalLog,
+    mutationFn: (input: ChemicalLogInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(createLocalDemoChemicalLog(input))
+        : createChemicalLog(input),
     onMutate: async (input) => {
       await Promise.all([
         queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey }),
         queryClient.cancelQueries({ queryKey: chemicalLogsQueryKey }),
       ]);
       const previousInventory =
-        queryClient.getQueryData<ChemicalInventoryItem[]>(chemicalInventoryQueryKey) ?? [];
-      const previousLogs = queryClient.getQueryData<ChemicalLog[]>(chemicalLogsQueryKey) ?? [];
+        queryClient.getQueryData<ChemicalInventoryItem[]>(
+          chemicalInventoryQueryKey,
+        ) ?? [];
+      const previousLogs =
+        queryClient.getQueryData<ChemicalLog[]>(chemicalLogsQueryKey) ?? [];
 
       queryClient.setQueryData<ChemicalInventoryItem[]>(
         chemicalInventoryQueryKey,
@@ -183,10 +234,15 @@ export function useCreateChemicalLog() {
         chemicalInventoryQueryKey,
         context?.previousInventory ?? [],
       );
-      queryClient.setQueryData(chemicalLogsQueryKey, context?.previousLogs ?? []);
+      queryClient.setQueryData(
+        chemicalLogsQueryKey,
+        context?.previousLogs ?? [],
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: chemicalInventoryQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: chemicalInventoryQueryKey,
+      });
       void queryClient.invalidateQueries({ queryKey: chemicalLogsQueryKey });
     },
   });

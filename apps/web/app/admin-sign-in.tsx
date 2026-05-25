@@ -50,7 +50,13 @@ export function AdminSignIn() {
     setFormError(null);
 
     try {
-      await prepareDemoLogin.mutateAsync();
+      const prepared = await prepareDemoLogin.mutateAsync();
+
+      if (prepared.status?.environment_label === "Local fixture demo") {
+        await signInLocalDemo();
+        return;
+      }
+
       await signIn(DEMO_SEED_ADMIN_EMAIL, DEMO_SEED_ADMIN_PASSWORD);
     } catch (error) {
       try {
