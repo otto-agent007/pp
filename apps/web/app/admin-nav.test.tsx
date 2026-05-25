@@ -127,16 +127,17 @@ describe("AdminNav", () => {
     const homeLink = screen.getByRole("link", {
       name: "Pest Patrol OS — Home",
     });
-    const brandSvgs = homeLink.querySelectorAll("svg");
-    const brandMarks = homeLink.querySelectorAll('span[style*="width"]');
-    // The rail renders the compact logomark by default and reveals the full
-    // wordmark when the taskbar-style shell expands.
-    expect(brandSvgs.length).toBeGreaterThanOrEqual(2);
-    expect(container.querySelector('svg[viewBox="0 0 420 96"]')).not.toBeNull();
-    expect(screen.getByTestId("admin-nav-desktop-logomark")).toHaveClass(
-      "hidden",
-      "md:inline-block",
+    const compactLogomarks = homeLink.querySelectorAll(
+      'svg[viewBox="0 0 100 100"]',
     );
+    const brandMarks = homeLink.querySelectorAll('span[style*="width"]');
+    // The full wordmark already includes the shield mark. Rendering the
+    // standalone desktop logomark beside it duplicates the logo when revealed.
+    expect(compactLogomarks).toHaveLength(0);
+    expect(container.querySelector('svg[viewBox="0 0 420 96"]')).not.toBeNull();
+    expect(
+      screen.queryByTestId("admin-nav-desktop-logomark"),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId("admin-nav-desktop-wordmark")).toHaveClass(
       "hidden",
       "md:block",
@@ -145,10 +146,10 @@ describe("AdminNav", () => {
       "md:hidden",
     );
     expect(brandMarks[0]).toHaveStyle({
-      width: "36px",
+      width: "156px",
     });
     expect(brandMarks[1]).toHaveStyle({
-      width: "156px",
+      width: "200px",
     });
   });
 
