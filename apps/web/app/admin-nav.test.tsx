@@ -59,9 +59,38 @@ describe("AdminNav", () => {
     expect(screen.getByText("System")).toHaveClass("hidden", "md:block");
     expect(screen.getByRole("navigation")).toHaveClass(
       "bg-primitive-navy-900",
+      "md:fixed",
+      "md:left-0",
+      "md:w-64",
+      "md:-translate-x-[calc(100%-1rem)]",
+      "md:hover:translate-x-0",
+      "md:focus-within:translate-x-0",
+      "motion-reduce:transition-none",
+    );
+    expect(screen.getByRole("navigation")).not.toHaveClass(
       "md:w-[4.5rem]",
       "md:hover:w-64",
       "md:focus-within:w-64",
+    );
+    expect(screen.getByTestId("admin-nav-reveal-edge")).toHaveClass(
+      "hidden",
+      "w-4",
+      "md:block",
+      "md:group-hover/admin-nav:opacity-0",
+      "md:group-focus-within/admin-nav:opacity-0",
+    );
+    expect(screen.getByTestId("admin-nav-reveal-edge")).not.toHaveClass(
+      "pointer-events-none",
+    );
+    expect(screen.getByTestId("admin-nav-content")).toHaveClass(
+      "md:opacity-0",
+      "md:group-hover/admin-nav:opacity-100",
+      "md:group-focus-within/admin-nav:opacity-100",
+    );
+    expect(screen.getByTestId("admin-nav-route-strip")).toHaveClass(
+      "max-w-full",
+      "min-w-0",
+      "overflow-x-auto",
     );
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
@@ -99,11 +128,22 @@ describe("AdminNav", () => {
       name: "Pest Patrol OS — Home",
     });
     const brandSvgs = homeLink.querySelectorAll("svg");
-    const brandMarks = homeLink.querySelectorAll("span");
+    const brandMarks = homeLink.querySelectorAll('span[style*="width"]');
     // The rail renders the compact logomark by default and reveals the full
     // wordmark when the taskbar-style shell expands.
     expect(brandSvgs.length).toBeGreaterThanOrEqual(2);
     expect(container.querySelector('svg[viewBox="0 0 420 96"]')).not.toBeNull();
+    expect(screen.getByTestId("admin-nav-desktop-logomark")).toHaveClass(
+      "hidden",
+      "md:inline-block",
+    );
+    expect(screen.getByTestId("admin-nav-desktop-wordmark")).toHaveClass(
+      "hidden",
+      "md:block",
+    );
+    expect(screen.getByTestId("admin-nav-mobile-wordmark")).toHaveClass(
+      "md:hidden",
+    );
     expect(brandMarks[0]).toHaveStyle({
       width: "36px",
     });
@@ -151,8 +191,15 @@ describe("AdminNav", () => {
       </AdminShell>,
     );
 
+    const shell = screen.getByText("Dispatch content").parentElement
+      ?.parentElement;
     expect(screen.getByRole("navigation")).toHaveClass("md:h-screen");
-    expect(screen.getByRole("navigation")).toHaveClass("md:w-[4.5rem]");
+    expect(shell).toHaveClass("min-h-screen", "bg-theme-background-canvas");
+    expect(shell).not.toHaveClass(
+      "md:grid",
+      "md:grid-cols-[4.5rem_minmax(0,1fr)]",
+      "md:grid-cols-[15rem_minmax(0,1fr)]",
+    );
     expect(screen.getByText("Dispatch content")).toBeInTheDocument();
   });
 });
