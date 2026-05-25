@@ -1106,3 +1106,11 @@
 - Re-verified the already-implemented 014, 016, and 017 critique checklist items with targeted searches and focused tests
 - Kept migrations, providers, env changes, Supabase/Vercel state, preview mutations, production mutations, API contracts, and package wiring out of scope
 - Verified with focused native/web tests, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+
+## Sidebar Auto-Hide Taskbar V1
+
+- Converted the signed-in desktop admin sidebar into a fixed auto-hidden taskbar-style rail with a 1rem reveal strip, hover reveal, focus-within reveal, and reduced-motion handling
+- Removed the reserved desktop shell column so admin content can use the full viewport while the nav is hidden
+- Preserved mobile top brand and horizontal route navigation plus public-route admin-nav hiding
+- Added focused assertions for desktop auto-hide classes, reveal edge behavior, content fade, shell layout, wordmark/logomark wrappers, active routes, grouped links, sign-out, and mobile route text
+- Verified with focused nav tests, Browser DOM/geometry QA on `/`, mobile/public-route checks, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
