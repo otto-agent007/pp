@@ -19,7 +19,9 @@ import {
 } from "@pest-patrol/ui";
 import type { ChemicalInventoryItem, Invoice, Job } from "@pest-patrol/types";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
+import { useWhisperTranscribe } from "../hooks/useWhisperTranscribe";
 
 import { useAdminAuth } from "./admin-auth-context";
 import { DemoSeedControls } from "./demo-seed-controls";
@@ -37,6 +39,94 @@ import {
   dispatchMapPingPaletteLength,
   mapPointSourceLabel,
 } from "./san-diego-map";
+
+export function isLocalWhisperSearchEnabled(
+  nodeEnv = process.env.NODE_ENV,
+) {
+  return nodeEnv === "development";
+}
+
+// ---------------------------------------------------------------------------
+// Mic button: visual states for idle, recording, transcribing, and error.
+// ---------------------------------------------------------------------------
+function MicButton({
+  onClick,
+  status,
+  title,
+}: {
+  onClick: () => void;
+  status: "idle" | "requesting" | "recording" | "transcribing" | "error";
+  title: string;
+}) {
+  // Mic sits at far right (right-2). When × is also visible it sits at right-8.
+  const baseClass =
+    "absolute inset-y-0 right-2 flex items-center px-1 transition-colors";
+
+  if (status === "recording") {
+    return (
+      <button
+        aria-label="Stop recording"
+        className={`${baseClass} right-2 text-status-alert-danger-fg hover:bg-status-alert-danger-bg`}
+        onClick={onClick}
+        title="Recording - click to stop"
+        type="button"
+      >
+        {/* Solid square = stop */}
+        <svg fill="currentColor" height={14} viewBox="0 0 24 24" width={14}>
+          <rect height="14" rx="2" width="14" x="5" y="5" />
+        </svg>
+      </button>
+    );
+  }
+
+  if (status === "transcribing") {
+    return (
+      <span
+        aria-label="Transcribing..."
+        className={`${baseClass} animate-pulse text-theme-action-primary`}
+        title="Transcribing..."
+      >
+        {/* Spinning dots */}
+        <svg fill="currentColor" height={14} viewBox="0 0 24 24" width={14}>
+          <circle cx="12" cy="5" r="2" /><circle cx="12" cy="19" r="2" opacity=".4" />
+          <circle cx="5" cy="12" r="2" opacity=".7" /><circle cx="19" cy="12" r="2" opacity=".2" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <button
+        aria-label="Transcription error - click to dismiss"
+        className={`${baseClass} text-status-alert-danger-fg hover:bg-status-alert-danger-bg`}
+        onClick={onClick}
+        title={title}
+        type="button"
+      >
+        <svg fill="none" height={14} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" width={14}>
+          <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
+        </svg>
+      </button>
+    );
+  }
+
+  // idle / requesting
+  return (
+    <button
+      aria-label="Search by voice"
+      className={`${baseClass} text-theme-text-muted hover:text-theme-action-primary`}
+      onClick={onClick}
+      title="Search by voice (local Whisper)"
+      type="button"
+    >
+      <svg fill="none" height={14} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" width={14}>
+        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+        <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
+}
 
 const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
   good: "success",
@@ -293,6 +383,14 @@ function buildSearchItems({
 export function HomeCommandCenter() {
   const [search, setSearch] = useState("");
   const { profile } = useAdminAuth();
+
+  const handleTranscript = useCallback(
+    (text: string) => setSearch(text),
+    [],
+  );
+  const { error: whisperError, status: whisperStatus, toggle: toggleMic } =
+    useWhisperTranscribe({ onTranscript: handleTranscript });
+  const localWhisperSearchEnabled = isLocalWhisperSearchEnabled();
   const customersQuery = useCustomers();
   const jobsQuery = useJobs();
   const techniciansQuery = useTechnicians();
@@ -421,21 +519,34 @@ export function HomeCommandCenter() {
               <span className="sr-only">Search overview</span>
               <input
                 aria-label="Search overview"
-                className="min-h-10 w-full rounded-md border border-theme-border-default bg-theme-background-surface px-3 pr-8 text-sm font-semibold outline-none transition placeholder:text-theme-text-muted focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20"
+                className={`min-h-10 w-full rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-semibold outline-none transition placeholder:text-theme-text-muted focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20 ${
+                  localWhisperSearchEnabled ? "pr-14" : "pr-8"
+                }`}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search customers, jobs, addresses..."
                 type="search"
                 value={search}
               />
+              {/* Clear button is always visible when there is text. */}
               {search ? (
                 <button
                   aria-label="Clear search"
-                  className="absolute inset-y-0 right-2 flex items-center text-theme-text-muted hover:text-theme-text-primary"
+                  className={`absolute inset-y-0 flex items-center text-theme-text-muted hover:text-theme-text-primary ${
+                    localWhisperSearchEnabled ? "right-8 px-1" : "right-2"
+                  }`}
                   onClick={() => setSearch("")}
                   type="button"
                 >
                   ×
                 </button>
+              ) : null}
+              {/* Local-only mic button stays on the far right. */}
+              {localWhisperSearchEnabled ? (
+                <MicButton
+                  onClick={toggleMic}
+                  status={whisperStatus}
+                  title={whisperError ?? "Search by voice"}
+                />
               ) : null}
             </div>
             <div className="flex gap-2">

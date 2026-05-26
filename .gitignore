@@ -8,6 +8,8 @@ coverage
 .env
 .env.*
 !.env.example
+.venv
+apps/whisper/.venv
 *.log
 *.tsbuildinfo
 .expo

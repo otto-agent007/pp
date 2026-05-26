@@ -75,7 +75,7 @@ describe("AdminNav", () => {
     expect(screen.getByTestId("admin-nav-reveal-edge")).toHaveClass(
       "hidden",
       "w-4",
-      "md:block",
+      "md:flex",
       "md:group-hover/admin-nav:opacity-0",
       "md:group-focus-within/admin-nav:opacity-0",
     );

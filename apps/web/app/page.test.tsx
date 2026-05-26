@@ -173,6 +173,9 @@ describe("HomePage", () => {
     expect(
       screen.getByPlaceholderText(/Search customers, jobs, addresses/i),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Search by voice" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Today's jobs")).toBeInTheDocument();
     expect(screen.getByText("Today's jobs").closest(".rounded-lg")).toHaveClass(
       "bg-status-alert-success-bg",
