@@ -50,7 +50,14 @@ const openInvoiceStatuses = new Set(["draft", "sent"]);
 function serviceLabel(notes: string | null | undefined) {
   const trimmed = notes?.trim();
 
-  return trimmed || "Service visit";
+  if (!trimmed) return "Service visit";
+
+  // Strip auto-generated seed prefixes and bracket tags so labels are
+  // readable in production and demo contexts alike.
+  return trimmed
+    .replace(/\[.*?\]/g, "")                                // remove [tag] tokens
+    .replace(/^Generated\s+weekly\s+route\s+stop\s+\d+\s+for\s+the\s+large\s+editable\s+demo\.\s*/i, "")
+    .trim() || "Service visit";
 }
 
 function dateKey(date: Date) {
@@ -195,9 +202,18 @@ function DashboardMap({
       </div>
       <div className="grid grid-cols-2 divide-x divide-y divide-theme-border-subtle border-t border-theme-border-subtle text-center text-xs font-bold text-theme-text-secondary sm:grid-cols-4 sm:divide-y-0">
         <p className="px-2 py-2">{mapState.summary.plotted_stops} plotted</p>
-        <p className="px-2 py-2">
-          {mapState.summary.missing_coordinates_count} missing GPS
-        </p>
+        {/* Link "missing GPS" to dispatch so operators have an action path */}
+        {mapState.summary.missing_coordinates_count > 0 ? (
+          <Link
+            className="px-2 py-2 text-theme-text-secondary underline-offset-2 hover:text-theme-action-primary hover:underline"
+            href="/dispatch"
+            title="View jobs missing GPS coordinates in Dispatch"
+          >
+            {mapState.summary.missing_coordinates_count} missing GPS
+          </Link>
+        ) : (
+          <p className="px-2 py-2">All GPS plotted</p>
+        )}
         <p className="px-2 py-2">{mapState.bounds.label}</p>
         <p className="px-2 py-2">
           {mapState.points[0]
@@ -401,16 +417,27 @@ export function HomeCommandCenter() {
                 {operationsDateLabel(now)} · SAN DIEGO DISPATCH
               </p>
             </div>
-            <label className="block">
+            <div className="relative block">
               <span className="sr-only">Search overview</span>
               <input
-                className="min-h-10 w-full rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-semibold outline-none transition placeholder:text-theme-text-muted focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20"
+                aria-label="Search overview"
+                className="min-h-10 w-full rounded-md border border-theme-border-default bg-theme-background-surface px-3 pr-8 text-sm font-semibold outline-none transition placeholder:text-theme-text-muted focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20"
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search customers, jobs, addresses..."
                 type="search"
                 value={search}
               />
-            </label>
+              {search ? (
+                <button
+                  aria-label="Clear search"
+                  className="absolute inset-y-0 right-2 flex items-center text-theme-text-muted hover:text-theme-text-primary"
+                  onClick={() => setSearch("")}
+                  type="button"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
             <div className="flex gap-2">
               <Link
                 className={buttonClassName({ size: "sm", variant: "ghost" })}
@@ -435,9 +462,19 @@ export function HomeCommandCenter() {
                   : state.nextAction.summary}
               </p>
             </div>
-            <StatusPill tone={loading ? "neutral" : "info"}>
-              {loading ? "Refreshing" : state.portalProviderLabel}
-            </StatusPill>
+            {/* Portal mode indicator — links to customers so operators know what it means */}
+            <Link
+              className="inline-flex items-center gap-1.5 rounded-full text-sm font-semibold transition hover:opacity-80"
+              href="/customers"
+              title="Customer portal sharing mode — click to manage"
+            >
+              <span className="text-xs font-bold uppercase text-theme-text-muted">
+                Portal mode:
+              </span>
+              <StatusPill tone={loading ? "neutral" : "info"}>
+                {loading ? "Refreshing" : state.portalProviderLabel}
+              </StatusPill>
+            </Link>
           </div>
         </div>
       </section>
@@ -590,7 +627,7 @@ export function HomeCommandCenter() {
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="accent">Work queue</Eyebrow>
+                <Eyebrow tone="accent">Alerts &amp; blockers</Eyebrow>
                 <h2 className="mt-1 text-lg font-bold">
                   Jobs needing attention
                 </h2>
@@ -630,23 +667,26 @@ export function HomeCommandCenter() {
                   data.
                 </p>
               )}
-              <Link
-                className={buttonClassName({
-                  fullWidth: true,
-                  size: "sm",
-                  variant: "ghost",
-                })}
-                href={state.nextAction.href}
-              >
-                {state.nextAction.label}
-              </Link>
+              {/* Only show the next-action CTA when there are open alerts to act on */}
+              {state.alerts.length > 0 && (
+                <Link
+                  className={buttonClassName({
+                    fullWidth: true,
+                    size: "sm",
+                    variant: "ghost",
+                  })}
+                  href={state.nextAction.href}
+                >
+                  {state.nextAction.label}
+                </Link>
+              )}
             </div>
           </Card>
 
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="accent">Low inventory</Eyebrow>
+                <Eyebrow tone="accent">Chemicals &amp; supplies</Eyebrow>
                 <h2 className="mt-1 text-lg font-bold">Low inventory</h2>
               </div>
               <StatusPill
@@ -689,10 +729,11 @@ export function HomeCommandCenter() {
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="accent">Recent activity</Eyebrow>
+                <Eyebrow tone="accent">Billing &amp; field</Eyebrow>
                 <h2 className="mt-1 text-lg font-bold">Recent activity</h2>
               </div>
-              <StatusPill tone={openInvoices.length > 0 ? "danger" : "success"}>
+              {/* Use warning (amber) not danger (red) — open invoices are routine, not emergencies */}
+              <StatusPill tone={openInvoices.length > 0 ? "warning" : "success"}>
                 {openInvoices.length} unpaid
               </StatusPill>
             </div>
@@ -731,7 +772,7 @@ export function HomeCommandCenter() {
                   Launch readiness tools
                 </h2>
               </div>
-              <StatusPill tone="neutral">Provider-free checks</StatusPill>
+              <StatusPill tone="neutral">Demo tools</StatusPill>
             </div>
           </summary>
           <div className="hidden gap-4 border-t border-theme-border-subtle p-4 group-open:grid">
