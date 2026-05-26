@@ -91,4 +91,43 @@ describe("useWhisperTranscribe", () => {
     );
     expect(screen.getByText("idle")).toBeInTheDocument();
   });
+
+  it("surfaces recorder permission and support errors", async () => {
+    vi.mocked(useSpeechRecorder).mockImplementation(() => ({
+      errorMessage:
+        "Microphone access denied. Check browser permissions and try again.",
+      start: startRecorder,
+      state: "error",
+      stop: vi.fn(),
+    }));
+
+    render(<WhisperProbe onTranscript={vi.fn()} />);
+
+    expect(
+      await screen.findByText(
+        "Microphone access denied. Check browser permissions and try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("error")).toBeInTheDocument();
+  });
+
+  it("uses the root voice script hint when the local Whisper server is unavailable", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    );
+
+    render(<WhisperProbe onTranscript={vi.fn()} />);
+
+    await act(async () => {
+      await onBlob?.(new Blob(["audio"], { type: "audio/webm" }), "audio/webm");
+    });
+
+    expect(
+      await screen.findByText(
+        "Whisper server is unavailable. Run `corepack pnpm voice:dev` in another terminal, then try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("error")).toBeInTheDocument();
+  });
 });

@@ -12,7 +12,7 @@
  *   });
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useSpeechRecorder } from "./useSpeechRecorder";
 
@@ -28,11 +28,15 @@ export type WhisperStatus =
   | "transcribing"
   | "error";
 
+const whisperUnavailableMessage =
+  "Whisper server is unavailable. Run `corepack pnpm voice:dev` in another terminal, then try again.";
+
 export function useWhisperTranscribe({
   onTranscript,
 }: UseWhisperTranscribeOptions) {
   const [status, setStatus] = useState<WhisperStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [recorderErrorDismissed, setRecorderErrorDismissed] = useState(false);
 
   const handleBlob = useCallback(
     async (blob: Blob, mimeType: string) => {
@@ -40,7 +44,11 @@ export function useWhisperTranscribe({
       setError(null);
 
       const formData = new FormData();
-      formData.append("audio", blob, `recording.${mimeType.includes("webm") ? "webm" : "ogg"}`);
+      formData.append(
+        "audio",
+        blob,
+        `recording.${mimeType.includes("webm") ? "webm" : "ogg"}`,
+      );
 
       try {
         const res = await fetch("/api/transcribe", {
@@ -62,8 +70,8 @@ export function useWhisperTranscribe({
         const message =
           err instanceof Error ? err.message : "Transcription failed";
         setError(
-          message.includes("fetch")
-            ? "Whisper server not running. Start it with: cd apps/whisper && .\\start.ps1"
+          message.toLowerCase().includes("fetch")
+            ? whisperUnavailableMessage
             : message,
         );
         setStatus("error");
@@ -72,22 +80,40 @@ export function useWhisperTranscribe({
     [onTranscript],
   );
 
-  const { start, state: recorderState } = useSpeechRecorder({
+  const {
+    errorMessage: recorderError,
+    start,
+    state: recorderState,
+  } = useSpeechRecorder({
     onBlob: handleBlob,
   });
+
+  useEffect(() => {
+    if (recorderState === "error" && recorderError && !recorderErrorDismissed) {
+      setError(recorderError);
+      setStatus("error");
+    }
+    if (recorderState !== "error") {
+      setRecorderErrorDismissed(false);
+    }
+  }, [recorderError, recorderErrorDismissed, recorderState]);
 
   // Keep status in sync with recorder state when not transcribing.
   const derivedStatus: WhisperStatus =
     status === "transcribing" || status === "error"
       ? status
-      : (recorderState as WhisperStatus);
+      : recorderState === "error" && recorderErrorDismissed
+        ? "idle"
+        : (recorderState as WhisperStatus);
 
   const toggle = useCallback(() => {
     if (derivedStatus === "error") {
       setStatus("idle");
       setError(null);
+      setRecorderErrorDismissed(true);
       return;
     }
+    setRecorderErrorDismissed(false);
     void start();
   }, [derivedStatus, start]);
 

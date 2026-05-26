@@ -8,11 +8,15 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "dev:voice": "tsx tooling/dev-voice.ts",
+    "voice:dev": "tsx tooling/dev-voice.ts --helper-only",
+    "voice:health": "tsx tooling/voice-health.ts",
     "build": "turbo build",
     "brand:generate-svgs": "tsx tooling/generate-brand-svgs.ts",
     "compliance:ingest": "tsx tooling/compliance-ingest.ts",
     "demo:reset": "tsx tooling/demo-seed.ts reset",
     "demo:seed": "tsx tooling/demo-seed.ts seed",
+    "demo:fixture-smoke": "tsx tooling/local-fixture-smoke.ts",
     "demo:smoke": "tsx tooling/demo-smoke-preflight.ts",
     "lint": "tsx tooling/no-hardcoded-hex.ts && turbo lint",
     "tokens:no-hardcoded-hex": "tsx tooling/no-hardcoded-hex.ts",
@@ -22,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.51.1",
     "@supabase/supabase-js": "^2.47.10",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

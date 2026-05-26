@@ -23,7 +23,7 @@ import {
   buttonClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   useCustomerPortalBilling,
@@ -87,6 +87,9 @@ function EmptyState({ children }: { children: string }) {
     </p>
   );
 }
+
+const emptyCloseouts: CustomerPortalCloseout[] = [];
+const emptyInvoices: CustomerPortalInvoice[] = [];
 
 function accessErrorMessage(error: Error | null, fallback: string) {
   return error?.message ?? fallback;
@@ -249,7 +252,9 @@ function BillingSection({
     <section className="flex flex-col gap-3">
       <div>
         <Eyebrow>Billing</Eyebrow>
-        <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">Invoices</h2>
+        <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
+          Invoices
+        </h2>
       </div>
       {isLoading ? (
         <EmptyState>Loading invoices</EmptyState>
@@ -484,7 +489,9 @@ function CloseoutCard({
       </section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-theme-text-primary">Photos</h3>
+        <h3 className="text-lg font-semibold text-theme-text-primary">
+          Photos
+        </h3>
         {closeout.photos.length === 0 ? (
           <EmptyState>No photos are available for this visit.</EmptyState>
         ) : (
@@ -497,7 +504,9 @@ function CloseoutCard({
       </section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-theme-text-primary">Signatures</h3>
+        <h3 className="text-lg font-semibold text-theme-text-primary">
+          Signatures
+        </h3>
         {closeout.signatures.length === 0 ? (
           <EmptyState>No signatures are available for this visit.</EmptyState>
         ) : (
@@ -520,28 +529,38 @@ export function CustomerPortalClient({
   customerId: string;
 }) {
   const [search, setSearch] = useState("");
+  const [mounted, setMounted] = useState(false);
   const portal = useCustomerPortalCloseouts(customerId, accessToken);
   const billing = useCustomerPortalBilling(customerId, accessToken);
+  const portalCloseouts = mounted ? portal.closeouts : emptyCloseouts;
+  const billingInvoices = mounted ? billing.invoices : emptyInvoices;
+  const portalError = mounted ? portal.error : null;
+  const billingError = mounted ? billing.error : null;
   const visibleCloseouts = useMemo(
-    () => filterCustomerPortalCloseouts(portal.closeouts, search),
-    [portal.closeouts, search],
+    () => filterCustomerPortalCloseouts(portalCloseouts, search),
+    [portalCloseouts, search],
   );
   const timelineItems = useMemo(
-    () => buildCustomerPortalTimeline(visibleCloseouts, billing.invoices),
-    [billing.invoices, visibleCloseouts],
+    () => buildCustomerPortalTimeline(visibleCloseouts, billingInvoices),
+    [billingInvoices, visibleCloseouts],
   );
-  const customerName =
-    visibleCloseouts[0]?.job.customer?.name ??
-    portal.closeouts[0]?.job.customer?.name ??
-    "Customer portal";
+  const customerName = mounted
+    ? (visibleCloseouts[0]?.job.customer?.name ??
+      portalCloseouts[0]?.job.customer?.name ??
+      "Customer portal")
+    : "Customer portal";
   const openBalanceCents = useMemo(
     () =>
-      billing.invoices.reduce(
+      billingInvoices.reduce(
         (total, invoice) => total + invoice.balance_cents,
         0,
       ),
-    [billing.invoices],
+    [billingInvoices],
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8">
@@ -571,12 +590,12 @@ export function CustomerPortalClient({
             detail="Completed visits in this portal"
             label="Services"
             tone="success"
-            value={portal.closeouts.length}
+            value={portalCloseouts.length}
           />
           <StatTile
             detail="Customer-safe billing activity"
             label="Invoices"
-            value={billing.invoices.length}
+            value={billingInvoices.length}
           />
           <StatTile
             detail="Due across visible invoices"
@@ -588,22 +607,22 @@ export function CustomerPortalClient({
       </section>
 
       <BillingSection
-        error={billing.error}
-        invoices={billing.invoices}
-        isLoading={billing.isLoading}
+        error={billingError}
+        invoices={billingInvoices}
+        isLoading={!mounted || billing.isLoading}
         search={search}
       />
 
       <PortalTimeline
-        isLoading={portal.isLoading || billing.isLoading}
+        isLoading={!mounted || portal.isLoading || billing.isLoading}
         items={timelineItems}
       />
 
-      {portal.isLoading ? (
+      {!mounted || portal.isLoading ? (
         <EmptyState>Loading completed service visits</EmptyState>
-      ) : portal.error ? (
+      ) : portalError ? (
         <EmptyState>
-          {accessErrorMessage(portal.error, "Unable to load service visits")}
+          {accessErrorMessage(portalError, "Unable to load service visits")}
         </EmptyState>
       ) : visibleCloseouts.length === 0 ? (
         <EmptyState>No completed service visits found</EmptyState>
@@ -612,7 +631,7 @@ export function CustomerPortalClient({
           {visibleCloseouts.map((closeout) => (
             <CloseoutCard
               closeout={closeout}
-              invoices={billing.invoices}
+              invoices={billingInvoices}
               key={closeout.job.id}
             />
           ))}

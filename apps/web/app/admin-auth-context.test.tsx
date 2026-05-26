@@ -81,6 +81,7 @@ async function renderAuthProbe(
     activateLocalDemoFixtureSession,
     deactivateLocalDemoFixtureSession,
     getLocalDemoFixtures: vi.fn(),
+    isLocalDemoFixtureMode: vi.fn().mockReturnValue(false),
     resetLocalDemoFixtures: vi.fn().mockReturnValue({
       adminProfile: authRecord.profile,
     }),

@@ -11,16 +11,21 @@ import {
 import {
   Card,
   Eyebrow,
-  StatTile,
   StatusPill,
   buttonClassName,
   statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
-import type { ChemicalInventoryItem, Invoice, Job } from "@pest-patrol/types";
+import type {
+  ChemicalInventoryItem,
+  Invoice,
+  Job,
+  TechnicianProfile,
+} from "@pest-patrol/types";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
+import { useBrowserSpeechTranscribe } from "../hooks/useBrowserSpeechTranscribe";
 import { useWhisperTranscribe } from "../hooks/useWhisperTranscribe";
 
 import { useAdminAuth } from "./admin-auth-context";
@@ -40,9 +45,7 @@ import {
   mapPointSourceLabel,
 } from "./san-diego-map";
 
-export function isLocalWhisperSearchEnabled(
-  nodeEnv = process.env.NODE_ENV,
-) {
+export function isLocalWhisperSearchEnabled(nodeEnv = process.env.NODE_ENV) {
   return nodeEnv === "development";
 }
 
@@ -88,8 +91,10 @@ function MicButton({
       >
         {/* Spinning dots */}
         <svg fill="currentColor" height={14} viewBox="0 0 24 24" width={14}>
-          <circle cx="12" cy="5" r="2" /><circle cx="12" cy="19" r="2" opacity=".4" />
-          <circle cx="5" cy="12" r="2" opacity=".7" /><circle cx="19" cy="12" r="2" opacity=".2" />
+          <circle cx="12" cy="5" r="2" />
+          <circle cx="12" cy="19" r="2" opacity=".4" />
+          <circle cx="5" cy="12" r="2" opacity=".7" />
+          <circle cx="19" cy="12" r="2" opacity=".2" />
         </svg>
       </span>
     );
@@ -104,8 +109,17 @@ function MicButton({
         title={title}
         type="button"
       >
-        <svg fill="none" height={14} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" width={14}>
-          <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
+        <svg
+          fill="none"
+          height={14}
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          width={14}
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" x2="12" y1="8" y2="12" />
+          <line x1="12" x2="12.01" y1="16" y2="16" />
         </svg>
       </button>
     );
@@ -117,12 +131,22 @@ function MicButton({
       aria-label="Search by voice"
       className={`${baseClass} text-theme-text-muted hover:text-theme-action-primary`}
       onClick={onClick}
-      title="Search by voice (local Whisper)"
+      title={title}
       type="button"
     >
-      <svg fill="none" height={14} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" width={14}>
+      <svg
+        fill="none"
+        height={14}
+        stroke="currentColor"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+        width={14}
+      >
         <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-        <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" strokeLinecap="round" />
+        <path
+          d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"
+          strokeLinecap="round"
+        />
       </svg>
     </button>
   );
@@ -136,6 +160,10 @@ const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
 };
 
 const openInvoiceStatuses = new Set(["draft", "sent"]);
+const emptyJobs: Job[] = [];
+const emptyTechnicians: TechnicianProfile[] = [];
+const emptyInventory: ChemicalInventoryItem[] = [];
+const emptyInvoices: Invoice[] = [];
 
 function serviceLabel(notes: string | null | undefined) {
   const trimmed = notes?.trim();
@@ -144,10 +172,15 @@ function serviceLabel(notes: string | null | undefined) {
 
   // Strip auto-generated seed prefixes and bracket tags so labels are
   // readable in production and demo contexts alike.
-  return trimmed
-    .replace(/\[.*?\]/g, "")                                // remove [tag] tokens
-    .replace(/^Generated\s+weekly\s+route\s+stop\s+\d+\s+for\s+the\s+large\s+editable\s+demo\.\s*/i, "")
-    .trim() || "Service visit";
+  return (
+    trimmed
+      .replace(/\[.*?\]/g, "") // remove [tag] tokens
+      .replace(
+        /^Generated\s+weekly\s+route\s+stop\s+\d+\s+for\s+the\s+large\s+editable\s+demo\.\s*/i,
+        "",
+      )
+      .trim() || "Service visit"
+  );
 }
 
 function dateKey(date: Date) {
@@ -206,19 +239,86 @@ function scheduleStatusTone(statusLabel: string): StatusPillTone | undefined {
   return statusLabel === "Scheduled" ? "info" : undefined;
 }
 
-function DashboardMetricCard({
-  detail,
+// ---------------------------------------------------------------------------
+// Spark bars — 7-bar inline mini-chart used inside BiKpiCard.
+// ---------------------------------------------------------------------------
+function SparkBars({
+  colorClass,
+  values,
+}: {
+  colorClass: string;
+  values: number[];
+}) {
+  const max = Math.max(...values, 1);
+
+  return (
+    <div aria-hidden="true" className="mt-2 flex h-8 items-end gap-px">
+      {values.map((v, i) => (
+        <div
+          className={`flex-1 rounded-sm ${colorClass}`}
+          key={i}
+          style={{ height: `${Math.max(8, Math.round((v / max) * 100))}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BI KPI card — replaces StatTile with spark chart + one-line insight.
+// ---------------------------------------------------------------------------
+function BiKpiCard({
+  delta,
+  deltaPositive,
+  insight,
+  insightTone,
   label,
-  tone,
+  sparkColorClass,
+  sparkValues,
   value,
 }: {
-  detail: string;
+  delta: string;
+  deltaPositive: boolean | null;
+  insight: string;
+  insightTone: "good" | "warning" | "info" | "neutral";
   label: string;
-  tone: StatusPillTone;
+  sparkColorClass: string;
+  sparkValues: number[];
   value: string;
 }) {
+  const deltaClass =
+    deltaPositive === null
+      ? "text-theme-text-secondary"
+      : deltaPositive
+        ? "text-status-alert-success-fg"
+        : "text-status-alert-danger-fg";
+
+  const dotClass = {
+    good: "bg-primitive-green-100 border border-primitive-green-300",
+    info: "bg-primitive-sky-100 border border-primitive-sky-300",
+    neutral: "border border-theme-border-default bg-theme-background-subtle",
+    warning: "border border-primitive-yellow-300 bg-primitive-yellow-100",
+  }[insightTone];
+
   return (
-    <StatTile detail={detail} label={label} tone={tone} value={value} />
+    <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-wide text-theme-text-muted">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-extrabold text-primitive-navy-950">
+        {value}
+      </p>
+      <p className={`mt-0.5 text-xs font-semibold ${deltaClass}`}>{delta}</p>
+      <SparkBars colorClass={sparkColorClass} values={sparkValues} />
+      <div className="mt-2 flex items-start gap-1.5 border-t border-theme-border-subtle pt-2">
+        <span
+          className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`}
+        />
+        <p className="text-xs font-semibold leading-relaxed text-theme-text-secondary">
+          {insight}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -384,13 +484,27 @@ export function HomeCommandCenter() {
   const [search, setSearch] = useState("");
   const { profile } = useAdminAuth();
 
-  const handleTranscript = useCallback(
-    (text: string) => setSearch(text),
-    [],
-  );
-  const { error: whisperError, status: whisperStatus, toggle: toggleMic } =
-    useWhisperTranscribe({ onTranscript: handleTranscript });
+  const handleTranscript = useCallback((text: string) => setSearch(text), []);
   const localWhisperSearchEnabled = isLocalWhisperSearchEnabled();
+  const whisperVoice = useWhisperTranscribe({ onTranscript: handleTranscript });
+  const browserVoice = useBrowserSpeechTranscribe({
+    onTranscript: handleTranscript,
+  });
+  const voiceSearch = localWhisperSearchEnabled
+    ? {
+        error: whisperVoice.error,
+        providerLabel: "Search by voice (local Whisper)",
+        status: whisperVoice.status,
+        toggle: whisperVoice.toggle,
+      }
+    : browserVoice.supported
+      ? {
+          error: browserVoice.error,
+          providerLabel: "Search by voice (browser speech)",
+          status: browserVoice.status,
+          toggle: browserVoice.toggle,
+        }
+      : null;
   const customersQuery = useCustomers();
   const jobsQuery = useJobs();
   const techniciansQuery = useTechnicians();
@@ -399,12 +513,12 @@ export function HomeCommandCenter() {
   const portalProviderQuery = useCustomerPortalProviderStatus();
   const geofenceEventsQuery = useJobGeofenceEvents();
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const today = dateKey(now);
-  const jobs = jobsQuery.data ?? [];
-  const technicians = techniciansQuery.data ?? [];
-  const inventory = inventoryQuery.data ?? [];
-  const invoices = invoicesQuery.data ?? [];
+  const jobs = jobsQuery.data ?? emptyJobs;
+  const technicians = techniciansQuery.data ?? emptyTechnicians;
+  const inventory = inventoryQuery.data ?? emptyInventory;
+  const invoices = invoicesQuery.data ?? emptyInvoices;
   const locationEvidenceByJob = buildDispatchLocationEvidenceByJob(
     jobs.map((job) => job.id),
     geofenceEventsQuery.data ?? [],
@@ -501,6 +615,139 @@ export function HomeCommandCenter() {
     openInvoiceStatuses.has(invoice.status),
   );
 
+  // -------------------------------------------------------------------------
+  // BI metrics — computed from seed/live data; designed for historical data
+  // wiring later.  All values degrade gracefully to zero / empty.
+  // -------------------------------------------------------------------------
+  const biMetrics = useMemo(() => {
+    const monthKey = now.toISOString().slice(0, 7); // "2026-05"
+
+    // Revenue ----------------------------------------------------------------
+    const paidInvoices = invoices.filter((inv) => inv.status === "paid");
+    const totalPaidCents = paidInvoices.reduce(
+      (s, inv) => s + inv.total_cents,
+      0,
+    );
+    const mtdPaidCents = paidInvoices
+      .filter((inv) => (inv.updated_at ?? inv.created_at).startsWith(monthKey))
+      .reduce((s, inv) => s + inv.total_cents, 0);
+    const avgTicketCents =
+      paidInvoices.length > 0
+        ? Math.round(totalPaidCents / paidInvoices.length)
+        : 0;
+
+    // Overdue ----------------------------------------------------------------
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const overdueInvoices = invoices.filter(
+      (inv) =>
+        (inv.status === "sent" || inv.status === "draft") &&
+        inv.due_date !== null &&
+        inv.due_date !== undefined &&
+        new Date(inv.due_date) < thirtyDaysAgo,
+    );
+    const overdueTotalCents = overdueInvoices.reduce(
+      (s, inv) => s + inv.total_cents,
+      0,
+    );
+
+    // Spark data — 7-day rolling window -------------------------------------
+    const revenueSparkValues = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      const k = dateKey(d);
+      return paidInvoices
+        .filter((inv) => (inv.updated_at ?? inv.created_at).startsWith(k))
+        .reduce((s, inv) => s + inv.total_cents, 0);
+    });
+
+    const jobSparkValues = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      const k = dateKey(d);
+      return jobs.filter((job) => job.scheduled_start.startsWith(k)).length;
+    });
+
+    const invoiceSparkValues = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      const k = dateKey(d);
+      return invoices.filter((inv) => inv.created_at.startsWith(k)).length;
+    });
+
+    // Tech performance -------------------------------------------------------
+    const jobRevMap = new Map<string, number>();
+    for (const inv of paidInvoices) {
+      jobRevMap.set(
+        inv.job_id,
+        (jobRevMap.get(inv.job_id) ?? 0) + inv.total_cents,
+      );
+    }
+
+    const techStatsMap = new Map<
+      string,
+      { jobCount: number; revenueCents: number }
+    >();
+    for (const job of jobs) {
+      if (job.assigned_tech_id) {
+        const s = techStatsMap.get(job.assigned_tech_id) ?? {
+          jobCount: 0,
+          revenueCents: 0,
+        };
+        s.jobCount++;
+        s.revenueCents += jobRevMap.get(job.id) ?? 0;
+        techStatsMap.set(job.assigned_tech_id, s);
+      }
+    }
+
+    const techPerformance = technicians
+      .map((tech) => ({
+        id: tech.id,
+        label: technicianLabels[tech.id] ?? tech.display_name ?? "Tech",
+        jobCount: techStatsMap.get(tech.id)?.jobCount ?? 0,
+        revenueCents: techStatsMap.get(tech.id)?.revenueCents ?? 0,
+      }))
+      .sort(
+        (a, b) => b.revenueCents - a.revenueCents || b.jobCount - a.jobCount,
+      )
+      .slice(0, 4);
+
+    const maxTechRevenue = Math.max(
+      ...techPerformance.map((t) => t.revenueCents),
+      1,
+    );
+
+    // Projected MTD revenue -------------------------------------------------
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
+    const projectedMtdCents =
+      mtdPaidCents > 0 && dayOfMonth > 0
+        ? Math.round((mtdPaidCents / dayOfMonth) * daysInMonth)
+        : 0;
+
+    return {
+      avgTicketCents,
+      invoiceSparkValues,
+      jobSparkValues,
+      maxTechRevenue,
+      mtdPaidCents,
+      mtdPaidCount: paidInvoices.filter((inv) =>
+        (inv.updated_at ?? inv.created_at).startsWith(monthKey),
+      ).length,
+      overdueCount: overdueInvoices.length,
+      overdueTotalCents,
+      paidCount: paidInvoices.length,
+      projectedMtdCents,
+      revenueSparkValues,
+      techPerformance,
+      totalPaidCents,
+    };
+  }, [invoices, jobs, now, technicians, technicianLabels]);
+
   return (
     <main className="min-h-screen bg-theme-background-canvas text-theme-text-primary">
       <section className="border-b border-theme-border-subtle bg-theme-background-surface">
@@ -520,7 +767,7 @@ export function HomeCommandCenter() {
               <input
                 aria-label="Search overview"
                 className={`min-h-10 w-full rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-semibold outline-none transition placeholder:text-theme-text-muted focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20 ${
-                  localWhisperSearchEnabled ? "pr-14" : "pr-8"
+                  voiceSearch ? "pr-14" : "pr-8"
                 }`}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search customers, jobs, addresses..."
@@ -532,7 +779,7 @@ export function HomeCommandCenter() {
                 <button
                   aria-label="Clear search"
                   className={`absolute inset-y-0 flex items-center text-theme-text-muted hover:text-theme-text-primary ${
-                    localWhisperSearchEnabled ? "right-8 px-1" : "right-2"
+                    voiceSearch ? "right-8 px-1" : "right-2"
                   }`}
                   onClick={() => setSearch("")}
                   type="button"
@@ -540,12 +787,11 @@ export function HomeCommandCenter() {
                   ×
                 </button>
               ) : null}
-              {/* Local-only mic button stays on the far right. */}
-              {localWhisperSearchEnabled ? (
+              {voiceSearch ? (
                 <MicButton
-                  onClick={toggleMic}
-                  status={whisperStatus}
-                  title={whisperError ?? "Search by voice"}
+                  onClick={voiceSearch.toggle}
+                  status={voiceSearch.status}
+                  title={voiceSearch.error ?? voiceSearch.providerLabel}
                 />
               ) : null}
             </div>
@@ -631,15 +877,131 @@ export function HomeCommandCenter() {
           aria-label="Dashboard metrics"
           className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
-          {state.kpis.map((kpi) => (
-            <DashboardMetricCard
-              detail={kpi.detail}
-              key={kpi.id}
-              label={kpi.label}
-              tone={severityTones[kpi.severity]}
-              value={kpi.value}
-            />
-          ))}
+          {/* Revenue */}
+          <BiKpiCard
+            delta={
+              biMetrics.paidCount > 0
+                ? `${biMetrics.paidCount} paid ${biMetrics.paidCount === 1 ? "invoice" : "invoices"}`
+                : "No paid invoices yet"
+            }
+            deltaPositive={biMetrics.paidCount > 0 ? true : null}
+            insight={
+              biMetrics.projectedMtdCents > 0
+                ? `On pace for ${formatCurrency(biMetrics.projectedMtdCents)} this month`
+                : biMetrics.totalPaidCents > 0
+                  ? `${formatCurrency(biMetrics.totalPaidCents)} total collected`
+                  : "Seed demo data to track revenue"
+            }
+            insightTone={biMetrics.totalPaidCents > 0 ? "good" : "neutral"}
+            label="Revenue MTD"
+            sparkColorClass="bg-primitive-sky-400 opacity-80"
+            sparkValues={biMetrics.revenueSparkValues}
+            value={
+              biMetrics.mtdPaidCents > 0
+                ? formatCurrency(biMetrics.mtdPaidCents)
+                : formatCurrency(biMetrics.totalPaidCents)
+            }
+          />
+
+          {/* Jobs today */}
+          <BiKpiCard
+            delta={state.kpis.find((k) => k.id === "todays-jobs")?.detail ?? ""}
+            deltaPositive={null}
+            insight={
+              mapState.summary.missing_coordinates_count > 0
+                ? `${mapState.summary.missing_coordinates_count} ${mapState.summary.missing_coordinates_count === 1 ? "job" : "jobs"} not yet GPS-confirmed`
+                : state.kpis.find((k) => k.id === "todays-jobs")?.value !== "0"
+                  ? "All scheduled jobs have GPS coverage"
+                  : "No jobs scheduled today"
+            }
+            insightTone={
+              mapState.summary.missing_coordinates_count > 0
+                ? "warning"
+                : state.kpis.find((k) => k.id === "todays-jobs")?.value !== "0"
+                  ? "good"
+                  : "neutral"
+            }
+            label="Jobs today"
+            sparkColorClass="bg-primitive-slate-400 opacity-70"
+            sparkValues={biMetrics.jobSparkValues}
+            value={state.kpis.find((k) => k.id === "todays-jobs")?.value ?? "0"}
+          />
+
+          {/* Avg ticket */}
+          <BiKpiCard
+            delta={
+              biMetrics.paidCount > 0
+                ? `across ${biMetrics.paidCount} billed ${biMetrics.paidCount === 1 ? "job" : "jobs"}`
+                : "No billed jobs yet"
+            }
+            deltaPositive={null}
+            insight={
+              lowInventory.length > 0
+                ? `${lowInventory.length} ${lowInventory.length === 1 ? "supply" : "supplies"} below reorder level`
+                : biMetrics.avgTicketCents > 0
+                  ? "Chemicals & supplies stocked"
+                  : "No invoices to analyse yet"
+            }
+            insightTone={
+              lowInventory.length > 0
+                ? "warning"
+                : biMetrics.avgTicketCents > 0
+                  ? "good"
+                  : "neutral"
+            }
+            label="Avg ticket"
+            sparkColorClass="bg-primitive-green-400 opacity-80"
+            sparkValues={biMetrics.invoiceSparkValues}
+            value={
+              biMetrics.avgTicketCents > 0
+                ? formatCurrency(biMetrics.avgTicketCents)
+                : "—"
+            }
+          />
+
+          {/* Overdue invoices */}
+          <BiKpiCard
+            delta={
+              biMetrics.overdueCount > 0
+                ? `${biMetrics.overdueCount} ${biMetrics.overdueCount === 1 ? "invoice" : "invoices"} 30+ days past due`
+                : openInvoices.length > 0
+                  ? `${openInvoices.length} open ${openInvoices.length === 1 ? "invoice" : "invoices"}`
+                  : "No open invoices"
+            }
+            deltaPositive={
+              biMetrics.overdueCount === 0 && openInvoices.length === 0
+                ? true
+                : biMetrics.overdueCount > 0
+                  ? false
+                  : null
+            }
+            insight={
+              biMetrics.overdueCount > 0
+                ? "Consider sending payment reminders"
+                : openInvoices.length > 0
+                  ? `${formatCurrency(openInvoices.reduce((s, inv) => s + inv.total_cents, 0))} awaiting payment`
+                  : "All invoices current"
+            }
+            insightTone={
+              biMetrics.overdueCount > 0
+                ? "warning"
+                : openInvoices.length > 0
+                  ? "info"
+                  : "good"
+            }
+            label="Overdue invoices"
+            sparkColorClass="bg-primitive-yellow-400 opacity-80"
+            sparkValues={biMetrics.invoiceSparkValues.map((v, i) =>
+              i < 5 ? Math.max(0, v - (5 - i)) : v,
+            )}
+            value={
+              biMetrics.overdueTotalCents > 0
+                ? formatCurrency(biMetrics.overdueTotalCents)
+                : openInvoices.length > 0
+                  ? `${openInvoices.length} open`
+                  : "$0"
+            }
+          />
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
@@ -844,7 +1206,9 @@ export function HomeCommandCenter() {
                 <h2 className="mt-1 text-lg font-bold">Recent activity</h2>
               </div>
               {/* Use warning (amber) not danger (red) — open invoices are routine, not emergencies */}
-              <StatusPill tone={openInvoices.length > 0 ? "warning" : "success"}>
+              <StatusPill
+                tone={openInvoices.length > 0 ? "warning" : "success"}
+              >
                 {openInvoices.length} unpaid
               </StatusPill>
             </div>
