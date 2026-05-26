@@ -61,7 +61,7 @@ describe("AdminNav", () => {
       "bg-primitive-navy-900",
       "md:fixed",
       "md:left-0",
-      "md:w-64",
+      "md:w-52",
       "md:-translate-x-[calc(100%-1rem)]",
       "md:hover:translate-x-0",
       "md:focus-within:translate-x-0",

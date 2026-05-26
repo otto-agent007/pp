@@ -287,12 +287,12 @@ export function JobsClient() {
           <Eyebrow tone="accent">Admin</Eyebrow>
           <h1 className="text-3xl font-bold text-theme-text-primary">Jobs</h1>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-[2fr_1fr] lg:grid-cols-[minmax(14rem,1fr)_9rem_8rem_8rem]">
           <input
             aria-label="Search jobs"
             className={formControlClassName}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search"
+            placeholder="Search customers, addresses, notes…"
             value={search}
           />
           <select

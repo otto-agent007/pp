@@ -313,7 +313,7 @@ describe("DispatchClient", () => {
     );
   });
 
-  it("keeps route intelligence in compact disclosure panels with stronger week navigation", () => {
+  it("opens route intelligence by default while keeping route groups compact", () => {
     render(<DispatchClient />);
 
     const intelligencePanel = screen
@@ -323,7 +323,7 @@ describe("DispatchClient", () => {
       .getByText("Route groups and compliance")
       .closest("details");
 
-    expect(intelligencePanel).not.toHaveAttribute("open");
+    expect(intelligencePanel).toHaveAttribute("open");
     expect(routeGroupsPanel).not.toHaveAttribute("open");
     expect(screen.getByRole("button", { name: "Previous week" })).toHaveClass(
       "border-theme-border-subtle",

@@ -49,6 +49,8 @@ import {
 import {
   SanDiegoMapBackdrop,
   dispatchMapMarkerClassName,
+  dispatchMapPingClassName,
+  dispatchMapPingPaletteLength,
   mapPointSourceLabel,
 } from "../san-diego-map";
 
@@ -60,6 +62,9 @@ const statusLabels: Record<JobStatus, string> = {
   completed: "Completed",
   canceled: "Canceled",
 };
+const statusLabelEntries = Object.entries(statusLabels) as Array<
+  [JobStatus, string]
+>;
 const triageLabels: Record<DispatchRouteTriageFilter, string> = {
   all: "All dispatch work",
   at_risk: "At risk",
@@ -364,8 +369,10 @@ function RouteIntelligencePanel({
 
 function DispatchStaticMapPanel({
   mapState,
+  techLabelColorMap,
 }: {
   mapState: DispatchStaticMapState;
+  techLabelColorMap: Record<string, number>;
 }) {
   return (
     <Card aria-label="Provider-free San Diego dispatch map" tone="subtle">
@@ -403,30 +410,44 @@ function DispatchStaticMapPanel({
         </div>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="relative aspect-[16/9] overflow-hidden rounded-md border border-theme-border-subtle bg-theme-background-surface">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-md border border-theme-border-subtle bg-primitive-navy-950">
           <SanDiegoMapBackdrop />
           {mapState.points.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm font-semibold text-theme-text-secondary">
               No stops are pinned in the San Diego view.
             </div>
           ) : null}
-          {mapState.points.map((point) => (
-            <span
-              aria-label={`Map pin ${point.label}: ${point.customer_label}, ${point.technician_label}`}
-              className={`absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 px-1 text-xs font-bold shadow-sm ${dispatchMapMarkerClassName(
-                point.marker_tone,
-              )}`}
-              key={point.job_id}
-              role="img"
-              style={{
-                left: `${point.x_percent}%`,
-                top: `${point.y_percent}%`,
-              }}
-              title={`${point.label}: ${point.customer_label} - ${point.technician_label}`}
-            >
-              {point.label.replace("Stop ", "")}
-            </span>
-          ))}
+          {mapState.points.map((point) => {
+            const colorIdx = techLabelColorMap[point.technician_label] ?? 0;
+            const pingColor = dispatchMapPingClassName(colorIdx);
+
+            return (
+              <div
+                className="absolute"
+                key={point.job_id}
+                style={{
+                  left: `${point.x_percent}%`,
+                  top: `${point.y_percent}%`,
+                }}
+              >
+                {/* Blinking GPS signal ring */}
+                <span
+                  className={`absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-60 ${pingColor}`}
+                />
+                {/* Solid marker */}
+                <span
+                  aria-label={`Map pin ${point.label}: ${point.customer_label}, ${point.technician_label}`}
+                  className={`absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 px-1 text-xs font-bold shadow-sm ${dispatchMapMarkerClassName(
+                    point.marker_tone,
+                  )}`}
+                  role="img"
+                  title={`${point.label}: ${point.customer_label} - ${point.technician_label}`}
+                >
+                  {point.label.replace("Stop ", "")}
+                </span>
+              </div>
+            );
+          })}
         </div>
         <div className="space-y-2">
           {mapState.points.length === 0 ? (
@@ -435,29 +456,44 @@ function DispatchStaticMapPanel({
               pins on this overview.
             </p>
           ) : (
-            mapState.points.map((point) => (
-              <Card key={`${point.job_id}-summary`} padding="sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold text-theme-text-muted">
-                      {point.label}
-                    </p>
-                    <h3 className="text-sm font-semibold text-theme-text-primary">
-                      {point.customer_label}
-                    </h3>
+            mapState.points.map((point) => {
+              const colorIdx =
+                techLabelColorMap[point.technician_label] ?? 0;
+              const dotColor =
+                dispatchMapPingClassName(colorIdx);
+
+              return (
+                <Card key={`${point.job_id}-summary`} padding="sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-theme-text-muted">
+                        {point.label}
+                      </p>
+                      <h3 className="text-sm font-semibold text-theme-text-primary">
+                        {point.customer_label}
+                      </h3>
+                    </div>
+                    <StatusPill dot={false} tone="info">
+                      {mapPointSourceLabel(point.source)}
+                    </StatusPill>
                   </div>
-                  <StatusPill dot={false} tone="info">
-                    {mapPointSourceLabel(point.source)}
-                  </StatusPill>
-                </div>
-                <p className="mt-2 text-xs font-semibold text-theme-text-secondary">
-                  {point.technician_label}
-                </p>
-                <p className="mt-2 text-xs text-theme-text-secondary">
-                  {point.address_label}
-                </p>
-              </Card>
-            ))
+                  <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-theme-text-secondary">
+                    <span className="relative inline-flex h-2 w-2 shrink-0">
+                      <span
+                        className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${dotColor}`}
+                      />
+                      <span
+                        className={`relative inline-flex h-2 w-2 rounded-full ${dotColor}`}
+                      />
+                    </span>
+                    {point.technician_label}
+                  </p>
+                  <p className="mt-1 text-xs text-theme-text-secondary">
+                    {point.address_label}
+                  </p>
+                </Card>
+              );
+            })
           )}
         </div>
       </div>
@@ -573,6 +609,7 @@ export function DispatchClient() {
   const assignTechnician = useAssignJobTechnician();
   const hasAppliedTechnicianQuery = useRef(false);
   const [anchorDate, setAnchorDate] = useState(todayKey());
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [technician, setTechnician] = useState<TechnicianFilter>("all");
   const [triage, setTriage] = useState<DispatchRouteTriageFilter>("all");
@@ -686,6 +723,17 @@ export function DispatchClient() {
       ),
     [technicians],
   );
+
+  // Assign a stable color index to each technician (sorted by id for consistency)
+  const techLabelColorMap = useMemo(() => {
+    const sorted = [...technicians].sort((a, b) => a.id.localeCompare(b.id));
+    return Object.fromEntries(
+      sorted.map((t, i) => [
+        getTechnicianLabel(t),
+        i % dispatchMapPingPaletteLength,
+      ]),
+    );
+  }, [technicians]);
   const dispatchStaticMapState = useMemo(
     () =>
       buildDispatchStaticMapState(visibleRouteIntelligence.stops, {
@@ -727,6 +775,51 @@ export function DispatchClient() {
     setAnchorDate(getRelativeDispatchWeek(anchorDate, offset));
   }
 
+  function moveMonth(offset: number) {
+    const anchor = new Date(`${anchorDate}T00:00:00`);
+    anchor.setMonth(anchor.getMonth() + offset, 1);
+    setAnchorDate(anchor.toISOString().slice(0, 10));
+  }
+
+  // Build month grid data (only computed when viewMode === "month")
+  const monthData = useMemo(() => {
+    if (viewMode !== "month") return null;
+    const anchor = new Date(`${anchorDate}T00:00:00`);
+    const year = anchor.getFullYear();
+    const month = anchor.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const monthLabel = anchor.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const days = Array.from({ length: daysInMonth }, (_, i) => {
+      const d = i + 1;
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dayJobs = decoratedJobs.filter((job) => {
+        if (!job.scheduled_start) return false;
+        const jobDate = job.scheduled_start.slice(0, 10);
+        if (jobDate !== dateStr) return false;
+        if (status !== "all" && job.status !== status) return false;
+        if (technician === "unassigned") return !job.assigned_tech_id;
+        if (technician !== "all") return job.assigned_tech_id === technician;
+        return true;
+      });
+      return { date: dateStr, dayNum: d, jobs: dayJobs };
+    });
+
+    return { days, firstWeekday, monthLabel };
+  }, [viewMode, anchorDate, decoratedJobs, status, technician]);
+
+  const monthJobStatusColor: Record<JobStatus, string> = {
+    scheduled: "bg-status-alert-info-solid",
+    en_route: "bg-status-alert-warning-solid",
+    in_progress: "bg-status-alert-warning-solid",
+    completed: "bg-status-alert-success-solid",
+    canceled: "bg-status-alert-danger-solid",
+  };
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-4">
@@ -747,16 +840,63 @@ export function DispatchClient() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => moveWeek(-1)} variant="subtle">
-              Previous week
-            </Button>
-            <Button onClick={() => setAnchorDate(todayKey())} variant="primary">
-              Today
-            </Button>
-            <Button onClick={() => moveWeek(1)} variant="subtle">
-              Next week
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View mode toggle */}
+            <div className="flex rounded-md border border-theme-border-default overflow-hidden">
+              <button
+                className={`px-3 py-1.5 text-sm font-semibold transition ${
+                  viewMode === "week"
+                    ? "bg-primitive-sky-500 text-white"
+                    : "bg-theme-background-surface text-theme-text-secondary hover:bg-theme-background-subtle"
+                }`}
+                onClick={() => setViewMode("week")}
+                type="button"
+              >
+                Week
+              </button>
+              <button
+                className={`border-l border-theme-border-default px-3 py-1.5 text-sm font-semibold transition ${
+                  viewMode === "month"
+                    ? "bg-primitive-sky-500 text-white"
+                    : "bg-theme-background-surface text-theme-text-secondary hover:bg-theme-background-subtle"
+                }`}
+                onClick={() => setViewMode("month")}
+                type="button"
+              >
+                Month
+              </button>
+            </div>
+            {viewMode === "week" ? (
+              <>
+                <Button onClick={() => moveWeek(-1)} variant="subtle">
+                  Previous week
+                </Button>
+                <Button
+                  onClick={() => setAnchorDate(todayKey())}
+                  variant="primary"
+                >
+                  Today
+                </Button>
+                <Button onClick={() => moveWeek(1)} variant="subtle">
+                  Next week
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => moveMonth(-1)} variant="subtle">
+                  Previous month
+                </Button>
+                <Button
+                  onClick={() => setAnchorDate(todayKey())}
+                  variant="primary"
+                >
+                  Today
+                </Button>
+                <Button onClick={() => moveMonth(1)} variant="subtle">
+                  Next month
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -782,7 +922,7 @@ export function DispatchClient() {
               value={status}
             >
               <option value="all">All statuses</option>
-              {Object.entries(statusLabels).map(([value, label]) => (
+              {statusLabelEntries.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -817,21 +957,26 @@ export function DispatchClient() {
         </div>
 
         <p className="text-sm text-theme-text-secondary">
-          Week starting {weekStart}
+          {viewMode === "month"
+            ? monthData?.monthLabel
+            : `Week starting ${weekStart}`}
         </p>
       </header>
 
       <section aria-label="Dispatch intelligence" className="grid gap-4">
-        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
+        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm" open>
           <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
             Route intelligence
           </summary>
           <div className="hidden gap-4 border-t border-theme-border-subtle p-4 group-open:grid">
+            <DispatchStaticMapPanel
+              mapState={dispatchStaticMapState}
+              techLabelColorMap={techLabelColorMap}
+            />
             <RouteIntelligencePanel
               intelligence={visibleRouteIntelligence}
               triage={triage}
             />
-            <DispatchStaticMapPanel mapState={dispatchStaticMapState} />
           </div>
         </details>
 
@@ -877,7 +1022,111 @@ export function DispatchClient() {
         <p className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 text-sm text-theme-text-secondary">
           Loading dispatch calendar
         </p>
+      ) : viewMode === "month" && monthData ? (
+        /* ── Month view ─────────────────────────────────────────── */
+        <section aria-label="Monthly dispatch calendar">
+          {/* Day-of-week headers */}
+          <div className="grid grid-cols-7 gap-px mb-1">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              <div
+                className="py-2 text-center text-xs font-bold text-theme-text-muted"
+                key={d}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden border border-theme-border-subtle bg-theme-border-subtle">
+            {/* Empty leading cells */}
+            {Array.from({ length: monthData.firstWeekday }).map((_, i) => (
+              <div
+                className="min-h-24 bg-theme-background-canvas p-1.5"
+                key={`empty-${i}`}
+              />
+            ))}
+            {monthData.days.map((day) => {
+              const isToday = day.date === todayKey();
+              const hasJobs = day.jobs.length > 0;
+              return (
+                <div
+                  className={`min-h-24 p-1.5 ${
+                    isToday
+                      ? "bg-primitive-sky-50 ring-1 ring-inset ring-primitive-sky-300"
+                      : "bg-theme-background-surface"
+                  }`}
+                  key={day.date}
+                >
+                  {/* Day number */}
+                  <p
+                    className={`mb-1 text-xs font-bold ${
+                      isToday
+                        ? "text-primitive-sky-600"
+                        : "text-theme-text-primary"
+                    }`}
+                  >
+                    {day.dayNum}
+                  </p>
+                  {/* Status dot row */}
+                  {hasJobs ? (
+                    <div className="mb-1 flex flex-wrap gap-0.5">
+                      {day.jobs.slice(0, 6).map((job) => (
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${monthJobStatusColor[job.status] ?? "bg-theme-border-default"}`}
+                          key={job.id}
+                          title={statusLabels[job.status]}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                  {/* Condensed job pills */}
+                  {day.jobs.slice(0, 3).map((job) => (
+                    <button
+                      className="mb-0.5 w-full truncate rounded px-1 py-0.5 text-left text-[10px] font-semibold leading-tight bg-theme-background-subtle text-theme-text-primary hover:bg-primitive-sky-100 transition"
+                      key={job.id}
+                      onClick={() => {
+                        setViewMode("week");
+                        setAnchorDate(day.date);
+                      }}
+                      title={`${job.scheduled_start ? formatTime(job.scheduled_start) : ""} · ${job.customer?.name ?? "Job"}`}
+                      type="button"
+                    >
+                      {job.scheduled_start
+                        ? `${formatTime(job.scheduled_start)} `
+                        : ""}
+                      {job.customer?.name ?? "Job"}
+                    </button>
+                  ))}
+                  {day.jobs.length > 3 ? (
+                    <button
+                      className="w-full text-left text-[10px] font-semibold text-theme-text-muted hover:text-theme-action-primary transition"
+                      onClick={() => {
+                        setViewMode("week");
+                        setAnchorDate(day.date);
+                      }}
+                      type="button"
+                    >
+                      +{day.jobs.length - 3} more
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          {/* Month legend */}
+          <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-theme-text-secondary">
+            {statusLabelEntries.map(([value, label]) => (
+              <span className="flex items-center gap-1" key={value}>
+                <span
+                  className={`h-2 w-2 rounded-full ${monthJobStatusColor[value] ?? "bg-theme-border-default"}`}
+                />
+                {label}
+              </span>
+            ))}
+          </div>
+        </section>
       ) : (
+        /* ── Week view ──────────────────────────────────────────── */
         <section className="grid gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
           {visibleCalendarDays.map((day) => (
             <Card
@@ -978,7 +1227,7 @@ export function DispatchClient() {
                         }
                         value={job.status}
                       >
-                        {Object.entries(statusLabels).map(([value, label]) => (
+                        {statusLabelEntries.map(([value, label]) => (
                           <option key={value} value={value}>
                             {label}
                           </option>

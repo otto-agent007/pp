@@ -12,4 +12,13 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.unstable_enableSymlinks = true;
 
+// Exclude the tools/ directory from Metro's file walker.
+// tools/github-mcp-server has restricted node_modules that trigger EACCES
+// (errno -4092) on Windows when Metro tries to lstat them.
+config.resolver.blockList = [
+  new RegExp(
+    `${path.resolve(workspaceRoot, "tools").replace(/\\/g, "\\\\")}[/\\\\].*`,
+  ),
+];
+
 module.exports = config;
