@@ -43,6 +43,15 @@ const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
   warning: "warning",
 };
 
+// Stable color palette for technician GPS indicators — full class strings so Tailwind doesn't purge
+const techPingColors = [
+  "bg-sky-400",
+  "bg-emerald-400",
+  "bg-amber-400",
+  "bg-rose-400",
+  "bg-violet-400",
+];
+
 const openInvoiceStatuses = new Set(["draft", "sent"]);
 
 function serviceLabel(notes: string | null | undefined) {
@@ -126,9 +135,11 @@ function DashboardMetricCard({
 function DashboardMap({
   liveTechCount,
   mapState,
+  techLabelColorMap,
 }: {
   liveTechCount: number;
   mapState: ReturnType<typeof buildDispatchStaticMapState>;
+  techLabelColorMap: Record<string, number>;
 }) {
   return (
     <Card className="overflow-hidden" padding="none">
@@ -149,25 +160,39 @@ function DashboardMap({
       </div>
       <div
         aria-label="Provider-free San Diego live map"
-        className="relative aspect-[16/9] min-h-60 overflow-hidden bg-primitive-navy-950"
+        className="relative aspect-[4/3] min-h-72 overflow-hidden bg-primitive-navy-950"
       >
         <SanDiegoMapBackdrop />
-        {mapState.points.map((point) => (
-          <Link
-            aria-label={`${point.technician_label} GPS marker ${point.label}: ${point.customer_label}`}
-            className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-[10px] font-extrabold shadow-sm ${dispatchMapMarkerClassName(
-              point.marker_tone,
-            )}`}
-            href={`/jobs/${point.job_id}`}
-            key={point.job_id}
-            style={{
-              left: `${point.x_percent}%`,
-              top: `${point.y_percent}%`,
-            }}
-          >
-            {point.label.replace("Stop ", "")}
-          </Link>
-        ))}
+        {mapState.points.map((point) => {
+          const colorIdx = techLabelColorMap[point.technician_label] ?? 0;
+          const pingColor = techPingColors[colorIdx % techPingColors.length];
+
+          return (
+            <div
+              className="absolute"
+              key={point.job_id}
+              style={{
+                left: `${point.x_percent}%`,
+                top: `${point.y_percent}%`,
+              }}
+            >
+              {/* Blinking GPS signal ring */}
+              <span
+                className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-60 ${pingColor}`}
+              />
+              {/* Solid marker */}
+              <Link
+                aria-label={`${point.technician_label} GPS marker ${point.label}: ${point.customer_label}`}
+                className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-[10px] font-extrabold shadow-sm ${dispatchMapMarkerClassName(
+                  point.marker_tone,
+                )}`}
+                href={`/jobs/${point.job_id}`}
+              >
+                {point.label.replace("Stop ", "")}
+              </Link>
+            </div>
+          );
+        })}
         {mapState.points.length === 0 ? (
           <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 rounded-md border border-dashed border-theme-border-default bg-theme-background-surface/90 p-3 text-sm font-semibold text-theme-text-secondary">
             Sync GPS evidence or add service coordinates to plot today&apos;s
@@ -283,6 +308,27 @@ export function HomeCommandCenter() {
       getTechnicianLabel(technician),
     ]),
   );
+
+  // Assign a stable color index to each technician (sorted by id for consistency)
+  const techColorMap = Object.fromEntries(
+    [...technicians]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((t, i) => [t.id, i % techPingColors.length]),
+  );
+
+  // Map technician label → color index (for the map's point.technician_label)
+  const techLabelColorMap = Object.fromEntries(
+    Object.entries(technicianLabels).map(([id, label]) => [
+      label,
+      techColorMap[id] ?? 0,
+    ]),
+  );
+
+  // Map job id → assigned tech id (for coloring schedule entries)
+  const jobTechIdMap = Object.fromEntries(
+    jobs.map((job) => [job.id, job.assigned_tech_id ?? null]),
+  );
+
   const routeIntelligence = buildDispatchRouteIntelligence(jobs, today, "all", {
     evidenceByJob: locationEvidenceByJob,
     now,
@@ -455,7 +501,7 @@ export function HomeCommandCenter() {
           ))}
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.35fr_.95fr]">
+        <section className="grid gap-4 xl:grid-cols-2">
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -478,33 +524,59 @@ export function HomeCommandCenter() {
 
             <div className="mt-4 divide-y divide-theme-border-subtle">
               {state.schedule.length > 0 ? (
-                state.schedule.map((job) => (
-                  <Link
-                    className="grid gap-3 py-3 transition hover:bg-theme-background-subtle sm:grid-cols-[5rem_1fr_auto]"
-                    href={job.href}
-                    key={job.id}
-                  >
-                    <p className="text-sm font-extrabold tabular-nums text-primitive-navy-950">
-                      {job.timeLabel}
-                    </p>
-                    <div>
-                      <p className="font-bold text-primitive-navy-950">
-                        {job.serviceLabel}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-                        {job.customerName}
-                      </p>
-                    </div>
-                    <StatusPill
-                      tone={
-                        scheduleStatusTone(job.statusLabel) ??
-                        severityTones[job.statusSeverity]
-                      }
+                state.schedule.map((job) => {
+                  const techId = jobTechIdMap[job.id];
+                  const techName = techId ? technicianLabels[techId] : null;
+                  const colorIdx =
+                    techId !== null && techId !== undefined
+                      ? (techColorMap[techId] ?? 0)
+                      : null;
+                  const dotColor =
+                    colorIdx !== null
+                      ? techPingColors[colorIdx % techPingColors.length]
+                      : null;
+
+                  return (
+                    <Link
+                      className="grid gap-3 py-3 transition hover:bg-theme-background-subtle sm:grid-cols-[5rem_1fr_auto]"
+                      href={job.href}
+                      key={job.id}
                     >
-                      {job.statusLabel}
-                    </StatusPill>
-                  </Link>
-                ))
+                      <p className="text-sm font-extrabold tabular-nums text-primitive-navy-950">
+                        {job.timeLabel}
+                      </p>
+                      <div>
+                        <p className="font-bold text-primitive-navy-950">
+                          {job.serviceLabel}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                          {job.customerName}
+                        </p>
+                        {techName && dotColor ? (
+                          <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-theme-text-secondary">
+                            <span className="relative inline-flex h-2 w-2 shrink-0">
+                              <span
+                                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${dotColor}`}
+                              />
+                              <span
+                                className={`relative inline-flex h-2 w-2 rounded-full ${dotColor}`}
+                              />
+                            </span>
+                            {techName}
+                          </p>
+                        ) : null}
+                      </div>
+                      <StatusPill
+                        tone={
+                          scheduleStatusTone(job.statusLabel) ??
+                          severityTones[job.statusSeverity]
+                        }
+                      >
+                        {job.statusLabel}
+                      </StatusPill>
+                    </Link>
+                  );
+                })
               ) : (
                 <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm font-semibold text-theme-text-secondary">
                   No jobs scheduled for today yet. Seed the demo story or create
@@ -517,6 +589,7 @@ export function HomeCommandCenter() {
           <DashboardMap
             liveTechCount={technicians.length}
             mapState={mapState}
+            techLabelColorMap={techLabelColorMap}
           />
         </section>
 

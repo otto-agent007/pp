@@ -115,7 +115,7 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="group/admin-nav sticky top-0 z-30 flex flex-col border-b border-primitive-navy-800 bg-primitive-navy-900 text-theme-text-inverse shadow-sm md:fixed md:inset-y-0 md:left-0 md:z-40 md:h-screen md:w-64 md:-translate-x-[calc(100%-1rem)] md:overflow-hidden md:border-b-0 md:border-r md:px-3 md:py-4 md:transition-transform md:duration-200 md:ease-out md:hover:translate-x-0 md:focus-within:translate-x-0 motion-reduce:transition-none">
+    <nav className="group/admin-nav sticky top-0 z-30 flex flex-col border-b border-primitive-navy-800 bg-primitive-navy-900 text-theme-text-inverse shadow-sm md:fixed md:inset-y-0 md:left-0 md:z-40 md:h-screen md:w-52 md:-translate-x-[calc(100%-1rem)] md:overflow-hidden md:border-b-0 md:border-r md:px-3 md:py-4 md:transition-transform md:duration-200 md:ease-out md:hover:translate-x-0 md:focus-within:translate-x-0 motion-reduce:transition-none">
       <div
         className="flex min-h-0 flex-1 flex-col md:opacity-0 md:transition-opacity md:duration-150 md:group-hover/admin-nav:opacity-100 md:group-focus-within/admin-nav:opacity-100 motion-reduce:transition-none"
         data-testid="admin-nav-content"
@@ -210,7 +210,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-theme-background-canvas">
       <AdminNav />
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0 md:pl-4">{children}</div>
     </div>
   );
 }
