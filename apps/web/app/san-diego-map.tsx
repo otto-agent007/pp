@@ -16,8 +16,22 @@ const markerToneClasses: Record<DispatchStaticMapMarkerTone, string> = {
     "border-theme-background-surface bg-status-alert-info-solid text-theme-text-inverse",
 };
 
+const technicianPingClasses = [
+  "bg-status-alert-info-solid",
+  "bg-status-alert-success-solid",
+  "bg-status-alert-warning-solid",
+  "bg-status-alert-danger-solid",
+  "bg-primitive-navy-800",
+] as const;
+
 export function dispatchMapMarkerClassName(tone: DispatchStaticMapMarkerTone) {
   return markerToneClasses[tone];
+}
+
+export const dispatchMapPingPaletteLength = technicianPingClasses.length;
+
+export function dispatchMapPingClassName(index: number) {
+  return technicianPingClasses[index % technicianPingClasses.length];
 }
 
 export function mapPointSourceLabel(source: DispatchStaticMapPointSource) {

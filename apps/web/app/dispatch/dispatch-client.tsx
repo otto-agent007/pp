@@ -49,6 +49,8 @@ import {
 import {
   SanDiegoMapBackdrop,
   dispatchMapMarkerClassName,
+  dispatchMapPingClassName,
+  dispatchMapPingPaletteLength,
   mapPointSourceLabel,
 } from "../san-diego-map";
 
@@ -60,6 +62,9 @@ const statusLabels: Record<JobStatus, string> = {
   completed: "Completed",
   canceled: "Canceled",
 };
+const statusLabelEntries = Object.entries(statusLabels) as Array<
+  [JobStatus, string]
+>;
 const triageLabels: Record<DispatchRouteTriageFilter, string> = {
   all: "All dispatch work",
   at_risk: "At risk",
@@ -67,15 +72,6 @@ const triageLabels: Record<DispatchRouteTriageFilter, string> = {
   missing_evidence: "Missing GPS evidence",
   unassigned: "Unassigned",
 };
-
-// Stable color palette — matches the dashboard GPS indicator colors
-const techPingColors = [
-  "bg-sky-400",
-  "bg-emerald-400",
-  "bg-amber-400",
-  "bg-rose-400",
-  "bg-violet-400",
-];
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -423,7 +419,7 @@ function DispatchStaticMapPanel({
           ) : null}
           {mapState.points.map((point) => {
             const colorIdx = techLabelColorMap[point.technician_label] ?? 0;
-            const pingColor = techPingColors[colorIdx % techPingColors.length];
+            const pingColor = dispatchMapPingClassName(colorIdx);
 
             return (
               <div
@@ -464,7 +460,7 @@ function DispatchStaticMapPanel({
               const colorIdx =
                 techLabelColorMap[point.technician_label] ?? 0;
               const dotColor =
-                techPingColors[colorIdx % techPingColors.length];
+                dispatchMapPingClassName(colorIdx);
 
               return (
                 <Card key={`${point.job_id}-summary`} padding="sm">
@@ -734,7 +730,7 @@ export function DispatchClient() {
     return Object.fromEntries(
       sorted.map((t, i) => [
         getTechnicianLabel(t),
-        i % techPingColors.length,
+        i % dispatchMapPingPaletteLength,
       ]),
     );
   }, [technicians]);
@@ -816,12 +812,12 @@ export function DispatchClient() {
     return { days, firstWeekday, monthLabel };
   }, [viewMode, anchorDate, decoratedJobs, status, technician]);
 
-  const monthJobStatusColor: Record<string, string> = {
-    scheduled: "bg-sky-400",
-    en_route: "bg-amber-400",
-    in_progress: "bg-orange-400",
-    completed: "bg-emerald-400",
-    canceled: "bg-rose-400",
+  const monthJobStatusColor: Record<JobStatus, string> = {
+    scheduled: "bg-status-alert-info-solid",
+    en_route: "bg-status-alert-warning-solid",
+    in_progress: "bg-status-alert-warning-solid",
+    completed: "bg-status-alert-success-solid",
+    canceled: "bg-status-alert-danger-solid",
   };
 
   return (
@@ -926,7 +922,7 @@ export function DispatchClient() {
               value={status}
             >
               <option value="all">All statuses</option>
-              {Object.entries(statusLabels).map(([value, label]) => (
+              {statusLabelEntries.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -1119,7 +1115,7 @@ export function DispatchClient() {
           </div>
           {/* Month legend */}
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-theme-text-secondary">
-            {Object.entries(statusLabels).map(([value, label]) => (
+            {statusLabelEntries.map(([value, label]) => (
               <span className="flex items-center gap-1" key={value}>
                 <span
                   className={`h-2 w-2 rounded-full ${monthJobStatusColor[value] ?? "bg-theme-border-default"}`}
@@ -1231,7 +1227,7 @@ export function DispatchClient() {
                         }
                         value={job.status}
                       >
-                        {Object.entries(statusLabels).map(([value, label]) => (
+                        {statusLabelEntries.map(([value, label]) => (
                           <option key={value} value={value}>
                             {label}
                           </option>

@@ -33,6 +33,8 @@ import { useTechnicians } from "../hooks/useTechnicians";
 import {
   SanDiegoMapBackdrop,
   dispatchMapMarkerClassName,
+  dispatchMapPingClassName,
+  dispatchMapPingPaletteLength,
   mapPointSourceLabel,
 } from "./san-diego-map";
 
@@ -42,15 +44,6 @@ const severityTones: Record<HomeCommandCenterSeverity, StatusPillTone> = {
   urgent: "danger",
   warning: "warning",
 };
-
-// Stable color palette for technician GPS indicators — full class strings so Tailwind doesn't purge
-const techPingColors = [
-  "bg-sky-400",
-  "bg-emerald-400",
-  "bg-amber-400",
-  "bg-rose-400",
-  "bg-violet-400",
-];
 
 const openInvoiceStatuses = new Set(["draft", "sent"]);
 
@@ -165,7 +158,7 @@ function DashboardMap({
         <SanDiegoMapBackdrop />
         {mapState.points.map((point) => {
           const colorIdx = techLabelColorMap[point.technician_label] ?? 0;
-          const pingColor = techPingColors[colorIdx % techPingColors.length];
+          const pingColor = dispatchMapPingClassName(colorIdx);
 
           return (
             <div
@@ -313,7 +306,7 @@ export function HomeCommandCenter() {
   const techColorMap = Object.fromEntries(
     [...technicians]
       .sort((a, b) => a.id.localeCompare(b.id))
-      .map((t, i) => [t.id, i % techPingColors.length]),
+      .map((t, i) => [t.id, i % dispatchMapPingPaletteLength]),
   );
 
   // Map technician label → color index (for the map's point.technician_label)
@@ -533,7 +526,7 @@ export function HomeCommandCenter() {
                       : null;
                   const dotColor =
                     colorIdx !== null
-                      ? techPingColors[colorIdx % techPingColors.length]
+                      ? dispatchMapPingClassName(colorIdx)
                       : null;
 
                   return (
