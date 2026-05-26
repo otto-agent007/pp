@@ -6,6 +6,7 @@ import {
   getDemoSeedPlanSummary,
   type DemoSeedTarget,
 } from "./demoSeedData";
+import { buildDemoWorkflowFixtures } from "./demoWorkflowFixtures";
 
 export { DEMO_SEED_CONFIRMATION } from "./demoSeedData";
 
@@ -14,7 +15,9 @@ export type DemoSmokeEnvName =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY";
 
-export type DemoSmokeEnv = Partial<Record<DemoSmokeEnvName | "VERCEL_ENV", string>>;
+export type DemoSmokeEnv = Partial<
+  Record<DemoSmokeEnvName | "VERCEL_ENV", string>
+>;
 
 export type DemoSmokePreflightState = "blocked" | "ready";
 
@@ -46,6 +49,45 @@ export interface DemoSmokePreflightResult {
   target: DemoSeedTarget;
 }
 
+export interface LocalFixtureSmokeRoute {
+  expectedText: string[];
+  id:
+    | "automation"
+    | "closeouts"
+    | "compliance"
+    | "customers"
+    | "dispatch"
+    | "home"
+    | "inventory"
+    | "jobs"
+    | "payments"
+    | "portal";
+  label: string;
+  path: string;
+  redactedPath: string;
+  requiresAdminSession: boolean;
+}
+
+export const localFixtureSmokeStorageKeys = [
+  "pest-patrol-local-demo-session",
+  "pest-patrol-demo-fixture-session",
+] as const;
+
+export const localFixtureSmokeSensitivePatterns = [
+  "access_token=",
+  "portal-token",
+  "local-demo-access-token",
+  "local-demo-refresh-token",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "PORTAL_DELIVERY_WEBHOOK_SECRET",
+  "NOTIFICATION_DELIVERY_WEBHOOK_SECRET",
+  "sk_live_",
+  "sk_test_",
+  "whsec_",
+] as const;
+
 const requiredEnvNames: DemoSmokeEnvName[] = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
@@ -63,7 +105,7 @@ function productionEnv(input: DemoSmokePreflightInput) {
 function isLocalSupabaseUrl(supabaseUrl?: string) {
   return Boolean(
     supabaseUrl?.startsWith("http://localhost") ||
-      supabaseUrl?.startsWith("http://127.0.0.1"),
+    supabaseUrl?.startsWith("http://127.0.0.1"),
   );
 }
 
@@ -72,7 +114,9 @@ function normalizedTarget(target: string): DemoSeedTarget {
 }
 
 function defaultBaseUrl(target: DemoSeedTarget) {
-  return target === "preview" ? "<protected-preview-url>" : "http://localhost:3000";
+  return target === "preview"
+    ? "<protected-preview-url>"
+    : "http://localhost:3000";
 }
 
 function seedCommand(target: DemoSeedTarget, techPasswordEnv?: string) {
@@ -93,7 +137,9 @@ function commandsFor(input: {
   techPasswordEnv?: string;
 }): DemoSmokePreflightCommand[] {
   const preflightCommand = `corepack pnpm demo:smoke -- --target ${input.target}${
-    input.baseUrl !== defaultBaseUrl(input.target) ? ` --base-url ${input.baseUrl}` : ""
+    input.baseUrl !== defaultBaseUrl(input.target)
+      ? ` --base-url ${input.baseUrl}`
+      : ""
   }${input.techPasswordEnv ? ` --tech-password-env ${input.techPasswordEnv}` : ""}`;
 
   const commands: DemoSmokePreflightCommand[] = [
@@ -145,6 +191,100 @@ function evidenceFor(target: DemoSeedTarget): string[] {
   ];
 }
 
+export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
+  const fixtures = buildDemoWorkflowFixtures();
+  const portalCustomer =
+    fixtures.customers.find(
+      (customer) => customer.name === "Demo - Rivera Cafe",
+    ) ??
+    fixtures.customers[1] ??
+    fixtures.customers[0];
+  const portalPath = `/portal/${portalCustomer.id}?access_token=portal-token`;
+
+  return [
+    {
+      expectedText: ["Dashboard overview"],
+      id: "home",
+      label: "/",
+      path: "/",
+      redactedPath: "/",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Dispatch Calendar"],
+      id: "dispatch",
+      label: "/dispatch",
+      path: "/dispatch",
+      redactedPath: "/dispatch",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Demo - Rivera Cafe"],
+      id: "customers",
+      label: "/customers",
+      path: "/customers",
+      redactedPath: "/customers",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Jobs"],
+      id: "jobs",
+      label: "/jobs",
+      path: "/jobs",
+      redactedPath: "/jobs",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Inventory"],
+      id: "inventory",
+      label: "/inventory",
+      path: "/inventory",
+      redactedPath: "/inventory",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Payments"],
+      id: "payments",
+      label: "/payments",
+      path: "/payments",
+      redactedPath: "/payments",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Billing work queue"],
+      id: "closeouts",
+      label: "/closeouts",
+      path: "/closeouts",
+      redactedPath: "/closeouts",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Compliance RAG"],
+      id: "compliance",
+      label: "/compliance",
+      path: "/compliance",
+      redactedPath: "/compliance",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Provider: Manual fallback", "Manual fallback accepted"],
+      id: "automation",
+      label: "/automation",
+      path: "/automation",
+      redactedPath: "/automation",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Demo - Rivera Cafe"],
+      id: "portal",
+      label: "tokened /portal",
+      path: portalPath,
+      redactedPath: "/portal/<fixture-customer-id>?access_token=<redacted>",
+      requiresAdminSession: false,
+    },
+  ];
+}
+
 export function buildDemoSmokePreflight(
   input: DemoSmokePreflightInput,
 ): DemoSmokePreflightResult {
@@ -162,7 +302,9 @@ export function buildDemoSmokePreflight(
   }
 
   if (productionEnv(input) === "production") {
-    blockers.push("Demo smoke preflight is disabled for production deployments.");
+    blockers.push(
+      "Demo smoke preflight is disabled for production deployments.",
+    );
   }
 
   for (const envName of missingEnvNames) {
@@ -198,8 +340,10 @@ export function buildDemoSmokePreflight(
     !hasLocalUrlBlocker &&
     Boolean(envValue(input.env, "NEXT_PUBLIC_SUPABASE_URL")) &&
     Boolean(envValue(input.env, "SUPABASE_SERVICE_ROLE_KEY")) &&
-    (target === "preview" || Boolean(envValue(input.env, "NEXT_PUBLIC_SUPABASE_ANON_KEY")));
-  const browserSmokeReady = target === "local" && shellSeedReady && blockers.length === 0;
+    (target === "preview" ||
+      Boolean(envValue(input.env, "NEXT_PUBLIC_SUPABASE_ANON_KEY")));
+  const browserSmokeReady =
+    target === "local" && shellSeedReady && blockers.length === 0;
   const ready = browserSmokeReady;
 
   return {

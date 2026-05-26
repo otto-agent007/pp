@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   DEMO_SEED_CONFIRMATION,
   buildDemoSmokePreflight,
+  buildLocalFixtureSmokePlan,
+  localFixtureSmokeSensitivePatterns,
+  localFixtureSmokeStorageKeys,
 } from "./demoSmokePreflight";
 
 describe("demo smoke preflight", () => {
@@ -132,6 +135,50 @@ describe("demo smoke preflight", () => {
     });
     expect(result.blockers).toContain(
       "Demo smoke preflight is disabled for production deployments.",
+    );
+  });
+
+  it("publishes a redacted local fixture browser-smoke route plan", () => {
+    const routes = buildLocalFixtureSmokePlan();
+
+    expect(routes.map((route) => route.id)).toEqual([
+      "home",
+      "dispatch",
+      "customers",
+      "jobs",
+      "inventory",
+      "payments",
+      "closeouts",
+      "compliance",
+      "automation",
+      "portal",
+    ]);
+    expect(routes.find((route) => route.id === "portal")).toMatchObject({
+      label: "tokened /portal",
+      redactedPath: "/portal/<fixture-customer-id>?access_token=<redacted>",
+      requiresAdminSession: false,
+    });
+    expect(routes.find((route) => route.id === "portal")?.path).toContain(
+      "access_token=portal-token",
+    );
+    expect(
+      routes.find((route) => route.id === "portal")?.redactedPath,
+    ).not.toContain("portal-token");
+    expect(
+      routes.find((route) => route.id === "payments")?.expectedText,
+    ).toEqual(["Payments"]);
+  });
+
+  it("shares fixture auth storage keys and sensitive-pattern guardrails", () => {
+    expect(localFixtureSmokeStorageKeys).toEqual([
+      "pest-patrol-local-demo-session",
+      "pest-patrol-demo-fixture-session",
+    ]);
+    expect(localFixtureSmokeSensitivePatterns).toContain("access_token=");
+    expect(localFixtureSmokeSensitivePatterns).toContain("portal-token");
+    expect(localFixtureSmokeSensitivePatterns).toContain("STRIPE_SECRET_KEY");
+    expect(localFixtureSmokeSensitivePatterns).toContain(
+      "PORTAL_DELIVERY_WEBHOOK_SECRET",
     );
   });
 });

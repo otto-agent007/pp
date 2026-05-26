@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   useCreateCustomerPortalAccessToken,
+  useCustomerPortalProviderStatus,
   useCustomerPortalAccessTokens,
 } from "./useCustomerPortalAccess";
+import { useNotificationProviderStatus } from "./useAutomation";
 import { useCreateCustomer, useCustomers } from "./useCustomers";
 import { useRunDemoSeedAction } from "./useDemoSeed";
 import {
@@ -274,5 +276,32 @@ describe("local demo React Query hooks", () => {
         (customer) => customer.name === "Demo - Reset Hook Customer",
       ),
     ).toBe(false);
+  });
+
+  it("reports manual portal and notification provider status from local fixtures", async () => {
+    const wrapper = createWrapper();
+    const portalProviderStatus = renderHook(
+      () => useCustomerPortalProviderStatus(),
+      { wrapper },
+    );
+    const notificationProviderStatus = renderHook(
+      () => useNotificationProviderStatus(),
+      { wrapper },
+    );
+
+    await waitFor(() =>
+      expect(portalProviderStatus.result.current.data).toMatchObject({
+        provider: "manual",
+        webhook_configured: false,
+        webhook_secret_configured: false,
+      }),
+    );
+    await waitFor(() =>
+      expect(notificationProviderStatus.result.current.data).toMatchObject({
+        provider: "manual",
+        webhook_configured: false,
+        webhook_secret_configured: false,
+      }),
+    );
   });
 });

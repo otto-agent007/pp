@@ -55,6 +55,25 @@ export function useSpeechRecorder({
     setState("requesting");
     setErrorMessage(null);
 
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getUserMedia
+    ) {
+      setState("error");
+      setErrorMessage(
+        "Voice recording is not supported in this browser. Type your search instead.",
+      );
+      return;
+    }
+
+    if (typeof MediaRecorder === "undefined") {
+      setState("error");
+      setErrorMessage(
+        "Voice recording is not supported in this browser. Type your search instead.",
+      );
+      return;
+    }
+
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });

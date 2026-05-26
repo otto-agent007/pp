@@ -24,6 +24,7 @@ import {
   activateLocalDemoFixtureSession,
   deactivateLocalDemoFixtureSession,
   getLocalDemoFixtures,
+  isLocalDemoFixtureMode,
   resetLocalDemoFixtures,
 } from "../hooks/localDemoData";
 
@@ -106,11 +107,17 @@ function subscribe(listener: () => void) {
 }
 
 function localDemoFixtureModeEnabled() {
-  return shouldUseLocalDemoFixtures({
-    nodeEnv: process.env.NODE_ENV,
-    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  });
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  return (
+    shouldUseLocalDemoFixtures({
+      nodeEnv: process.env.NODE_ENV,
+      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    }) || isLocalDemoFixtureMode()
+  );
 }
 
 function readLocalDemoSession() {

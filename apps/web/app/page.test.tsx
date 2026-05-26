@@ -1,8 +1,53 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "./page";
+
+class DashboardSpeechRecognition {
+  static instances: DashboardSpeechRecognition[] = [];
+
+  continuous = true;
+  interimResults = true;
+  lang = "";
+  maxAlternatives = 0;
+  onend: (() => void) | null = null;
+  onerror: ((event: { error?: string; message?: string }) => void) | null =
+    null;
+  onnomatch: (() => void) | null = null;
+  onresult:
+    | ((event: {
+        resultIndex: number;
+        results: Array<{
+          isFinal: boolean;
+          0: { transcript: string };
+          length: number;
+        }>;
+      }) => void)
+    | null = null;
+  onstart: (() => void) | null = null;
+  abort = vi.fn();
+  start = vi.fn(() => this.onstart?.());
+  stop = vi.fn(() => this.onend?.());
+
+  constructor() {
+    DashboardSpeechRecognition.instances.push(this);
+  }
+}
+
+function installDashboardSpeechRecognition() {
+  Object.defineProperty(window, "SpeechRecognition", {
+    configurable: true,
+    value: DashboardSpeechRecognition,
+  });
+}
+
+function clearDashboardSpeechRecognition() {
+  DashboardSpeechRecognition.instances = [];
+  delete (window as Window & { SpeechRecognition?: unknown }).SpeechRecognition;
+  delete (window as Window & { webkitSpeechRecognition?: unknown })
+    .webkitSpeechRecognition;
+}
 
 vi.mock("next/link", () => ({
   default: ({
@@ -85,7 +130,13 @@ vi.mock("../hooks/useInventory", () => ({
 
 vi.mock("../hooks/usePayments", () => ({
   useInvoices: () => ({
-    data: [{ status: "sent", total_cents: 28500 }],
+    data: [
+      {
+        created_at: "2026-05-14T16:00:00.000Z",
+        status: "sent",
+        total_cents: 28500,
+      },
+    ],
     isLoading: false,
   }),
 }));
@@ -160,6 +211,7 @@ describe("HomePage", () => {
   });
 
   afterEach(() => {
+    clearDashboardSpeechRecognition();
     vi.useRealTimers();
   });
 
@@ -176,17 +228,12 @@ describe("HomePage", () => {
     expect(
       screen.queryByRole("button", { name: "Search by voice" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Today's jobs")).toBeInTheDocument();
-    expect(screen.getByText("Today's jobs").closest(".rounded-lg")).toHaveClass(
-      "bg-status-alert-success-bg",
-      "border-status-alert-success-border",
-    );
+    expect(screen.getByText("Revenue MTD")).toBeInTheDocument();
+    expect(screen.getByText("No paid invoices yet")).toBeInTheDocument();
+    expect(screen.getByText("Jobs today")).toBeInTheDocument();
     expect(screen.getByText("1 active today")).toBeInTheDocument();
-    expect(screen.getByText("$285.00")).toBeInTheDocument();
-    expect(screen.getByText("$285.00").closest(".rounded-lg")).toHaveClass(
-      "bg-status-alert-danger-bg",
-      "border-status-alert-danger-border",
-    );
+    expect(screen.getByText("Overdue invoices")).toBeInTheDocument();
+    expect(screen.getByText("$0.00")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Today's schedule" }),
     ).toBeInTheDocument();
@@ -247,6 +294,34 @@ describe("HomePage", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/Demo - Rivera Cafe/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/No dashboard matches/)).not.toBeInTheDocument();
+  });
+
+  it("renders browser voice search when SpeechRecognition is available", () => {
+    installDashboardSpeechRecognition();
+
+    render(<HomePage />);
+
+    const searchInput = screen.getByPlaceholderText(
+      /Search customers, jobs, addresses/i,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Search by voice" }));
+
+    const recognition = DashboardSpeechRecognition.instances[0];
+    expect(recognition.start).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      recognition.onresult?.({
+        resultIndex: 0,
+        results: [{ 0: { transcript: "Rivera" }, isFinal: true, length: 1 }],
+      });
+      recognition.onend?.();
+    });
+
+    expect(searchInput).toHaveValue("Rivera");
+    expect(
+      screen.getByRole("heading", { name: "Search results" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/Demo - Rivera Cafe/).length).toBeGreaterThan(0);
   });
 
   it("renders guided smoke links with sanitized evidence prompts", () => {

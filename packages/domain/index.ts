@@ -71,7 +71,12 @@ export type {
   DemoWorkflowFixtureEnv,
   DemoWorkflowFixtures,
 } from "./demoWorkflowFixtures";
-export { buildDemoSmokePreflight } from "./demoSmokePreflight";
+export {
+  buildDemoSmokePreflight,
+  buildLocalFixtureSmokePlan,
+  localFixtureSmokeSensitivePatterns,
+  localFixtureSmokeStorageKeys,
+} from "./demoSmokePreflight";
 export type {
   DemoSmokeEnv,
   DemoSmokeEnvName,
@@ -79,6 +84,7 @@ export type {
   DemoSmokePreflightInput,
   DemoSmokePreflightResult,
   DemoSmokePreflightState,
+  LocalFixtureSmokeRoute,
 } from "./demoSmokePreflight";
 export {
   getProductionSmokeChecklist,
