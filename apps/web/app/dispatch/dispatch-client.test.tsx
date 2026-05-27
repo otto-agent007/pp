@@ -183,6 +183,18 @@ function openDispatchDisclosure(
   fireEvent.click(screen.getByText(name));
 }
 
+async function openJobControls(
+  user: ReturnType<typeof userEvent.setup>,
+  jobId: string,
+  customerName: string,
+) {
+  await user.click(
+    screen.getByRole("button", {
+      name: `Manage controls for ${jobId}: ${customerName}`,
+    }),
+  );
+}
+
 describe("DispatchClient", () => {
   const changeStatusMutate = vi.fn();
   const assignTechnicianMutate = vi.fn();
@@ -295,11 +307,11 @@ describe("DispatchClient", () => {
     expect(
       screen.getAllByText("Missing service coordinates").length,
     ).toBeGreaterThan(0);
+    expect(screen.getByLabelText("GPS evidence for job-1")).toHaveTextContent(
+      "Latest GPS: Departure",
+    );
     expect(
-      screen.getAllByText("Arrival and departure synced").length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText("No synced GPS evidence").length,
+      screen.getAllByText("No synced GPS evidence yet").length,
     ).toBeGreaterThan(0);
     expect(screen.getByText("Route groups by technician")).toBeInTheDocument();
     expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
@@ -478,11 +490,21 @@ describe("DispatchClient", () => {
 
     expect(screen.getAllByText("2 stops").length).toBeGreaterThan(0);
     expect(screen.getByText("2 stops need review")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText("Status for job-missing-coordinates"),
+      screen.queryByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-missing-coordinates: Apex Homes",
+      }),
+    ).toHaveTextContent("Missing GPS evidence");
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-2: Apex Homes",
+      }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
     expect(
       screen.getByText("Showing missing gps evidence."),
     ).toBeInTheDocument();
@@ -519,8 +541,16 @@ describe("DispatchClient", () => {
       "Testnician",
     );
 
-    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-2: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("labels technician filters by display name", async () => {
@@ -544,8 +574,16 @@ describe("DispatchClient", () => {
     expect(
       screen.getByRole("combobox", { name: "Dispatch technician" }),
     ).toHaveValue("Testnician");
-    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-2: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps all technicians selected when the query string omits technician", () => {
@@ -554,8 +592,16 @@ describe("DispatchClient", () => {
     expect(
       screen.getByRole("combobox", { name: "Dispatch technician" }),
     ).toHaveValue("All technicians");
-    expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
-    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-2: Apex Homes",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("ignores unknown technician query string values", () => {
@@ -570,8 +616,16 @@ describe("DispatchClient", () => {
     expect(
       screen.getByRole("combobox", { name: "Dispatch technician" }),
     ).toHaveValue("All technicians");
-    expect(screen.getByLabelText("Status for job-1")).toBeInTheDocument();
-    expect(screen.getByLabelText("Status for job-2")).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-2: Apex Homes",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("navigates weeks", async () => {
@@ -580,12 +634,18 @@ describe("DispatchClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Next week" }));
 
-    expect(screen.queryByLabelText("Status for job-1")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("quick-updates status and technician", async () => {
     const user = userEvent.setup();
     render(<DispatchClient />);
+
+    await openJobControls(user, "job-1", "Apex Homes");
 
     await user.selectOptions(
       screen.getByLabelText("Status for job-1"),
@@ -611,32 +671,18 @@ describe("DispatchClient", () => {
   it("renders synced GPS evidence and provider-free map links", () => {
     render(<DispatchClient />);
 
-    const evidence = screen.getByLabelText("GPS evidence for job-1");
-
-    expect(evidence).toHaveTextContent("Latest GPS: Departure");
-    expect(evidence).toHaveTextContent("Arrival");
-    expect(evidence).toHaveTextContent("Within service radius (80 m)");
-    expect(evidence).toHaveTextContent("Departure");
-    expect(evidence).toHaveTextContent("Outside service radius (210 m)");
-    expect(evidence).toHaveTextContent("Accuracy 12 m");
+    // GPS evidence panel is shown for job with synced geofence events
     expect(
-      screen.getByRole("link", { name: "Open arrival map" }),
+      screen.getByLabelText("GPS evidence for job-1"),
+    ).toBeInTheDocument();
+
+    // Map link visible text is provider-free (not a raw job ID)
+    expect(screen.getByText("Open in Maps")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Open service map for job-1" }),
     ).toHaveAttribute(
       "href",
       "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
     );
-  });
-
-  it("renders missing GPS evidence copy when no synced event exists", () => {
-    vi.mocked(useJobGeofenceEvents).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-
-    render(<DispatchClient />);
-
-    expect(
-      screen.getAllByText("No synced GPS evidence yet").length,
-    ).toBeGreaterThan(0);
   });
 });

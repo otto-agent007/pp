@@ -1,23 +1,29 @@
 # Implementation Plan
 
-## Current Priority: Vercel Packaging Evidence Refresh
+## Current Priority: Dispatch Calendar Proof Polish
 
-The current evidence pass starts from local `main` synced through PR #74 and
-removes the stale local Windows Vercel packaging blocker from the launch gate.
-It does not change app behavior, migrations, providers, environment variables,
-seed/reset state, preview data, production data, or live compliance ingestion.
+The current polish pass starts from local `main` synced through merged PR #75
+and closes the protected dispatch-calendar follow-up without changing schema,
+providers, environment variables, seed/reset state, preview data, production
+data, or live compliance ingestion. It keeps the provider-free 180-job demo
+week readable by making job proof and route context scan faster before edits.
 
 Completed in this batch:
 
-1. Confirmed PR #74 is merged and fast-forwarded local `main` to
-   `58a9eb1`.
-2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
-   successfully, wrote `.vercel/output`, and reported `Build completed
-   successfully` for the preview target.
-3. Kept the remaining launch blockers explicit: approved Supabase env names,
-   local Docker/Postgres availability for local migration inspection,
-   protected-preview access, and admin/dispatcher sign-in are still required
-   before real seed/reset or authenticated preview smoke.
+1. Moved the protected dispatch diff onto
+   `codex/dispatch-calendar-proof-polish-v1` after syncing local `main`
+   through merged PR #75.
+2. Made weekly dispatch cards denser with stop readiness, route/order context,
+   scheduled time, customer/location, service-map link, status, technician, and
+   proof state visible before edit controls.
+3. Put status and technician edits behind a per-job `Manage` control with
+   accessible job-group labels and expanded controls for the selected job only.
+4. Kept missing/loading GPS evidence as compact inline copy and reserved the
+   full evidence panel for synced arrival/departure events.
+5. Tuned route-intelligence summary tones, disclosure counts, icon-only week
+   navigation, and today's day-column highlight while staying provider-free.
+6. Verified with focused dispatch tests, full repo test/typecheck/lint/build,
+   local fixture smoke, and in-app browser DOM QA on `/dispatch`.
 
 Next decision points:
 
@@ -29,6 +35,25 @@ Next decision points:
 3. Keep provider delivery receipts, richer provider failure states, and
    production launch checklist work deferred until authenticated preview and
    webhook-backed evidence exist.
+
+## Previous Priority: Vercel Packaging Evidence Refresh
+
+That evidence pass started from local `main` synced through PR #74 and removed
+the stale local Windows Vercel packaging blocker from the launch gate. It did
+not change app behavior, migrations, providers, environment variables,
+seed/reset state, preview data, production data, or live compliance ingestion.
+
+Completed in that batch:
+
+1. Confirmed PR #74 is merged and fast-forwarded local `main` to
+   `58a9eb1`.
+2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
+   successfully, wrote `.vercel/output`, and reported `Build completed
+   successfully` for the preview target.
+3. Kept the remaining launch blockers explicit: approved Supabase env names,
+   local Docker/Postgres availability for local migration inspection,
+   protected-preview access, and admin/dispatcher sign-in are still required
+   before real seed/reset or authenticated preview smoke.
 
 ## Previous Priority: Dashboard BI + Fixture Smoke Evidence
 
