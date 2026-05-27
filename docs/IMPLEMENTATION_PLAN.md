@@ -1,10 +1,40 @@
 # Implementation Plan
 
-## Current Priority: Dashboard BI + Fixture Smoke Evidence
+## Current Priority: Vercel Packaging Evidence Refresh
 
-The current batch closes the protected dashboard BI work, promotes the merged
-fixture smoke harness as the repeatable no-env QA gate, records a concrete
-mobile STT implementation decision without changing mobile config, and refreshes
+The current evidence pass starts from local `main` synced through PR #74 and
+removes the stale local Windows Vercel packaging blocker from the launch gate.
+It does not change app behavior, migrations, providers, environment variables,
+seed/reset state, preview data, production data, or live compliance ingestion.
+
+Completed in this batch:
+
+1. Confirmed PR #74 is merged and fast-forwarded local `main` to
+   `58a9eb1`.
+2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
+   successfully, wrote `.vercel/output`, and reported `Build completed
+   successfully` for the preview target.
+3. Kept the remaining launch blockers explicit: approved Supabase env names,
+   local Docker/Postgres availability for local migration inspection,
+   protected-preview access, and admin/dispatcher sign-in are still required
+   before real seed/reset or authenticated preview smoke.
+
+Next decision points:
+
+1. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+2. If local Supabase remains the chosen migration target, repair Docker
+   Desktop's Linux engine and local Postgres before relying on local migration
+   history.
+3. Keep provider delivery receipts, richer provider failure states, and
+   production launch checklist work deferred until authenticated preview and
+   webhook-backed evidence exist.
+
+## Previous Priority: Dashboard BI + Fixture Smoke Evidence
+
+That batch closed the protected dashboard BI work, promoted the merged fixture
+smoke harness as the repeatable no-env QA gate, recorded a concrete mobile STT
+implementation decision without changing mobile config, and refreshed
 launch-readiness evidence while keeping migrations, providers, env changes,
 seed/reset writes, preview mutations, and production mutations approval-gated.
 
@@ -118,7 +148,7 @@ Previously completed launch-readiness items still matter:
 1. Added reusable web `Wordmark` and `Logomark` wrappers for the checked-in brand assets, wired the dark wordmark into the admin shell home link, and documented that `docs/design-system/` remains a reference export rather than the app token source.
 2. Added domain-backed dashboard launch gates for local smoke, protected-preview smoke, compliance source setup, and portal delivery mode so operators can see the next safe action without secret values.
 3. Forced `/auth/update-password` to package as a dynamic app route, clearing the previous local Vercel CLI blocker `Unable to find lambda for route: /auth/update-password`.
-4. Reran local Vercel packaging; it now reaches serverless-function output but remains blocked on this Windows session by `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
+4. Reran local Vercel packaging on May 27, 2026 after PR #74; `corepack pnpm dlx vercel build --yes` now passes and writes `.vercel/output`, superseding the earlier Windows symlink `EPERM` blocker.
 5. Reran the May 18, 2026 compliance dry-run/no-embed preflight and local/protected-preview demo smoke preflights. Compliance dry-run passed with 0 writes and 0 OpenAI calls; smoke remains blocked before seed/reset or browser work on missing approved env/access.
 6. Cleaned up the critique repo audit items by removing production `as never` casts, adding strict app color guardrails, tokenizing web/mobile app shell colors, adding `@pest-patrol/ui-tokens` to web transpilation, removing the dead `packages/ui` Tailwind glob, and adding a local `send_succeeded` portal audit-event migration proposal without applying it to any database.
 
@@ -153,7 +183,7 @@ Preview launch readiness from `origin/main` remains the smoke handoff baseline:
 1. Verify the approved local/preview migration target before applying pending local migration files, including the compliance RAG schema and `20260518021520_portal_send_succeeded_event.sql`.
 2. If using local Supabase for that target verification, start or repair Docker Desktop's Linux engine and local Postgres before rerunning `supabase status -o env` and `supabase migration list --local`; the May 23, 2026 check could not inspect local containers or migration history.
 3. After explicit migration approval, run `corepack pnpm compliance:ingest` against an approved local or preview Supabase environment before treating `/compliance` as source-backed; the May 23, 2026 dry-run/no-embed preflight passed locally without Supabase writes or OpenAI calls.
-4. If local Windows Vercel packaging remains required, resolve the remaining symlink permission/tooling blocker. The `/auth/update-password` lambda mapping issue is fixed, but `corepack pnpm dlx vercel build --yes` now fails after serverless function creation with `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
+4. Keep local Vercel packaging as optional pre-deploy evidence; the May 27, 2026 `corepack pnpm dlx vercel build --yes` pass cleared the prior Windows symlink blocker on the synced PR #74 baseline.
 5. For local fixture demos, start `corepack pnpm --filter @pest-patrol/web dev --turbopack -p 3000` and use the no-auth `Local fixture demo` path; real Supabase seed/reset is unnecessary for fixture presentation.
 6. Load approved local Supabase env names and rerun `corepack pnpm demo:smoke -- --target local` only before real local seed/reset; the May 23, 2026 read-only pass is still blocked on the required env names.
 7. Run real local seed/reset only after the local preflight is ready, then smoke `/`, `/dispatch`, `/closeouts`, `/customers`, `/compliance`, the mobile route flow, and tokened portal surfaces with sanitized notes, including the seeded proof photos and synthetic signature.
