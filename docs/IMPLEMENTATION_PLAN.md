@@ -1,6 +1,35 @@
 # Implementation Plan
 
-## Current Priority: Vercel Packaging Evidence Refresh
+## Current Priority: Mobile Treatment Form Bilingual Copy
+
+This product-polish slice advances the active bilingual field-copy candidate
+without changing the offline queue, native config, dependencies, providers,
+environment variables, migrations, seed/reset state, preview data, production
+data, or the later STT/provider decision.
+
+Completed in this batch:
+
+1. Added English and Spanish treatment-form field labels and placeholders in
+   `@pest-patrol/i18n`.
+2. Added a mobile-local copy adapter so `JobTreatmentForm` can render localized
+   labels/placeholders while preserving the domain template and JSONB field ids.
+3. Localized required-field validation copy in the mobile treatment form by
+   mapping unchanged domain validation messages to the selected technician
+   language.
+4. Added focused tests for the copy adapter and ran mobile/i18n verification
+   plus full repo gates.
+
+Next decision points:
+
+1. Keep STT behind the already decisioned later provider/audio slice; do not
+   add microphone permissions, audio packages, or provider routes until
+   explicitly approved.
+2. Continue mobile bilingual copy only as small follow-up slices if other
+   capture controls still expose English-only dynamic form content.
+3. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+
+## Previous Priority: Vercel Packaging Evidence Refresh
 
 The current evidence pass starts from local `main` synced through PR #74 and
 removes the stale local Windows Vercel packaging blocker from the launch gate.
