@@ -1,10 +1,26 @@
-# Mobile STT Capability Spike V1
+# Mobile STT Capability Decision V1
 
 ## Goal
 
-Decide the Expo-native speech-to-text path before adding mobile dictation.
-The first target should be technician treatment or closeout notes, where the
-final transcript can drop into an existing editable text draft.
+Choose the mobile speech-to-text path before adding technician dictation. The
+first implementation target is treatment-note dictation inside existing
+editable treatment-form drafts, not persisted audio or a new evidence type.
+
+## Decision
+
+- Use a recorded-audio transcription provider adapter for V1, behind an
+  explicitly approved server/provider slice. Do not add native OS STT first.
+- Keep manual typed notes as the primary offline path. STT is an optional
+  online assist and must never block form completion.
+- Support English and Spanish in the first implementation. Default to English
+  until the technician chooses Spanish or the app has a reliable route/user
+  language setting.
+- Insert only final transcript text into existing editable draft fields. Do
+  not expose interim transcript text as saved field state.
+- Do not retain raw audio. Do not queue raw audio while offline. Delete local
+  temporary audio after transcript success, failure, or cancellation.
+- Add the microphone permission, audio recording package, provider route, and
+  provider env only in the later implementation slice after approval.
 
 ## Current Mobile Surface
 
@@ -18,28 +34,38 @@ final transcript can drop into an existing editable text draft.
   permissions only. This spike does not add a microphone permission or native
   module.
 
-## Decision Points
+## Implementation Shape For The Later Slice
 
-- On-device/native STT versus recorded-audio transcription through a provider.
-- English-only first pass versus English/Spanish support.
-- Permission copy for microphone access, denial, and unavailable recognition.
-- Whether to expose interim transcripts or only final editable text.
-- How confidence, no-speech, and noisy-route failures are communicated.
-- Whether transcript text stores in existing form draft JSON or needs a later
-  typed schema/storage slice.
-- Whether any future provider path is allowed to retain raw audio. Default:
-  no raw audio retention.
+- Add dictation controls to treatment-form textarea fields first:
+  `target_pests`, `areas_treated`, `materials_applied`,
+  `application_method`, `weather_conditions`, and `customer_instructions`.
+- Write transcript text through the existing `useFormDrafts.setFieldValue`
+  path. If the field already has text, append the transcript after a newline;
+  otherwise replace the empty value.
+- The mobile UI states are `idle`, `recording`, `transcribing`, `inserted`,
+  `permission_denied`, `no_speech`, `offline`, and `provider_error`.
+- Permission copy: "Allow Pest Patrol OS to use the microphone for technician
+  note dictation. Audio is transcribed for the current draft and not retained."
+- Provider failures should leave the draft unchanged and show typed-note
+  fallback copy.
+- The server/provider route must accept audio, return transcript text plus
+  language/confidence metadata when available, and avoid writing audio or
+  transcript records unless a separate evidence-storage slice is approved.
 
 ## Expo Go And Dev Client
 
 Expo Go has a fixed native library set, so native STT modules that are not
 bundled in Expo Go require a development build/dev client. `expo-speech` is
-text-to-speech, not speech-to-text, so it does not solve dictation.
+text-to-speech, not speech-to-text, so it does not solve dictation. Current
+Expo audio docs support audio recording with microphone permission/config
+work, which makes recorded-audio transcription the cleaner V1 path than
+native OS speech recognition.
 
 A later implementation slice may need:
 
-- a chosen STT native package or provider adapter,
-- a config plugin or permission entries,
+- an Expo SDK-compatible audio recording package,
+- microphone permission entries,
+- a server-only provider adapter,
 - an EAS/dev-client runbook,
 - explicit iOS and Android permission/error QA.
 
@@ -60,8 +86,10 @@ Those are non-goals for this spike.
 - No dependency install.
 - No Expo config, Metro, iOS, Android, or lockfile mutation.
 - No microphone permission string yet.
-- No OpenAI API, provider env, migration, storage bucket, preview mutation, or
-  production mutation.
+- No OpenAI API call, provider env, migration, storage bucket, preview
+  mutation, or production mutation.
+- No native STT package selection until the project explicitly chooses a
+  development-build/native-recognition path.
 
 ## Validation
 

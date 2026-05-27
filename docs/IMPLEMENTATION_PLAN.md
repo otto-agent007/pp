@@ -1,8 +1,70 @@
 # Implementation Plan
 
-## Current Priority: Launch Readiness Evidence + White App Canvas
+## Current Priority: Dashboard BI + Fixture Smoke Evidence
 
-The current launch-readiness track is evidence-first after PR #53 merged:
+The current batch closes the protected dashboard BI work, promotes the merged
+fixture smoke harness as the repeatable no-env QA gate, records a concrete
+mobile STT implementation decision without changing mobile config, and refreshes
+launch-readiness evidence while keeping migrations, providers, env changes,
+seed/reset writes, preview mutations, and production mutations approval-gated.
+
+Completed in this batch:
+
+1. Confirmed PR #72 is merged and moved the protected dashboard BI diff onto
+   `codex/dashboard-bi-performance-v1`; untracked helper-file residue remains
+   protected and unstaged.
+2. Finished the home command-center BI closeout with technician performance,
+   avatar initials, and an operator insight banner from existing hook data,
+   without direct Supabase calls, schema changes, providers, or API contract
+   changes.
+3. Updated focused home dashboard tests for the technician performance panel
+   and operator insight state.
+4. Ran `corepack pnpm demo:fixture-smoke`; the harness served the local fixture
+   app on `http://127.0.0.1:3300` and passed `/`, `/dispatch`, `/customers`,
+   `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`,
+   `/automation`, and tokened `/portal` at desktop and narrow widths with no
+   page/console errors, horizontal overflow, or sensitive patterns.
+5. Converted the mobile STT spike into a decision artifact: later V1
+   implementation should use recorded-audio transcription through an approved
+   server/provider adapter, support English and Spanish, insert final editable
+   transcript text into existing treatment-form drafts, and never retain or
+   queue raw audio.
+6. Refreshed Vercel evidence: latest Ready preview is
+   `https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app`
+   and latest Ready production deployment is
+   `https://pest-patrol-xd9td65tl-ottoagent007-gmailcoms-projects.vercel.app`;
+   `vercel inspect` reported the preview Ready and `vercel curl` returned the
+   protected app shell.
+7. Confirmed Vercel Preview env names exist for Supabase and scheduler secrets,
+   while Stripe, portal/notification webhook, OpenAI compliance, and Expo
+   public Supabase env names were not present in the safe env-name list.
+8. Reran read-only local and preview `demo:smoke` preflights; both remain
+   blocked before seed/reset or authenticated preview smoke on missing local
+   shell Supabase env names, with preview also gated on operator-approved access
+   and sign-in.
+9. Reran Supabase CLI/migration readiness checks without applying migrations:
+   CLI 2.98.2 is installed, local Docker/Postgres remain unavailable, local
+   migration history inspection is blocked, and grep audit still confirms
+   `private.has_admin_access()` precedes dependent portal/compliance policies
+   plus explicit compliance Data API grants.
+10. Reran `corepack pnpm compliance:ingest -- --dry-run --no-embed`; it planned
+    6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI
+    calls.
+
+Next decision points:
+
+1. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+2. If local Supabase remains the chosen migration target, repair Docker
+   Desktop's Linux engine and local Postgres before relying on local migration
+   history.
+3. Keep provider delivery receipts, richer provider failure states, and
+   production launch checklist work deferred until authenticated preview and
+   webhook-backed evidence exist.
+
+## Previous Priority: Launch Readiness Evidence + White App Canvas
+
+That launch-readiness track was evidence-first after PR #53 merged:
 post-merge GitHub/Vercel/Supabase/compliance checks are refreshed, migration
 application remains operator-approved only, and the app shell now reads as a
 white canvas instead of sand/cream while preserving dark rail chrome, cards,

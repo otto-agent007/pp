@@ -2,6 +2,60 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-27 Dashboard BI And Fixture Smoke Evidence
+
+Status: this evidence pass ran on `codex/dashboard-bi-performance-v1` after
+PR #72 was confirmed merged. No Supabase, Vercel, provider, environment,
+preview, production, seed/reset, migration, or live-ingest mutation was
+performed.
+
+Branch and local-worktree boundary:
+- Command: `gh pr view 72 --json number,state,mergedAt,mergeCommit,headRefName,baseRefName,url`
+- Result: pass; PR #72 is merged, merge commit is `63119c4f7f0658def6a172d1178a1252f4f378c3`, and the dirty dashboard work was moved to `codex/dashboard-bi-performance-v1`.
+- Protected untracked files intentionally left unstaged: `127.0.0.1`, `commit-bi-dashboard.bat`, `create-pr.ps1`, `run-ui-pr.bat`, and `run-whisper-commit.bat`.
+
+Local fixture smoke:
+- Command: `corepack pnpm demo:fixture-smoke`
+- Result: pass; the harness served the local app on `http://127.0.0.1:3300`.
+- Routes: `/`, `/dispatch`, `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal`.
+- Result: pass at `1440x1000` and `390x900`; route signals rendered, no page/console errors were reported, no document-level horizontal overflow was found, and no sensitive patterns were detected.
+
+Read-only local and preview gates:
+- Command: `corepack pnpm dlx vercel ls pest-patrol-os`
+- Result: pass; latest Ready preview is `https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app`, and latest Ready production deployment is `https://pest-patrol-xd9td65tl-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel inspect https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; deployment `dpl_DvadtbR8CdnMht8g62HybXKaPkW7` is Ready, target `preview`, with alias `https://pest-patrol-os-git-codex-f275bd-ottoagent007-gmailcoms-projects.vercel.app`.
+- Command: `corepack pnpm dlx vercel curl / --deployment https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: pass; the protected preview returned the Pest Patrol OS app shell with `Checking admin access...`.
+- Command: `corepack pnpm dlx vercel env ls`
+- Result: pass; Preview env names exist for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and `AUTOMATION_CRON_SECRET`. Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list.
+- Command: `corepack pnpm demo:smoke -- --target local`
+- Result: blocked safely before real local seed/reset.
+- Missing setup names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Command: `corepack pnpm demo:smoke -- --target preview --base-url https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app`
+- Result: blocked safely before preview seed/reset or authenticated preview browser smoke.
+- Blocker category: missing env/setup and operator access blocked.
+- Missing setup names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+Supabase and compliance readiness:
+- Command: `supabase --version`
+- Result: pass; local CLI is `2.98.2`, and the CLI reported `2.101.0` is available.
+- Command: `supabase status --help` and `supabase migration list --help`
+- Result: pass; command flags were inspected before running local target checks.
+- Command: `supabase status -o env`
+- Result: blocked before local target env export because Docker Desktop's Linux engine pipe was unavailable.
+- Command: `supabase migration list --local`
+- Result: blocked before local migration history inspection because local Postgres on `127.0.0.1:54322` refused the connection. No migration apply command was run.
+- Command: migration/RLS grep audit through `20260518021520_portal_send_succeeded_event.sql`
+- Result: pass; `private.has_admin_access()` is defined before dependent portal/compliance policies, portal token audit history enables RLS, compliance RAG tables enable RLS, compliance Data API grants remain explicit for `authenticated` and `service_role`, and the portal send succeeded proposal adds `send_succeeded` without Codex applying it.
+- Command: `corepack pnpm compliance:ingest -- --dry-run --no-embed`
+- Result: pass; checked-in EPA/DPR/SPCB fixtures planned 6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI calls.
+
+Provider-mode decision:
+- Result: protected preview browser smoke cannot move past the access/sign-in gate in this shell. Provider delivery receipts and richer provider failure states remain deferred until webhook-backed evidence exists.
+
+No real seed/reset write, browser credential capture, provider dashboard mutation, environment mutation, migration application, live compliance ingestion, raw portal token disclosure, protected-preview access value, webhook payload, preview data mutation, or production data action was performed.
+
 ## 2026-05-23 Launch Readiness White Canvas
 
 Status: local `main` was synced to the PR #53 merge commit `52ab65c397e82c78d9b6c37d963d78a4cb5be7d3`, this evidence pass ran on `codex/launch-readiness-white-canvas`, and no Supabase, Vercel, provider, environment, preview, production, seed/reset, migration, or live-ingest mutation was performed.

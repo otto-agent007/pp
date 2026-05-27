@@ -268,7 +268,16 @@ describe("HomePage", () => {
       screen.getAllByText(/Demo - Ant Bait Stations/).length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("heading", { name: "Recent activity" }),
+      screen.getByRole("heading", { name: "Technicians" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("2 technicians assigned")).toBeInTheDocument();
+    expect(screen.getAllByText("Maya Chen").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Eli Brooks").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1 job")).toHaveLength(2);
+    expect(
+      screen.getByText(
+        "Dispatch is running normally. Seed demo data to see revenue insights.",
+      ),
     ).toBeInTheDocument();
     const toolsPanel = screen
       .getByText("Launch readiness tools")
