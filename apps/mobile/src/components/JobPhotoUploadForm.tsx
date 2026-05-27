@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { Image, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { CaptureButton, CaptureSection } from "@pest-patrol/ui-native";
+import {
+  CaptureButton,
+  CaptureCard,
+  CaptureSection,
+} from "@pest-patrol/ui-native";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobPhotos } from "../store/useJobPhotos";
@@ -123,14 +127,20 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       </Text>
 
       {lastPhoto ? (
-        <Image
-          source={{ uri: lastPhoto.local_uri }}
+        <CaptureCard
           style={{
-            ...mobileCaptureControlStyles.preview,
-            height: 140,
-            width: "100%",
+            overflow: "hidden",
+            padding: 0,
           }}
-        />
+        >
+          <Image
+            source={{ uri: lastPhoto.local_uri }}
+            style={{
+              height: 140,
+              width: "100%",
+            }}
+          />
+        </CaptureCard>
       ) : null}
 
       <TextInput
