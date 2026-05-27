@@ -2,10 +2,12 @@ import type {
   CustomerStatus,
   DemoSeedRuntimeStatus as SharedDemoSeedRuntimeStatus,
   DemoSeedSummary as SharedDemoSeedSummary,
+  InventoryStatus,
   InventoryUnit,
   InvoiceStatus,
   JobStatus,
   JobMediaType,
+  PaymentStatus,
   PropertyType,
   UserRole,
 } from "@pest-patrol/types";
@@ -74,6 +76,8 @@ export interface DemoSeedLocation {
   customer_id: string;
   id: string;
   is_primary: boolean;
+  latitude?: number;
+  longitude?: number;
   nickname: string;
   service_notes: string;
   status: CustomerStatus;
@@ -86,6 +90,7 @@ export interface DemoSeedInventoryItem {
   key: string;
   name: string;
   reorder_level: number;
+  status?: InventoryStatus;
   unit: InventoryUnit;
 }
 
@@ -154,10 +159,10 @@ export interface DemoSeedPayment {
   amount_cents: number;
   currency: string;
   invoice_id: string;
-  paid_at: string;
+  paid_at: string | null;
   provider: "stripe";
   provider_payment_id: string;
-  status: "succeeded";
+  status: PaymentStatus;
 }
 
 export interface DemoSeedPlan {
@@ -345,6 +350,60 @@ const generatedCustomerTypes: PropertyType[] = [
   "commercial",
   "other",
 ];
+
+const sanDiegoDemoCoordinates: Array<{ latitude: number; longitude: number }> =
+  [
+    { latitude: 32.7422, longitude: -117.1772 },
+    { latitude: 32.7446, longitude: -117.1846 },
+    { latitude: 32.7157, longitude: -117.1611 },
+    { latitude: 32.9595, longitude: -117.1172 },
+    { latitude: 32.9023, longitude: -117.2022 },
+    { latitude: 32.7924, longitude: -117.2531 },
+    { latitude: 32.7912, longitude: -117.2508 },
+    { latitude: 32.8283, longitude: -117.1516 },
+    { latitude: 32.7496, longitude: -117.1299 },
+    { latitude: 32.7519, longitude: -117.1324 },
+    { latitude: 32.8899, longitude: -117.2325 },
+    { latitude: 32.6401, longitude: -117.0842 },
+    { latitude: 32.6418, longitude: -117.0861 },
+    { latitude: 32.8429, longitude: -117.2721 },
+    { latitude: 32.7839, longitude: -117.1048 },
+    { latitude: 32.7852, longitude: -117.1064 },
+    { latitude: 32.5558, longitude: -116.9382 },
+    { latitude: 32.7506, longitude: -117.1664 },
+    { latitude: 32.7512, longitude: -117.1689 },
+    { latitude: 32.7218, longitude: -117.2309 },
+    { latitude: 32.7294, longitude: -117.1605 },
+    { latitude: 32.7317, longitude: -117.1629 },
+    { latitude: 32.9599, longitude: -117.2653 },
+    { latitude: 32.9627, longitude: -117.0382 },
+    { latitude: 32.9644, longitude: -117.0415 },
+    { latitude: 32.7116, longitude: -117.1538 },
+  ];
+
+function demoCoordinateForLocation(index: number) {
+  const base = sanDiegoDemoCoordinates[index % sanDiegoDemoCoordinates.length];
+  const routeRing = Math.floor(index / sanDiegoDemoCoordinates.length);
+
+  return {
+    latitude: Number((base.latitude + routeRing * 0.0013).toFixed(4)),
+    longitude: Number((base.longitude + routeRing * 0.0012).toFixed(4)),
+  };
+}
+
+function withDemoLocationCoordinates(
+  customers: DemoSeedCustomer[],
+): DemoSeedCustomer[] {
+  let locationIndex = 0;
+
+  return customers.map((customer) => ({
+    ...customer,
+    locations: customer.locations.map((location) => ({
+      ...location,
+      ...demoCoordinateForLocation(locationIndex++),
+    })),
+  }));
+}
 
 function buildGeneratedCustomers(
   startIndex: number,
@@ -611,6 +670,143 @@ const riveraCafeSignatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1
   <line x1="125" y1="350" x2="965" y2="350" stroke="#cbd5e1" stroke-width="4"/>
   <text x="125" y="395" fill="#475569" font-family="Arial, sans-serif" font-size="24">Jamie Rivera - sample signature for demo only</text>
 </svg>`;
+
+const intentionalFieldCaptureGapJobKeys = new Set([
+  "mission-brewery-completed",
+  "del-mar-completed",
+  "generated-weekly-039",
+]);
+const baseChemicalLogJobIds = new Set([
+  demoId("j", 1),
+  demoId("j", 2),
+  demoId("j", 8),
+  demoId("j", 10),
+  demoId("j", 12),
+  demoId("j", 20),
+  demoId("j", 25),
+  demoId("j", 29),
+]);
+const baseFormSubmissionJobIds = new Set([
+  demoId("j", 1),
+  demoId("j", 2),
+  demoId("j", 8),
+  demoId("j", 10),
+  demoId("j", 12),
+  demoId("j", 20),
+  demoId("j", 25),
+]);
+const basePhotoJobIds = new Set([
+  demoId("j", 2),
+  demoId("j", 20),
+  demoId("j", 25),
+]);
+const baseSignatureJobIds = new Set([demoId("j", 2), demoId("j", 29)]);
+
+function isProductionReadyCloseoutJob(job: DemoSeedJob) {
+  return (
+    job.status === "completed" &&
+    !intentionalFieldCaptureGapJobKeys.has(job.key)
+  );
+}
+
+function buildSupplementalDemoChemicalLogs(
+  jobs: DemoSeedJob[],
+): DemoSeedChemicalLog[] {
+  return jobs
+    .filter(isProductionReadyCloseoutJob)
+    .filter((job) => !baseChemicalLogJobIds.has(job.id))
+    .map((job, index) => ({
+      amount_used: 1 + (index % 4) * 0.5,
+      chemical_key: job.inventory_key ?? "perimeter",
+      job_id: job.id,
+      notes: markerNote(
+        `Production demo chemical usage captured for ${job.key}.`,
+      ),
+    }));
+}
+
+function buildSupplementalDemoFormSubmissions(
+  jobs: DemoSeedJob[],
+): DemoSeedFormSubmission[] {
+  return jobs
+    .filter(isProductionReadyCloseoutJob)
+    .filter((job) => !baseFormSubmissionJobIds.has(job.id))
+    .map((job, index) => ({
+      form_data: {
+        areas_treated: "Primary service area, entry points, and activity zones",
+        application_method:
+          "Inspection, targeted placement, sanitation review, and customer walkthrough.",
+        customer_instructions:
+          "Review portal proof, keep access points clear, and report renewed activity.",
+        epa_label_reviewed: true,
+        follow_up_required: index % 5 === 0,
+        materials_applied: `Demo material: ${job.inventory_key ?? "perimeter"}`,
+        service_branch: "San Diego production demo route",
+        target_pests: "Ants, rodents, and occasional seasonal activity",
+        weather_conditions:
+          "Clear field conditions recorded with GPS evidence.",
+      },
+      job_id: job.id,
+      template_id: treatmentTemplateId,
+    }));
+}
+
+function supplementalMediaId(sequence: number) {
+  return `00000000-0000-4000-8000-${String(9200 + sequence).padStart(12, "0")}`;
+}
+
+function buildSupplementalDemoMedia(jobs: DemoSeedJob[]): DemoSeedMediaItem[] {
+  const media: DemoSeedMediaItem[] = [];
+  const photoAssets = [
+    {
+      content: riveraCafeDryStorageSvg,
+      description: "Production demo service photo - monitor proof",
+      filename: "demo-rivera-cafe-dry-storage.svg",
+    },
+    {
+      content: riveraCafeRearEntrySvg,
+      description: "Production demo service photo - exclusion proof",
+      filename: "demo-rivera-cafe-rear-entry.svg",
+    },
+  ];
+  let sequence = 0;
+
+  for (const [index, job] of jobs
+    .filter(isProductionReadyCloseoutJob)
+    .entries()) {
+    const photoAsset = photoAssets[index % photoAssets.length];
+
+    if (!basePhotoJobIds.has(job.id)) {
+      media.push({
+        captured_at: job.scheduled_end,
+        content: photoAsset.content,
+        content_type: "image/svg+xml",
+        description: photoAsset.description,
+        id: supplementalMediaId(sequence++),
+        job_id: job.id,
+        media_type: "photo",
+        storage_bucket: "job-media",
+        storage_path: `${job.id}/${photoAsset.filename}`,
+      });
+    }
+
+    if (!baseSignatureJobIds.has(job.id)) {
+      media.push({
+        captured_at: job.scheduled_end,
+        content: riveraCafeSignatureSvg,
+        content_type: "image/svg+xml",
+        description: "Production demo customer signature",
+        id: supplementalMediaId(sequence++),
+        job_id: job.id,
+        media_type: "signature",
+        storage_bucket: "job-media",
+        storage_path: `${job.id}/demo-rivera-cafe-signature.svg`,
+      });
+    }
+  }
+
+  return media;
+}
 
 export function validateDemoSeedGuardrails(
   input: DemoSeedGuardrailInput,
@@ -1216,6 +1412,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
     },
   ];
   customers.push(...buildGeneratedCustomers(customers.length + 1, 100));
+  const customersWithCoordinates = withDemoLocationCoordinates(customers);
   const technicians = buildDemoTechnicians(technicianPassword);
   const inventory: DemoSeedInventoryItem[] = [
     {
@@ -1228,7 +1425,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       unit: "oz",
     },
     {
-      current_stock: 54,
+      current_stock: 8,
       epa_number: "DEMO-499-548",
       id: "00000000-0000-4000-8000-00000000a002",
       key: "bait",
@@ -1246,7 +1443,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       unit: "each",
     },
     {
-      current_stock: 28,
+      current_stock: 4,
       epa_number: "DEMO-352-888",
       id: "00000000-0000-4000-8000-00000000a004",
       key: "dust",
@@ -1264,7 +1461,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       unit: "each",
     },
     {
-      current_stock: 16,
+      current_stock: 5,
       epa_number: "DEMO-432-1544",
       id: "00000000-0000-4000-8000-00000000a006",
       key: "aerosol",
@@ -1324,6 +1521,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       key: "drain-foam",
       name: "Demo - Drain Line Bio Foam",
       reorder_level: 3,
+      status: "archived",
       unit: "gal",
     },
     {
@@ -1728,7 +1926,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
   ];
   jobs.push(
     ...buildGeneratedJobs({
-      customers,
+      customers: customersWithCoordinates,
       existingCount: jobs.length,
       inventory,
       now,
@@ -1811,6 +2009,68 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       subtotal_cents: 21000,
       total_cents: 21000,
     },
+    {
+      customer_id: demoId("c", 5),
+      due_date: wallClockIso(now, 5, 17, 0),
+      id: demoId("i", 4),
+      job_id: demoId("j", 20),
+      line_items: [
+        {
+          description: "Demo apartment monitor service",
+          invoice_id: demoId("i", 4),
+          quantity: 1,
+          total_cents: 32500,
+          unit_amount_cents: 32500,
+        },
+      ],
+      notes: markerNote("Synthetic sent invoice with pending mock payment."),
+      payment: {
+        amount_cents: 32500,
+        currency: "usd",
+        invoice_id: demoId("i", 4),
+        paid_at: null,
+        provider: "stripe",
+        provider_payment_id: "demo_pi_seabreeze_pending",
+        status: "pending",
+      },
+      payment_url: "https://pay.example.test/demo-seabreeze-invoice",
+      status: "sent",
+      stripe_payment_link_id: "demo_plink_seabreeze_sent",
+      subtotal_cents: 32500,
+      total_cents: 32500,
+    },
+    {
+      customer_id: demoId("c", 12),
+      due_date: wallClockIso(now, 2, 17, 0),
+      id: demoId("i", 5),
+      job_id: demoId("j", 29),
+      line_items: [
+        {
+          description: "Demo logistics dock-door service",
+          invoice_id: demoId("i", 5),
+          quantity: 1,
+          total_cents: 47500,
+          unit_amount_cents: 47500,
+        },
+      ],
+      notes: markerNote(
+        "Synthetic void invoice preserving a failed payment example for demo reconciliation.",
+      ),
+      payment: {
+        amount_cents: 47500,
+        currency: "usd",
+        invoice_id: demoId("i", 5),
+        paid_at: null,
+        provider: "stripe",
+        provider_payment_id: "demo_pi_otay_failed",
+        status: "failed",
+      },
+      payment_url: null,
+      status: "void",
+      stripe_payment_link_id: "demo_plink_otay_void",
+      subtotal_cents: 47500,
+      total_cents: 47500,
+    },
   ];
   const media: DemoSeedMediaItem[] = [
     {
@@ -1846,6 +2106,51 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       storage_bucket: "job-media",
       storage_path: `${demoId("j", 2)}/demo-rivera-cafe-signature.svg`,
     },
+    {
+      captured_at: wallClockIso(now, 0, 7, 58),
+      content: riveraCafeDryStorageSvg,
+      content_type: "image/svg+xml",
+      description: "Laundry room monitor replacement proof",
+      id: "00000000-0000-4000-8000-000000009004",
+      job_id: demoId("j", 20),
+      media_type: "photo",
+      storage_bucket: "job-media",
+      storage_path: `${demoId("j", 20)}/demo-rivera-cafe-dry-storage.svg`,
+    },
+    {
+      captured_at: wallClockIso(now, 0, 8, 12),
+      content: riveraCafeRearEntrySvg,
+      content_type: "image/svg+xml",
+      description: "Pool house exterior exclusion proof",
+      id: "00000000-0000-4000-8000-000000009005",
+      job_id: demoId("j", 20),
+      media_type: "photo",
+      storage_bucket: "job-media",
+      storage_path: `${demoId("j", 20)}/demo-rivera-cafe-rear-entry.svg`,
+    },
+    {
+      captured_at: wallClockIso(now, 0, 10, 2),
+      content: riveraCafeDryStorageSvg,
+      content_type: "image/svg+xml",
+      description: "Restaurant basement storage closeout photo",
+      id: "00000000-0000-4000-8000-000000009006",
+      job_id: demoId("j", 25),
+      media_type: "photo",
+      storage_bucket: "job-media",
+      storage_path: `${demoId("j", 25)}/demo-rivera-cafe-dry-storage.svg`,
+    },
+    {
+      captured_at: wallClockIso(now, 0, 7, 36),
+      content: riveraCafeSignatureSvg,
+      content_type: "image/svg+xml",
+      description: "Dock manager signature",
+      id: "00000000-0000-4000-8000-000000009007",
+      job_id: demoId("j", 29),
+      media_type: "signature",
+      storage_bucket: "job-media",
+      storage_path: `${demoId("j", 29)}/demo-rivera-cafe-signature.svg`,
+    },
+    ...buildSupplementalDemoMedia(jobs),
   ];
 
   return {
@@ -1907,8 +2212,41 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
           "Refreshed dock-door rodent monitors and checked break room corners.",
         ),
       },
+      {
+        amount_used: 6,
+        chemical_key: "perimeter",
+        job_id: demoId("j", 1),
+        notes: markerNote(
+          "Recorded clubhouse exterior perimeter application with GPS-backed arrival proof.",
+        ),
+      },
+      {
+        amount_used: 1.25,
+        chemical_key: "dust",
+        job_id: demoId("j", 8),
+        notes: markerNote(
+          "Demo crack-and-crevice dust entry for bakery storage voids.",
+        ),
+      },
+      {
+        amount_used: 1,
+        chemical_key: "aerosol",
+        job_id: demoId("j", 10),
+        notes: markerNote(
+          "Spot knockdown entry for dining hall exterior soffit activity.",
+        ),
+      },
+      {
+        amount_used: 0.75,
+        chemical_key: "igr",
+        job_id: demoId("j", 12),
+        notes: markerNote(
+          "Brewhouse drain-area growth regulator note for compliance demo.",
+        ),
+      },
+      ...buildSupplementalDemoChemicalLogs(jobs),
     ],
-    customers,
+    customers: customersWithCoordinates,
     formSubmissions: [
       {
         form_data: {
@@ -1980,6 +2318,76 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
         job_id: demoId("j", 25),
         template_id: treatmentTemplateId,
       },
+      {
+        form_data: {
+          areas_treated: "Clubhouse exterior, kitchen threshold, pool room",
+          application_method:
+            "Perimeter inspection, targeted exterior treatment, and bait station check.",
+          customer_instructions:
+            "Keep pool-room door sweep clear and approve follow-up photos in portal.",
+          epa_label_reviewed: true,
+          follow_up_required: true,
+          materials_applied: "Demo perimeter treatment",
+          service_branch: "San Diego HOA route",
+          target_pests: "Ants and occasional rodents",
+          weather_conditions:
+            "Clear coastal morning; exterior service completed.",
+        },
+        job_id: demoId("j", 1),
+        template_id: treatmentTemplateId,
+      },
+      {
+        form_data: {
+          areas_treated: "Prep room, shared storage, rear trash corral",
+          application_method:
+            "Inspection, crack-and-crevice dust placement, and sanitation coaching.",
+          customer_instructions:
+            "Sweep flour accumulation daily and keep back door closed between deliveries.",
+          epa_label_reviewed: true,
+          follow_up_required: false,
+          materials_applied: "Demo crack and crevice dust",
+          service_branch: "San Diego food-service route",
+          target_pests: "Stored-product pests and ants",
+          weather_conditions: "Interior service; rear corral dry.",
+        },
+        job_id: demoId("j", 8),
+        template_id: treatmentTemplateId,
+      },
+      {
+        form_data: {
+          areas_treated: "Dining hall exterior, receiving door, refuse pad",
+          application_method:
+            "Monitor inspection, limited exterior spot treatment, and sanitation notes.",
+          customer_instructions:
+            "Keep receiving door closed after deliveries and report wasp activity.",
+          epa_label_reviewed: true,
+          follow_up_required: false,
+          materials_applied: "Demo aerosol spot treatment",
+          service_branch: "San Diego senior-living route",
+          target_pests: "Occasional ants and flying insects",
+          weather_conditions: "Clear afternoon service window.",
+        },
+        job_id: demoId("j", 10),
+        template_id: treatmentTemplateId,
+      },
+      {
+        form_data: {
+          areas_treated: "Taproom drains, brewhouse threshold, keg storage",
+          application_method:
+            "Drain review, monitor replacement, and growth-regulator note.",
+          customer_instructions:
+            "Maintain nightly drain brushing and review portal photos.",
+          epa_label_reviewed: true,
+          follow_up_required: true,
+          materials_applied: "Demo IGR concentrate and glueboard monitors",
+          service_branch: "San Diego brewery route",
+          target_pests: "Small flies and occasional rodents",
+          weather_conditions: "Interior service after production cleanup.",
+        },
+        job_id: demoId("j", 12),
+        template_id: treatmentTemplateId,
+      },
+      ...buildSupplementalDemoFormSubmissions(jobs),
     ],
     inventory,
     invoices,

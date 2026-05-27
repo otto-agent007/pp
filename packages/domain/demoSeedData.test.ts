@@ -34,6 +34,15 @@ describe("demo seed data", () => {
       name: "Demo - Harbor Heights HOA",
       email: "demo+harbor-hoa@example.test",
     });
+    expect(
+      plan.customers
+        .flatMap((customer) => customer.locations)
+        .every(
+          (location) =>
+            typeof location.latitude === "number" &&
+            typeof location.longitude === "number",
+        ),
+    ).toBe(true);
     expect(plan.technicians).toHaveLength(16);
     expect(
       plan.technicians.every((tech) => tech.email.endsWith("@example.test")),
@@ -46,6 +55,14 @@ describe("demo seed data", () => {
         "Demo - Tamper-Resistant Bait Stations",
         "Demo - PPE Service Restock Kit",
       ]),
+    );
+    expect(
+      plan.inventory
+        .filter((item) => item.current_stock <= item.reorder_level)
+        .map((item) => item.key),
+    ).toEqual(expect.arrayContaining(["bait", "dust", "aerosol"]));
+    expect(plan.inventory.some((item) => item.status === "archived")).toBe(
+      true,
     );
     expect(plan.jobs).toHaveLength(180);
     expect(plan.jobs.map((job) => job.scheduled_start)).toContain(
@@ -60,14 +77,19 @@ describe("demo seed data", () => {
     expect(
       plan.jobs.filter((job) => !job.assigned_technician_key).length,
     ).toBeGreaterThanOrEqual(3);
-    expect(plan.chemicalLogs).toHaveLength(6);
-    expect(plan.formSubmissions).toHaveLength(4);
-    expect(plan.media).toHaveLength(3);
+    expect(plan.chemicalLogs.length).toBeGreaterThanOrEqual(10);
+    expect(plan.formSubmissions.length).toBeGreaterThanOrEqual(8);
+    expect(plan.media.length).toBeGreaterThanOrEqual(7);
     expect(plan.invoices.map((invoice) => invoice.status)).toEqual([
       "sent",
       "paid",
       "draft",
+      "sent",
+      "void",
     ]);
+    expect(
+      plan.invoices.map((invoice) => invoice.payment?.status).filter(Boolean),
+    ).toEqual(expect.arrayContaining(["succeeded", "pending", "failed"]));
     expect(JSON.stringify(plan)).toContain(DEMO_SEED_MARKER);
   });
 
@@ -253,19 +275,64 @@ describe("demo seed data", () => {
       now: new Date("2026-05-14T16:38:00.000Z"),
     });
 
-    expect(getDemoSeedPlanSummary(plan)).toEqual({
+    const summary = getDemoSeedPlanSummary(plan);
+
+    expect(summary).toMatchObject({
       admin_users: 1,
-      chemical_logs: 6,
       customers: 100,
-      form_submissions: 4,
       inventory_items: 14,
-      invoices: 3,
+      invoices: 5,
       jobs: 180,
       locations: 108,
-      media_items: 3,
-      payments: 1,
+      payments: 3,
       technicians: 16,
     });
+    expect(summary.chemical_logs).toBeGreaterThanOrEqual(25);
+    expect(summary.form_submissions).toBeGreaterThanOrEqual(25);
+    expect(summary.media_items).toBeGreaterThanOrEqual(45);
+  });
+
+  it("keeps completed closeouts production-filled with only a few intentional gaps", () => {
+    const plan = buildDemoSeedPlan({
+      now: new Date("2026-05-14T16:38:00.000Z"),
+    });
+    const completedAssignedJobs = plan.jobs.filter(
+      (job) => job.status === "completed" && job.assigned_technician_key,
+    );
+    const chemicalLogJobIds = new Set(
+      plan.chemicalLogs.map((log) => log.job_id),
+    );
+    const formJobIds = new Set(
+      plan.formSubmissions.map((submission) => submission.job_id),
+    );
+    const photoJobIds = new Set(
+      plan.media
+        .filter((item) => item.media_type === "photo")
+        .map((item) => item.job_id),
+    );
+    const signatureJobIds = new Set(
+      plan.media
+        .filter((item) => item.media_type === "signature")
+        .map((item) => item.job_id),
+    );
+
+    const missingCaptureJobs = completedAssignedJobs.filter(
+      (job) =>
+        !chemicalLogJobIds.has(job.id) ||
+        !formJobIds.has(job.id) ||
+        !photoJobIds.has(job.id) ||
+        !signatureJobIds.has(job.id),
+    );
+
+    expect(completedAssignedJobs.length).toBeGreaterThan(20);
+    expect(missingCaptureJobs).toHaveLength(3);
+    expect(missingCaptureJobs.map((job) => job.key)).toEqual(
+      expect.arrayContaining([
+        "mission-brewery-completed",
+        "del-mar-completed",
+        "generated-weekly-039",
+      ]),
+    );
   });
 
   it("builds user-facing runtime status without allowing production writes", () => {

@@ -169,8 +169,8 @@ describe("demo seed api client", () => {
       customers: 100,
       inventory: 14,
       jobs: 180,
-      media: 3,
-      invoices: 3,
+      media: 52,
+      invoices: 5,
     });
     expect(
       calls.filter((call) => call.startsWith("auth.createUser")),

@@ -334,6 +334,7 @@ export type {
 } from "./technicians";
 export {
   archiveChemicalInventory,
+  buildInventoryCockpitRows,
   createChemicalInventory,
   createChemicalLog,
   createChemicalLogForClient,
@@ -350,6 +351,11 @@ export {
   updateChemicalInventory,
   validateChemicalInventoryInput,
   validateChemicalLogInput,
+} from "./inventory";
+export type {
+  InventoryCockpitRow,
+  InventoryCockpitStockState,
+  InventoryCockpitTone,
 } from "./inventory";
 export {
   buildComplianceAdvisory,

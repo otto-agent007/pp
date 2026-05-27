@@ -245,6 +245,33 @@ function scheduleStatusTone(statusLabel: string): StatusPillTone | undefined {
   return statusLabel === "Scheduled" ? "info" : undefined;
 }
 
+function TechnicianGpsBadge({
+  dotColor,
+  techName,
+}: {
+  dotColor: string;
+  techName: string;
+}) {
+  return (
+    <span
+      aria-label={`Technician GPS signal ${techName}`}
+      className="inline-flex h-6 max-w-full items-center gap-1.5 rounded-full border border-theme-border-subtle bg-theme-background-surface px-2 text-[11px] font-bold leading-none text-theme-text-secondary shadow-sm"
+    >
+      <span className="relative inline-flex h-2 w-2 shrink-0">
+        <span
+          aria-hidden="true"
+          className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${dotColor}`}
+        />
+        <span
+          aria-hidden="true"
+          className={`relative inline-flex h-2 w-2 rounded-full ${dotColor}`}
+        />
+      </span>
+      <span className="truncate">{techName}</span>
+    </span>
+  );
+}
+
 function techInitials(label: string) {
   const parts = label.trim().split(/\s+/).filter(Boolean);
   const initials =
@@ -1093,7 +1120,7 @@ export function HomeCommandCenter() {
 
                   return (
                     <Link
-                      className="grid gap-3 py-3 transition hover:bg-theme-background-subtle sm:grid-cols-[5rem_1fr_auto]"
+                      className="grid gap-3 py-3 transition hover:bg-theme-background-subtle sm:grid-cols-[5rem_minmax(0,1fr)_auto] sm:items-center"
                       href={job.href}
                       key={job.id}
                     >
@@ -1107,28 +1134,23 @@ export function HomeCommandCenter() {
                         <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
                           {job.customerName}
                         </p>
-                        {techName && dotColor ? (
-                          <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-theme-text-secondary">
-                            <span className="relative inline-flex h-2 w-2 shrink-0">
-                              <span
-                                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${dotColor}`}
-                              />
-                              <span
-                                className={`relative inline-flex h-2 w-2 rounded-full ${dotColor}`}
-                              />
-                            </span>
-                            {techName}
-                          </p>
-                        ) : null}
                       </div>
-                      <StatusPill
-                        tone={
-                          scheduleStatusTone(job.statusLabel) ??
-                          severityTones[job.statusSeverity]
-                        }
-                      >
-                        {job.statusLabel}
-                      </StatusPill>
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        {techName && dotColor ? (
+                          <TechnicianGpsBadge
+                            dotColor={dotColor}
+                            techName={techName}
+                          />
+                        ) : null}
+                        <StatusPill
+                          tone={
+                            scheduleStatusTone(job.statusLabel) ??
+                            severityTones[job.statusSeverity]
+                          }
+                        >
+                          {job.statusLabel}
+                        </StatusPill>
+                      </div>
                     </Link>
                   );
                 })

@@ -33,15 +33,15 @@ const now = "2026-05-05T00:00:00Z";
 
 describe("job domain", () => {
   it("rejects a missing customer", () => {
-    expect(() =>
-      validateJobInput({ ...validInput, customer_id: " " }),
-    ).toThrow("Customer is required");
+    expect(() => validateJobInput({ ...validInput, customer_id: " " })).toThrow(
+      "Customer is required",
+    );
   });
 
   it("rejects a missing location", () => {
-    expect(() =>
-      validateJobInput({ ...validInput, location_id: " " }),
-    ).toThrow("Location is required");
+    expect(() => validateJobInput({ ...validInput, location_id: " " })).toThrow(
+      "Location is required",
+    );
   });
 
   it("rejects a missing scheduled start", () => {
@@ -117,8 +117,9 @@ describe("job domain", () => {
       },
     ] satisfies Job[];
 
-    expect(filterJobs(jobs, "pine", "scheduled", "2026-05-06", "2026-05-06"))
-      .toHaveLength(1);
+    expect(
+      filterJobs(jobs, "pine", "scheduled", "2026-05-06", "2026-05-06"),
+    ).toHaveLength(1);
     expect(filterJobs(jobs, "", "canceled")).toHaveLength(1);
   });
 
@@ -160,13 +161,20 @@ describe("job domain", () => {
       },
     ] satisfies Job[];
 
-    const week = buildDispatchWeek(jobs, "2026-05-06", "scheduled", "technician-1");
+    const week = buildDispatchWeek(
+      jobs,
+      "2026-05-06",
+      "scheduled",
+      "technician-1",
+    );
 
     expect(getDispatchWeekStart("2026-05-06")).toBe("2026-05-03");
     expect(getRelativeDispatchWeek("2026-05-06", 1)).toBe("2026-05-10");
     expect(week).toHaveLength(7);
     expect(week.find((day) => day.date === "2026-05-06")?.jobs).toHaveLength(1);
-    expect(week.find((day) => day.date === "2026-05-06")?.jobs[0].id).toBe("job-1");
+    expect(week.find((day) => day.date === "2026-05-06")?.jobs[0].id).toBe(
+      "job-1",
+    );
   });
 
   it("keeps Z-suffixed scheduled jobs on their wall-clock dispatch day", () => {
@@ -187,8 +195,9 @@ describe("job domain", () => {
 
     const week = buildDispatchWeek(jobs, "2026-05-06");
 
-    expect(week.find((day) => day.date === "2026-05-06")?.jobs[0]?.id)
-      .toBe("job-1");
+    expect(week.find((day) => day.date === "2026-05-06")?.jobs[0]?.id).toBe(
+      "job-1",
+    );
   });
 
   it("builds provider-free dispatch route intelligence by technician and readiness", () => {
@@ -325,7 +334,8 @@ describe("job domain", () => {
     });
     expect(intelligence.stops[2]).toMatchObject({
       address_label: "10 Pine Street",
-      location_map_url: "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
+      location_map_url:
+        "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
       location_state: "ready",
       next_stop_job_id: null,
       schedule_label: "11:00 AM",
@@ -369,9 +379,11 @@ describe("job domain", () => {
       unassigned_stops: 1,
     });
     expect(
-      buildDispatchRouteIntelligence(jobs, "2026-05-06", "unassigned").stops.map(
-        (stop) => stop.job.id,
-      ),
+      buildDispatchRouteIntelligence(
+        jobs,
+        "2026-05-06",
+        "unassigned",
+      ).stops.map((stop) => stop.job.id),
     ).toEqual(["job-unassigned"]);
   });
 
@@ -620,12 +632,13 @@ describe("job domain", () => {
       missing_evidence_count: 2,
       unassigned_stops: 1,
     });
-    expect(intelligence.stops.find((stop) => stop.job.id === "job-ready"))
-      .toMatchObject({
-        evidence_state: "complete",
-        risk_state: "at_risk",
-        triage_labels: ["At risk"],
-      });
+    expect(
+      intelligence.stops.find((stop) => stop.job.id === "job-ready"),
+    ).toMatchObject({
+      evidence_state: "complete",
+      risk_state: "at_risk",
+      triage_labels: ["At risk"],
+    });
     expect(
       intelligence.stops.find((stop) => stop.job.id === "job-missing-evidence"),
     ).toMatchObject({
@@ -638,15 +651,21 @@ describe("job domain", () => {
         "Missing GPS evidence",
       ],
     });
-    expect(filterDispatchRouteStops(intelligence.stops, "at_risk").map((stop) => stop.job.id))
-      .toEqual(["job-ready"]);
+    expect(
+      filterDispatchRouteStops(intelligence.stops, "at_risk").map(
+        (stop) => stop.job.id,
+      ),
+    ).toEqual(["job-ready"]);
     expect(
       filterDispatchRouteStops(intelligence.stops, "missing_evidence").map(
         (stop) => stop.job.id,
       ),
     ).toEqual(["job-closed", "job-missing-evidence"]);
-    expect(filterDispatchRouteStops(intelligence.stops, "unassigned").map((stop) => stop.job.id))
-      .toEqual(["job-missing-evidence"]);
+    expect(
+      filterDispatchRouteStops(intelligence.stops, "unassigned").map(
+        (stop) => stop.job.id,
+      ),
+    ).toEqual(["job-missing-evidence"]);
   });
 
   it("summarizes dispatch exceptions for the selected route stops", () => {
@@ -703,11 +722,18 @@ describe("job domain", () => {
       },
     ] satisfies Job[];
 
-    const intelligence = buildDispatchRouteIntelligence(jobs, "2026-05-06", "all", {
-      now: "2026-05-06T09:30:00",
-    });
+    const intelligence = buildDispatchRouteIntelligence(
+      jobs,
+      "2026-05-06",
+      "all",
+      {
+        now: "2026-05-06T09:30:00",
+      },
+    );
 
-    expect(buildDispatchRouteExceptionSummary(intelligence.stops)).toMatchObject({
+    expect(
+      buildDispatchRouteExceptionSummary(intelligence.stops),
+    ).toMatchObject({
       label: "2 stops need review",
       items: [
         {
@@ -799,7 +825,7 @@ describe("job domain", () => {
       technician_id: "technician-1",
       technician_label: "Technician technician-1",
     });
-    expect(mapState.points[0].x_percent).toBeCloseTo(30.9, 1);
+    expect(mapState.points[0].x_percent).toBeCloseTo(51.9, 1);
     expect(mapState.points[0].y_percent).toBeCloseTo(69.9, 1);
   });
 
@@ -899,8 +925,93 @@ describe("job domain", () => {
       source: "latest_gps",
       status_state: "completed",
     });
-    expect(mapState.points[0].x_percent).toBeCloseTo(6.4, 1);
+    expect(mapState.points[0].x_percent).toBeCloseTo(37.7, 1);
     expect(mapState.points[0].y_percent).toBeCloseTo(51.9, 1);
+  });
+
+  it("keeps San Diego demo truck markers on the land portion of the static map", () => {
+    const jobs = [
+      {
+        id: "job-coastal",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-1",
+          name: "Coastal Service",
+          phone: null,
+          email: null,
+          property_type: "commercial",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "500 Demo Harbor Dr, San Diego, CA 92101",
+          nickname: "Harbor",
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.8429,
+          longitude: -117.2721,
+          status: "active",
+          created_at: "2026-05-01T00:00:00Z",
+          updated_at: "2026-05-01T00:00:00Z",
+        },
+      },
+      {
+        id: "job-inland",
+        customer_id: "customer-2",
+        location_id: "location-2",
+        assigned_tech_id: "technician-2",
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer: {
+          id: "customer-2",
+          name: "Inland Service",
+          phone: null,
+          email: null,
+          property_type: "commercial",
+          service_notes: null,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+        location: {
+          id: "location-2",
+          customer_id: "customer-2",
+          address: "200 Demo Inland Rd, San Diego, CA 92131",
+          nickname: "Inland",
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.9627,
+          longitude: -117.0382,
+          status: "active",
+          created_at: "2026-05-01T00:00:00Z",
+          updated_at: "2026-05-01T00:00:00Z",
+        },
+      },
+    ] satisfies Job[];
+    const intelligence = buildDispatchRouteIntelligence(jobs, "2026-05-06");
+    const mapState = buildDispatchStaticMapState(intelligence.stops);
+
+    expect(mapState.points).toHaveLength(2);
+    expect(mapState.points.every((point) => point.x_percent >= 34)).toBe(true);
+    expect(mapState.points[1].x_percent).toBeGreaterThan(
+      mapState.points[0].x_percent,
+    );
   });
 
   it("assigns stable distinct marker tones to plotted technicians", () => {
@@ -1258,7 +1369,11 @@ describe("job domain", () => {
         created_at: now,
         last_error: null,
         next_retry_at: null,
-        payload: { job_id: "job-queued", template_id: "template-1", form_data: {} },
+        payload: {
+          job_id: "job-queued",
+          template_id: "template-1",
+          form_data: {},
+        },
         status: "queued",
         updated_at: now,
       },
@@ -1270,7 +1385,9 @@ describe("job domain", () => {
       queueItems,
     );
 
-    expect(timeline.current?.readinessLabel).toBe("1 done, 1 pending, 4 missing");
+    expect(timeline.current?.readinessLabel).toBe(
+      "1 done, 1 pending, 4 missing",
+    );
     expect(timeline.current?.nextAction).toEqual({
       label: "Submit treatment form",
       severity: "queued",
@@ -1279,7 +1396,9 @@ describe("job domain", () => {
       label: "1 queued sync item",
       state: "queued",
     });
-    expect(timeline.current?.workPlan.find((item) => item.id === "form")).toMatchObject({
+    expect(
+      timeline.current?.workPlan.find((item) => item.id === "form"),
+    ).toMatchObject({
       state: "pending",
       summary: "Treatment form is queued for sync.",
     });
@@ -1324,22 +1443,32 @@ describe("job domain", () => {
         status: "failed" as const,
         updated_at: now,
       },
-      ...(["geofence_event_create", "chemical_log_create", "photo_upload", "signature_capture", "form_submission_create"] as const).map(
-        (action, index) => ({
-          id: `queue-ready-${index}`,
-          action,
-          attempts: 0,
-          created_at: now,
-          last_error: null,
-          next_retry_at: null,
-          payload: { job_id: "job-ready" },
-          status: "synced" as const,
-          updated_at: now,
-        }),
-      ),
+      ...(
+        [
+          "geofence_event_create",
+          "chemical_log_create",
+          "photo_upload",
+          "signature_capture",
+          "form_submission_create",
+        ] as const
+      ).map((action, index) => ({
+        id: `queue-ready-${index}`,
+        action,
+        attempts: 0,
+        created_at: now,
+        last_error: null,
+        next_retry_at: null,
+        payload: { job_id: "job-ready" },
+        status: "synced" as const,
+        updated_at: now,
+      })),
     ] satisfies OfflineQueueItem[];
 
-    const timeline = buildMobileDailyRouteTimeline(jobs, "2026-05-06", queueItems);
+    const timeline = buildMobileDailyRouteTimeline(
+      jobs,
+      "2026-05-06",
+      queueItems,
+    );
 
     expect(timeline.current?.nextAction).toEqual({
       label: "Retry photo sync",

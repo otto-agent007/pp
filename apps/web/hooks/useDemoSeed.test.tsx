@@ -58,7 +58,7 @@ describe("useDemoSeed local fixture mode", () => {
       reason: null,
       target: "local",
     });
-    expect(result.current.data?.summary.media_items).toBe(3);
+    expect(result.current.data?.summary.media_items).toBeGreaterThanOrEqual(45);
     expect(result.current.data?.summary).toMatchObject({
       customers: 100,
       jobs: 180,
@@ -93,10 +93,10 @@ describe("useDemoSeed local fixture mode", () => {
         customers: 100,
         inventory_items: 14,
         jobs: 180,
-        media_items: 3,
         technicians: 16,
       },
     });
+    expect(result.current.data?.summary.media_items).toBeGreaterThanOrEqual(45);
     expect(runDemoSeedActionRecord).not.toHaveBeenCalled();
   });
 });

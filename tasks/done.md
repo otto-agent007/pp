@@ -1,5 +1,35 @@
 # Done
 
+## Production Demo Showpiece V1
+
+- Enriched the canonical demo seed and local workflow fixtures with synthetic
+  San Diego coordinates, arrival/departure GPS evidence, proof
+  photos/signatures, treatment forms, chemical logs, invoices, paid/pending/
+  failed payment examples, and portal-ready closeout proof
+- Preserved the demo baseline of 16 active technicians, 100 customers, 180
+  current-week jobs, and 14 inventory items while leaving only a few
+  intentional missing-data examples for the demo story
+- Shifted provider-free San Diego map projection so GPS truck markers render
+  on the coastline/inland land area instead of the Pacific Ocean band
+- Expanded closeout fixtures so production-ready completed work opens with
+  treatment forms, chemical logs, proof photos, and signatures; only three
+  intentional jobs remain in the needs-captures story
+- Added a `/technicians` top KPI strip with `Active techs` derived from active
+  technician records, so the demo roster shows 16
+- Updated the home dashboard Today's Dispatch rows to match the Claude Admin UI
+  density pattern: compact time/customer hierarchy, technician name with
+  matching GPS signal chip, and the regular job status pill at the far right
+- Evolved `/inventory` into a Product cockpit with selected-item state,
+  reorder/aging-stock action cues, recent usage evidence, customer proof
+  context, EPA/compliance readiness signals, low-stock examples, and an
+  archived inventory example
+- Kept migrations, schema changes, provider setup, env changes, Supabase
+  writes, preview mutations, production mutations, and real Stripe/map
+  provider wiring out of scope
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`
+
 ## Dashboard BI Performance + Readiness Evidence V1
 
 - Moved the protected dashboard BI work off the already-merged PR #72 branch
