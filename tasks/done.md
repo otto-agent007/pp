@@ -1,5 +1,40 @@
 # Done
 
+## Dashboard BI Performance + Readiness Evidence V1
+
+- Moved the protected dashboard BI work off the already-merged PR #72 branch
+  onto `codex/dashboard-bi-performance-v1`, while leaving local helper-file
+  residue untracked and unstaged
+- Added the missing technician avatar/initial helpers and operator insight
+  banner for the home command center, preserving existing hook data flow and
+  avoiding Supabase, provider, env, schema, and API contract changes
+- Updated home dashboard coverage for the technician performance panel and
+  operator insight state
+- Promoted the merged fixture smoke harness as the repeatable no-env demo QA
+  gate; `corepack pnpm demo:fixture-smoke` passed on `/`, `/dispatch`,
+  `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`,
+  `/compliance`, `/automation`, and tokened `/portal` at desktop and narrow
+  widths with no page/console errors, horizontal overflow, or sensitive
+  patterns
+- Converted the mobile STT spike into a decision artifact: recorded-audio
+  transcription through a later approved server/provider adapter, English and
+  Spanish support, final editable transcript text only, no retained or queued
+  raw audio, and draft insertion through existing treatment-form fields
+- Reran read-only local and preview smoke preflights against the latest Ready
+  preview discovered in this pass; both remain blocked before seed/reset or
+  authenticated preview smoke on missing approved Supabase env names, with
+  protected-preview access/sign-in still operator-gated
+- Reran Supabase CLI/migration readiness checks without applying migrations:
+  CLI 2.98.2 is installed, local Docker/Postgres remain unavailable, migration
+  history inspection is blocked locally, and the migration grep audit still
+  confirms `private.has_admin_access()` precedes dependent compliance/portal
+  policies plus explicit compliance Data API grants
+- Reran compliance dry-run/no-embed with 6 sources, 6 documents, 6 chunks,
+  0 Supabase writes, and 0 OpenAI calls
+- Kept migrations, provider setup, env changes, seed/reset writes, Supabase
+  writes, live compliance ingestion, preview mutations, production mutations,
+  and provider delivery receipts out of scope
+
 ## Large Interactive Demo Reset V1
 
 - Updated the canonical demo seed and local fixture materialization to reset to

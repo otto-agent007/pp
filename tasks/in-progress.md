@@ -4,6 +4,42 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Dashboard BI Performance + Readiness Evidence V1 moved protected dashboard
+  work off the already-merged PR #72 branch onto
+  `codex/dashboard-bi-performance-v1` while leaving local helper-file residue
+  untracked and unstaged.
+- `/` now shows BI-style dashboard KPI cards, technician performance, and an
+  operator insight banner from existing loaded hook data without schema,
+  provider, env, Supabase, or API contract changes.
+- The local fixture smoke harness is the current repeatable no-env demo QA
+  gate; `corepack pnpm demo:fixture-smoke` passed on `/`, `/dispatch`,
+  `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`,
+  `/compliance`, `/automation`, and tokened `/portal` at desktop and narrow
+  widths with no page/console errors, horizontal overflow, or sensitive
+  patterns.
+- Mobile STT is now decisioned for a later approved implementation slice:
+  recorded-audio transcription through a server/provider adapter, English and
+  Spanish support, final editable transcript text only, no retained or queued
+  raw audio, and insertion into existing treatment-form draft fields.
+- Latest Vercel discovery found Ready preview
+  `https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app`
+  and Ready production
+  `https://pest-patrol-xd9td65tl-ottoagent007-gmailcoms-projects.vercel.app`;
+  `vercel inspect` reported the preview Ready and `vercel curl` returned the
+  protected app shell.
+- Vercel Preview env names exist for Supabase and scheduler secrets, but
+  Stripe, portal/notification webhook, OpenAI compliance, and Expo public
+  Supabase env names were not present in the safe env-name list.
+- Read-only local and preview `demo:smoke` preflights remain blocked before
+  seed/reset or authenticated preview browser smoke on missing local shell
+  Supabase env names; preview also remains gated on operator-approved
+  protected-preview access and admin/dispatcher sign-in.
+- Supabase local target inspection remains blocked because Docker Desktop's
+  Linux engine pipe is unavailable and local Postgres on `127.0.0.1:54322`
+  refused `supabase migration list --local`; no migration apply command ran.
+- `corepack pnpm compliance:ingest -- --dry-run --no-embed` still plans
+  6 sources, 6 documents, and 6 chunks with 0 Supabase writes and 0 OpenAI
+  calls.
 - Large Interactive Demo Reset V1 updated the canonical demo seed and local
   fixture demo so reuse/login resets to 16 technicians, 100 customers, 108
   locations, 180 current-week jobs, and 14 realistic synthetic inventory items.

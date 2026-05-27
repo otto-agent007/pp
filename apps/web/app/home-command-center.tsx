@@ -164,6 +164,12 @@ const emptyJobs: Job[] = [];
 const emptyTechnicians: TechnicianProfile[] = [];
 const emptyInventory: ChemicalInventoryItem[] = [];
 const emptyInvoices: Invoice[] = [];
+const AVATAR_PALETTES = [
+  "bg-primitive-sky-100 text-primitive-sky-900",
+  "bg-primitive-green-100 text-primitive-green-900",
+  "bg-primitive-yellow-100 text-primitive-yellow-900",
+  "bg-primitive-slate-100 text-primitive-slate-900",
+];
 
 function serviceLabel(notes: string | null | undefined) {
   const trimmed = notes?.trim();
@@ -237,6 +243,16 @@ function inventoryUnit(
 
 function scheduleStatusTone(statusLabel: string): StatusPillTone | undefined {
   return statusLabel === "Scheduled" ? "info" : undefined;
+}
+
+function techInitials(label: string) {
+  const parts = label.trim().split(/\s+/).filter(Boolean);
+  const initials =
+    parts.length > 1
+      ? `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`
+      : (parts[0]?.slice(0, 2) ?? "");
+
+  return initials.toUpperCase() || "T";
 }
 
 // ---------------------------------------------------------------------------
@@ -318,6 +334,47 @@ function BiKpiCard({
           {insight}
         </p>
       </div>
+    </div>
+  );
+}
+
+function InsightBanner({
+  href,
+  narrative,
+}: {
+  href?: string;
+  narrative: string;
+}) {
+  const content = (
+    <>
+      <div>
+        <Eyebrow tone="accent">Operator insight</Eyebrow>
+        <p className="mt-1 text-base font-bold text-primitive-navy-950">
+          {narrative}
+        </p>
+      </div>
+      {href ? (
+        <span className={buttonClassName({ size: "sm", variant: "ghost" })}>
+          Review
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        className="flex flex-col gap-3 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm transition hover:border-theme-action-primary sm:flex-row sm:items-center sm:justify-between"
+        href={href}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4 shadow-sm">
+      {content}
     </div>
   );
 }
@@ -415,40 +472,6 @@ function DashboardMap({
   );
 }
 
-function buildRecentActivity(
-  jobs: Job[],
-  invoices: Invoice[],
-  inventory: ChemicalInventoryItem[],
-) {
-  const completedJobs = jobs
-    .filter((job) => job.status === "completed")
-    .map((job) => ({
-      href: `/jobs/${job.id}`,
-      label: `${job.customer?.name ?? "Customer"} completed ${serviceLabel(
-        job.service_notes,
-      )}`,
-      meta: "Field workflow",
-    }));
-  const invoiceItems = invoices.slice(0, 2).map((invoice) => ({
-    href: "/payments",
-    label: `${formatCurrency(invoice.total_cents)} invoice ${invoice.status}`,
-    meta: "Billing",
-  }));
-  const lowStockItems = inventory
-    .filter(
-      (item) =>
-        item.reorder_level !== null &&
-        item.reorder_level !== undefined &&
-        item.current_stock <= item.reorder_level,
-    )
-    .map((item) => ({
-      href: "/inventory",
-      label: `${item.name} is below reorder level`,
-      meta: "Inventory",
-    }));
-
-  return [...completedJobs, ...invoiceItems, ...lowStockItems].slice(0, 5);
-}
 
 function buildSearchItems({
   inventory,
@@ -602,7 +625,6 @@ export function HomeCommandCenter() {
         item.current_stock <= item.reorder_level,
     )
     .slice(0, 3);
-  const recentActivity = buildRecentActivity(jobs, invoices, inventory);
   const query = search.trim().toLowerCase();
   const searchResults = query
     ? buildSearchItems({ inventory, invoices, jobs })
@@ -703,7 +725,7 @@ export function HomeCommandCenter() {
     const techPerformance = technicians
       .map((tech) => ({
         id: tech.id,
-        label: technicianLabels[tech.id] ?? tech.display_name ?? "Tech",
+        label: getTechnicianLabel(tech),
         jobCount: techStatsMap.get(tech.id)?.jobCount ?? 0,
         revenueCents: techStatsMap.get(tech.id)?.revenueCents ?? 0,
       }))
@@ -746,7 +768,37 @@ export function HomeCommandCenter() {
       techPerformance,
       totalPaidCents,
     };
-  }, [invoices, jobs, now, technicians, technicianLabels]);
+  }, [invoices, jobs, now, technicians]);
+
+  const insightNarrative = useMemo(() => {
+    const {
+      avgTicketCents,
+      mtdPaidCents,
+      overdueCount,
+      overdueTotalCents,
+      projectedMtdCents,
+    } = biMetrics;
+
+    if (overdueCount >= 2 && overdueTotalCents > 50_000) {
+      return `${overdueCount} invoices totaling ${formatCurrency(overdueTotalCents)} are overdue - send reminders before next dispatch.`;
+    }
+
+    if (projectedMtdCents > 0) {
+      const avgLabel =
+        avgTicketCents > 0
+          ? ` - avg ticket ${formatCurrency(avgTicketCents)}`
+          : "";
+      return `On pace for ${formatCurrency(projectedMtdCents)} this month${avgLabel}.`;
+    }
+
+    if (mtdPaidCents > 0) {
+      return `${formatCurrency(mtdPaidCents)} collected so far this month.`;
+    }
+
+    return "Dispatch is running normally. Seed demo data to see revenue insights.";
+  }, [biMetrics]);
+
+  const insightHref = biMetrics.overdueCount > 0 ? "/payments" : undefined;
 
   return (
     <main className="min-h-screen bg-theme-background-canvas text-theme-text-primary">
@@ -1199,44 +1251,83 @@ export function HomeCommandCenter() {
             </div>
           </Card>
 
+          {/* Technician performance */}
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="accent">Billing &amp; field</Eyebrow>
-                <h2 className="mt-1 text-lg font-bold">Recent activity</h2>
+                <Eyebrow tone="accent">Team</Eyebrow>
+                <h2 className="mt-1 text-lg font-bold">Technicians</h2>
+                <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+                  {technicians.length}{" "}
+                  {technicians.length === 1 ? "technician" : "technicians"}{" "}
+                  assigned
+                </p>
               </div>
-              {/* Use warning (amber) not danger (red) — open invoices are routine, not emergencies */}
-              <StatusPill
-                tone={openInvoices.length > 0 ? "warning" : "success"}
+              <Link
+                className={buttonClassName({ size: "sm", variant: "ghost" })}
+                href="/technicians"
               >
-                {openInvoices.length} unpaid
-              </StatusPill>
+                All techs
+              </Link>
             </div>
             <div className="mt-4 divide-y divide-theme-border-subtle">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((item) => (
-                  <Link
-                    className="block py-3 transition hover:bg-theme-background-subtle"
-                    href={item.href}
-                    key={`${item.href}-${item.label}`}
-                  >
-                    <p className="text-sm font-bold text-primitive-navy-950">
-                      {item.label}
-                    </p>
-                    <p className="mt-1 text-xs font-bold uppercase text-theme-text-muted">
-                      {item.meta}
-                    </p>
-                  </Link>
-                ))
+              {biMetrics.techPerformance.length > 0 ? (
+                biMetrics.techPerformance.map((tech, i) => {
+                  const avatarClass =
+                    AVATAR_PALETTES[i % AVATAR_PALETTES.length];
+                  const pct =
+                    biMetrics.maxTechRevenue > 0
+                      ? Math.round(
+                          (tech.revenueCents / biMetrics.maxTechRevenue) * 100,
+                        )
+                      : tech.jobCount > 0
+                        ? 30
+                        : 0;
+
+                  return (
+                    <div
+                      className="flex items-center gap-3 py-3"
+                      key={tech.id}
+                    >
+                      <div
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold ${avatarClass}`}
+                      >
+                        {techInitials(tech.label)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate text-sm font-bold text-primitive-navy-950">
+                            {tech.label}
+                          </p>
+                          <p className="shrink-0 text-xs font-semibold text-theme-text-secondary">
+                            {tech.jobCount}{" "}
+                            {tech.jobCount === 1 ? "job" : "jobs"}
+                            {tech.revenueCents > 0
+                              ? ` · ${formatCurrency(tech.revenueCents)}`
+                              : ""}
+                          </p>
+                        </div>
+                        <div className="mt-1.5 h-1 rounded-full bg-theme-background-subtle">
+                          <div
+                            className="h-1 rounded-full bg-theme-action-primary transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
-                <p className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
-                  Activity appears after demo jobs, invoices, or inventory
-                  changes load.
+                <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-3 text-sm font-semibold text-theme-text-secondary">
+                  No technician assignments found. Seed demo data to populate
+                  performance metrics.
                 </p>
               )}
             </div>
           </Card>
         </section>
+
+        <InsightBanner href={insightHref} narrative={insightNarrative} />
 
         <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
           <summary className="cursor-pointer px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
