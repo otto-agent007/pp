@@ -45,6 +45,11 @@ Local verification:
 - Result: pass; focused regression tests prove the 9:38 AM demo schedule no
   longer renders as 2:38 AM on the updated local admin and customer-facing
   surfaces.
+- Command: `corepack pnpm demo:fixture-smoke`
+- Result: pass; `/`, `/dispatch`, `/customers`, `/jobs`, `/inventory`,
+  `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened
+  `/portal` rendered at `1440x1000` and `390x900` with no route-signal
+  failures, page/console errors, horizontal overflow, or sensitive patterns.
 
 Remaining launch gate:
 - Verify the original safe preview job schedule again on the next deployed

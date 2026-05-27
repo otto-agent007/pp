@@ -11,12 +11,17 @@
   billing cards, and service timeline labels
 - Added focused regression coverage proving the 9:38 AM demo schedule no
   longer renders as 2:38 AM on the affected admin and customer-facing surfaces
+- Reran the no-env local fixture smoke on this branch; `/`, `/dispatch`,
+  `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`,
+  `/compliance`, `/automation`, and tokened `/portal` passed at desktop and
+  narrow widths with no route-signal failures, page/console errors,
+  horizontal overflow, or sensitive patterns
 - Kept migrations, schema changes, provider setup, env changes, Supabase
   writes, seed/reset writes, preview mutations, production mutations, mobile
   component changes, and dispatch PR #77 UI changes out of scope
 - Verified with focused domain/web tests, `corepack pnpm test`,
-  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
-  `git diff --check`
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`
 
 ## Local Vercel Packaging Evidence Refresh V1
 

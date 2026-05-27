@@ -19,8 +19,8 @@ Completed in this batch:
    service/billing labels.
 3. Added focused regression tests for the 9:38 AM demo schedule across domain,
    admin, billing, automation, closeout, and portal surfaces.
-4. Reran focused checks plus full repo test, typecheck, lint, build, and
-   whitespace verification.
+4. Reran focused checks plus full repo test, typecheck, lint, build, no-env
+   local fixture smoke, and whitespace verification.
 
 Next decision points:
 
