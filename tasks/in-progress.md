@@ -4,6 +4,19 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Local Vercel Packaging Evidence Refresh V1 synced local `main` through
+  merged PR #74 and moved the evidence-only follow-up to
+  `codex/vercel-packaging-evidence-v1`.
+- `corepack pnpm dlx vercel build --yes` now passes on the synced PR #74
+  baseline, writes `.vercel/output`, and supersedes the earlier local Windows
+  symlink `EPERM` blocker.
+- The remaining launch gates are unchanged: approved Supabase env names before
+  real seed/reset or authenticated smoke, Docker/local Postgres availability
+  before local migration-history inspection, protected-preview access, and an
+  admin/dispatcher sign-in path.
+- The slice kept app behavior, migrations, providers, env changes, seed/reset
+  writes, Supabase writes, preview mutations, production mutations, and live
+  compliance ingestion out of scope.
 - Production Demo Showpiece V1 enriched the canonical demo seed and local
   fixture story with synthetic San Diego coordinates, arrival/departure GPS
   evidence, proof photos/signatures, treatment forms, chemical logs, invoices,
@@ -286,7 +299,6 @@ Follow-up candidates:
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
 - [ ] If using the local Supabase target, start or repair Docker Desktop's Linux engine and local Postgres before rerunning `supabase status -o env` and `supabase migration list --local`; the May 23, 2026 check could not inspect local containers or migration history.
 - [ ] After explicit migration approval, run `compliance:ingest` against an approved local or preview Supabase environment before relying on source-backed `/compliance` advisories; the May 23, 2026 dry-run/no-embed preflight passed without Supabase writes or OpenAI calls.
-- [ ] If local Windows `vercel build` remains required, resolve the remaining Vercel CLI symlink blocker: after the `/auth/update-password` lambda mapping fix, local packaging now fails on `EPERM: operation not permitted, symlink '..\portal\[customerId].func' -> '.vercel\output\functions\auth\update-password.func'`.
 - [ ] Operator runs local seed/reset with approved local Supabase credentials.
 - [ ] Operator runs preview seed from the dashboard or a protected shell with preview Supabase credentials.
 - [ ] Operator optionally supplies `DEMO_TECH_PASSWORD` for technician login demos.

@@ -2,6 +2,31 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-05-27 Local Vercel Packaging Evidence Refresh
+
+Status: this evidence pass ran on `codex/vercel-packaging-evidence-v1` after
+local `main` was fast-forwarded through merged PR #74. No Supabase, provider,
+environment, preview, production, seed/reset, migration, or live-ingest
+mutation was performed.
+
+Local Vercel packaging:
+- Command: `corepack pnpm dlx vercel build --yes`
+- Result: pass; Vercel installed workspace dependencies, ran the Next.js
+  production build, generated 29 static pages, created all serverless
+  functions, collected static files, and wrote `.vercel/output`.
+- Result: pass; the command returned `Build completed successfully` for the
+  preview target.
+- Note: this supersedes the earlier local Windows symlink `EPERM` packaging
+  blocker on the synced PR #74 baseline.
+
+Remaining launch gates:
+- Read-only local and preview `demo:smoke` preflights still require approved
+  Supabase env names before real seed/reset or authenticated browser smoke.
+- Local Supabase migration-history inspection still requires reachable Docker
+  Desktop Linux engine and local Postgres.
+- Protected-preview browser smoke still requires operator-approved preview
+  access and an admin/dispatcher sign-in path.
+
 ## 2026-05-27 Dashboard BI And Fixture Smoke Evidence
 
 Status: this evidence pass ran on `codex/dashboard-bi-performance-v1` after

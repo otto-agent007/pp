@@ -1,5 +1,22 @@
 # Done
 
+## Local Vercel Packaging Evidence Refresh V1
+
+- Fast-forwarded local `main` through merged PR #74 before starting the
+  evidence branch
+- Reran `corepack pnpm dlx vercel build --yes` on the synced baseline; Vercel
+  installed workspace dependencies, ran the Next.js production build, created
+  serverless functions, collected static files, and wrote `.vercel/output`
+- Confirmed the command completed with `Build completed successfully`, clearing
+  the stale local Windows symlink `EPERM` blocker from current launch-readiness
+  docs
+- Preserved the remaining operator-gated blockers for approved Supabase env
+  names, local Docker/Postgres migration-history inspection, protected-preview
+  access, and admin/dispatcher sign-in
+- Kept app behavior, migrations, providers, env changes, seed/reset writes,
+  Supabase writes, preview mutations, production mutations, and live compliance
+  ingestion out of scope
+
 ## Production Demo Showpiece V1
 
 - Enriched the canonical demo seed and local workflow fixtures with synthetic
