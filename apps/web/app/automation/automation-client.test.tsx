@@ -725,6 +725,27 @@ describe("AutomationClient", () => {
     );
   });
 
+  it("shows reminder job picker schedules as wall-clock job time", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [{ ...job, scheduled_start: "2026-05-06T09:38:00Z" }],
+      isLoading: false,
+    } as never);
+
+    render(<AutomationClient />);
+
+    await user.click(screen.getByRole("combobox", { name: "Reminder job" }));
+
+    expect(
+      await screen.findByRole("option", {
+        name: "5/6/26, 9:38 AM - Apex Homes - 10 Pine Street",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: /2:38 AM/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("previews due scheduler output and labels duplicates", async () => {
     const user = userEvent.setup();
     const dueJob = {
@@ -801,7 +822,8 @@ describe("AutomationClient", () => {
     );
     expect(
       within(
-        screen.getByRole("heading", { name: "Post-service follow-up" })
+        screen
+          .getByRole("heading", { name: "Post-service follow-up" })
           .closest("article")!,
       ).getByText("active"),
     ).toHaveClass("rounded-full", "border-status-alert-success-border");

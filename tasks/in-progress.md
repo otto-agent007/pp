@@ -4,6 +4,20 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Schedule Wall-Clock Consistency V1 started from local `main` already synced
+  through merged PR #75 on branch `codex/schedule-wall-clock-consistency-v1`.
+- Shared job schedule date/time helpers now parse stored schedule values as
+  operator-entered wall-clock times for technician route load, home schedule
+  rows, dispatch route intelligence, inventory/payments/automation job
+  pickers, closeouts, and customer portal service/billing labels.
+- Focused regressions prove the 9:38 AM demo schedule does not render as
+  2:38 AM on the updated admin and customer proof/billing surfaces.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  Supabase writes, seed/reset writes, preview mutations, production mutations,
+  mobile component changes, and dispatch PR #77 UI changes out of scope.
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
 - Local Vercel Packaging Evidence Refresh V1 synced local `main` through
   merged PR #74 and moved the evidence-only follow-up to
   `codex/vercel-packaging-evidence-v1`.

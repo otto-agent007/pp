@@ -215,7 +215,9 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Needs reorder review")).toHaveClass(
       "text-status-alert-danger-fg",
     );
-    expect(screen.getByText("Needs reorder review").closest(".rounded-lg")).toHaveClass(
+    expect(
+      screen.getByText("Needs reorder review").closest(".rounded-lg"),
+    ).toHaveClass(
       "border-status-alert-danger-border",
       "bg-status-alert-danger-bg",
     );
@@ -224,7 +226,9 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
     expect(screen.getByText("Inspect aging stock")).toBeInTheDocument();
     expect(screen.getByText("2 oz | Reorder at 4 oz")).toBeInTheDocument();
-    expect(screen.getByText("2 oz | Reorder at 4 oz").closest('[role="article"]')).toHaveClass(
+    expect(
+      screen.getByText("2 oz | Reorder at 4 oz").closest('[role="article"]'),
+    ).toHaveClass(
       "border-status-alert-danger-border",
       "bg-status-alert-danger-bg",
     );
@@ -325,6 +329,27 @@ describe("InventoryClient", () => {
     });
   });
 
+  it("shows job picker schedules as wall-clock job time", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [{ ...job, scheduled_start: "2026-05-06T09:38:00Z" }],
+      isLoading: false,
+    } as never);
+
+    render(<InventoryClient />);
+
+    await user.click(screen.getByRole("combobox", { name: "Job" }));
+
+    expect(
+      await screen.findByRole("option", {
+        name: "5/6/26, 9:38 AM - Apex Homes - 10 Pine Street",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: /2:38 AM/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows per-chemical usage counts and expands the last three uses", async () => {
     const user = userEvent.setup();
     vi.mocked(useChemicalInventory).mockReturnValue({
@@ -340,9 +365,13 @@ describe("InventoryClient", () => {
 
     expect(screen.getByText("4 uses logged")).toBeInTheDocument();
     expect(screen.getByText("No uses logged yet")).toBeInTheDocument();
-    expect(screen.getByText("Last used May 7, 2026 - Apex Homes")).toBeInTheDocument();
+    expect(
+      screen.getByText("Last used May 7, 2026 - Apex Homes"),
+    ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "View uses for Bait Gel" }));
+    await user.click(
+      screen.getByRole("button", { name: "View uses for Bait Gel" }),
+    );
 
     expect(screen.getByText("Recent uses")).toBeInTheDocument();
     expect(screen.getByText("Apex Homes")).toBeInTheDocument();
@@ -350,7 +379,9 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Nguyen Residence")).toBeInTheDocument();
     expect(screen.queryByText("Park Apartments")).not.toBeInTheDocument();
     expect(screen.getByText("2.5 oz - May 7, 2026")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Collapse uses for Bait Gel" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Collapse uses for Bait Gel" }),
+    ).toBeInTheDocument();
   });
 
   it("lets operators select an inventory product for cockpit review", async () => {

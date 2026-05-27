@@ -1,5 +1,23 @@
 # Done
 
+## Schedule Wall-Clock Consistency V1
+
+- Added shared domain helpers for job schedule date keys, time labels, and
+  date/time labels that parse stored job schedule values as operator-entered
+  wall-clock times
+- Reused the helpers in technician route load summaries, home command-center
+  schedule rows, dispatch route intelligence labels, inventory/payments/
+  automation job pickers, closeouts queue/detail labels, customer portal
+  billing cards, and service timeline labels
+- Added focused regression coverage proving the 9:38 AM demo schedule no
+  longer renders as 2:38 AM on the affected admin and customer-facing surfaces
+- Kept migrations, schema changes, provider setup, env changes, Supabase
+  writes, seed/reset writes, preview mutations, production mutations, mobile
+  component changes, and dispatch PR #77 UI changes out of scope
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`
+
 ## Local Vercel Packaging Evidence Refresh V1
 
 - Fast-forwarded local `main` through merged PR #74 before starting the

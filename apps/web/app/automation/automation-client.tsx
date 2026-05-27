@@ -6,6 +6,7 @@ import {
   filterNotificationEvents,
   filterNotificationEventsByRecipient,
   filterNotificationTemplates,
+  formatJobScheduleDateTime,
   getAutomationSummary,
   getAutomationSchedulerStatus,
   getNotificationDeliveryAttemptSummary,
@@ -155,10 +156,10 @@ function formatSchedulerTrigger(run: AutomationSchedulerRun) {
 function jobLabel(job: Job) {
   const customer = job.customer?.name ?? "Unknown customer";
   const location = job.location?.address ?? "No location";
-  const scheduled = new Intl.DateTimeFormat("en", {
+  const scheduled = formatJobScheduleDateTime(job.scheduled_start, {
     dateStyle: "short",
     timeStyle: "short",
-  }).format(new Date(job.scheduled_start));
+  });
 
   return `${scheduled} - ${customer} - ${location}`;
 }
@@ -616,7 +617,9 @@ export function AutomationClient() {
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow>Admin</Eyebrow>
-          <h1 className="text-3xl font-bold text-theme-text-primary">Automation</h1>
+          <h1 className="text-3xl font-bold text-theme-text-primary">
+            Automation
+          </h1>
         </div>
       </header>
 
@@ -714,7 +717,9 @@ export function AutomationClient() {
             </div>
             <div
               className={`rounded-md border p-3 ${statusSurfaceClassName(
-                schedulerStatus.lastRunGeneratedCount > 0 ? "success" : "neutral",
+                schedulerStatus.lastRunGeneratedCount > 0
+                  ? "success"
+                  : "neutral",
               )}`}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
@@ -985,7 +990,9 @@ export function AutomationClient() {
             </div>
             <Card
               className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-              statusTone={providerStatus?.provider === "webhook" ? "info" : "warning"}
+              statusTone={
+                providerStatus?.provider === "webhook" ? "info" : "warning"
+              }
             >
               <div>
                 <Eyebrow tone="accent">Provider readiness</Eyebrow>
@@ -1015,7 +1022,9 @@ export function AutomationClient() {
                 {providerStatusQuery.isLoading ? null : (
                   <div
                     className={`mt-3 rounded-md border p-3 ${statusSurfaceClassName(
-                      providerStatus?.provider === "webhook" ? "info" : "warning",
+                      providerStatus?.provider === "webhook"
+                        ? "info"
+                        : "warning",
                     )}`}
                   >
                     <p className="text-sm font-semibold text-theme-text-primary">
@@ -1242,7 +1251,10 @@ export function AutomationClient() {
                           {formatType(rule.type)}
                         </p>
                       </div>
-                      <StatusPill dot={false} tone={ruleStatusTone(rule.status)}>
+                      <StatusPill
+                        dot={false}
+                        tone={ruleStatusTone(rule.status)}
+                      >
                         {rule.status}
                       </StatusPill>
                     </div>
@@ -1482,7 +1494,9 @@ export function AutomationClient() {
                       </div>
                       <StatusPill
                         dot={false}
-                        tone={template.status === "active" ? "success" : "neutral"}
+                        tone={
+                          template.status === "active" ? "success" : "neutral"
+                        }
                       >
                         {template.status}
                       </StatusPill>
@@ -1696,10 +1710,7 @@ export function AutomationClient() {
                 {notificationPreview.message || "Message preview"}
               </p>
             </div>
-            <Button
-              disabled={createNotification.isPending}
-              type="submit"
-            >
+            <Button disabled={createNotification.isPending} type="submit">
               Save reminder
             </Button>
           </form>

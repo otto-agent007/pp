@@ -4,6 +4,7 @@ import {
   buildCustomerPortalTimeline,
   filterCustomerPortalInvoices,
   filterCustomerPortalCloseouts,
+  formatJobScheduleDateTime,
   getCustomerPortalInvoiceStatusLabel,
   getCustomerPortalProofHandoff,
   getCustomerPortalServiceSummary,
@@ -185,7 +186,10 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
               "Service invoice"}
           </p>
           <p className="mt-1 text-sm text-theme-text-secondary">
-            Service date {formatDateTime(invoice.job?.scheduled_start)}
+            Service date{" "}
+            {invoice.job?.scheduled_start
+              ? formatJobScheduleDateTime(invoice.job.scheduled_start)
+              : "Not available"}
           </p>
           <p className="mt-1 text-sm text-theme-text-secondary">
             Due {formatDateTime(invoice.due_date)}
@@ -326,7 +330,9 @@ function PortalTimeline({
                     {item.title}
                   </h3>
                   <p className="mt-1 text-sm text-theme-text-secondary">
-                    {formatDateTime(item.date)}
+                    {item.type === "service"
+                      ? formatJobScheduleDateTime(item.date)
+                      : formatDateTime(item.date)}
                   </p>
                   <p className="mt-2 text-sm text-theme-text-secondary">
                     {item.captures_label}

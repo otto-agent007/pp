@@ -27,6 +27,29 @@ Remaining launch gates:
 - Protected-preview browser smoke still requires operator-approved preview
   access and an admin/dispatcher sign-in path.
 
+## 2026-05-27 Schedule Wall-Clock Consistency
+
+Status: this app-polish pass ran on
+`codex/schedule-wall-clock-consistency-v1` after local `main` already included
+merged PR #75. No Supabase, provider, environment, preview, production,
+seed/reset, migration, or live-ingest mutation was performed.
+
+Local verification:
+- Result: pass; shared domain helpers now parse job schedule values as
+  operator-entered wall-clock timestamps for date keys, time labels, and
+  date/time labels.
+- Result: pass; technician route load, home command-center schedule rows,
+  dispatch route intelligence labels, inventory/payments/automation job
+  pickers, closeouts, and customer portal service/billing labels reuse the
+  wall-clock helpers where they display job schedules.
+- Result: pass; focused regression tests prove the 9:38 AM demo schedule no
+  longer renders as 2:38 AM on the updated local admin and customer-facing
+  surfaces.
+
+Remaining launch gate:
+- Verify the original safe preview job schedule again on the next deployed
+  preview after this slice lands.
+
 ## 2026-05-27 Dashboard BI And Fixture Smoke Evidence
 
 Status: this evidence pass ran on `codex/dashboard-bi-performance-v1` after
@@ -540,7 +563,7 @@ Findings:
 - Action: operator compared a safe test job schedule expected at 9:38 AM-10:38 AM with the displayed admin schedule.
 - Result: fail; both pages displayed 2:38 AM, indicating scheduled job timestamps were rendered as absolute instants instead of operator-entered wall-clock job time.
 - Blocker category: app bug.
-- Next action: fixed in repo by parsing job schedule values as wall-clock timestamps for jobs/dispatch display, grouping, sorting, and date filters; verify in the next deployed preview.
+- Next action: fixed in repo by parsing job schedule values as wall-clock timestamps for jobs/dispatch display, grouping, sorting, date filters, and the related admin/customer proof and billing schedule labels; verify in the next deployed preview.
 - Route: `/customers`
 - Action: operator requested richer portal access recency details.
 - Result: repo-contained follow-up added; opened portal links now show full Pacific timestamp plus relative age where the last access timestamp is available.
