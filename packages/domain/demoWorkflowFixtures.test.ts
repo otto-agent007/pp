@@ -4,6 +4,7 @@ import {
   buildDemoWorkflowFixtures,
   shouldUseLocalDemoFixtures,
 } from "./demoWorkflowFixtures";
+import { buildBillingQueue } from "./closeouts";
 
 describe("demo workflow fixtures", () => {
   it("materializes seeded demo records for read-only local workflows", () => {
@@ -18,9 +19,41 @@ describe("demo workflow fixtures", () => {
     expect(
       fixtures.jobs.filter((job) => !job.assigned_tech_id).length,
     ).toBeGreaterThanOrEqual(3);
-    expect(fixtures.geofenceEvents).toHaveLength(4);
+    const assignedRoutableJobs = fixtures.jobs.filter(
+      (job) => job.assigned_tech_id && job.status !== "canceled",
+    );
+    const jobsWithGpsEvidence = new Set(
+      fixtures.geofenceEvents.map((event) => event.job_id),
+    );
+
+    expect(fixtures.geofenceEvents.length).toBeGreaterThan(250);
+    expect(
+      assignedRoutableJobs.filter((job) => !jobsWithGpsEvidence.has(job.id)),
+    ).toHaveLength(3);
+    expect(
+      new Set(fixtures.geofenceEvents.map((event) => event.event_type)),
+    ).toEqual(new Set(["arrival", "departure"]));
     expect(fixtures.inventory).toHaveLength(14);
-    expect(fixtures.invoices).toHaveLength(3);
+    expect(
+      fixtures.inventory.filter((item) => item.status === "archived"),
+    ).toHaveLength(1);
+    expect(
+      fixtures.inventory
+        .filter(
+          (item) =>
+            item.status === "active" &&
+            item.reorder_level !== null &&
+            item.current_stock <= item.reorder_level,
+        )
+        .map((item) => item.name),
+    ).toEqual(
+      expect.arrayContaining([
+        "Demo - Ant Gel Bait Rotation A",
+        "Demo - Crack and Crevice Dust",
+        "Demo - Wasp Knockdown Aerosol",
+      ]),
+    );
+    expect(fixtures.invoices).toHaveLength(5);
     expect(fixtures.closeoutSummaries).toContainEqual({
       chemicalLogs: 3,
       forms: 2,
@@ -28,6 +61,27 @@ describe("demo workflow fixtures", () => {
       photos: 2,
       signatures: 1,
     });
+    const completedAssignedIds = new Set(
+      fixtures.jobs
+        .filter((job) => job.status === "completed" && job.assigned_tech_id)
+        .map((job) => job.id),
+    );
+    const productionReadySummaries = fixtures.closeoutSummaries.filter(
+      (summary) =>
+        completedAssignedIds.has(summary.jobId) &&
+        summary.chemicalLogs > 0 &&
+        summary.forms > 0 &&
+        summary.photos > 0 &&
+        summary.signatures > 0,
+    );
+    const billingQueue = buildBillingQueue(
+      fixtures.jobs,
+      fixtures.invoices,
+      fixtures.closeoutSummaries,
+    );
+
+    expect(productionReadySummaries.length).toBeGreaterThan(20);
+    expect(billingQueue.needsCaptures).toHaveLength(3);
   });
 
   it("links jobs, invoices, captures, and technicians enough for workflows to render", () => {
@@ -78,13 +132,29 @@ describe("demo workflow fixtures", () => {
     );
     expect(fixtures.geofenceEvents).toContainEqual(
       expect.objectContaining({
-        event_type: "departure",
+        event_type: "arrival",
         job_id: "00000000-0000-4000-8000-00000000e001",
         latitude: 32.7422,
         longitude: -117.1772,
         recorded_by: harborJob?.assigned_tech_id,
       }),
     );
+    expect(fixtures.geofenceEvents).toContainEqual(
+      expect.objectContaining({
+        event_type: "departure",
+        job_id: "00000000-0000-4000-8000-00000000e001",
+        recorded_by: harborJob?.assigned_tech_id,
+      }),
+    );
+    expect(
+      fixtures.customers
+        .flatMap((customer) => customer.locations ?? [])
+        .every(
+          (location) =>
+            typeof location.latitude === "number" &&
+            typeof location.longitude === "number",
+        ),
+    ).toBe(true);
     expect(fixtures.jobs.every((job) => customerIds.has(job.customer_id))).toBe(
       true,
     );

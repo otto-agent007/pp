@@ -84,6 +84,12 @@ const demoGpsSignalsByJobKey: ReadonlyMap<
   ["mesa-tomorrow", { latitude: 32.9023, longitude: -117.2022 }],
 ]);
 
+const demoMissingGpsEvidenceJobKeys = new Set([
+  "north-park-bakery",
+  "hillcrest-late",
+  "kearny-overdue",
+]);
+
 function timestamp(now: Date) {
   return now.toISOString();
 }
@@ -112,6 +118,29 @@ function sanitizeFormData(input: Record<string, unknown>) {
 function demoMediaUrl(storagePath: string) {
   const parts = storagePath.split("/");
   return `/demo-media/${parts[parts.length - 1] ?? storagePath}`;
+}
+
+function demoJobCoordinates(job: {
+  key: string;
+  location?: { latitude?: number | null; longitude?: number | null };
+}) {
+  const override = demoGpsSignalsByJobKey.get(job.key);
+
+  if (override) {
+    return override;
+  }
+
+  if (
+    typeof job.location?.latitude === "number" &&
+    typeof job.location.longitude === "number"
+  ) {
+    return {
+      latitude: job.location.latitude,
+      longitude: job.location.longitude,
+    };
+  }
+
+  return null;
 }
 
 function cloneJob(job: Job): Job {
@@ -196,6 +225,8 @@ export function buildDemoWorkflowFixtures(
       nickname: location.nickname,
       service_notes: location.service_notes,
       is_primary: location.is_primary,
+      latitude: location.latitude,
+      longitude: location.longitude,
       status: location.status,
       created_at: createdAt,
       updated_at: createdAt,
@@ -218,7 +249,7 @@ export function buildDemoWorkflowFixtures(
     current_stock: item.current_stock,
     unit: item.unit,
     reorder_level: item.reorder_level,
-    status: "active",
+    status: item.status ?? "active",
     created_at: createdAt,
     updated_at: createdAt,
   }));
@@ -249,31 +280,57 @@ export function buildDemoWorkflowFixtures(
   });
   const jobsById = new Map(jobs.map((job) => [job.id, job]));
   const geofenceEvents = plan.jobs.reduce<JobGeofenceEvent[]>(
-    (events, job, index) => {
-      const coordinates = demoGpsSignalsByJobKey.get(job.key);
-      const assignedTechnician = job.assigned_technician_key
-        ? techniciansByKey.get(job.assigned_technician_key)
+    (events, planJob, index) => {
+      const job = jobsById.get(planJob.id);
+      const coordinates = demoJobCoordinates({
+        key: planJob.key,
+        location: job?.location,
+      });
+      const assignedTechnician = planJob.assigned_technician_key
+        ? techniciansByKey.get(planJob.assigned_technician_key)
         : undefined;
 
-      if (!coordinates || !assignedTechnician) {
+      if (
+        !coordinates ||
+        !assignedTechnician ||
+        planJob.status === "canceled" ||
+        demoMissingGpsEvidenceJobKeys.has(planJob.key)
+      ) {
         return events;
       }
 
-      events.push({
-        id: fixtureId("8", index + 1),
-        job_id: job.id,
-        event_type: "departure",
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
-        accuracy_m: 18 + index,
-        distance_m: null,
-        within_radius: null,
-        recorded_by: assignedTechnician.id,
-        client_event_id: fixtureId("9", index + 1),
-        captured_at: job.scheduled_start,
-        created_at: job.scheduled_start,
-        job: jobsById.get(job.id),
-      });
+      events.push(
+        {
+          id: fixtureId("8", index * 2 + 1),
+          job_id: planJob.id,
+          event_type: "arrival",
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude,
+          accuracy_m: 12 + (index % 8),
+          distance_m: 24 + (index % 6) * 7,
+          within_radius: true,
+          recorded_by: assignedTechnician.id,
+          client_event_id: fixtureId("9", index * 2 + 1),
+          captured_at: planJob.scheduled_start,
+          created_at: planJob.scheduled_start,
+          job,
+        },
+        {
+          id: fixtureId("8", index * 2 + 2),
+          job_id: planJob.id,
+          event_type: "departure",
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude,
+          accuracy_m: 14 + (index % 8),
+          distance_m: 38 + (index % 6) * 9,
+          within_radius: true,
+          recorded_by: assignedTechnician.id,
+          client_event_id: fixtureId("9", index * 2 + 2),
+          captured_at: planJob.scheduled_end,
+          created_at: planJob.scheduled_end,
+          job,
+        },
+      );
 
       return events;
     },

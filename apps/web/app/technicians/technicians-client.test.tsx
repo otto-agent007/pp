@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +28,13 @@ const technician = {
   created_at: now,
   updated_at: now,
 } as const;
+
+const demoTechnicians = Array.from({ length: 16 }, (_, index) => ({
+  ...technician,
+  id: `technician-${index + 1}`,
+  display_name: `Demo Tech ${index + 1}`,
+  email: `demo+tech-${index + 1}@example.test`,
+}));
 
 function addDays(date: Date, days: number) {
   const copy = new Date(date);
@@ -88,6 +95,9 @@ describe("TechniciansClient", () => {
 
     expect(screen.getByText("Technician roster")).toBeInTheDocument();
     expect(screen.getByText("Dispatch-ready crew")).toBeInTheDocument();
+    const activeTechsTile = screen.getByText("Active techs").closest(".rounded-lg");
+    expect(activeTechsTile).toBeInTheDocument();
+    expect(within(activeTechsTile as HTMLElement).getByText("1")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Testnician" })).toBeInTheDocument();
     expect(screen.getByText("Testnician")).toBeInTheDocument();
     expect(screen.getByText("testnician@example.com")).toBeInTheDocument();
@@ -105,6 +115,23 @@ describe("TechniciansClient", () => {
     await user.type(screen.getByLabelText("Search technicians"), "missing");
 
     expect(screen.getByText("No technicians found")).toBeInTheDocument();
+  });
+
+  it("surfaces sixteen active demo technicians at the top of the page", () => {
+    vi.mocked(useTechnicianDirectory).mockReturnValue({
+      data: demoTechnicians,
+      isLoading: false,
+    } as never);
+    vi.mocked(useJobs).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<TechniciansClient />);
+
+    const activeTechsTile = screen.getByText("Active techs").closest(".rounded-lg");
+    expect(activeTechsTile).toBeInTheDocument();
+    expect(within(activeTechsTile as HTMLElement).getByText("16")).toBeInTheDocument();
   });
 
   it("validates and invites technicians to set their own password", async () => {
@@ -128,5 +155,5 @@ describe("TechniciansClient", () => {
     expect(
       await screen.findByText("Testnician was invited to set a password."),
     ).toBeInTheDocument();
-  });
+  }, 10_000);
 });

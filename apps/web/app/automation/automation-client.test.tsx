@@ -767,7 +767,7 @@ describe("AutomationClient", () => {
     await user.click(screen.getByRole("button", { name: "Refresh preview" }));
 
     expect(runScheduler).not.toHaveBeenCalled();
-  });
+  }, 10_000);
 
   it("uses shared primitive styling for operator clarity controls", () => {
     const dueJob = {

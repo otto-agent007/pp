@@ -4,6 +4,27 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Production Demo Showpiece V1 enriched the canonical demo seed and local
+  fixture story with synthetic San Diego coordinates, arrival/departure GPS
+  evidence, proof photos/signatures, treatment forms, chemical logs, invoices,
+  pending/paid/failed payments, and portal-ready proof while preserving the
+  16 technicians, 100 customers, 180 current-week jobs, and 14 inventory-item
+  baseline.
+- The provider-free San Diego map projection now keeps GPS truck markers on
+  the coastline/inland land area; closeouts now default to proof-rich completed
+  work with forms, chemical logs, proof photos, and signatures, leaving only
+  three intentional needs-captures examples.
+- `/technicians` now surfaces a top `Active techs` KPI derived from active
+  records, `/` uses the Claude Admin UI-inspired compact Today's Dispatch row
+  with technician name plus matching GPS signal before the normal status pill,
+  and `/inventory` now has a selectable Product cockpit for stock, usage,
+  reorder, compliance cues, low-stock examples, and an archived item.
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  Supabase writes, preview mutations, production mutations, and real
+  Stripe/map-provider wiring out of scope.
 - Dashboard BI Performance + Readiness Evidence V1 moved protected dashboard
   work off the already-merged PR #72 branch onto
   `codex/dashboard-bi-performance-v1` while leaving local helper-file residue

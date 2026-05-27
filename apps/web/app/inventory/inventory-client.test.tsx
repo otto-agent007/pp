@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -220,6 +220,9 @@ describe("InventoryClient", () => {
       "bg-status-alert-danger-bg",
     );
     expect(screen.getAllByText("Bait Gel").length).toBeGreaterThan(0);
+    expect(screen.getByText("Product cockpit")).toBeInTheDocument();
+    expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
+    expect(screen.getByText("Inspect aging stock")).toBeInTheDocument();
     expect(screen.getByText("2 oz | Reorder at 4 oz")).toBeInTheDocument();
     expect(screen.getByText("2 oz | Reorder at 4 oz").closest('[role="article"]')).toHaveClass(
       "border-status-alert-danger-border",
@@ -266,25 +269,32 @@ describe("InventoryClient", () => {
   });
 
   it("creates and edits chemical inventory", async () => {
-    const user = userEvent.setup();
     render(<InventoryClient />);
 
-    await user.type(screen.getByLabelText("Name"), "Dust");
-    await user.type(screen.getByLabelText("EPA number"), "EPA-999");
-    await user.click(screen.getByRole("button", { name: "Save chemical" }));
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Dust" },
+    });
+    fireEvent.change(screen.getByLabelText("EPA number"), {
+      target: { value: "EPA-999" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save chemical" }));
 
-    expect(createInventoryMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Dust", epa_number: "EPA-999" }),
+    await waitFor(() =>
+      expect(createInventoryMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Dust", epa_number: "EPA-999" }),
+      ),
     );
 
-    await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.click(screen.getByRole("button", { name: "Save chemical" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save chemical" }));
 
-    expect(updateInventoryMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "chemical-1",
-        input: expect.objectContaining({ name: "Bait Gel" }),
-      }),
+    await waitFor(() =>
+      expect(updateInventoryMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "chemical-1",
+          input: expect.objectContaining({ name: "Bait Gel" }),
+        }),
+      ),
     );
   });
 
@@ -341,5 +351,27 @@ describe("InventoryClient", () => {
     expect(screen.queryByText("Park Apartments")).not.toBeInTheDocument();
     expect(screen.getByText("2.5 oz - May 7, 2026")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Collapse uses for Bait Gel" })).toBeInTheDocument();
+  });
+
+  it("lets operators select an inventory product for cockpit review", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [activeChemical, noLogChemical],
+      isLoading: false,
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: chemicalLogs,
+      isLoading: false,
+    } as never);
+
+    render(<InventoryClient />);
+
+    expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
+    expect(screen.getByText("Reorder now")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Inspect Dust" }));
+
+    expect(screen.getByText("Dust selected")).toBeInTheDocument();
+    expect(screen.getByText("Stocked for field use")).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   Eyebrow,
+  StatTile,
   StatusPill,
   buttonClassName,
   statusSurfaceClassName,
@@ -62,16 +63,37 @@ export function TechniciansClient() {
         .includes(query);
     });
   }, [search, techniciansQuery.data]);
+  const routeLoadSummaries = useMemo(
+    () =>
+      buildTechnicianRouteLoadSummaries(
+        techniciansQuery.data ?? [],
+        jobsQuery.data ?? [],
+      ),
+    [jobsQuery.data, techniciansQuery.data],
+  );
   const routeLoadByTechnician = useMemo(() => {
-    const summaries = buildTechnicianRouteLoadSummaries(
-      techniciansQuery.data ?? [],
-      jobsQuery.data ?? [],
-    );
-
     return new Map(
-      summaries.map((summary) => [summary.technician_id, summary]),
+      routeLoadSummaries.map((summary) => [summary.technician_id, summary]),
     );
-  }, [jobsQuery.data, techniciansQuery.data]);
+  }, [routeLoadSummaries]);
+  const activeTechnicianCount = useMemo(
+    () =>
+      (techniciansQuery.data ?? []).filter(
+        (technician) => technician.status === "active",
+      ).length,
+    [techniciansQuery.data],
+  );
+  const assignedTodayCount = routeLoadSummaries.reduce(
+    (total, summary) => total + summary.today_assigned_job_count,
+    0,
+  );
+  const upcomingAssignedCount = routeLoadSummaries.reduce(
+    (total, summary) => total + summary.upcoming_assigned_job_count,
+    0,
+  );
+  const noRouteTodayCount = routeLoadSummaries.filter(
+    (summary) => summary.today_assigned_job_count === 0,
+  ).length;
 
   function updateForm(update: Partial<TechnicianInviteInput>) {
     setForm((current) => ({
@@ -117,6 +139,33 @@ export function TechniciansClient() {
           value={search}
         />
       </header>
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          detail="Available in demo roster"
+          label="Active techs"
+          tone="success"
+          value={activeTechnicianCount}
+        />
+        <StatTile
+          detail="Scheduled route work"
+          label="Assigned today"
+          tone="warning"
+          value={assignedTodayCount}
+        />
+        <StatTile
+          detail="Future assigned jobs"
+          label="Upcoming"
+          tone="info"
+          value={upcomingAssignedCount}
+        />
+        <StatTile
+          detail="Ready for dispatch"
+          label="No route today"
+          tone="neutral"
+          value={noRouteTodayCount}
+        />
+      </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">

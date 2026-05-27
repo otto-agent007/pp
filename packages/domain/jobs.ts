@@ -8,7 +8,12 @@ import {
   updateJobRecord,
 } from "@pest-patrol/api-client";
 import type { AuthSupabaseClient } from "@pest-patrol/api-client";
-import type { Job, JobInput, JobStatus, OfflineQueueItem } from "@pest-patrol/types";
+import type {
+  Job,
+  JobInput,
+  JobStatus,
+  OfflineQueueItem,
+} from "@pest-patrol/types";
 
 import { buildMobileJobWorkPlan } from "./demoReadiness";
 import type { MobileJobWorkPlanItem } from "./demoReadiness";
@@ -109,8 +114,10 @@ export interface DispatchRouteGroupDaySummary {
   unassigned_stops: number;
 }
 
-export interface DispatchRouteGroupSummary
-  extends Omit<DispatchRouteGroupDaySummary, "date" | "label"> {
+export interface DispatchRouteGroupSummary extends Omit<
+  DispatchRouteGroupDaySummary,
+  "date" | "label"
+> {
   days: DispatchRouteGroupDaySummary[];
   id: string;
   label: string;
@@ -221,6 +228,10 @@ const dispatchStaticMapBounds: DispatchStaticMapBounds = {
   south: 32.52,
   west: -117.3,
 };
+const dispatchStaticMapLandXPercent = {
+  width: 58,
+  west: 34,
+};
 const dispatchStaticMapMarkerTones: DispatchStaticMapMarkerTone[] = [
   "sky",
   "emerald",
@@ -266,7 +277,10 @@ export function normalizeJobInput(input: JobInput): JobInput {
   const scheduledStart = requireScheduledStart(input.scheduled_start);
   const scheduledEnd = normalizeScheduledEnd(input.scheduled_end);
 
-  if (scheduledEnd && getJobScheduleTime(scheduledEnd) < getJobScheduleTime(scheduledStart)) {
+  if (
+    scheduledEnd &&
+    getJobScheduleTime(scheduledEnd) < getJobScheduleTime(scheduledStart)
+  ) {
     throw new Error("Scheduled end must be after scheduled start");
   }
 
@@ -389,7 +403,10 @@ export function getDispatchWeekStart(anchorDate: string) {
   return toDateKey(date);
 }
 
-export function getRelativeDispatchWeek(anchorDate: string, weekOffset: number) {
+export function getRelativeDispatchWeek(
+  anchorDate: string,
+  weekOffset: number,
+) {
   const date = parseDateOnly(getDispatchWeekStart(anchorDate));
   date.setDate(date.getDate() + weekOffset * 7);
 
@@ -416,7 +433,11 @@ export function buildDispatchWeek(
 
       return job.assigned_tech_id === technician;
     })
-    .sort((left, right) => getJobScheduleTime(left.scheduled_start) - getJobScheduleTime(right.scheduled_start));
+    .sort(
+      (left, right) =>
+        getJobScheduleTime(left.scheduled_start) -
+        getJobScheduleTime(right.scheduled_start),
+    );
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart);
@@ -426,7 +447,10 @@ export function buildDispatchWeek(
     return {
       date: dateKey,
       label: toDateLabel(date),
-      jobs: filteredJobs.filter((job) => toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === dateKey),
+      jobs: filteredJobs.filter(
+        (job) =>
+          toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === dateKey,
+      ),
     };
   });
 }
@@ -459,9 +483,7 @@ function filterDispatchRouteJobs(
     );
 }
 
-function getDispatchRouteLocationState(
-  job: Job,
-): DispatchRouteLocationState {
+function getDispatchRouteLocationState(job: Job): DispatchRouteLocationState {
   if (!job.location) {
     return "missing_location";
   }
@@ -510,8 +532,10 @@ function summarizeDispatchRouteStops(
   return {
     active_stops: stops.filter((stop) => stop.status_state === "active").length,
     at_risk_stops: stops.filter((stop) => stop.risk_state === "at_risk").length,
-    canceled_stops: stops.filter((stop) => stop.status_state === "canceled").length,
-    completed_stops: stops.filter((stop) => stop.status_state === "completed").length,
+    canceled_stops: stops.filter((stop) => stop.status_state === "canceled")
+      .length,
+    completed_stops: stops.filter((stop) => stop.status_state === "completed")
+      .length,
     missing_coordinates_count: stops.filter(
       (stop) => stop.location_state === "missing_coordinates",
     ).length,
@@ -577,9 +601,8 @@ export function buildDispatchRouteExceptionSummary(
       "Confirm arrival and departure evidence after mobile sync.",
     ),
   ].filter((item): item is DispatchRouteExceptionSummaryItem => Boolean(item));
-  const totalExceptionStops = new Set(
-    items.flatMap((item) => item.job_ids),
-  ).size;
+  const totalExceptionStops = new Set(items.flatMap((item) => item.job_ids))
+    .size;
 
   return {
     items,
@@ -643,7 +666,9 @@ function getDispatchRouteTriageLabels(stop: {
     stop.location_state === "missing_coordinates"
       ? "Missing service coordinates"
       : null,
-    stop.location_state === "missing_location" ? "Missing service location" : null,
+    stop.location_state === "missing_location"
+      ? "Missing service location"
+      : null,
     stop.evidence_state === "complete" ? null : "Missing GPS evidence",
     stop.risk_state === "at_risk" ? "At risk" : null,
   ].filter((label): label is string => Boolean(label));
@@ -696,8 +721,10 @@ export function buildDispatchRouteIntelligenceForDays(
   options: DispatchRouteIntelligenceOptions = {},
 ): DispatchRouteIntelligence {
   const stops = days
-    .flatMap((day) =>
-      buildDispatchRouteIntelligence(day.jobs, day.date, technician, options).stops,
+    .flatMap(
+      (day) =>
+        buildDispatchRouteIntelligence(day.jobs, day.date, technician, options)
+          .stops,
     )
     .map((stop, index, allStops) => ({
       ...stop,
@@ -822,7 +849,10 @@ export function buildDispatchRouteGroupSummaries(
 
     for (const job of day.jobs) {
       const groupId = job.assigned_tech_id ?? "unassigned";
-      jobsByTechnician.set(groupId, [...(jobsByTechnician.get(groupId) ?? []), job]);
+      jobsByTechnician.set(groupId, [
+        ...(jobsByTechnician.get(groupId) ?? []),
+        job,
+      ]);
     }
 
     for (const [groupId, jobs] of jobsByTechnician.entries()) {
@@ -858,14 +888,27 @@ export function buildDispatchRouteGroupSummaries(
   });
 }
 
-function isCoordinate(value: unknown, min: number, max: number): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+function isCoordinate(
+  value: unknown,
+  min: number,
+  max: number,
+): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= min &&
+    value <= max
+  );
 }
 
 function stopMapCoordinate(
   stop: DispatchRouteStop,
   evidenceByJob: DispatchLocationEvidenceByJob,
-): { latitude: number; longitude: number; source: DispatchStaticMapPointSource } | null {
+): {
+  latitude: number;
+  longitude: number;
+  source: DispatchStaticMapPointSource;
+} | null {
   const latestGps = evidenceByJob[stop.job.id]?.latest_event;
 
   if (
@@ -934,15 +977,16 @@ function percent(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-function projectDispatchStaticMapPoint(
-  latitude: number,
-  longitude: number,
-) {
+function projectDispatchStaticMapPoint(latitude: number, longitude: number) {
+  const rawXPercent =
+    ((longitude - dispatchStaticMapBounds.west) /
+      (dispatchStaticMapBounds.east - dispatchStaticMapBounds.west)) *
+    100;
+
   return {
     x_percent: percent(
-      ((longitude - dispatchStaticMapBounds.west) /
-        (dispatchStaticMapBounds.east - dispatchStaticMapBounds.west)) *
-        100,
+      dispatchStaticMapLandXPercent.west +
+        (rawXPercent / 100) * dispatchStaticMapLandXPercent.width,
     ),
     y_percent: percent(
       ((dispatchStaticMapBounds.north - latitude) /
@@ -993,7 +1037,10 @@ export function buildDispatchStaticMapState(
         stop.technician_id,
         options.technicianLabels ?? {},
       ),
-      ...projectDispatchStaticMapPoint(coordinate.latitude, coordinate.longitude),
+      ...projectDispatchStaticMapPoint(
+        coordinate.latitude,
+        coordinate.longitude,
+      ),
     });
   }
 
@@ -1037,12 +1084,22 @@ export function filterDispatchRouteStops(
   });
 }
 
-export function buildMobileDailyJobs(jobs: Job[], date: string): MobileDailyJobs {
+export function buildMobileDailyJobs(
+  jobs: Job[],
+  date: string,
+): MobileDailyJobs {
   return {
     date,
     jobs: jobs
-      .filter((job) => toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === date)
-      .sort((left, right) => getJobScheduleTime(left.scheduled_start) - getJobScheduleTime(right.scheduled_start)),
+      .filter(
+        (job) =>
+          toDateKey(parseJobScheduleWallTime(job.scheduled_start)) === date,
+      )
+      .sort(
+        (left, right) =>
+          getJobScheduleTime(left.scheduled_start) -
+          getJobScheduleTime(right.scheduled_start),
+      ),
   };
 }
 
@@ -1073,7 +1130,10 @@ function sortLaterTimelineJobs(left: Job, right: Job) {
     return priorityDifference;
   }
 
-  return getJobScheduleTime(left.scheduled_start) - getJobScheduleTime(right.scheduled_start);
+  return (
+    getJobScheduleTime(left.scheduled_start) -
+    getJobScheduleTime(right.scheduled_start)
+  );
 }
 
 function getReadinessLabel(workPlan: MobileJobWorkPlanItem[]) {
@@ -1180,7 +1240,9 @@ export function buildMobileDailyRouteTimeline(
       ? toTimelineJob(currentJob, queueItems, "Current job")
       : null,
     date,
-    later: laterJobs.map((job) => toTimelineJob(job, queueItems, "Later today")),
+    later: laterJobs.map((job) =>
+      toTimelineJob(job, queueItems, "Later today"),
+    ),
     next: nextJob ? toTimelineJob(nextJob, queueItems, "Next job") : null,
     summary: {
       label: assignedJobsLabel(dailyJobs.length),
@@ -1193,11 +1255,17 @@ export function buildMobileDailyRouteTimeline(
   };
 }
 
-export function filterAssignedTechnicianJobs(jobs: Job[], technicianId: string) {
+export function filterAssignedTechnicianJobs(
+  jobs: Job[],
+  technicianId: string,
+) {
   return jobs.filter((job) => job.assigned_tech_id === technicianId);
 }
 
-export function jobToInput(job: Job, override: Partial<JobInput> = {}): JobInput {
+export function jobToInput(
+  job: Job,
+  override: Partial<JobInput> = {},
+): JobInput {
   return validateJobInput({
     customer_id: job.customer_id,
     location_id: job.location_id,
@@ -1214,7 +1282,10 @@ export async function changeJobStatus(job: Job, status: JobStatus) {
   return updateJobRecord(job.id, jobToInput(job, { status }));
 }
 
-export async function assignJobTechnician(job: Job, assignedTechId?: string | null) {
+export async function assignJobTechnician(
+  job: Job,
+  assignedTechId?: string | null,
+) {
   return updateJobRecord(
     job.id,
     jobToInput(job, { assigned_tech_id: normalizeOptional(assignedTechId) }),

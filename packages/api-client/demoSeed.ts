@@ -176,7 +176,7 @@ function inventoryRow(item: DemoSeedInventoryItem) {
     id: item.id,
     name: item.name,
     reorder_level: item.reorder_level,
-    status: "active",
+    status: item.status ?? "active",
     unit: item.unit,
   };
 }

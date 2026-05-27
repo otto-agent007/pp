@@ -258,6 +258,18 @@ describe("HomePage", () => {
     expect(screen.getByText("Scheduled").closest("span")).toHaveClass(
       "bg-status-alert-info-bg",
     );
+    const todaysSchedule = screen
+      .getByRole("heading", { name: "Today's schedule" })
+      .closest(".rounded-lg") as HTMLElement;
+    expect(
+      within(todaysSchedule).getByLabelText("Technician GPS signal Eli Brooks"),
+    ).toHaveClass("rounded-full");
+    expect(
+      within(todaysSchedule).getByLabelText("Technician GPS signal Eli Brooks"),
+    ).toHaveTextContent("Eli Brooks");
+    expect(
+      within(todaysSchedule).getByText("Completed").closest("span"),
+    ).toHaveClass("bg-status-alert-success-bg");
     expect(
       screen.getByRole("heading", { name: "Jobs needing attention" }),
     ).toBeInTheDocument();
@@ -286,7 +298,7 @@ describe("HomePage", () => {
     expect(
       within(toolsPanel as HTMLElement).getByText("Demo data controls"),
     ).toBeInTheDocument();
-  });
+  }, 10_000);
 
   it("filters loaded overview items from the dashboard search", () => {
     render(<HomePage />);

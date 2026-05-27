@@ -2,6 +2,7 @@
 
 import {
   buildComplianceAdvisory,
+  buildInventoryCockpitRows,
   filterChemicalInventory,
   getInventorySummary,
   validateChemicalInventoryInput,
@@ -127,9 +128,32 @@ export function InventoryClient() {
   const [expandedChemicalId, setExpandedChemicalId] = useState<string | null>(
     null,
   );
+  const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(
+    null,
+  );
 
   const inventoryItems = inventoryQuery.data ?? emptyInventoryItems;
   const canShowChemicalUsage = !logsQuery.isLoading && !logsQuery.error;
+  const cockpitRows = useMemo(
+    () => buildInventoryCockpitRows(inventoryItems, logsQuery.data ?? []),
+    [inventoryItems, logsQuery.data],
+  );
+  const cockpitRowsById = useMemo(
+    () => new Map(cockpitRows.map((row) => [row.id, row])),
+    [cockpitRows],
+  );
+  const selectedCockpitRow = useMemo(() => {
+    const selectedRow = selectedInventoryId
+      ? cockpitRowsById.get(selectedInventoryId)
+      : null;
+
+    return (
+      selectedRow ??
+      cockpitRows.find((row) => row.stockState === "reorder") ??
+      cockpitRows[0] ??
+      null
+    );
+  }, [cockpitRows, cockpitRowsById, selectedInventoryId]);
   const logsByChemical = useMemo(
     () => groupLogsByChemical(logsQuery.data ?? []),
     [logsQuery.data],
@@ -440,15 +464,20 @@ export function InventoryClient() {
                 item.current_stock <= item.reorder_level;
               const chemicalLogs = logsByChemical.get(item.id) ?? [];
               const isExpanded = expandedChemicalId === item.id;
+              const isSelected = selectedCockpitRow?.id === item.id;
 
               return (
                 <Card
                   key={item.id}
-                  className={
+                  className={`${
                     isLowStock
                       ? "min-w-0 border-status-alert-danger-border bg-status-alert-danger-bg"
                       : "min-w-0"
-                  }
+                  } ${
+                    isSelected
+                      ? "ring-2 ring-theme-action-primary/30"
+                      : ""
+                  }`}
                   padding="lg"
                   role="article"
                 >
@@ -490,6 +519,13 @@ export function InventoryClient() {
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <Button
+                        aria-label={`Inspect ${item.name}`}
+                        onClick={() => setSelectedInventoryId(item.id)}
+                        variant="ghost"
+                      >
+                        {isSelected ? "Selected" : "Inspect"}
+                      </Button>
                       <Button
                         onClick={() => editInventoryItem(item)}
                         variant="ghost"
@@ -552,6 +588,69 @@ export function InventoryClient() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-6">
+          <Card
+            padding="lg"
+            statusTone={selectedCockpitRow?.statusTone ?? "neutral"}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Eyebrow tone="accent">Product cockpit</Eyebrow>
+                <h2 className="mt-1 text-xl font-semibold text-neutralDark">
+                  {selectedCockpitRow
+                    ? `${selectedCockpitRow.item.name} selected`
+                    : "Select product"}
+                </h2>
+              </div>
+              {selectedCockpitRow ? (
+                <StatusPill tone={selectedCockpitRow.statusTone}>
+                  {selectedCockpitRow.nextActionLabel}
+                </StatusPill>
+              ) : null}
+            </div>
+            {selectedCockpitRow ? (
+              <div className="mt-4 grid gap-3 text-sm text-theme-text-secondary">
+                <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
+                  <p className="font-semibold text-neutralDark">
+                    {selectedCockpitRow.item.current_stock}{" "}
+                    {selectedCockpitRow.item.unit} on hand
+                  </p>
+                  <p className="mt-1">
+                    {selectedCockpitRow.item.reorder_level !== null
+                      ? `Reorder threshold ${selectedCockpitRow.item.reorder_level} ${selectedCockpitRow.item.unit}`
+                      : "No reorder threshold set"}
+                  </p>
+                </div>
+                <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
+                  <p className="font-semibold text-neutralDark">
+                    Usage evidence: {selectedCockpitRow.usageCount}
+                  </p>
+                  <p className="mt-1">
+                    {selectedCockpitRow.latestCustomerName
+                      ? `Latest evidence: ${selectedCockpitRow.latestCustomerName}`
+                      : "No recent usage evidence"}
+                  </p>
+                </div>
+                <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
+                  <p className="font-semibold text-neutralDark">
+                    {selectedCockpitRow.hasEpaNumber
+                      ? `EPA ${selectedCockpitRow.item.epa_number}`
+                      : "EPA detail missing"}
+                  </p>
+                  <p className="mt-1">
+                    {selectedCockpitRow.hasEpaNumber
+                      ? "Compliance-ready for field logs"
+                      : "Add EPA detail before relying on closeout proof"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-theme-text-secondary">
+                Select a product to review stock, usage, and compliance
+                signals.
+              </p>
+            )}
+          </Card>
+
           <form
             className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitInventory}

@@ -11,6 +11,7 @@ import type { AuthSupabaseClient } from "@pest-patrol/api-client";
 import type {
   ChemicalInventoryInput,
   ChemicalInventoryItem,
+  ChemicalLog,
   ChemicalLogInput,
   InventoryStatus,
   InventoryUnit,
@@ -123,6 +124,116 @@ export function getInventorySummary(items: ChemicalInventoryItem[]) {
     lowStockCount: lowStockItems.length,
     totalStock: activeItems.reduce((total, item) => total + item.current_stock, 0),
   };
+}
+
+export type InventoryCockpitStockState = "archived" | "ready" | "reorder";
+
+export type InventoryCockpitTone =
+  | "danger"
+  | "info"
+  | "neutral"
+  | "success"
+  | "warning";
+
+export interface InventoryCockpitRow {
+  hasEpaNumber: boolean;
+  id: string;
+  item: ChemicalInventoryItem;
+  latestCustomerName: string | null;
+  latestLog: ChemicalLog | null;
+  nextActionLabel: string;
+  recentLogs: ChemicalLog[];
+  statusTone: InventoryCockpitTone;
+  stockState: InventoryCockpitStockState;
+  usageCount: number;
+}
+
+function hasValidEpaNumber(item: ChemicalInventoryItem) {
+  const normalized = item.epa_number?.trim().toLowerCase();
+
+  return Boolean(normalized && normalized !== "n/a");
+}
+
+function isAtReorderLevel(item: ChemicalInventoryItem) {
+  return (
+    item.status === "active" &&
+    item.reorder_level !== null &&
+    item.current_stock <= item.reorder_level
+  );
+}
+
+function cockpitActionForItem(
+  item: ChemicalInventoryItem,
+  usageCount: number,
+): Pick<
+  InventoryCockpitRow,
+  "nextActionLabel" | "statusTone" | "stockState"
+> {
+  if (item.status === "archived") {
+    return {
+      nextActionLabel: "Archived",
+      statusTone: "neutral",
+      stockState: "archived",
+    };
+  }
+
+  if (isAtReorderLevel(item)) {
+    return {
+      nextActionLabel: usageCount > 0 ? "Reorder now" : "Inspect aging stock",
+      statusTone: "danger",
+      stockState: "reorder",
+    };
+  }
+
+  if (!hasValidEpaNumber(item)) {
+    return {
+      nextActionLabel: "Add EPA detail",
+      statusTone: "warning",
+      stockState: "ready",
+    };
+  }
+
+  return {
+    nextActionLabel: "Stocked for field use",
+    statusTone: "success",
+    stockState: "ready",
+  };
+}
+
+export function buildInventoryCockpitRows(
+  items: ChemicalInventoryItem[],
+  logs: ChemicalLog[],
+): InventoryCockpitRow[] {
+  const logsByChemical = new Map<string, ChemicalLog[]>();
+
+  for (const log of logs) {
+    const chemicalLogs = logsByChemical.get(log.chemical_id) ?? [];
+    chemicalLogs.push(log);
+    logsByChemical.set(log.chemical_id, chemicalLogs);
+  }
+
+  for (const chemicalLogs of logsByChemical.values()) {
+    chemicalLogs.sort(
+      (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at),
+    );
+  }
+
+  return items.map((item) => {
+    const recentLogs = logsByChemical.get(item.id) ?? [];
+    const latestLog = recentLogs[0] ?? null;
+    const cockpitAction = cockpitActionForItem(item, recentLogs.length);
+
+    return {
+      ...cockpitAction,
+      hasEpaNumber: hasValidEpaNumber(item),
+      id: item.id,
+      item,
+      latestCustomerName: latestLog?.job?.customer?.name ?? null,
+      latestLog,
+      recentLogs,
+      usageCount: recentLogs.length,
+    };
+  });
 }
 
 export async function listChemicalInventory() {
