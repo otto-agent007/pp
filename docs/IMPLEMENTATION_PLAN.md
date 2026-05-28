@@ -1,10 +1,35 @@
 # Implementation Plan
 
-## Current Priority: Mobile Capture Proof Frames
+## Current Priority: Dispatch Calendar Proof Polish
 
-This slice finishes the next small mobile native-primitive adoption step while
-operator-gated preview/Supabase launch checks remain blocked on approved
-env/access. It keeps the work presentation-only in the Expo technician app:
+The current polish pass starts from local `main` synced through merged PR #75
+and closes the protected dispatch-calendar follow-up without changing schema,
+providers, environment variables, seed/reset state, preview data, production
+data, or live compliance ingestion. It keeps the provider-free 180-job demo
+week readable by making job proof and route context scan faster before edits.
+
+Completed in this batch:
+
+1. Moved the protected dispatch diff onto
+   `codex/dispatch-calendar-proof-polish-v1` after syncing local `main`
+   through merged PR #75.
+2. Made weekly dispatch cards denser with stop readiness, route/order context,
+   scheduled time, customer/location, service-map link, status, technician, and
+   proof state visible before edit controls.
+3. Put status and technician edits behind a per-job `Manage` control with
+   accessible job-group labels and expanded controls for the selected job only.
+4. Kept missing/loading GPS evidence as compact inline copy and reserved the
+   full evidence panel for synced arrival/departure events.
+5. Tuned route-intelligence summary tones, disclosure counts, icon-only week
+   navigation, and today's day-column highlight while staying provider-free.
+6. Verified with focused dispatch tests, full repo test/typecheck/lint/build,
+   local fixture smoke, and in-app browser DOM QA on `/dispatch`.
+
+## Previous Priority: Mobile Capture Proof Frames
+
+This slice finished the next small mobile native-primitive adoption step while
+operator-gated preview/Supabase launch checks remained blocked on approved
+env/access. It kept the work presentation-only in the Expo technician app:
 no mobile dependency/config changes, migrations, providers, env changes,
 Supabase writes, seed/reset writes, preview mutations, production mutations, or
 raw-audio/STT implementation.

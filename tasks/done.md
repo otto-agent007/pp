@@ -1,5 +1,28 @@
 # Done
 
+## Dispatch Calendar Proof Polish V1
+
+- Moved the protected dispatch-calendar diff onto
+  `codex/dispatch-calendar-proof-polish-v1` after local `main` was synced
+  through merged PR #75
+- Made weekly dispatch cards denser by showing stop readiness, scheduled time,
+  customer/location, service-map link, status, technician, and proof summary
+  before any edit controls
+- Put per-job status and technician edits behind an explicit `Manage` control,
+  with accessible job-group labels and expanded-state controls for the focused
+  job only
+- Kept missing or loading GPS evidence as compact inline copy and reserved the
+  full evidence panel for jobs with synced arrival/departure events
+- Tuned route-intelligence summary tones, disclosure counts, icon-only period
+  navigation, and today's column highlight so the 180-job demo week scans
+  faster without adding a map provider
+- Verified with the focused dispatch test, full repo `test`, `typecheck`,
+  `lint`, `build`, local fixture smoke, in-app browser DOM QA on `/dispatch`,
+  and `git diff --check`
+- Kept migrations, schema changes, provider setup, env changes, Supabase
+  writes, preview mutations, production mutations, and embedded map SDKs out
+  of scope
+
 ## Mobile Capture Proof Frames V1
 
 - Adopted shared `@pest-patrol/ui-native` `CaptureCard` framing for mobile
