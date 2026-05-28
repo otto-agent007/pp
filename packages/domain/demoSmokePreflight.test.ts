@@ -146,6 +146,7 @@ describe("demo smoke preflight", () => {
       "dispatch",
       "customers",
       "jobs",
+      "technicians",
       "inventory",
       "payments",
       "closeouts",
@@ -164,6 +165,9 @@ describe("demo smoke preflight", () => {
     expect(
       routes.find((route) => route.id === "portal")?.redactedPath,
     ).not.toContain("portal-token");
+    expect(
+      routes.find((route) => route.id === "technicians")?.expectedText,
+    ).toEqual(["Technicians", "Dispatch-ready crew"]);
     expect(
       routes.find((route) => route.id === "payments")?.expectedText,
     ).toEqual(["Payments"]);

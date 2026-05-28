@@ -4,6 +4,10 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Technician Access Handoff V1 added provider-neutral `/technicians` invite
+  handoff guidance and included `/technicians` in the local fixture smoke route
+  plan, without auth behavior, provider, env, seed/reset, preview, or
+  production changes.
 - Jobs Assignment Handoff V1 added `/jobs` assignment handoff counts and
   per-card technician assignment state from existing loaded jobs/technicians,
   without schema, provider, env, seed/reset, preview, or production changes.

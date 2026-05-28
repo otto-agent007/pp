@@ -61,7 +61,8 @@ export interface LocalFixtureSmokeRoute {
     | "inventory"
     | "jobs"
     | "payments"
-    | "portal";
+    | "portal"
+    | "technicians";
   label: string;
   path: string;
   redactedPath: string;
@@ -232,6 +233,14 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
       label: "/jobs",
       path: "/jobs",
       redactedPath: "/jobs",
+      requiresAdminSession: true,
+    },
+    {
+      expectedText: ["Technicians", "Dispatch-ready crew"],
+      id: "technicians",
+      label: "/technicians",
+      path: "/technicians",
+      redactedPath: "/technicians",
       requiresAdminSession: true,
     },
     {

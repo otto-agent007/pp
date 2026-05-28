@@ -47,7 +47,7 @@ set role = 'admin', updated_at = now();
 ```
 
 6. Create dispatcher users in Supabase Auth as needed and set matching `profiles.role` values.
-7. Invite technician users from `/technicians` so Supabase sends the password setup email and the app stores technician profile metadata.
+7. Invite technician users from `/technicians` so the configured auth email path sends the password setup link and the app stores technician profile metadata.
 8. Confirm RLS is enabled on all migrated tables before production traffic.
 
 ## Supabase Auth Redirects
@@ -59,7 +59,7 @@ Password recovery links must return to the deployed app, not localhost.
 3. Add `https://<production-domain>/technician-login` to the allowed redirect URLs so technician invites land on the technician setup page.
 4. Keep `http://localhost:3000/auth/update-password` and `http://localhost:3000/technician-login` allowed for local development only.
 5. Request password resets from `/forgot-password` so Supabase sends a recovery link with the app's `/auth/update-password` redirect.
-6. Invite technicians from `/technicians` so Supabase sends an invite link with the app's `/technician-login` redirect.
+6. Invite technicians from `/technicians` so the configured auth email path sends an invite link with the app's `/technician-login` redirect.
 7. Treat any pasted recovery, invite, or magic-link URL as exposed and request a fresh link.
 
 ## Supabase Dashboard Security
@@ -120,7 +120,7 @@ created during the check.
 | --- | --- | --- |
 | Admin sign-in | `/` | Admin can sign in and load the protected admin shell. |
 | Create customer and location | `/customers` | Active customer saves with at least one active location. |
-| Invite technician | `/technicians` | Technician invite sends and the technician appears by display name. |
+| Invite technician | `/technicians` | Technician invite sends through the configured auth email path, the technician appears by display name, and dispatch assignment remains the next handoff. |
 | Technician password setup | `/technician-login` | Invite link lets the technician set a password without entering the admin shell. |
 | Create job | `/jobs` | Scheduled job saves against the new customer and location. |
 | Queue field captures | Expo mobile app | Technician queues status, geofence, form, chemical, photo, and signature captures offline-first. |

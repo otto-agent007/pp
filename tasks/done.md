@@ -1,5 +1,19 @@
 # Done
 
+## Technician Access Handoff V1
+
+- Added provider-neutral `/technicians` invite handoff guidance for confirming
+  the technician email, sending the setup link, and opening dispatch for first
+  route assignment
+- Added `/technicians` to the local fixture smoke route plan so the roster and
+  dispatch-ready crew route signals are covered in the no-env demo gate
+- Preserved existing hooks, invite mutation behavior, auth/provider setup,
+  data flow, API contracts, schema, env, seed/reset writes, preview state, and
+  production state
+- Verified with focused technician UI and domain smoke-plan coverage plus the
+  full repo gate for tests, typecheck, lint, build, local fixture smoke, and
+  `git diff --check`
+
 ## Jobs Assignment Handoff V1
 
 - Added a `/jobs` assignment handoff summary that counts assigned and

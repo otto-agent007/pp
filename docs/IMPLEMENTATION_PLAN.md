@@ -1,14 +1,48 @@
 # Implementation Plan
 
-## Current Priority: Jobs Assignment Handoff
+## Current Priority: Technician Access Handoff
 
 This product polish pass starts from local `main` after merged PR #75 and keeps
 the next slice away from the open draft PR surfaces for mobile capture,
 dispatch, payments/closeouts/inventory/portal/automation, mobile bilingual
-treatment copy, and customer ledger follow-up. It adds dispatch assignment
-handoff clarity to `/jobs` without changing app behavior outside the jobs
-workspace, migrations, providers, environment variables, seed/reset state,
+treatment copy, customer ledger follow-up, and jobs assignment handoff. It adds
+provider-neutral technician invite handoff guidance and brings `/technicians`
+into the repeatable local fixture smoke route plan without changing auth
+behavior, migrations, providers, environment variables, seed/reset state,
 preview data, production data, or live compliance ingestion.
+
+Completed in this batch:
+
+1. Confirmed PR #75 is merged and local `main` is fast-forwarded to
+   `origin/main`.
+2. Added `/technicians` access handoff guidance that explains the invite,
+   email confirmation, and dispatch assignment sequence without exposing
+   provider internals or changing invite behavior.
+3. Added `/technicians` to the local fixture smoke plan with route signals for
+   the technician roster and dispatch-ready crew.
+4. Kept the remaining launch blockers explicit: approved Supabase env names,
+   local Docker/Postgres availability for local migration inspection,
+   protected-preview access, and admin/dispatcher sign-in are still required
+   before real seed/reset or authenticated preview smoke.
+
+Next decision points:
+
+1. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+2. If local Supabase remains the chosen migration target, repair Docker
+   Desktop's Linux engine and local Postgres before relying on local migration
+   history.
+3. Keep provider delivery receipts, richer provider failure states, and
+   production launch checklist work deferred until authenticated preview and
+   webhook-backed evidence exist.
+
+## Previous Priority: Jobs Assignment Handoff
+
+That product polish pass started from local `main` after merged PR #75 and
+added dispatch assignment handoff clarity to `/jobs` without changing app
+behavior outside the jobs workspace, migrations, providers, environment
+variables, seed/reset state, preview data, production data, or live compliance
+ingestion.
 
 Completed in this batch:
 
@@ -123,7 +157,6 @@ Next decision points:
    operator chooses to merge or rebase them.
 3. Operator loads approved local or preview Supabase env names before any real
    seed/reset, live ingestion, or authenticated preview browser smoke.
-
 ## Previous Priority: Dispatch Calendar Proof Polish
 
 That polish pass started from local `main` synced through merged PR #75 and

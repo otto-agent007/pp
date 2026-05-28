@@ -134,6 +134,25 @@ describe("TechniciansClient", () => {
     expect(within(activeTechsTile as HTMLElement).getByText("16")).toBeInTheDocument();
   });
 
+  it("shows technician access handoff guidance before inviting", () => {
+    render(<TechniciansClient />);
+
+    expect(screen.getByText("Technician access handoff")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Sends a password setup link through the configured email delivery path.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Confirm the email, send the invite, then open dispatch to assign the first route.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Open dispatch after invite" }),
+    ).toHaveAttribute("href", "/dispatch");
+  });
+
   it("validates and invites technicians to set their own password", async () => {
     const user = userEvent.setup();
     render(<TechniciansClient />);

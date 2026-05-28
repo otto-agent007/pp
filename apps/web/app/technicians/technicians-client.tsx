@@ -261,9 +261,38 @@ export function TechniciansClient() {
               Invite technician
             </h2>
             <p className="mt-1 text-sm text-theme-text-secondary">
-              Supabase will send a setup email so the technician can choose
-              their own password.
+              Send a password setup link through the configured email delivery
+              path so the technician can choose their own password.
             </p>
+          </div>
+
+          <div
+            className={`rounded-md border p-3 ${statusSurfaceClassName(
+              "info",
+            )}`}
+          >
+            <p className="text-sm font-bold text-theme-text-primary">
+              Technician access handoff
+            </p>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              Sends a password setup link through the configured email delivery
+              path.
+            </p>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              Confirm the email, send the invite, then open dispatch to assign
+              the first route.
+            </p>
+            <a
+              className={buttonClassName({
+                className:
+                  "mt-3 border-status-alert-info-border text-status-alert-info-fgStrong hover:bg-status-alert-info-bg",
+                size: "sm",
+                variant: "ghost",
+              })}
+              href="/dispatch"
+            >
+              Open dispatch after invite
+            </a>
           </div>
 
           {formError ? (
