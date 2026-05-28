@@ -32,6 +32,63 @@ Next decision points:
 3. Continue product polish as small provider-free slices while open draft PRs
    for mobile, dispatch, and schedule surfaces are still in review.
 
+## Previous Priority: Mobile Treatment Form Bilingual Copy
+
+That product-polish slice advanced the active bilingual field-copy candidate
+without changing the offline queue, native config, dependencies, providers,
+environment variables, migrations, seed/reset state, preview data, production
+data, or the later STT/provider decision.
+
+Completed in this batch:
+
+1. Added English and Spanish treatment-form field labels and placeholders in
+   `@pest-patrol/i18n`.
+2. Added a mobile-local copy adapter so `JobTreatmentForm` can render localized
+   labels/placeholders while preserving the domain template and JSONB field ids.
+3. Localized required-field validation copy in the mobile treatment form by
+   mapping unchanged domain validation messages to the selected technician
+   language.
+4. Added focused tests for the copy adapter and ran mobile/i18n verification
+   plus full repo gates.
+
+Next decision points:
+
+1. Keep STT behind the already decisioned later provider/audio slice; do not
+   add microphone permissions, audio packages, or provider routes until
+   explicitly approved.
+2. Continue mobile bilingual copy only as small follow-up slices if other
+   capture controls still expose English-only dynamic form content.
+
+## Previous Priority: Schedule Wall-Clock Consistency
+
+That product-polish slice closed the preview smoke finding where stored
+Z-suffixed job schedule values rendered as absolute instants instead of the
+operator-entered local service time. It starts from `origin/main` after merged
+PR #75 and keeps migrations, providers, environment variables, Supabase writes,
+seed/reset state, preview data, production data, mobile component changes, and
+dispatch PR #77 UI work out of scope.
+
+Completed in this batch:
+
+1. Added shared domain helpers for job schedule date keys, time labels, and
+   date/time labels that parse job schedules as wall-clock service times.
+2. Reused the helpers in technician route load summaries, home command-center
+   schedule rows, dispatch route intelligence labels, inventory/payments/
+   automation job pickers, closeouts queue/detail labels, and customer portal
+   service/billing labels.
+3. Added focused regression tests for the 9:38 AM demo schedule across domain,
+   admin, billing, automation, closeout, and portal surfaces.
+4. Reran focused checks plus full repo test, typecheck, lint, build, no-env
+   local fixture smoke, and whitespace verification.
+
+Next decision points:
+
+1. Verify the 9:38 AM preview smoke case again on the next deployed preview.
+2. Keep the open dispatch and mobile capture draft PRs independent unless the
+   operator chooses to merge or rebase them.
+3. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+
 ## Previous Priority: Dispatch Calendar Proof Polish
 
 That polish pass started from local `main` synced through merged PR #75 and

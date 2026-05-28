@@ -238,6 +238,29 @@ describe("PaymentsClient", () => {
     expect(screen.getByText("No invoices found")).toBeInTheDocument();
   });
 
+  it("shows invoice job picker schedules as wall-clock job time", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        { ...secondCompletedJob, scheduled_start: "2026-05-06T09:38:00Z" },
+      ],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    await user.click(screen.getByRole("combobox", { name: "Completed job" }));
+
+    expect(
+      await screen.findByRole("option", {
+        name: "5/6/26, 9:38 AM - Apex Homes - 20 Oak Avenue",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: /2:38 AM/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("uses shared count tiles for payment filters without changing invoice data", async () => {
     const user = userEvent.setup();
     vi.mocked(useInvoices).mockReturnValue({

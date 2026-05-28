@@ -57,7 +57,7 @@ const completedJob = {
   customer_id: "customer-1",
   location_id: "location-1",
   assigned_tech_id: "tech-1",
-  scheduled_start: "2026-05-06T09:00:00Z",
+  scheduled_start: "2026-05-06T09:38:00Z",
   scheduled_end: null,
   status: "completed",
   service_notes: "Interior treatment",
@@ -258,7 +258,9 @@ describe("CloseoutsClient", () => {
   it("renders closeout captures for the selected completed job", () => {
     render(<CloseoutsClient />);
 
-    expect(screen.getByRole("heading", { name: "Billing work queue" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Billing work queue" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "Completed jobs grouped by billing readiness. Open one to review captures or create an invoice.",
@@ -277,7 +279,9 @@ describe("CloseoutsClient", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
-    expect(screen.getByText("Ready for office proof review")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ready for office proof review"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Arrival and departure GPS synced for office review"),
     ).toBeInTheDocument();
@@ -301,9 +305,15 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("Bait Gel")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
+    expect(screen.getAllByText(/May 6, 2026, 9:38 AM/).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.queryByText(/2:38 AM/)).not.toBeInTheDocument();
     expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
     expect(
-      screen.getByText("Treatment form, chemical log, photo, and signature are captured."),
+      screen.getByText(
+        "Treatment form, chemical log, photo, and signature are captured.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Location evidence")).toBeInTheDocument();
     expect(screen.getByText("Billing captures")).toBeInTheDocument();
@@ -313,14 +323,12 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByText("Invoice will include GPS + form evidence."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Create invoice" })).toHaveAttribute(
-      "href",
-      "/payments?job_id=job-1",
-    );
-    expect(screen.getByRole("link", { name: "Open customer ledger" })).toHaveAttribute(
-      "href",
-      "/customers?customer_id=customer-1",
-    );
+    expect(
+      screen.getByRole("link", { name: "Create invoice" }),
+    ).toHaveAttribute("href", "/payments?job_id=job-1");
+    expect(
+      screen.getByRole("link", { name: "Open customer ledger" }),
+    ).toHaveAttribute("href", "/customers?customer_id=customer-1");
   });
 
   it("points invoiced closeouts toward portal sharing", async () => {
@@ -334,7 +342,9 @@ describe("CloseoutsClient", () => {
       "/customers?customer_id=customer-1",
     );
     expect(
-      screen.getByText("Awaiting customer payment. No action needed until paid or overdue."),
+      screen.getByText(
+        "Awaiting customer payment. No action needed until paid or overdue.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -422,7 +432,9 @@ describe("CloseoutsClient", () => {
 
     render(<CloseoutsClient />);
 
-    expect(screen.getAllByText("Needs field captures").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Needs field captures").length).toBeGreaterThan(
+      0,
+    );
     expect(
       screen.getAllByText(
         "Missing treatment form, chemical log, photo, and signature before billing.",
@@ -436,9 +448,15 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByText("No treatment forms captured for this job."),
     ).toBeInTheDocument();
-    expect(screen.getByText("No chemical logs captured for this job.")).toBeInTheDocument();
-    expect(screen.getByText("No photos captured for this job.")).toBeInTheDocument();
-    expect(screen.getByText("No signatures captured for this job.")).toBeInTheDocument();
+    expect(
+      screen.getByText("No chemical logs captured for this job."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("No photos captured for this job."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("No signatures captured for this job."),
+    ).toBeInTheDocument();
   });
 
   it("uses warning tones for synced-proof gaps", () => {
@@ -464,21 +482,29 @@ describe("CloseoutsClient", () => {
     const user = userEvent.setup();
     render(<CloseoutsClient />);
 
-    expect(screen.getByRole("button", { name: /Proof ready 2/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /GPS review 1/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Needs invoice 1/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Billing ready 1/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Proof ready 2/i })).toHaveAttribute(
-      "aria-pressed",
-      "false",
+    expect(
+      screen.getByRole("button", { name: /Proof ready 2/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /GPS review 1/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Needs invoice 1/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Billing ready 1/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Proof ready 2/i }),
+    ).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(
+      screen.getByRole("button", { name: /Missing captures 1/i }),
     );
 
-    await user.click(screen.getByRole("button", { name: /Missing captures 1/i }));
-
-    expect(screen.getByRole("button", { name: /Missing captures 1/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", { name: /Missing captures 1/i }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Needs photo and signature")).toBeInTheDocument();
     expect(screen.getByText("Missing: photo · signature")).toBeInTheDocument();
     expect(
@@ -517,7 +543,9 @@ describe("CloseoutsClient", () => {
 
     await user.click(screen.getByText("30 Cedar Road"));
 
-    expect(screen.getByText("$125.00 received May 7, 2026.")).toBeInTheDocument();
+    expect(
+      screen.getByText("$125.00 received May 7, 2026."),
+    ).toBeInTheDocument();
   });
 });
 

@@ -5,6 +5,7 @@ import {
   buildBillingQueue,
   buildInvoiceInputFromJob,
   filterInvoices,
+  formatJobScheduleDateTime,
   getBillingCloseoutHandoffSummary,
   getBillingQueueCounts,
   getInvoiceJobIds,
@@ -98,10 +99,10 @@ function formatPaymentDate(value: string | null) {
 function jobLabel(job: Job) {
   const customer = job.customer?.name ?? "Unknown customer";
   const address = job.location?.address ?? "No location";
-  const scheduled = new Intl.DateTimeFormat("en", {
+  const scheduled = formatJobScheduleDateTime(job.scheduled_start, {
     dateStyle: "short",
     timeStyle: "short",
-  }).format(new Date(job.scheduled_start));
+  });
 
   return `${scheduled} - ${customer} - ${address}`;
 }
@@ -155,7 +156,9 @@ function InvoiceHandoff({
   }
 
   return (
-    <div className={`mt-4 rounded-md border p-3 ${statusSurfaceClassName("info")}`}>
+    <div
+      className={`mt-4 rounded-md border p-3 ${statusSurfaceClassName("info")}`}
+    >
       <p className="text-sm font-semibold text-theme-text-primary">
         Customer handoff
       </p>
