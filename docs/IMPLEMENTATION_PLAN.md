@@ -1,8 +1,43 @@
 # Implementation Plan
 
-## Current Priority: Customer Account Follow-Up Status
+## Current Priority: Jobs Assignment Handoff
 
-This provider-free customer polish starts from local `main` synced through PR
+This product polish pass starts from local `main` after merged PR #75 and keeps
+the next slice away from the open draft PR surfaces for mobile capture,
+dispatch, payments/closeouts/inventory/portal/automation, mobile bilingual
+treatment copy, and customer ledger follow-up. It adds dispatch assignment
+handoff clarity to `/jobs` without changing app behavior outside the jobs
+workspace, migrations, providers, environment variables, seed/reset state,
+preview data, production data, or live compliance ingestion.
+
+Completed in this batch:
+
+1. Confirmed PR #75 is merged and local `main` is fast-forwarded to
+   `origin/main`.
+2. Added a `/jobs` assignment handoff summary that counts assigned and
+   unassigned active jobs from existing loaded job data.
+3. Added per-job technician handoff state so dispatch can see the assigned
+   technician, missing assignment work, or pending technician details without
+   leaving the job queue.
+4. Kept the remaining launch blockers explicit: approved Supabase env names,
+   local Docker/Postgres availability for local migration inspection,
+   protected-preview access, and admin/dispatcher sign-in are still required
+   before real seed/reset or authenticated preview smoke.
+
+Next decision points:
+
+1. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+2. If local Supabase remains the chosen migration target, repair Docker
+   Desktop's Linux engine and local Postgres before relying on local migration
+   history.
+3. Keep provider delivery receipts, richer provider failure states, and
+   production launch checklist work deferred until authenticated preview and
+   webhook-backed evidence exist.
+
+## Previous Priority: Customer Account Follow-Up Status
+
+That provider-free customer polish started from local `main` synced through PR
 #75 and makes `/customers` easier to scan during real operator walkthroughs. It
 does not change migrations, providers, environment variables, seed/reset state,
 preview data, production data, Supabase writes, API contracts, or live
@@ -135,17 +170,6 @@ Completed in this batch:
 5. Verified with focused mobile capture tests, mobile typecheck,
    `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
    `corepack pnpm build`, and whitespace checks.
-
-Next decision points:
-
-1. Operator loads approved local or preview Supabase env names before any real
-   seed/reset, live ingestion, or authenticated preview browser smoke.
-2. If local Supabase remains the chosen migration target, repair Docker
-   Desktop's Linux engine and local Postgres before relying on local migration
-   history.
-3. Keep provider delivery receipts, richer provider failure states, and
-   production launch checklist work deferred until authenticated preview and
-   webhook-backed evidence exist.
 
 ## Previous Priority: Vercel Packaging Evidence Refresh
 

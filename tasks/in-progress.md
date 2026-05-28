@@ -4,6 +4,9 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Jobs Assignment Handoff V1 added `/jobs` assignment handoff counts and
+  per-card technician assignment state from existing loaded jobs/technicians,
+  without schema, provider, env, seed/reset, preview, or production changes.
 - Customer Account Follow-Up Status V1 synced local `main` through merged PR
   #75 and moved the provider-free customer polish to
   `codex/customer-account-follow-up-v1`.
