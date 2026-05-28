@@ -6,6 +6,7 @@ import {
   buildBillingPortalNextActions,
   buildBillingQueue,
   filterCloseoutJobs,
+  formatJobScheduleDateTime,
   formatMissingCaptureList,
   getAdminCloseoutProofReview,
   getBillingQueueCounts,
@@ -243,7 +244,7 @@ function QueueRowContent({
           {job.location?.address ?? "No location saved"}
         </p>
         <p className="mt-2 text-xs font-medium text-theme-text-muted">
-          {formatDateTime(job.scheduled_start)}
+          {formatJobScheduleDateTime(job.scheduled_start)}
         </p>
         <p className="mt-2 line-clamp-2 text-xs text-theme-text-muted">
           {summary ?? job.service_notes}
@@ -427,11 +428,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
     const actions = buildBillingPortalNextActions({ job: item.job });
 
     return (
-      <Card
-        className="shadow-none"
-        padding="md"
-        statusTone="success"
-      >
+      <Card className="shadow-none" padding="md" statusTone="success">
         <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
         <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
@@ -456,11 +453,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
   if (!item.invoice) {
     return (
-      <Card
-        className="shadow-none"
-        padding="md"
-        statusTone="warning"
-      >
+      <Card className="shadow-none" padding="md" statusTone="warning">
         <p className="text-sm font-semibold text-neutralDark">
           {item.readiness.label}
         </p>
@@ -503,11 +496,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
   };
 
   return (
-    <Card
-      className="shadow-none"
-      padding="md"
-      statusTone="info"
-    >
+    <Card className="shadow-none" padding="md" statusTone="info">
       <p className="text-sm font-semibold text-neutralDark">
         {titleByStatus[invoice.status]}
       </p>
@@ -593,14 +582,18 @@ function ProofHandoffCard({
       ? "warning"
       : "success";
   const billingTone: StatusPillTone =
-    proof?.billing_label === "Billing captures ready" ? "success" : completionTone;
+    proof?.billing_label === "Billing captures ready"
+      ? "success"
+      : completionTone;
   const invoiceTone: StatusPillTone = invoice
     ? invoice.status === "paid"
       ? "success"
       : "info"
     : "neutral";
   const syncTone: StatusPillTone =
-    proof?.sync_confidence_label === "High sync confidence" ? "success" : "warning";
+    proof?.sync_confidence_label === "High sync confidence"
+      ? "success"
+      : "warning";
   const locationEvidencePills: Array<{
     countsAsMissingEvidence?: boolean;
     label: string;
@@ -635,8 +628,7 @@ function ProofHandoffCard({
     ...locationEvidencePills,
     ...billingCapturePills,
   ].filter(
-    (pill) =>
-      pill.tone !== "success" && pill.countsAsMissingEvidence !== false,
+    (pill) => pill.tone !== "success" && pill.countsAsMissingEvidence !== false,
   ).length;
   const proofUnblockCopy =
     completionLabel === "Ready"
@@ -656,11 +648,7 @@ function ProofHandoffCard({
         : "Review evidence before billing handoff.";
 
   return (
-    <Card
-      className="shadow-none"
-      padding="md"
-      statusTone={completionTone}
-    >
+    <Card className="shadow-none" padding="md" statusTone={completionTone}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-neutralDark">
@@ -938,10 +926,7 @@ export function CloseoutsClient() {
         />
       </section>
 
-      <Card
-        padding="md"
-        statusTone={branchComplianceTone}
-      >
+      <Card padding="md" statusTone={branchComplianceTone}>
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <Eyebrow className={branchComplianceToneClasses.eyebrow}>
@@ -1050,7 +1035,8 @@ export function CloseoutsClient() {
                       {selectedJob.location?.address ?? "No location saved"}
                     </p>
                     <p className="mt-1 text-sm text-theme-text-secondary">
-                      Scheduled {formatDateTime(selectedJob.scheduled_start)}
+                      Scheduled{" "}
+                      {formatJobScheduleDateTime(selectedJob.scheduled_start)}
                     </p>
                   </div>
                   {reviewCounts ? (

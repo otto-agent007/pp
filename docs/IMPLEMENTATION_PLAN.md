@@ -1,9 +1,39 @@
 # Implementation Plan
 
-## Current Priority: Dispatch Calendar Proof Polish
+## Current Priority: Schedule Wall-Clock Consistency
 
-The current polish pass starts from local `main` synced through merged PR #75
-and closes the protected dispatch-calendar follow-up without changing schema,
+The current product-polish slice closes the preview smoke finding where stored
+Z-suffixed job schedule values rendered as absolute instants instead of the
+operator-entered local service time. It starts from `origin/main` after merged
+PR #75 and keeps migrations, providers, environment variables, Supabase writes,
+seed/reset state, preview data, production data, mobile component changes, and
+dispatch PR #77 UI work out of scope.
+
+Completed in this batch:
+
+1. Added shared domain helpers for job schedule date keys, time labels, and
+   date/time labels that parse job schedules as wall-clock service times.
+2. Reused the helpers in technician route load summaries, home command-center
+   schedule rows, dispatch route intelligence labels, inventory/payments/
+   automation job pickers, closeouts queue/detail labels, and customer portal
+   service/billing labels.
+3. Added focused regression tests for the 9:38 AM demo schedule across domain,
+   admin, billing, automation, closeout, and portal surfaces.
+4. Reran focused checks plus full repo test, typecheck, lint, build, no-env
+   local fixture smoke, and whitespace verification.
+
+Next decision points:
+
+1. Verify the 9:38 AM preview smoke case again on the next deployed preview.
+2. Keep the open dispatch and mobile capture draft PRs independent unless the
+   operator chooses to merge or rebase them.
+3. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+
+## Previous Priority: Dispatch Calendar Proof Polish
+
+That polish pass started from local `main` synced through merged PR #75 and
+closed the protected dispatch-calendar follow-up without changing schema,
 providers, environment variables, seed/reset state, preview data, production
 data, or live compliance ingestion. It keeps the provider-free 180-job demo
 week readable by making job proof and route context scan faster before edits.

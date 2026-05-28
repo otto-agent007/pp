@@ -9,6 +9,8 @@ import type {
   TechnicianProfile,
 } from "@pest-patrol/types";
 
+import { getJobScheduleDateKey, getJobScheduleTime } from "./jobs";
+
 export type TechnicianRouteStatus =
   | "completed"
   | "en_route"
@@ -80,11 +82,14 @@ function toDateKey(date: Date) {
 }
 
 function jobDateKey(job: Pick<Job, "scheduled_start">) {
-  return toDateKey(new Date(job.scheduled_start));
+  return getJobScheduleDateKey(job.scheduled_start);
 }
 
 function sortByScheduledStart(left: Job, right: Job) {
-  return Date.parse(left.scheduled_start) - Date.parse(right.scheduled_start);
+  return (
+    getJobScheduleTime(left.scheduled_start) -
+    getJobScheduleTime(right.scheduled_start)
+  );
 }
 
 function routeStatusPriority(status: JobStatus) {

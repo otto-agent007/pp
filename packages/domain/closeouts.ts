@@ -27,6 +27,7 @@ import {
   sendCustomerPortalAccessTokenRecord,
   listCustomerPortalBillingRecords,
 } from "@pest-patrol/api-client";
+import { formatJobScheduleDateTime, getJobScheduleTime } from "./jobs";
 import type { DispatchLocationEvidence } from "./geofencing";
 
 export type CloseoutStatusFilter = "completed" | "all";
@@ -191,7 +192,8 @@ export function filterCloseoutJobs(
     .filter((job) => !query || searchableJobText(job).includes(query))
     .sort(
       (left, right) =>
-        Date.parse(right.scheduled_start) - Date.parse(left.scheduled_start),
+        getJobScheduleTime(right.scheduled_start) -
+        getJobScheduleTime(left.scheduled_start),
     );
 }
 
@@ -202,7 +204,9 @@ export function buildJobCloseoutReview(input: {
   media: JobMedia[];
 }): JobCloseoutReview {
   const photos = input.media.filter((item) => item.media_type === "photo");
-  const signatures = input.media.filter((item) => item.media_type === "signature");
+  const signatures = input.media.filter(
+    (item) => item.media_type === "signature",
+  );
 
   return {
     job: input.job,
@@ -263,7 +267,8 @@ export function getCloseoutReviewReadinessFromCounts(
       billingReady,
       label: "Ready for billing",
       missing,
-      summary: "Treatment form, chemical log, photo, and signature are captured.",
+      summary:
+        "Treatment form, chemical log, photo, and signature are captured.",
     };
   }
 
@@ -283,10 +288,7 @@ export function getCloseoutReviewReadinessFromCounts(
   };
 }
 
-function getGpsEvidenceItem(
-  label: "Arrival" | "Departure",
-  synced: boolean,
-) {
+function getGpsEvidenceItem(label: "Arrival" | "Departure", synced: boolean) {
   return synced
     ? `${label} GPS synced for service-radius review.`
     : `${label} GPS still needs a synced capture.`;
@@ -404,7 +406,9 @@ export function getAdminCloseoutProofReview(input: {
   };
 }
 
-function readinessFromSummary(summary: CloseoutCaptureSummary): CloseoutReviewReadiness {
+function readinessFromSummary(
+  summary: CloseoutCaptureSummary,
+): CloseoutReviewReadiness {
   return getCloseoutReviewReadinessFromCounts({
     chemicalLogs: summary.chemicalLogs,
     forms: summary.forms,
@@ -414,20 +418,28 @@ function readinessFromSummary(summary: CloseoutCaptureSummary): CloseoutReviewRe
 }
 
 function latestInvoiceForJob(invoices: Invoice[], jobId: string) {
-  return invoices
-    .filter((invoice) => invoice.job_id === jobId)
-    .sort(
-      (left, right) =>
-        Date.parse(right.created_at) - Date.parse(left.created_at),
-    )[0] ?? null;
+  return (
+    invoices
+      .filter((invoice) => invoice.job_id === jobId)
+      .sort(
+        (left, right) =>
+          Date.parse(right.created_at) - Date.parse(left.created_at),
+      )[0] ?? null
+  );
 }
 
 function sortOldestFirst(left: BillingQueueItem, right: BillingQueueItem) {
-  return Date.parse(left.job.scheduled_start) - Date.parse(right.job.scheduled_start);
+  return (
+    getJobScheduleTime(left.job.scheduled_start) -
+    getJobScheduleTime(right.job.scheduled_start)
+  );
 }
 
 function sortNewestFirst(left: BillingQueueItem, right: BillingQueueItem) {
-  return Date.parse(right.job.scheduled_start) - Date.parse(left.job.scheduled_start);
+  return (
+    getJobScheduleTime(right.job.scheduled_start) -
+    getJobScheduleTime(left.job.scheduled_start)
+  );
 }
 
 export function buildBillingQueue(
@@ -582,7 +594,9 @@ export function validateCustomerPortalAccessInput(
   };
 }
 
-export function validateCustomerPortalSendInput(input: CustomerPortalSendInput) {
+export function validateCustomerPortalSendInput(
+  input: CustomerPortalSendInput,
+) {
   return {
     customer_id: validateCustomerPortalCustomerId(input.customer_id),
     token_id: validateCustomerPortalAccessTokenId(input.token_id),
@@ -690,7 +704,9 @@ export function getCustomerPortalAccessTokenReadiness(
   }
 
   return {
-    detail: token.last_used_at ? "Opened by customer" : "Generated but never opened",
+    detail: token.last_used_at
+      ? "Opened by customer"
+      : "Generated but never opened",
     label: "Active portal link",
     needsAttention: false,
     state: "active",
@@ -838,9 +854,7 @@ function pluralize(count: number, singular: string, plural = `${singular}s`) {
 }
 
 function formatServiceDate(value: string) {
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
-    new Date(value),
-  );
+  return formatJobScheduleDateTime(value, { dateStyle: "medium" });
 }
 
 export function getCustomerPortalServiceSummary(
@@ -905,7 +919,9 @@ export function getCustomerPortalProofHandoff(
 }
 
 function portalTimelineLocation(job: CustomerPortalJob | undefined) {
-  return job?.location?.nickname ?? job?.location?.address ?? "Service location";
+  return (
+    job?.location?.nickname ?? job?.location?.address ?? "Service location"
+  );
 }
 
 function portalTimelineDate(
@@ -922,7 +938,9 @@ export function buildCustomerPortalTimeline(
   const closeoutsByJobId = new Map(
     closeouts.map((closeout) => [closeout.job.id, closeout]),
   );
-  const invoiceByJobId = new Map(invoices.map((invoice) => [invoice.job_id, invoice]));
+  const invoiceByJobId = new Map(
+    invoices.map((invoice) => [invoice.job_id, invoice]),
+  );
   const serviceItems = closeouts.map((closeout): CustomerPortalTimelineItem => {
     const invoice = invoiceByJobId.get(closeout.job.id);
     const summary = getCustomerPortalServiceSummary(
@@ -947,20 +965,22 @@ export function buildCustomerPortalTimeline(
   });
   const invoiceOnlyItems = invoices
     .filter((invoice) => !closeoutsByJobId.has(invoice.job_id))
-    .map((invoice): CustomerPortalTimelineItem => ({
-      balance_cents: invoice.balance_cents,
-      captures_label: "No service captures available",
-      currency: invoice.currency,
-      date: portalTimelineDate(invoice.job, invoice.created_at),
-      id: `invoice-${invoice.id}`,
-      invoice_id: invoice.id,
-      invoice_status: invoice.status,
-      job_id: invoice.job_id,
-      location_label: portalTimelineLocation(invoice.job),
-      payment_url: invoice.payment_url,
-      title: portalTimelineLocation(invoice.job),
-      type: "invoice",
-    }));
+    .map(
+      (invoice): CustomerPortalTimelineItem => ({
+        balance_cents: invoice.balance_cents,
+        captures_label: "No service captures available",
+        currency: invoice.currency,
+        date: portalTimelineDate(invoice.job, invoice.created_at),
+        id: `invoice-${invoice.id}`,
+        invoice_id: invoice.id,
+        invoice_status: invoice.status,
+        job_id: invoice.job_id,
+        location_label: portalTimelineLocation(invoice.job),
+        payment_url: invoice.payment_url,
+        title: portalTimelineLocation(invoice.job),
+        type: "invoice",
+      }),
+    );
 
   return [...serviceItems, ...invoiceOnlyItems].sort(
     (left, right) => Date.parse(right.date) - Date.parse(left.date),

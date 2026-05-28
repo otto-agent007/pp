@@ -21,7 +21,7 @@ const closeout = {
     customer_id: "customer-1",
     location_id: "location-1",
     status: "completed",
-    scheduled_start: "2026-05-06T09:00:00Z",
+    scheduled_start: "2026-05-06T09:38:00Z",
     scheduled_end: null,
     customer: { id: "customer-1", name: "Apex Homes" },
     location: {
@@ -156,6 +156,10 @@ describe("CustomerPortalClient", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Main house")).toHaveLength(5);
     expect(screen.getAllByText("May 6, 2026").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("Service date May 6, 2026, 9:38 AM"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/2:38 AM/)).not.toBeInTheDocument();
     expect(screen.getAllByText("1 form, 1 photo, 1 signature")).toHaveLength(2);
     expect(screen.getByText("Invoice open")).toBeInTheDocument();
     expect(screen.getByText("Proof of service")).toBeInTheDocument();
