@@ -7,9 +7,18 @@ import type {
 } from "@pest-patrol/types";
 
 import { getDemoWorkflowSteps } from "./demoReadiness";
+import {
+  formatJobScheduleTime,
+  getJobScheduleDateKey,
+  getJobScheduleTime,
+} from "./jobs";
 import { getProviderReadinessCopy } from "./providerReadiness";
 
-export type HomeCommandCenterSeverity = "good" | "neutral" | "urgent" | "warning";
+export type HomeCommandCenterSeverity =
+  | "good"
+  | "neutral"
+  | "urgent"
+  | "warning";
 
 export type HomeCommandCenterKpiId =
   | "completed"
@@ -137,25 +146,6 @@ function dateKey(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function jobDateKey(scheduledStart: string) {
-  return scheduledStart.slice(0, 10);
-}
-
-function formatScheduleTime(scheduledStart: string) {
-  const match = scheduledStart.match(/T(\d{2}):(\d{2})/);
-
-  if (!match) {
-    return "Time pending";
-  }
-
-  const hour = Number(match[1]);
-  const minute = match[2];
-  const period = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 || 12;
-
-  return `${displayHour}:${minute} ${period}`;
-}
-
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat("en-US", {
     currency: "USD",
@@ -193,10 +183,7 @@ function buildLaunchReadiness(
     portalProviderStatus?.provider === "webhook" &&
     portalProviderStatus.webhook_configured &&
     portalProviderStatus.webhook_secret_configured;
-  const providerCopy = getProviderReadinessCopy(
-    "portal",
-    portalProviderStatus,
-  );
+  const providerCopy = getProviderReadinessCopy("portal", portalProviderStatus);
 
   return [
     {
@@ -208,7 +195,8 @@ function buildLaunchReadiness(
       label: "Local smoke preflight",
       severity: "warning",
       stateLabel: "Blocked on approved local env",
-      summary: "Seed/reset and Browser smoke stay gated until local preflight is ready.",
+      summary:
+        "Seed/reset and Browser smoke stay gated until local preflight is ready.",
     },
     {
       action:
@@ -220,7 +208,8 @@ function buildLaunchReadiness(
       label: "Protected preview smoke",
       severity: "warning",
       stateLabel: "Blocked on operator access",
-      summary: "Preview seed/reset and authenticated smoke stop at missing access.",
+      summary:
+        "Preview seed/reset and authenticated smoke stop at missing access.",
     },
     {
       action:
@@ -231,7 +220,8 @@ function buildLaunchReadiness(
       label: "Compliance source setup",
       severity: "neutral",
       stateLabel: "Dry-run first",
-      summary: "Source-backed advisories require explicit migration and ingestion approval.",
+      summary:
+        "Source-backed advisories require explicit migration and ingestion approval.",
     },
     webhookReady
       ? {
@@ -261,7 +251,9 @@ export function buildHomeCommandCenterState(
   const now = input.now ?? new Date();
   const today = dateKey(now);
   const jobs = input.jobs ?? [];
-  const todaysJobs = jobs.filter((job) => jobDateKey(job.scheduled_start) === today);
+  const todaysJobs = jobs.filter(
+    (job) => getJobScheduleDateKey(job.scheduled_start) === today,
+  );
   const activeToday = todaysJobs.filter((job) =>
     ACTIVE_JOB_STATUSES.has(job.status),
   );
@@ -327,8 +319,10 @@ export function buildHomeCommandCenterState(
 
   const schedule = todaysJobs
     .slice()
-    .sort((left, right) =>
-      left.scheduled_start.localeCompare(right.scheduled_start),
+    .sort(
+      (left, right) =>
+        getJobScheduleTime(left.scheduled_start) -
+        getJobScheduleTime(right.scheduled_start),
     )
     .slice(0, 5)
     .map<HomeCommandCenterScheduleItem>((job) => ({
@@ -338,7 +332,7 @@ export function buildHomeCommandCenterState(
       serviceLabel: job.serviceLabel?.trim() || "Service visit",
       statusLabel: STATUS_LABELS[job.status],
       statusSeverity: STATUS_SEVERITIES[job.status],
-      timeLabel: formatScheduleTime(job.scheduled_start),
+      timeLabel: formatJobScheduleTime(job.scheduled_start),
     }));
 
   const alerts: HomeCommandCenterAlert[] = [];
@@ -354,7 +348,8 @@ export function buildHomeCommandCenterState(
 
   if (!input.portalProviderStatus) {
     alerts.push({
-      detail: "Portal delivery status is still loading from the existing provider boundary.",
+      detail:
+        "Portal delivery status is still loading from the existing provider boundary.",
       id: "portal-provider",
       label: "Portal status",
       severity: "neutral",
@@ -368,7 +363,8 @@ export function buildHomeCommandCenterState(
     invoices.length === 0
   ) {
     alerts.push({
-      detail: "Run or reset the local demo story before presenting the workflow.",
+      detail:
+        "Run or reset the local demo story before presenting the workflow.",
       id: "seed-demo",
       label: "Seed demo story",
       severity: "neutral",
@@ -391,7 +387,8 @@ export function buildHomeCommandCenterState(
     nextAction = {
       href: "/inventory",
       label: "Restock low inventory",
-      summary: "Check reorder levels before sending technicians into the field.",
+      summary:
+        "Check reorder levels before sending technicians into the field.",
     };
   } else if (activeToday.length > 0) {
     nextAction = {

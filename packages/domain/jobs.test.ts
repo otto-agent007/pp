@@ -13,6 +13,9 @@ import {
   filterDispatchRouteStops,
   filterAssignedTechnicianJobs,
   filterJobs,
+  formatJobScheduleDateTime,
+  formatJobScheduleTime,
+  getJobScheduleDateKey,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
   parseJobScheduleWallTime,
@@ -131,6 +134,19 @@ describe("job domain", () => {
     expect(parsed.getDate()).toBe(6);
     expect(parsed.getHours()).toBe(9);
     expect(parsed.getMinutes()).toBe(38);
+  });
+
+  it("formats scheduled job timestamps as operator-entered wall time", () => {
+    const value = "2026-05-06T09:38:00Z";
+
+    expect(getJobScheduleDateKey(value)).toBe("2026-05-06");
+    expect(formatJobScheduleTime(value)).toBe("9:38 AM");
+    expect(
+      formatJobScheduleDateTime(value, {
+        dateStyle: "short",
+        timeStyle: "short",
+      }),
+    ).toBe("5/6/26, 9:38 AM");
   });
 
   it("groups dispatch jobs into a navigable week", () => {

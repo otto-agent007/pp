@@ -155,4 +155,46 @@ describe("technician domain", () => {
       },
     ]);
   });
+
+  it("counts Z-suffixed assigned jobs by wall-clock route date", () => {
+    const now = "2026-05-07T12:00:00.000Z";
+    const technicians = [
+      {
+        id: "technician-1",
+        role: "technician",
+        email: "one@example.com",
+        display_name: "One",
+        status: "active",
+        created_at: now,
+        updated_at: now,
+      },
+    ] as const;
+    const jobs = [
+      {
+        id: "job-wall-clock",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        status: "scheduled",
+        scheduled_start: "2026-05-07T01:30:00Z",
+        scheduled_end: null,
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+      },
+    ] as const;
+
+    expect(
+      buildTechnicianRouteLoadSummaries(technicians, jobs, "2026-05-07"),
+    ).toEqual([
+      {
+        technician_id: "technician-1",
+        today_assigned_job_count: 1,
+        upcoming_assigned_job_count: 0,
+        route_status: "scheduled",
+        route_status_label: "Scheduled",
+        current_job_id: "job-wall-clock",
+      },
+    ]);
+  });
 });

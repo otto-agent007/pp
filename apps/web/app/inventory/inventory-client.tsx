@@ -4,6 +4,7 @@ import {
   buildComplianceAdvisory,
   buildInventoryCockpitRows,
   filterChemicalInventory,
+  formatJobScheduleDateTime,
   getInventorySummary,
   validateChemicalInventoryInput,
   validateChemicalLogInput,
@@ -75,10 +76,10 @@ function itemToInput(item: ChemicalInventoryItem): ChemicalInventoryInput {
 function jobLabel(job: Job) {
   const customer = job.customer?.name ?? "Unknown customer";
   const location = job.location?.address ?? "No location";
-  const scheduled = new Intl.DateTimeFormat("en", {
+  const scheduled = formatJobScheduleDateTime(job.scheduled_start, {
     dateStyle: "short",
     timeStyle: "short",
-  }).format(new Date(job.scheduled_start));
+  });
 
   return `${scheduled} - ${customer} - ${location}`;
 }
@@ -100,7 +101,8 @@ function groupLogsByChemical(logs: ChemicalLog[]) {
 
   for (const chemicalLogs of logsByChemical.values()) {
     chemicalLogs.sort(
-      (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at),
+      (left, right) =>
+        Date.parse(right.created_at) - Date.parse(left.created_at),
     );
   }
 
@@ -333,11 +335,7 @@ export function InventoryClient() {
         />
       </section>
 
-      <Card
-        className="shadow-sm"
-        padding="md"
-        statusTone="warning"
-      >
+      <Card className="shadow-sm" padding="md" statusTone="warning">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <Eyebrow className="text-status-alert-warning-fg">
@@ -473,11 +471,7 @@ export function InventoryClient() {
                     isLowStock
                       ? "min-w-0 border-status-alert-danger-border bg-status-alert-danger-bg"
                       : "min-w-0"
-                  } ${
-                    isSelected
-                      ? "ring-2 ring-theme-action-primary/30"
-                      : ""
-                  }`}
+                  } ${isSelected ? "ring-2 ring-theme-action-primary/30" : ""}`}
                   padding="lg"
                   role="article"
                 >
@@ -645,8 +639,7 @@ export function InventoryClient() {
               </div>
             ) : (
               <p className="mt-4 text-sm text-theme-text-secondary">
-                Select a product to review stock, usage, and compliance
-                signals.
+                Select a product to review stock, usage, and compliance signals.
               </p>
             )}
           </Card>

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -269,12 +269,26 @@ describe("CustomersClient", () => {
   it("renders a compact ledger summary without provider payment metadata", () => {
     render(<CustomersClient />);
 
+    const followUp = screen.getByLabelText("Account follow-up for Apex Homes");
+    expect(within(followUp).getByText("Open balance")).toBeInTheDocument();
+    expect(
+      within(followUp).getByText(
+        "Customer has an open balance; billing context is ready for portal review.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(followUp).getByRole("link", { name: "Open billing" }),
+    ).toHaveAttribute("href", "/payments?customer_id=customer-1");
     expect(screen.getByText("Account ledger")).toBeInTheDocument();
-    expect(screen.getByText("Account ledger").closest(".rounded-lg")).toHaveClass(
+    expect(
+      screen.getByText("Account ledger").closest(".rounded-lg"),
+    ).toHaveClass(
       "bg-status-alert-warning-bg",
       "border-status-alert-warning-border",
     );
-    expect(screen.getByText("Open balance")).toBeInTheDocument();
+    expect(
+      screen.getByText("Open balance", { selector: "dt" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("$100.00")).toBeInTheDocument();
     expect(screen.getByText("Paid total")).toBeInTheDocument();
     expect(screen.getByText("$25.00")).toBeInTheDocument();
@@ -339,6 +353,13 @@ describe("CustomersClient", () => {
 
     render(<CustomersClient />);
 
+    const followUp = screen.getByLabelText("Account follow-up for Apex Homes");
+    expect(
+      within(followUp).getByText("Review payment", { selector: "span" }),
+    ).toBeInTheDocument();
+    expect(
+      within(followUp).getByRole("link", { name: "Review payment" }),
+    ).toHaveAttribute("href", "/payments?customer_id=customer-1&filter=review");
     expect(screen.getByText("1 payment needs review.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Review →" })).toHaveAttribute(
       "href",
@@ -348,8 +369,13 @@ describe("CustomersClient", () => {
     await user.click(screen.getByRole("button", { name: "Show all activity" }));
 
     expect(
-      screen.getAllByRole("link", { name: "Review payment" })[0],
-    ).toHaveAttribute("href", "/payments?invoice_id=invoice-review");
+      screen
+        .getAllByRole("link", { name: "Review payment" })
+        .some(
+          (link) =>
+            link.getAttribute("href") === "/payments?invoice_id=invoice-review",
+        ),
+    ).toBe(true);
     expect(screen.getByRole("link", { name: "View receipt" })).toHaveAttribute(
       "href",
       "/payments?invoice_id=invoice-paid",

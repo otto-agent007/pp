@@ -10,6 +10,10 @@ import {
   mobileCaptureControlStyles,
   mobileRouteShellPalette,
 } from "../styles/routeShellStyles";
+import {
+  formatTreatmentFormError,
+  localizeTreatmentFields,
+} from "./treatmentFormCopy";
 
 interface JobTreatmentFormProps {
   jobId: string;
@@ -104,6 +108,10 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
   const drafts = useFormDrafts((state) => state.drafts);
   const [error, setError] = useState<string | null>(null);
   const template = defaultTreatmentFormTemplate;
+  const localizedFields = useMemo(
+    () => localizeTreatmentFields(template.schema.fields, copy.treatment),
+    [copy.treatment, template.schema.fields],
+  );
   const draft = useMemo(
     () => getDraft(jobId, template),
     [drafts, getDraft, jobId, template],
@@ -116,7 +124,11 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
     } catch (submitError) {
       setError(
         submitError instanceof Error
-          ? submitError.message
+          ? formatTreatmentFormError(
+              submitError.message,
+              template.schema.fields,
+              copy.treatment,
+            )
           : copy.treatment.fallbackError,
       );
     }
@@ -133,7 +145,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
         </Text>
       </View>
 
-      {template.schema.fields.map((field) => (
+      {localizedFields.map((field) => (
         <View key={field.id} style={{ gap: 6 }}>
           {field.type === "boolean" ? null : (
             <Text style={mobileCaptureControlStyles.fieldLabel}>
