@@ -4,6 +4,19 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Customer Account Follow-Up Status V1 synced local `main` through merged PR
+  #75 and moved the provider-free customer polish to
+  `codex/customer-account-follow-up-v1`.
+- `/customers` now shows a compact account follow-up status derived from the
+  shared customer ledger summary, covering schedule-first-job,
+  ready-to-invoice, payment-review, open-balance, and account-current states.
+- Attention states link to existing jobs or payments workflows without exposing
+  provider metadata, raw payment records, portal tokens, admin notes, or
+  provider internals on customer cards.
+- The slice kept migrations, provider setup, env changes, Supabase writes,
+  preview mutations, production mutations, and API contract changes out of
+  scope.
+- Verified with focused domain/web customer tests, full repo gates,
 - Mobile Treatment Form Bilingual Copy V1 started from local `main` synced
   through merged PR #75 on branch `codex/mobile-treatment-form-bilingual-v1`.
 - Mobile treatment-form labels, placeholders, and required-field errors now

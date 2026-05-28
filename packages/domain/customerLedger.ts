@@ -44,6 +44,20 @@ export interface CustomerLedgerSummary {
   reviewCount: number;
 }
 
+export type CustomerAccountFollowUpStatusId =
+  | "account_current"
+  | "open_balance"
+  | "ready_to_invoice"
+  | "review_payment"
+  | "schedule_service";
+
+export interface CustomerAccountFollowUpStatus {
+  id: CustomerAccountFollowUpStatusId;
+  label: string;
+  needsAttention: boolean;
+  summary: string;
+}
+
 export interface CustomerPortalHandoffReviewInput {
   hasActivePortalLink: boolean;
   hasContact: boolean;
@@ -76,7 +90,9 @@ export interface BillingPortalNextActionInput {
   job: Job;
 }
 
-function invoiceType(status: InvoiceReconciliationStatus): CustomerLedgerEntryType {
+function invoiceType(
+  status: InvoiceReconciliationStatus,
+): CustomerLedgerEntryType {
   if (status === "draft") {
     return "draft_invoice";
   }
@@ -116,14 +132,26 @@ function invoiceLabel(type: CustomerLedgerEntryType) {
 }
 
 function serviceDetail(job: Job) {
-  return job.location?.nickname ?? job.location?.address ?? job.service_notes ?? "Service";
+  return (
+    job.location?.nickname ??
+    job.location?.address ??
+    job.service_notes ??
+    "Service"
+  );
 }
 
 function invoiceDetail(invoice: Invoice) {
-  return invoice.job?.location?.nickname ?? invoice.job?.location?.address ?? invoice.notes ?? "Invoice";
+  return (
+    invoice.job?.location?.nickname ??
+    invoice.job?.location?.address ??
+    invoice.notes ??
+    "Invoice"
+  );
 }
 
-export function buildCustomerLedger(input: CustomerLedgerInput): CustomerLedgerEntry[] {
+export function buildCustomerLedger(
+  input: CustomerLedgerInput,
+): CustomerLedgerEntry[] {
   const jobEntries = input.jobs
     .filter((job) => job.customer_id === input.customer.id)
     .filter((job) => job.status === "scheduled" || job.status === "completed")
@@ -176,16 +204,21 @@ export function getCustomerLedgerSummary(
 ): CustomerLedgerSummary {
   return entries.reduce<CustomerLedgerSummary>(
     (summary, entry) => {
-      if (entry.type === "completed_service" || entry.type === "scheduled_service") {
+      if (
+        entry.type === "completed_service" ||
+        entry.type === "scheduled_service"
+      ) {
         summary.latestServiceAt =
-          !summary.latestServiceAt || Date.parse(entry.date) > Date.parse(summary.latestServiceAt)
+          !summary.latestServiceAt ||
+          Date.parse(entry.date) > Date.parse(summary.latestServiceAt)
             ? entry.date
             : summary.latestServiceAt;
       }
 
       if (entry.invoice_id) {
         summary.latestInvoiceAt =
-          !summary.latestInvoiceAt || Date.parse(entry.date) > Date.parse(summary.latestInvoiceAt)
+          !summary.latestInvoiceAt ||
+          Date.parse(entry.date) > Date.parse(summary.latestInvoiceAt)
             ? entry.date
             : summary.latestInvoiceAt;
         summary.openBalanceCents += entry.balance_cents ?? 0;
@@ -218,6 +251,57 @@ export function getCustomerLedgerSummary(
   );
 }
 
+export function getCustomerAccountFollowUpStatus(
+  summary: CustomerLedgerSummary,
+): CustomerAccountFollowUpStatus {
+  if (!summary.latestServiceAt) {
+    return {
+      id: "schedule_service",
+      label: "Schedule first job",
+      needsAttention: true,
+      summary:
+        "No service activity yet. Schedule the first job before portal sharing.",
+    };
+  }
+
+  if (summary.reviewCount > 0) {
+    return {
+      id: "review_payment",
+      label: "Review payment",
+      needsAttention: true,
+      summary:
+        "Payment or invoice activity needs office review before portal handoff.",
+    };
+  }
+
+  if (summary.openBalanceCents > 0) {
+    return {
+      id: "open_balance",
+      label: "Open balance",
+      needsAttention: true,
+      summary:
+        "Customer has an open balance; billing context is ready for portal review.",
+    };
+  }
+
+  if (!summary.latestInvoiceAt) {
+    return {
+      id: "ready_to_invoice",
+      label: "Ready to invoice",
+      needsAttention: true,
+      summary:
+        "Service proof exists; create or review the invoice before portal sharing.",
+    };
+  }
+
+  return {
+    id: "account_current",
+    label: "Account current",
+    needsAttention: false,
+    summary: "Service and billing context are ready for portal handoff.",
+  };
+}
+
 export function getCustomerPortalHandoffReview(
   input: CustomerPortalHandoffReviewInput,
 ): CustomerPortalHandoffReview {
@@ -232,12 +316,13 @@ export function getCustomerPortalHandoffReview(
     return {
       label: "Review before portal handoff",
       mode_label,
-      summary: [
-        missingContact ? "Add customer contact" : null,
-        missingServiceProof ? "finish service proof" : null,
-      ]
-        .filter(Boolean)
-        .join(" and ") + " before sharing.",
+      summary:
+        [
+          missingContact ? "Add customer contact" : null,
+          missingServiceProof ? "finish service proof" : null,
+        ]
+          .filter(Boolean)
+          .join(" and ") + " before sharing.",
     };
   }
 
@@ -245,7 +330,8 @@ export function getCustomerPortalHandoffReview(
     return {
       label: "Review account before sharing",
       mode_label,
-      summary: "Payment or invoice activity needs office review before portal handoff.",
+      summary:
+        "Payment or invoice activity needs office review before portal handoff.",
     };
   }
 
@@ -253,7 +339,8 @@ export function getCustomerPortalHandoffReview(
     return {
       label: "Generate portal link",
       mode_label,
-      summary: "Service proof is ready; generate a portal link when the account is ready to share.",
+      summary:
+        "Service proof is ready; generate a portal link when the account is ready to share.",
     };
   }
 
@@ -287,7 +374,7 @@ export function buildBillingPortalNextActions(
       id: "review_payment",
       label: reconciliation.needsReview ? "Review payment" : "Open invoice",
       summary: reconciliation.needsReview
-        ? reconciliation.reviewLabel ?? "Payment activity needs review."
+        ? (reconciliation.reviewLabel ?? "Payment activity needs review.")
         : reconciliation.label,
     });
 
@@ -296,7 +383,8 @@ export function buildBillingPortalNextActions(
         href: customerHref,
         id: "share_portal",
         label: "Share portal",
-        summary: "Generate a customer portal link for service and billing follow-up.",
+        summary:
+          "Generate a customer portal link for service and billing follow-up.",
       });
     }
   }

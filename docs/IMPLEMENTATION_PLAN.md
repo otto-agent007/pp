@@ -1,8 +1,40 @@
 # Implementation Plan
 
-## Current Priority: Mobile Treatment Form Bilingual Copy
+## Current Priority: Customer Account Follow-Up Status
 
-This product-polish slice advances the active bilingual field-copy candidate
+This provider-free customer polish starts from local `main` synced through PR
+#75 and makes `/customers` easier to scan during real operator walkthroughs. It
+does not change migrations, providers, environment variables, seed/reset state,
+preview data, production data, Supabase writes, API contracts, or live
+compliance ingestion.
+
+Completed in this batch:
+
+1. Added a shared customer account follow-up classifier in `packages/domain`
+   from the existing customer ledger summary.
+2. Surfaced compact customer-card follow-up states for schedule-first-job,
+   ready-to-invoice, payment-review, open-balance, and account-current paths.
+3. Linked attention states to the existing jobs and payments workflows while
+   keeping provider metadata, raw payment records, portal tokens, admin notes,
+   and provider internals off customer cards.
+4. Added focused domain and web coverage for the new classifier and
+   `/customers` follow-up surface.
+5. Reran local fixture smoke across the standard admin and tokened portal
+   routes at desktop and narrow widths.
+
+Next decision points:
+
+1. Keep provider delivery receipts and richer provider failure states deferred
+   until webhook-backed evidence exists.
+2. Keep local/preview seed/reset and authenticated browser smoke gated on
+   approved Supabase env names, protected-preview access, and admin/dispatcher
+   sign-in.
+3. Continue product polish as small provider-free slices while open draft PRs
+   for mobile, dispatch, and schedule surfaces are still in review.
+
+## Previous Priority: Mobile Treatment Form Bilingual Copy
+
+That product-polish slice advanced the active bilingual field-copy candidate
 without changing the offline queue, native config, dependencies, providers,
 environment variables, migrations, seed/reset state, preview data, production
 data, or the later STT/provider decision.

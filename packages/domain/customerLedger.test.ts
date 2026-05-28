@@ -3,6 +3,7 @@ import type { Customer, Invoice, Job } from "@pest-patrol/types";
 
 import {
   buildBillingPortalNextActions,
+  getCustomerAccountFollowUpStatus,
   buildCustomerLedger,
   getCustomerPortalHandoffReview,
   getCustomerLedgerSummary,
@@ -100,7 +101,9 @@ describe("customer ledger domain", () => {
       "sent_invoice",
       "completed_service",
     ]);
-    expect(entries.every((entry) => entry.customer_id === "customer-1")).toBe(true);
+    expect(entries.every((entry) => entry.customer_id === "customer-1")).toBe(
+      true,
+    );
     expect(entries[1]).toMatchObject({
       amount_cents: 12500,
       balance_cents: 12500,
@@ -176,6 +179,83 @@ describe("customer ledger domain", () => {
       openBalanceCents: 0,
       paidCents: 0,
       reviewCount: 0,
+    });
+  });
+
+  it("classifies the next customer account follow-up from the ledger summary", () => {
+    expect(
+      getCustomerAccountFollowUpStatus({
+        latestInvoiceAt: null,
+        latestServiceAt: null,
+        openBalanceCents: 0,
+        paidCents: 0,
+        reviewCount: 0,
+      }),
+    ).toEqual({
+      id: "schedule_service",
+      label: "Schedule first job",
+      needsAttention: true,
+      summary:
+        "No service activity yet. Schedule the first job before portal sharing.",
+    });
+
+    expect(
+      getCustomerAccountFollowUpStatus({
+        latestInvoiceAt: "2026-05-06T09:00:00Z",
+        latestServiceAt: "2026-05-05T09:00:00Z",
+        openBalanceCents: 12500,
+        paidCents: 0,
+        reviewCount: 1,
+      }),
+    ).toEqual({
+      id: "review_payment",
+      label: "Review payment",
+      needsAttention: true,
+      summary:
+        "Payment or invoice activity needs office review before portal handoff.",
+    });
+
+    expect(
+      getCustomerAccountFollowUpStatus({
+        latestInvoiceAt: "2026-05-06T09:00:00Z",
+        latestServiceAt: "2026-05-05T09:00:00Z",
+        openBalanceCents: 12500,
+        paidCents: 0,
+        reviewCount: 0,
+      }),
+    ).toMatchObject({
+      id: "open_balance",
+      label: "Open balance",
+      needsAttention: true,
+    });
+
+    expect(
+      getCustomerAccountFollowUpStatus({
+        latestInvoiceAt: null,
+        latestServiceAt: "2026-05-05T09:00:00Z",
+        openBalanceCents: 0,
+        paidCents: 0,
+        reviewCount: 0,
+      }),
+    ).toMatchObject({
+      id: "ready_to_invoice",
+      label: "Ready to invoice",
+      needsAttention: true,
+    });
+
+    expect(
+      getCustomerAccountFollowUpStatus({
+        latestInvoiceAt: "2026-05-06T09:00:00Z",
+        latestServiceAt: "2026-05-05T09:00:00Z",
+        openBalanceCents: 0,
+        paidCents: 12500,
+        reviewCount: 0,
+      }),
+    ).toEqual({
+      id: "account_current",
+      label: "Account current",
+      needsAttention: false,
+      summary: "Service and billing context are ready for portal handoff.",
     });
   });
 
