@@ -35,6 +35,46 @@ Next decision points:
    production launch checklist work deferred until authenticated preview and
    webhook-backed evidence exist.
 
+## Previous Priority: Mobile Capture Proof Frames
+
+This slice finished the next small mobile native-primitive adoption step while
+operator-gated preview/Supabase launch checks remained blocked on approved
+env/access. It kept the work presentation-only in the Expo technician app:
+no mobile dependency/config changes, migrations, providers, env changes,
+Supabase writes, seed/reset writes, preview mutations, production mutations, or
+raw-audio/STT implementation.
+
+Completed in this batch:
+
+1. Adopted shared `@pest-patrol/ui-native` `CaptureCard` framing for queued
+   photo proof previews.
+2. Adopted shared `CaptureCard` framing for the signature pad surface.
+3. Preserved existing `CaptureButton` camera/library actions, Expo image picker
+   permission flow, signature-canvas handling, and offline queue stores.
+4. Added focused mobile component coverage for photo preview and signature pad
+   proof-frame behavior.
+5. Verified with focused mobile capture tests, mobile typecheck,
+   `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
+   `corepack pnpm build`, and whitespace checks.
+
+## Previous Priority: Vercel Packaging Evidence Refresh
+
+The evidence pass started from local `main` synced through PR #74 and removed
+the stale local Windows Vercel packaging blocker from the launch gate. It did
+not change app behavior, migrations, providers, environment variables,
+seed/reset state, preview data, production data, or live compliance ingestion.
+
+Completed in this batch:
+
+1. Confirmed PR #74 is merged and fast-forwarded local `main` to `58a9eb1`.
+2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
+   successfully, wrote `.vercel/output`, and reported `Build completed
+   successfully` for the preview target.
+3. Kept the remaining launch blockers explicit: approved Supabase env names,
+   local Docker/Postgres availability for local migration inspection,
+   protected-preview access, and admin/dispatcher sign-in are still required
+   before real seed/reset or authenticated preview smoke.
+
 ## Previous Priority: Dashboard BI + Fixture Smoke Evidence
 
 That batch closed the protected dashboard BI work, promoted the merged fixture
