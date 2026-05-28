@@ -1,20 +1,25 @@
 # Implementation Plan
 
-## Current Priority: Vercel Packaging Evidence Refresh
+## Current Priority: Jobs Assignment Handoff
 
-The current evidence pass starts from local `main` synced through PR #74 and
-removes the stale local Windows Vercel packaging blocker from the launch gate.
-It does not change app behavior, migrations, providers, environment variables,
-seed/reset state, preview data, production data, or live compliance ingestion.
+This product polish pass starts from local `main` after merged PR #75 and keeps
+the next slice away from the open draft PR surfaces for mobile capture,
+dispatch, payments/closeouts/inventory/portal/automation, mobile bilingual
+treatment copy, and customer ledger follow-up. It adds dispatch assignment
+handoff clarity to `/jobs` without changing app behavior outside the jobs
+workspace, migrations, providers, environment variables, seed/reset state,
+preview data, production data, or live compliance ingestion.
 
 Completed in this batch:
 
-1. Confirmed PR #74 is merged and fast-forwarded local `main` to
-   `58a9eb1`.
-2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
-   successfully, wrote `.vercel/output`, and reported `Build completed
-   successfully` for the preview target.
-3. Kept the remaining launch blockers explicit: approved Supabase env names,
+1. Confirmed PR #75 is merged and local `main` is fast-forwarded to
+   `origin/main`.
+2. Added a `/jobs` assignment handoff summary that counts assigned and
+   unassigned active jobs from existing loaded job data.
+3. Added per-job technician handoff state so dispatch can see the assigned
+   technician, missing assignment work, or pending technician details without
+   leaving the job queue.
+4. Kept the remaining launch blockers explicit: approved Supabase env names,
    local Docker/Postgres availability for local migration inspection,
    protected-preview access, and admin/dispatcher sign-in are still required
    before real seed/reset or authenticated preview smoke.

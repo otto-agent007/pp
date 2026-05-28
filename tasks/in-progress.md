@@ -4,6 +4,9 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Jobs Assignment Handoff V1 added `/jobs` assignment handoff counts and
+  per-card technician assignment state from existing loaded jobs/technicians,
+  without schema, provider, env, seed/reset, preview, or production changes.
 - Local Vercel Packaging Evidence Refresh V1 synced local `main` through
   merged PR #74 and moved the evidence-only follow-up to
   `codex/vercel-packaging-evidence-v1`.

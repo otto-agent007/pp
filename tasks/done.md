@@ -1,5 +1,17 @@
 # Done
 
+## Jobs Assignment Handoff V1
+
+- Added a `/jobs` assignment handoff summary that counts assigned and
+  unassigned active jobs from the already loaded job list
+- Added per-job technician handoff state so dispatch can see assigned
+  technicians, missing assignment work, and pending technician details without
+  leaving the job queue
+- Preserved existing hooks, data flow, API contracts, schema, providers, env,
+  seed/reset writes, preview state, and production state
+- Verified with focused jobs UI coverage plus the full repo gate for tests,
+  typecheck, lint, build, local fixture smoke, and `git diff --check`
+
 ## Local Vercel Packaging Evidence Refresh V1
 
 - Fast-forwarded local `main` through merged PR #74 before starting the
