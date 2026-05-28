@@ -18,6 +18,27 @@ Recent closure:
   scope.
 - Verified with focused domain/web customer tests, full repo gates,
   `corepack pnpm demo:fixture-smoke`, and `git diff --check`.
+- Dispatch Calendar Proof Polish V1 synced local `main` through merged PR #75
+  and moved the protected dispatch diff onto
+  `codex/dispatch-calendar-proof-polish-v1`.
+- `/dispatch` now keeps the 180-job weekly calendar denser: stop readiness,
+  route/order context, customer/location, service-map link, status,
+  technician, and GPS proof state are visible before edit controls.
+- Per-job status and technician edits now stay behind an explicit `Manage`
+  control, with accessible job-group labels and only the selected job's
+  controls expanded.
+- Empty or loading GPS evidence now renders as compact inline copy while the
+  full evidence panel is reserved for synced arrival/departure proof.
+- Route intelligence now has stronger summary tones, compact disclosure
+  counts, smaller period navigation, and today's highlighted day column without
+  adding a map provider.
+- Verified with the focused dispatch test, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, in-app browser DOM QA on `/dispatch`,
+  and `git diff --check`.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  Supabase writes, preview mutations, production mutations, and embedded map
+  SDKs out of scope.
 - Mobile Capture Proof Frames V1 adopted shared native `CaptureCard` framing
   for photo proof previews and the signature pad while preserving existing
   `CaptureButton` actions, Expo camera/library/signature flows, and offline
