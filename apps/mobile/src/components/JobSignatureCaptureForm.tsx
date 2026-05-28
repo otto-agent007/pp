@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Text, TextInput } from "react-native";
 import SignatureCanvas, {
   type SignatureViewRef,
 } from "react-native-signature-canvas";
-import { CaptureSection } from "@pest-patrol/ui-native";
+import { CaptureCard, CaptureSection } from "@pest-patrol/ui-native";
 
 import { useLanguage } from "../store/useLanguage";
 import { useJobSignatures } from "../store/useJobSignatures";
@@ -87,11 +87,11 @@ export function JobSignatureCaptureForm({
         value={draft.signerName}
       />
 
-      <View
+      <CaptureCard
         style={{
-          ...mobileCaptureControlStyles.preview,
           height: 220,
           overflow: "hidden",
+          padding: 0,
         }}
       >
         <SignatureCanvas
@@ -107,7 +107,7 @@ export function JobSignatureCaptureForm({
           ref={signatureRef}
           webStyle={signatureWebStyle}
         />
-      </View>
+      </CaptureCard>
 
       {error ? (
         <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
