@@ -8,6 +8,16 @@ Recent closure:
   handoff guidance and included `/technicians` in the local fixture smoke route
   plan, without auth behavior, provider, env, seed/reset, preview, or
   production changes.
+- Mobile Capture Proof Frames V1 adopted shared native `CaptureCard` framing
+  for photo proof previews and the signature pad while preserving existing
+  `CaptureButton` actions, Expo camera/library/signature flows, and offline
+  queue stores.
+- Focused mobile capture tests, mobile typecheck, full repo test, typecheck,
+  lint, build, and whitespace checks passed for the new photo/signature
+  proof-frame behavior.
+- The slice kept migrations, provider setup, env changes, Supabase writes,
+  preview mutations, production mutations, mobile dependency/config changes,
+  and raw-audio/STT implementation out of scope.
 - Local Vercel Packaging Evidence Refresh V1 synced local `main` through
   merged PR #74 and moved the evidence-only follow-up to
   `codex/vercel-packaging-evidence-v1`.
@@ -295,9 +305,8 @@ Recent closure:
 
 Follow-up candidates:
 
-- [ ] Consider the next mobile-native primitive adoption slice only after the
-      current shared-native package changes land; likely candidates are
-      capture-control buttons/cards, not a broad mobile restyle.
+- [ ] Consider only small remaining mobile-native primitive adoption slices;
+      broad mobile restyling remains deferred.
 - [ ] Operator loads approved local Supabase env names, then reruns local demo preflight against the richer seeded proof-media story.
 - [ ] After local preflight is ready, run local seed/reset and authenticated browser smoke for `/closeouts`, `/customers`, tokened `/portal`, and proof-media rendering.
 - [ ] Verify the approved local/preview migration target before applying pending local migration files, including `20260518021520_portal_send_succeeded_event.sql`; no preview/production migration has been applied by Codex.
