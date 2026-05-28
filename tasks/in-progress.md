@@ -4,6 +4,10 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Technician Access Handoff V1 added provider-neutral `/technicians` invite
+  handoff guidance and included `/technicians` in the local fixture smoke route
+  plan, without auth behavior, provider, env, seed/reset, preview, or
+  production changes.
 - Local Vercel Packaging Evidence Refresh V1 synced local `main` through
   merged PR #74 and moved the evidence-only follow-up to
   `codex/vercel-packaging-evidence-v1`.

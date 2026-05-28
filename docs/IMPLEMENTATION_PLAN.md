@@ -1,20 +1,26 @@
 # Implementation Plan
 
-## Current Priority: Vercel Packaging Evidence Refresh
+## Current Priority: Technician Access Handoff
 
-The current evidence pass starts from local `main` synced through PR #74 and
-removes the stale local Windows Vercel packaging blocker from the launch gate.
-It does not change app behavior, migrations, providers, environment variables,
-seed/reset state, preview data, production data, or live compliance ingestion.
+This product polish pass starts from local `main` after merged PR #75 and keeps
+the next slice away from the open draft PR surfaces for mobile capture,
+dispatch, payments/closeouts/inventory/portal/automation, mobile bilingual
+treatment copy, customer ledger follow-up, and jobs assignment handoff. It adds
+provider-neutral technician invite handoff guidance and brings `/technicians`
+into the repeatable local fixture smoke route plan without changing auth
+behavior, migrations, providers, environment variables, seed/reset state,
+preview data, production data, or live compliance ingestion.
 
 Completed in this batch:
 
-1. Confirmed PR #74 is merged and fast-forwarded local `main` to
-   `58a9eb1`.
-2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
-   successfully, wrote `.vercel/output`, and reported `Build completed
-   successfully` for the preview target.
-3. Kept the remaining launch blockers explicit: approved Supabase env names,
+1. Confirmed PR #75 is merged and local `main` is fast-forwarded to
+   `origin/main`.
+2. Added `/technicians` access handoff guidance that explains the invite,
+   email confirmation, and dispatch assignment sequence without exposing
+   provider internals or changing invite behavior.
+3. Added `/technicians` to the local fixture smoke plan with route signals for
+   the technician roster and dispatch-ready crew.
+4. Kept the remaining launch blockers explicit: approved Supabase env names,
    local Docker/Postgres availability for local migration inspection,
    protected-preview access, and admin/dispatcher sign-in are still required
    before real seed/reset or authenticated preview smoke.
