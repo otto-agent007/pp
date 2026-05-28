@@ -74,7 +74,46 @@ export const translations = {
           title: "Treatment form",
           description:
             "Record the field notes before leaving the stop. Queued forms stay on this device and sync when the connection is ready.",
+          fields: {
+            target_pests: {
+              label: "Target pests",
+              placeholder: "Ants, roaches, rodents",
+            },
+            areas_treated: {
+              label: "Areas treated",
+              placeholder: "Kitchen, garage, exterior perimeter",
+            },
+            materials_applied: {
+              label: "Materials applied",
+              placeholder: "Products or methods used",
+            },
+            application_method: {
+              label: "Application method",
+              placeholder:
+                "Bait placement, crack-and-crevice, exclusion, monitoring",
+            },
+            service_branch: {
+              label: "Service branch",
+              placeholder: "San Diego branch route",
+            },
+            weather_conditions: {
+              label: "Weather / site conditions",
+              placeholder:
+                "Interior service, dry exterior, wind, rain, access notes",
+            },
+            customer_instructions: {
+              label: "Customer instructions",
+              placeholder: "Re-entry notes, prep, follow-up instructions",
+            },
+            epa_label_reviewed: {
+              label: "EPA label reviewed",
+            },
+            follow_up_required: {
+              label: "Follow-up required",
+            },
+          },
           queueButton: "Queue form",
+          requiredFieldError: "{field} is required",
           fallbackError: "Unable to queue treatment form",
         },
       },
@@ -156,7 +195,46 @@ export const translations = {
           title: "Formulario de tratamiento",
           description:
             "Registra las notas de campo antes de salir de la parada. Los formularios guardados quedan en este dispositivo y se sincronizan cuando la conexión esté lista.",
+          fields: {
+            target_pests: {
+              label: "Plagas objetivo",
+              placeholder: "Hormigas, cucarachas, roedores",
+            },
+            areas_treated: {
+              label: "Áreas tratadas",
+              placeholder: "Cocina, garaje, perímetro exterior",
+            },
+            materials_applied: {
+              label: "Materiales aplicados",
+              placeholder: "Productos o métodos usados",
+            },
+            application_method: {
+              label: "Método de aplicación",
+              placeholder:
+                "Cebo, grietas y hendiduras, exclusión, monitoreo",
+            },
+            service_branch: {
+              label: "Sucursal de servicio",
+              placeholder: "Ruta de San Diego",
+            },
+            weather_conditions: {
+              label: "Clima / condiciones del sitio",
+              placeholder:
+                "Servicio interior, exterior seco, viento, lluvia, notas de acceso",
+            },
+            customer_instructions: {
+              label: "Instrucciones para el cliente",
+              placeholder: "Reingreso, preparación, seguimiento",
+            },
+            epa_label_reviewed: {
+              label: "Etiqueta EPA revisada",
+            },
+            follow_up_required: {
+              label: "Se requiere seguimiento",
+            },
+          },
           queueButton: "Guardar formulario",
+          requiredFieldError: "El campo {field} es obligatorio",
           fallbackError: "No se pudo guardar el formulario de tratamiento",
         },
       },

@@ -36,6 +36,127 @@ Next decision points:
    production launch checklist work deferred until authenticated preview and
    webhook-backed evidence exist.
 
+## Previous Priority: Jobs Assignment Handoff
+
+That product polish pass started from local `main` after merged PR #75 and
+added dispatch assignment handoff clarity to `/jobs` without changing app
+behavior outside the jobs workspace, migrations, providers, environment
+variables, seed/reset state, preview data, production data, or live compliance
+ingestion.
+
+Completed in this batch:
+
+1. Confirmed PR #75 is merged and local `main` is fast-forwarded to
+   `origin/main`.
+2. Added a `/jobs` assignment handoff summary that counts assigned and
+   unassigned active jobs from existing loaded job data.
+3. Added per-job technician handoff state so dispatch can see the assigned
+   technician, missing assignment work, or pending technician details without
+   leaving the job queue.
+4. Kept the remaining launch blockers explicit: approved Supabase env names,
+   local Docker/Postgres availability for local migration inspection,
+   protected-preview access, and admin/dispatcher sign-in are still required
+   before real seed/reset or authenticated preview smoke.
+
+Next decision points:
+
+1. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
+2. If local Supabase remains the chosen migration target, repair Docker
+   Desktop's Linux engine and local Postgres before relying on local migration
+   history.
+3. Keep provider delivery receipts, richer provider failure states, and
+   production launch checklist work deferred until authenticated preview and
+   webhook-backed evidence exist.
+
+## Previous Priority: Customer Account Follow-Up Status
+
+That provider-free customer polish started from local `main` synced through PR
+#75 and makes `/customers` easier to scan during real operator walkthroughs. It
+does not change migrations, providers, environment variables, seed/reset state,
+preview data, production data, Supabase writes, API contracts, or live
+compliance ingestion.
+
+Completed in this batch:
+
+1. Added a shared customer account follow-up classifier in `packages/domain`
+   from the existing customer ledger summary.
+2. Surfaced compact customer-card follow-up states for schedule-first-job,
+   ready-to-invoice, payment-review, open-balance, and account-current paths.
+3. Linked attention states to the existing jobs and payments workflows while
+   keeping provider metadata, raw payment records, portal tokens, admin notes,
+   and provider internals off customer cards.
+4. Added focused domain and web coverage for the new classifier and
+   `/customers` follow-up surface.
+5. Reran local fixture smoke across the standard admin and tokened portal
+   routes at desktop and narrow widths.
+
+Next decision points:
+
+1. Keep provider delivery receipts and richer provider failure states deferred
+   until webhook-backed evidence exists.
+2. Keep local/preview seed/reset and authenticated browser smoke gated on
+   approved Supabase env names, protected-preview access, and admin/dispatcher
+   sign-in.
+3. Continue product polish as small provider-free slices while open draft PRs
+   for mobile, dispatch, and schedule surfaces are still in review.
+
+## Previous Priority: Mobile Treatment Form Bilingual Copy
+
+That product-polish slice advanced the active bilingual field-copy candidate
+without changing the offline queue, native config, dependencies, providers,
+environment variables, migrations, seed/reset state, preview data, production
+data, or the later STT/provider decision.
+
+Completed in this batch:
+
+1. Added English and Spanish treatment-form field labels and placeholders in
+   `@pest-patrol/i18n`.
+2. Added a mobile-local copy adapter so `JobTreatmentForm` can render localized
+   labels/placeholders while preserving the domain template and JSONB field ids.
+3. Localized required-field validation copy in the mobile treatment form by
+   mapping unchanged domain validation messages to the selected technician
+   language.
+4. Added focused tests for the copy adapter and ran mobile/i18n verification
+   plus full repo gates.
+
+Next decision points:
+
+1. Keep STT behind the already decisioned later provider/audio slice; do not
+   add microphone permissions, audio packages, or provider routes until
+   explicitly approved.
+2. Continue mobile bilingual copy only as small follow-up slices if other
+   capture controls still expose English-only dynamic form content.
+
+## Previous Priority: Schedule Wall-Clock Consistency
+
+That product-polish slice closed the preview smoke finding where stored
+Z-suffixed job schedule values rendered as absolute instants instead of the
+operator-entered local service time. It starts from `origin/main` after merged
+PR #75 and keeps migrations, providers, environment variables, Supabase writes,
+seed/reset state, preview data, production data, mobile component changes, and
+dispatch PR #77 UI work out of scope.
+
+Completed in this batch:
+
+1. Added shared domain helpers for job schedule date keys, time labels, and
+   date/time labels that parse job schedules as wall-clock service times.
+2. Reused the helpers in technician route load summaries, home command-center
+   schedule rows, dispatch route intelligence labels, inventory/payments/
+   automation job pickers, closeouts queue/detail labels, and customer portal
+   service/billing labels.
+3. Added focused regression tests for the 9:38 AM demo schedule across domain,
+   admin, billing, automation, closeout, and portal surfaces.
+4. Reran focused checks plus full repo test, typecheck, lint, build, no-env
+   local fixture smoke, and whitespace verification.
+
+Next decision points:
+
+1. Verify the 9:38 AM preview smoke case again on the next deployed preview.
+2. Keep the open dispatch and mobile capture draft PRs independent unless the
+   operator chooses to merge or rebase them.
+3. Operator loads approved local or preview Supabase env names before any real
+   seed/reset, live ingestion, or authenticated preview browser smoke.
 ## Previous Priority: Dispatch Calendar Proof Polish
 
 That polish pass started from local `main` synced through merged PR #75 and

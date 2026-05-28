@@ -322,6 +322,29 @@ export function getJobScheduleTime(value: string) {
   return parseJobScheduleWallTime(value).getTime();
 }
 
+export function getJobScheduleDateKey(value: string) {
+  return toDateKey(parseJobScheduleWallTime(value));
+}
+
+export function formatJobScheduleTime(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parseJobScheduleWallTime(value));
+}
+
+export function formatJobScheduleDateTime(
+  value: string,
+  options: Intl.DateTimeFormatOptions = {
+    dateStyle: "medium",
+    timeStyle: "short",
+  },
+) {
+  return new Intl.DateTimeFormat("en", options).format(
+    parseJobScheduleWallTime(value),
+  );
+}
+
 export function filterJobs(
   jobs: Job[],
   search: string,
@@ -386,13 +409,6 @@ function toDateLabel(date: Date) {
     month: "short",
     day: "numeric",
   }).format(date);
-}
-
-function toTimeLabel(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parseJobScheduleWallTime(value));
 }
 
 export function getDispatchWeekStart(anchorDate: string) {
@@ -695,7 +711,7 @@ export function buildDispatchRouteIntelligence(
       location_state: getDispatchRouteLocationState(job),
       next_stop_job_id: routeJobs[index + 1]?.id ?? null,
       risk_state: getDispatchRouteRiskState(job, statusState, options.now),
-      schedule_label: toTimeLabel(job.scheduled_start),
+      schedule_label: formatJobScheduleTime(job.scheduled_start),
       sequence: index + 1,
       status_state: statusState,
       technician_id: job.assigned_tech_id,

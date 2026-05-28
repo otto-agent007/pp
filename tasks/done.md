@@ -14,6 +14,68 @@
   full repo gate for tests, typecheck, lint, build, local fixture smoke, and
   `git diff --check`
 
+## Jobs Assignment Handoff V1
+
+- Added a `/jobs` assignment handoff summary that counts assigned and
+  unassigned active jobs from the already loaded job list
+- Added per-job technician handoff state so dispatch can see assigned
+  technicians, missing assignment work, and pending technician details without
+  leaving the job queue
+- Preserved existing hooks, data flow, API contracts, schema, providers, env,
+  seed/reset writes, preview state, and production state
+- Verified with focused jobs UI coverage plus the full repo gate for tests,
+  typecheck, lint, build, local fixture smoke, and `git diff --check`
+
+## Customer Account Follow-Up Status V1
+
+- Added a shared customer account follow-up classifier from the existing
+  account ledger summary
+- Surfaced compact `/customers` follow-up states for schedule-first-job,
+  ready-to-invoice, payment-review, open-balance, and account-current paths
+- Linked each attention state to the existing jobs or payments workflow while
+  keeping provider metadata, raw payments, portal tokens, and admin-only notes
+  off customer cards
+- Kept the slice free of migrations, provider setup, env changes, Supabase
+  writes, preview mutations, production mutations, and API contract changes
+- Verified with focused domain/web customer tests, full repo gates,
+
+## Mobile Treatment Form Bilingual Copy V1
+
+- Added English and Spanish display copy for every mobile treatment-form field
+  label and placeholder while preserving the existing JSONB field ids and
+  domain form template
+- Localized treatment-form required-field errors in the mobile UI by mapping
+  domain validation messages back to the technician-selected language
+- Kept manual typed notes and the existing offline draft/enqueue/sync flow as
+  the only behavior change surface; no STT, audio recording, dependencies,
+  Expo config, provider route, environment variables, migrations, Supabase
+  writes, preview mutations, or production mutations were added
+- Verified with focused treatment-form copy tests, full mobile tests, mobile
+  typecheck, i18n typecheck, full repo gates, and `git diff --check`
+
+## Schedule Wall-Clock Consistency V1
+
+- Added shared domain helpers for job schedule date keys, time labels, and
+  date/time labels that parse stored job schedule values as operator-entered
+  wall-clock times
+- Reused the helpers in technician route load summaries, home command-center
+  schedule rows, dispatch route intelligence labels, inventory/payments/
+  automation job pickers, closeouts queue/detail labels, customer portal
+  billing cards, and service timeline labels
+- Added focused regression coverage proving the 9:38 AM demo schedule no
+  longer renders as 2:38 AM on the affected admin and customer-facing surfaces
+- Reran the no-env local fixture smoke on this branch; `/`, `/dispatch`,
+  `/customers`, `/jobs`, `/inventory`, `/payments`, `/closeouts`,
+  `/compliance`, `/automation`, and tokened `/portal` passed at desktop and
+  narrow widths with no route-signal failures, page/console errors,
+  horizontal overflow, or sensitive patterns
+- Kept migrations, schema changes, provider setup, env changes, Supabase
+  writes, seed/reset writes, preview mutations, production mutations, mobile
+  component changes, and dispatch PR #77 UI changes out of scope
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`
+
 ## Dispatch Calendar Proof Polish V1
 
 - Moved the protected dispatch-calendar diff onto

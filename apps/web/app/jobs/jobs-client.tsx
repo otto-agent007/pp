@@ -212,6 +212,25 @@ export function JobsClient() {
     }),
     [decoratedJobs],
   );
+  const assignmentCounts = useMemo(() => {
+    const activeJobs = decoratedJobs.filter((job) => job.status !== "canceled");
+    const unassigned = activeJobs.filter((job) => !job.assigned_tech_id).length;
+
+    return {
+      assigned: activeJobs.length - unassigned,
+      unassigned,
+    };
+  }, [decoratedJobs]);
+  const technicianById = useMemo(
+    () =>
+      new Map(
+        (techniciansQuery.data ?? []).map((technician) => [
+          technician.id,
+          technician,
+        ]),
+      ),
+    [techniciansQuery.data],
+  );
   const visibleJobs = useMemo(
     () => filterJobs(decoratedJobs, search, status, dateFrom, dateTo),
     [dateFrom, dateTo, decoratedJobs, search, status],
@@ -360,6 +379,35 @@ export function JobsClient() {
             value={jobCounts.canceled}
           />
         </div>
+        <div
+          className={`rounded-md border p-3 ${statusSurfaceClassName(
+            assignmentCounts.unassigned > 0 ? "warning" : "success",
+          )}`}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold text-theme-text-primary">
+                Assignment handoff
+              </p>
+              <p className="mt-1 text-sm text-theme-text-secondary">
+                {assignmentCounts.unassigned > 0
+                  ? "Assign technicians before dispatch route review, or leave a job intentionally unassigned for triage."
+                  : "All active jobs have a technician handoff for dispatch review."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <StatusPill
+                dot={false}
+                tone={assignmentCounts.unassigned > 0 ? "warning" : "success"}
+              >
+                {assignmentCounts.unassigned} unassigned
+              </StatusPill>
+              <StatusPill dot={false} tone="neutral">
+                {assignmentCounts.assigned} assigned
+              </StatusPill>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
@@ -389,49 +437,84 @@ export function JobsClient() {
               </a>
             </Card>
           ) : (
-            visibleJobs.map((job) => (
-              <article key={job.id}>
-                <Card padding="lg">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-semibold text-theme-text-primary">
-                          {job.customer?.name ?? "Unknown customer"}
-                        </h2>
-                        <StatusPill tone={jobStatusTone(job.status)}>
-                          {statusLabels[job.status]}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-2 text-sm text-theme-text-secondary">
-                        {formatSchedule(job.scheduled_start)}
-                      </p>
-                      <p className="mt-1 text-sm text-theme-text-secondary">
-                        {job.location?.address ?? "No location saved"}
-                      </p>
-                      {job.service_notes ? (
-                        <p className="mt-3 text-sm text-theme-text-secondary">
-                          {job.service_notes}
+            visibleJobs.map((job) => {
+              const assignedTechnician = job.assigned_tech_id
+                ? technicianById.get(job.assigned_tech_id)
+                : null;
+              const assignmentTone: StatusPillTone = job.assigned_tech_id
+                ? assignedTechnician
+                  ? "success"
+                  : "info"
+                : "warning";
+              const assignmentLabel = job.assigned_tech_id
+                ? `Assigned to ${
+                    assignedTechnician
+                      ? getTechnicianLabel(assignedTechnician)
+                      : "technician"
+                  }`
+                : "Unassigned";
+              const assignmentDetail = job.assigned_tech_id
+                ? assignedTechnician
+                  ? "Dispatch handoff ready"
+                  : "Technician details pending"
+                : "Needs dispatch assignment";
+
+              return (
+                <article key={job.id}>
+                  <Card padding="lg">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg font-semibold text-theme-text-primary">
+                            {job.customer?.name ?? "Unknown customer"}
+                          </h2>
+                          <StatusPill tone={jobStatusTone(job.status)}>
+                            {statusLabels[job.status]}
+                          </StatusPill>
+                        </div>
+                        <p className="mt-2 text-sm text-theme-text-secondary">
+                          {formatSchedule(job.scheduled_start)}
                         </p>
-                      ) : null}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={() => editJob(job)} variant="ghost">
-                        Edit
-                      </Button>
-                      {job.status !== "canceled" ? (
-                        <Button
-                          disabled={cancelJob.isPending}
-                          onClick={() => cancelJob.mutate(job.id)}
-                          variant="danger"
+                        <p className="mt-1 text-sm text-theme-text-secondary">
+                          {job.location?.address ?? "No location saved"}
+                        </p>
+                        <div
+                          className={`mt-3 flex flex-wrap items-center gap-2 rounded-md border p-2 ${statusSurfaceClassName(
+                            assignmentTone,
+                          )}`}
                         >
-                          Cancel
+                          <StatusPill dot={false} tone={assignmentTone}>
+                            {assignmentLabel}
+                          </StatusPill>
+                          <span className="text-xs font-semibold text-theme-text-secondary">
+                            {assignmentDetail}
+                          </span>
+                        </div>
+                        {job.service_notes ? (
+                          <p className="mt-3 text-sm text-theme-text-secondary">
+                            {job.service_notes}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={() => editJob(job)} variant="ghost">
+                          Edit
                         </Button>
-                      ) : null}
+                        {job.status !== "canceled" ? (
+                          <Button
+                            disabled={cancelJob.isPending}
+                            onClick={() => cancelJob.mutate(job.id)}
+                            variant="danger"
+                          >
+                            Cancel
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              </article>
-            ))
+                  </Card>
+                </article>
+              );
+            })
           )}
         </div>
 

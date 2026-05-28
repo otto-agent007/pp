@@ -8,6 +8,52 @@ Recent closure:
   handoff guidance and included `/technicians` in the local fixture smoke route
   plan, without auth behavior, provider, env, seed/reset, preview, or
   production changes.
+- Jobs Assignment Handoff V1 added `/jobs` assignment handoff counts and
+  per-card technician assignment state from existing loaded jobs/technicians,
+  without schema, provider, env, seed/reset, preview, or production changes.
+- Customer Account Follow-Up Status V1 synced local `main` through merged PR
+  #75 and moved the provider-free customer polish to
+  `codex/customer-account-follow-up-v1`.
+- `/customers` now shows a compact account follow-up status derived from the
+  shared customer ledger summary, covering schedule-first-job,
+  ready-to-invoice, payment-review, open-balance, and account-current states.
+- Attention states link to existing jobs or payments workflows without exposing
+  provider metadata, raw payment records, portal tokens, admin notes, or
+  provider internals on customer cards.
+- The slice kept migrations, provider setup, env changes, Supabase writes,
+  preview mutations, production mutations, and API contract changes out of
+  scope.
+- Verified with focused domain/web customer tests, full repo gates,
+- Mobile Treatment Form Bilingual Copy V1 started from local `main` synced
+  through merged PR #75 on branch `codex/mobile-treatment-form-bilingual-v1`.
+- Mobile treatment-form labels, placeholders, and required-field errors now
+  respect the technician language selection for English and Spanish while
+  preserving the existing domain form template, JSONB field ids, offline draft
+  state, and sync queue contracts.
+- The slice kept STT, audio recording, dependencies, Expo config, provider
+  routes, env changes, migrations, Supabase writes, preview mutations, and
+  production mutations out of scope.
+- Verified with focused treatment-form copy tests, full mobile tests, mobile
+  typecheck, i18n typecheck, full repo gates, and `git diff --check`.
+- Schedule Wall-Clock Consistency V1 started from local `main` already synced
+  through merged PR #75 on branch `codex/schedule-wall-clock-consistency-v1`.
+- Shared job schedule date/time helpers now parse stored schedule values as
+  operator-entered wall-clock times for technician route load, home schedule
+  rows, dispatch route intelligence, inventory/payments/automation job
+  pickers, closeouts, and customer portal service/billing labels.
+- Focused regressions prove the 9:38 AM demo schedule does not render as
+  2:38 AM on the updated admin and customer proof/billing surfaces.
+- The no-env local fixture smoke passed on `/`, `/dispatch`, `/customers`,
+  `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`,
+  `/automation`, and tokened `/portal` at desktop and narrow widths with no
+  route-signal failures, page/console errors, horizontal overflow, or
+  sensitive patterns.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  Supabase writes, seed/reset writes, preview mutations, production mutations,
+  mobile component changes, and dispatch PR #77 UI changes out of scope.
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`.
 - Dispatch Calendar Proof Polish V1 synced local `main` through merged PR #75
   and moved the protected dispatch diff onto
   `codex/dispatch-calendar-proof-polish-v1`.

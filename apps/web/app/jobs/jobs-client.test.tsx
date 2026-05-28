@@ -228,6 +228,30 @@ describe("JobsClient", () => {
     );
   });
 
+  it("surfaces assignment handoff state for dispatch review", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        scheduledJob,
+        {
+          ...scheduledJob,
+          id: "job-3",
+          assigned_tech_id: "technician-1",
+          service_notes: "Assigned exterior treatment",
+          status: "en_route",
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    render(<JobsClient />);
+
+    expect(screen.getByText("Assignment handoff")).toBeInTheDocument();
+    expect(screen.getByText("1 unassigned")).toBeInTheDocument();
+    expect(screen.getByText("Needs dispatch assignment")).toBeInTheDocument();
+    expect(screen.getByText("Assigned to Testnician")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch handoff ready")).toBeInTheDocument();
+  });
+
   it("validates required create fields", async () => {
     const user = userEvent.setup();
     render(<JobsClient />);
