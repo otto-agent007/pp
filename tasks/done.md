@@ -1,5 +1,19 @@
 # Done
 
+## Mobile Treatment Form Bilingual Copy V1
+
+- Added English and Spanish display copy for every mobile treatment-form field
+  label and placeholder while preserving the existing JSONB field ids and
+  domain form template
+- Localized treatment-form required-field errors in the mobile UI by mapping
+  domain validation messages back to the technician-selected language
+- Kept manual typed notes and the existing offline draft/enqueue/sync flow as
+  the only behavior change surface; no STT, audio recording, dependencies,
+  Expo config, provider route, environment variables, migrations, Supabase
+  writes, preview mutations, or production mutations were added
+- Verified with focused treatment-form copy tests, full mobile tests, mobile
+  typecheck, i18n typecheck, full repo gates, and `git diff --check`
+
 ## Schedule Wall-Clock Consistency V1
 
 - Added shared domain helpers for job schedule date keys, time labels, and

@@ -4,6 +4,17 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Mobile Treatment Form Bilingual Copy V1 started from local `main` synced
+  through merged PR #75 on branch `codex/mobile-treatment-form-bilingual-v1`.
+- Mobile treatment-form labels, placeholders, and required-field errors now
+  respect the technician language selection for English and Spanish while
+  preserving the existing domain form template, JSONB field ids, offline draft
+  state, and sync queue contracts.
+- The slice kept STT, audio recording, dependencies, Expo config, provider
+  routes, env changes, migrations, Supabase writes, preview mutations, and
+  production mutations out of scope.
+- Verified with focused treatment-form copy tests, full mobile tests, mobile
+  typecheck, i18n typecheck, full repo gates, and `git diff --check`.
 - Schedule Wall-Clock Consistency V1 started from local `main` already synced
   through merged PR #75 on branch `codex/schedule-wall-clock-consistency-v1`.
 - Shared job schedule date/time helpers now parse stored schedule values as
