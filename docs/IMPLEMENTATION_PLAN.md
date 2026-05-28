@@ -1,6 +1,38 @@
 # Implementation Plan
 
-## Current Priority: Vercel Packaging Evidence Refresh
+## Current Priority: Customer Account Follow-Up Status
+
+This provider-free customer polish starts from local `main` synced through PR
+#75 and makes `/customers` easier to scan during real operator walkthroughs. It
+does not change migrations, providers, environment variables, seed/reset state,
+preview data, production data, Supabase writes, API contracts, or live
+compliance ingestion.
+
+Completed in this batch:
+
+1. Added a shared customer account follow-up classifier in `packages/domain`
+   from the existing customer ledger summary.
+2. Surfaced compact customer-card follow-up states for schedule-first-job,
+   ready-to-invoice, payment-review, open-balance, and account-current paths.
+3. Linked attention states to the existing jobs and payments workflows while
+   keeping provider metadata, raw payment records, portal tokens, admin notes,
+   and provider internals off customer cards.
+4. Added focused domain and web coverage for the new classifier and
+   `/customers` follow-up surface.
+5. Reran local fixture smoke across the standard admin and tokened portal
+   routes at desktop and narrow widths.
+
+Next decision points:
+
+1. Keep provider delivery receipts and richer provider failure states deferred
+   until webhook-backed evidence exists.
+2. Keep local/preview seed/reset and authenticated browser smoke gated on
+   approved Supabase env names, protected-preview access, and admin/dispatcher
+   sign-in.
+3. Continue product polish as small provider-free slices while open draft PRs
+   for mobile, dispatch, and schedule surfaces are still in review.
+
+## Previous Priority: Vercel Packaging Evidence Refresh
 
 The current evidence pass starts from local `main` synced through PR #74 and
 removes the stale local Windows Vercel packaging blocker from the launch gate.
@@ -13,7 +45,7 @@ Completed in this batch:
    `58a9eb1`.
 2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
    successfully, wrote `.vercel/output`, and reported `Build completed
-   successfully` for the preview target.
+successfully` for the preview target.
 3. Kept the remaining launch blockers explicit: approved Supabase env names,
    local Docker/Postgres availability for local migration inspection,
    protected-preview access, and admin/dispatcher sign-in are still required

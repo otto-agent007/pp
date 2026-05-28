@@ -501,6 +501,7 @@ export type {
 export {
   buildBillingPortalNextActions,
   buildCustomerLedger,
+  getCustomerAccountFollowUpStatus,
   getCustomerPortalHandoffReview,
   getCustomerLedgerSummary,
 } from "./customerLedger";
@@ -508,6 +509,8 @@ export type {
   BillingPortalNextAction,
   BillingPortalNextActionId,
   BillingPortalNextActionInput,
+  CustomerAccountFollowUpStatus,
+  CustomerAccountFollowUpStatusId,
   CustomerPortalHandoffReview,
   CustomerPortalHandoffReviewInput,
   CustomerLedgerEntry,

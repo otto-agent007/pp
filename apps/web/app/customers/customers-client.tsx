@@ -3,7 +3,9 @@
 import {
   buildCustomerLedger,
   filterCustomers,
+  getCustomerAccountFollowUpStatus,
   getCustomerLedgerSummary,
+  type CustomerAccountFollowUpStatus,
   validateCustomerInput,
   type CustomerLedgerEntry,
 } from "@pest-patrol/domain";
@@ -197,6 +199,57 @@ function filterLedgerEntries(entries: CustomerLedgerEntry[], tab: LedgerTabId) {
   return entries;
 }
 
+function accountFollowUpTone(
+  status: CustomerAccountFollowUpStatus,
+): StatusPillTone {
+  if (!status.needsAttention) {
+    return "success";
+  }
+
+  return status.id === "review_payment" || status.id === "open_balance"
+    ? "warning"
+    : "info";
+}
+
+function accountFollowUpHref(
+  status: CustomerAccountFollowUpStatus,
+  customerId: string,
+) {
+  if (status.id === "schedule_service") {
+    return "/jobs";
+  }
+
+  if (status.id === "review_payment") {
+    return customerReviewHref(customerId);
+  }
+
+  if (status.id === "ready_to_invoice" || status.id === "open_balance") {
+    return customerBillingHref(customerId);
+  }
+
+  return null;
+}
+
+function accountFollowUpActionLabel(status: CustomerAccountFollowUpStatus) {
+  if (status.id === "schedule_service") {
+    return "Schedule job";
+  }
+
+  if (status.id === "review_payment") {
+    return "Review payment";
+  }
+
+  if (status.id === "ready_to_invoice") {
+    return "Create invoice";
+  }
+
+  if (status.id === "open_balance") {
+    return "Open billing";
+  }
+
+  return null;
+}
+
 function customerToInput(customer: Customer): CustomerInput {
   return {
     name: customer.name,
@@ -212,6 +265,47 @@ function customerToInput(customer: Customer): CustomerInput {
       is_primary: location.is_primary,
     })) ?? [{ ...emptyLocation }],
   };
+}
+
+function CustomerAccountStatusCard({
+  customer,
+  status,
+}: {
+  customer: Customer;
+  status: CustomerAccountFollowUpStatus;
+}) {
+  const href = accountFollowUpHref(status, customer.id);
+  const actionLabel = accountFollowUpActionLabel(status);
+  const tone = accountFollowUpTone(status);
+
+  return (
+    <Card
+      aria-label={`Account follow-up for ${customer.name}`}
+      className="mt-5 shadow-none"
+      padding="sm"
+      statusTone={tone}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <Eyebrow tone="muted">Account follow-up</Eyebrow>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <StatusPill tone={tone}>{status.label}</StatusPill>
+            <p className="text-sm text-theme-text-secondary">
+              {status.summary}
+            </p>
+          </div>
+        </div>
+        {href && actionLabel ? (
+          <Link
+            className={buttonClassName({ size: "sm", variant: "text" })}
+            href={href}
+          >
+            {actionLabel}
+          </Link>
+        ) : null}
+      </div>
+    </Card>
+  );
 }
 
 function CustomerLedgerSummary({
@@ -428,9 +522,14 @@ function CustomerAccountFollowUp({
     [customer, invoices, jobs],
   );
   const summary = useMemo(() => getCustomerLedgerSummary(entries), [entries]);
+  const followUpStatus = useMemo(
+    () => getCustomerAccountFollowUpStatus(summary),
+    [summary],
+  );
 
   return (
     <>
+      <CustomerAccountStatusCard customer={customer} status={followUpStatus} />
       <CustomerPortalLinks
         accountSummary={summary}
         customerContact={{

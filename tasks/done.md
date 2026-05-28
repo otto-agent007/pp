@@ -1,5 +1,19 @@
 # Done
 
+## Customer Account Follow-Up Status V1
+
+- Added a shared customer account follow-up classifier from the existing
+  account ledger summary
+- Surfaced compact `/customers` follow-up states for schedule-first-job,
+  ready-to-invoice, payment-review, open-balance, and account-current paths
+- Linked each attention state to the existing jobs or payments workflow while
+  keeping provider metadata, raw payments, portal tokens, and admin-only notes
+  off customer cards
+- Kept the slice free of migrations, provider setup, env changes, Supabase
+  writes, preview mutations, production mutations, and API contract changes
+- Verified with focused domain/web customer tests, full repo gates,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`
+
 ## Local Vercel Packaging Evidence Refresh V1
 
 - Fast-forwarded local `main` through merged PR #74 before starting the
