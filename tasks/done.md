@@ -23,6 +23,21 @@
   writes, preview mutations, production mutations, and embedded map SDKs out
   of scope
 
+## Mobile Capture Proof Frames V1
+
+- Adopted shared `@pest-patrol/ui-native` `CaptureCard` framing for mobile
+  photo proof previews and the signature pad
+- Preserved existing `CaptureButton` camera/library actions, Expo image picker
+  permissions, signature-canvas handling, and offline queue stores
+- Added focused coverage for queued photo previews and signature pad proof
+  frames
+- Verified with focused mobile capture tests, mobile typecheck,
+  `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
+  `corepack pnpm build`, and whitespace checks
+- Kept migrations, provider setup, env changes, Supabase writes, preview
+  mutations, production mutations, mobile dependency/config changes, and
+  raw-audio/STT implementation out of scope
+
 ## Local Vercel Packaging Evidence Refresh V1
 
 - Fast-forwarded local `main` through merged PR #74 before starting the
