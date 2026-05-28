@@ -15,6 +15,25 @@ Recent closure:
   production mutations out of scope.
 - Verified with focused treatment-form copy tests, full mobile tests, mobile
   typecheck, i18n typecheck, full repo gates, and `git diff --check`.
+- Schedule Wall-Clock Consistency V1 started from local `main` already synced
+  through merged PR #75 on branch `codex/schedule-wall-clock-consistency-v1`.
+- Shared job schedule date/time helpers now parse stored schedule values as
+  operator-entered wall-clock times for technician route load, home schedule
+  rows, dispatch route intelligence, inventory/payments/automation job
+  pickers, closeouts, and customer portal service/billing labels.
+- Focused regressions prove the 9:38 AM demo schedule does not render as
+  2:38 AM on the updated admin and customer proof/billing surfaces.
+- The no-env local fixture smoke passed on `/`, `/dispatch`, `/customers`,
+  `/jobs`, `/inventory`, `/payments`, `/closeouts`, `/compliance`,
+  `/automation`, and tokened `/portal` at desktop and narrow widths with no
+  route-signal failures, page/console errors, horizontal overflow, or
+  sensitive patterns.
+- The slice kept migrations, schema changes, provider setup, env changes,
+  Supabase writes, seed/reset writes, preview mutations, production mutations,
+  mobile component changes, and dispatch PR #77 UI changes out of scope.
+- Verified with focused domain/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, and `git diff --check`.
 - Dispatch Calendar Proof Polish V1 synced local `main` through merged PR #75
   and moved the protected dispatch diff onto
   `codex/dispatch-calendar-proof-polish-v1`.
