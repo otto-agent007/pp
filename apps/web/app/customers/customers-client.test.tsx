@@ -87,6 +87,28 @@ const activeCustomer = {
   ],
 } as const;
 
+const secondActiveCustomer = {
+  ...activeCustomer,
+  id: "customer-3",
+  name: "Bayview Bakery",
+  phone: "555-2222",
+  email: "bakery@example.com",
+  property_type: "commercial",
+  locations: [
+    {
+      id: "location-3",
+      customer_id: "customer-3",
+      address: "20 Market Street",
+      nickname: "Kitchen",
+      service_notes: null,
+      is_primary: true,
+      status: "active",
+      created_at: "2026-05-05T00:00:00Z",
+      updated_at: "2026-05-05T00:00:00Z",
+    },
+  ],
+} as const;
+
 const archivedCustomer = {
   ...activeCustomer,
   id: "customer-2",
@@ -260,6 +282,8 @@ describe("CustomersClient", () => {
     const ledger = screen.getByText("Account ledger");
 
     expect(portalLinks).toBeInTheDocument();
+    expect(screen.getAllByText(/Portal links for/)).toHaveLength(1);
+    expect(screen.getAllByText("Account ledger")).toHaveLength(1);
     expect(
       portalLinks.compareDocumentPosition(ledger) &
         Node.DOCUMENT_POSITION_FOLLOWING,
@@ -299,6 +323,63 @@ describe("CustomersClient", () => {
     expect(document.body).not.toHaveTextContent(
       "plink_secret_should_not_render",
     );
+  });
+
+  it("switches the selected customer workspace without rendering every account workflow", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomers).mockReturnValue({
+      data: [activeCustomer, secondActiveCustomer, archivedCustomer],
+      isLoading: false,
+    } as never);
+
+    render(<CustomersClient />);
+
+    expect(screen.getByText(/Portal links for customer-1/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Portal links for/)).toHaveLength(1);
+
+    await user.click(
+      screen.getByRole("button", { name: "Select Bayview Bakery" }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Bayview Bakery" }));
+    expect(screen.getByText(/Portal links for customer-3/)).toBeInTheDocument();
+    expect(screen.queryByText(/Portal links for customer-1/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Portal links for/)).toHaveLength(1);
+  });
+
+  it("moves selection when filters hide the selected customer", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomers).mockReturnValue({
+      data: [activeCustomer, secondActiveCustomer, archivedCustomer],
+      isLoading: false,
+    } as never);
+
+    render(<CustomersClient />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Select Bayview Bakery" }),
+    );
+    expect(screen.getByText(/Portal links for customer-3/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Search customers"), {
+      target: { value: "Apex" },
+    });
+
+    expect(screen.getByText(/Portal links for customer-1/)).toBeInTheDocument();
+    expect(screen.queryByText(/Portal links for customer-3/)).not.toBeInTheDocument();
+  });
+
+  it("preselects a customer from customer handoff links", () => {
+    vi.mocked(useCustomers).mockReturnValue({
+      data: [activeCustomer, secondActiveCustomer, archivedCustomer],
+      isLoading: false,
+    } as never);
+
+    render(<CustomersClient requestedCustomerId="customer-3" />);
+
+    expect(screen.getByRole("heading", { name: "Bayview Bakery" }));
+    expect(screen.getByText(/Portal links for customer-3/)).toBeInTheDocument();
+    expect(screen.queryByText(/Portal links for customer-1/)).not.toBeInTheDocument();
   });
 
   it("expands the customer ledger and filters service activity", async () => {
@@ -415,6 +496,7 @@ describe("CustomersClient", () => {
 
   it("shows demo data entry guidance for the next workflow step", () => {
     render(<CustomersClient />);
+    fireEvent.click(screen.getByRole("button", { name: "New customer" }));
 
     const helper = screen.getByText("Customer setup notes").closest("details");
     expect(helper).not.toHaveAttribute("open");
@@ -443,7 +525,7 @@ describe("CustomersClient", () => {
       "archived",
     );
 
-    expect(screen.getByText("Archived Shop")).toBeInTheDocument();
+    expect(screen.getAllByText("Archived Shop")).toHaveLength(2);
     expect(screen.queryByText("Apex Homes")).not.toBeInTheDocument();
     expect(
       screen.queryByText("Portal links for customer-1"),
@@ -454,6 +536,7 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
+    await user.click(screen.getByRole("button", { name: "New customer" }));
     await user.click(screen.getByRole("button", { name: "Save customer" }));
     expect(screen.getByText("Customer name is required")).toBeInTheDocument();
 
@@ -468,6 +551,7 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
+    await user.click(screen.getByRole("button", { name: "New customer" }));
     await user.click(screen.getByRole("button", { name: "Add" }));
     expect(screen.getAllByLabelText("Address")).toHaveLength(2);
 
@@ -479,6 +563,7 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
+    await user.click(screen.getByRole("button", { name: "New customer" }));
     fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "New Customer" },
     });
@@ -506,6 +591,7 @@ describe("CustomersClient", () => {
     const user = userEvent.setup();
     render(<CustomersClient />);
 
+    await user.click(screen.getByRole("button", { name: "New customer" }));
     fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "New Customer" },
     });

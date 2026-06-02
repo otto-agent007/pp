@@ -31,7 +31,7 @@ import type {
   PropertyType,
 } from "@pest-patrol/types";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
 import {
@@ -265,6 +265,128 @@ function customerToInput(customer: Customer): CustomerInput {
       is_primary: location.is_primary,
     })) ?? [{ ...emptyLocation }],
   };
+}
+
+function emptyCustomerForm(): CustomerInput {
+  return {
+    ...emptyForm,
+    locations: [{ ...emptyLocation }],
+  };
+}
+
+function getPrimaryLocation(customer: Customer) {
+  return (
+    customer.locations?.find((location) => location.is_primary) ??
+    customer.locations?.[0] ??
+    null
+  );
+}
+
+function customerContactLabel(customer: Customer) {
+  return [customer.phone, customer.email].filter(Boolean).join(" | ");
+}
+
+function locationCountLabel(customer: Customer) {
+  const count = customer.locations?.length ?? 0;
+
+  return `${count} location${count === 1 ? "" : "s"}`;
+}
+
+function getCustomerFollowUpStatus(
+  customer: Customer,
+  invoices: Invoice[],
+  jobs: Job[],
+) {
+  const entries = buildCustomerLedger({ customer, invoices, jobs });
+  const summary = getCustomerLedgerSummary(entries);
+
+  return getCustomerAccountFollowUpStatus(summary);
+}
+
+function CustomerFollowUpPill({
+  customer,
+  invoices,
+  jobs,
+}: {
+  customer: Customer;
+  invoices: Invoice[];
+  jobs: Job[];
+}) {
+  const followUpStatus = useMemo(
+    () => getCustomerFollowUpStatus(customer, invoices, jobs),
+    [customer, invoices, jobs],
+  );
+
+  return (
+    <StatusPill dot={false} tone={accountFollowUpTone(followUpStatus)}>
+      {followUpStatus.label}
+    </StatusPill>
+  );
+}
+
+function CustomerListRow({
+  customer,
+  invoices,
+  isSelected,
+  jobs,
+  onSelect,
+}: {
+  customer: Customer;
+  invoices: Invoice[];
+  isSelected: boolean;
+  jobs: Job[];
+  onSelect: () => void;
+}) {
+  const primaryLocation = getPrimaryLocation(customer);
+
+  return (
+    <button
+      aria-label={`Select ${customer.name}`}
+      aria-pressed={isSelected}
+      className={`w-full rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2 ${
+        isSelected
+          ? "border-theme-action-primary bg-status-alert-info-bg shadow-sm"
+          : "border-theme-border-subtle bg-theme-background-surface hover:bg-theme-background-subtle"
+      }`}
+      onClick={onSelect}
+      type="button"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="break-words text-base font-bold text-theme-text-primary">
+              {customer.name}
+            </span>
+            <StatusPill dot={false} tone="neutral">
+              {customer.property_type}
+            </StatusPill>
+          </div>
+          <p className="mt-1 truncate text-sm text-theme-text-secondary">
+            {customerContactLabel(customer) || "No contact saved"}
+          </p>
+          <p className="mt-1 truncate text-sm text-theme-text-secondary">
+            {primaryLocation?.address ?? "No location saved"}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          {customer.status === "active" ? (
+            <CustomerFollowUpPill
+              customer={customer}
+              invoices={invoices}
+              jobs={jobs}
+            />
+          ) : (
+            <StatusPill dot={false} tone="neutral">
+              Archived
+            </StatusPill>
+          )}
+          <span className="text-xs font-semibold text-theme-text-muted">
+            {locationCountLabel(customer)}
+          </span>
+        </div>
+      </div>
+    </button>
+  );
 }
 
 function CustomerAccountStatusCard({
@@ -603,7 +725,11 @@ function CustomerLedgerEntryRow({ entry }: { entry: CustomerLedgerEntry }) {
   );
 }
 
-export function CustomersClient() {
+export function CustomersClient({
+  requestedCustomerId = null,
+}: {
+  requestedCustomerId?: string | null;
+} = {}) {
   const customersQuery = useCustomers();
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
@@ -612,8 +738,15 @@ export function CustomersClient() {
   const archiveCustomer = useArchiveCustomer();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CustomerStatus>("active");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
+  const [appliedRequestedCustomerId, setAppliedRequestedCustomerId] = useState<
+    string | null
+  >(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [form, setForm] = useState<CustomerInput>(emptyForm);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [form, setForm] = useState<CustomerInput>(emptyCustomerForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [archiveConfirmationId, setArchiveConfirmationId] = useState<
@@ -624,14 +757,80 @@ export function CustomersClient() {
     () => filterCustomers(customersQuery.data ?? [], search, status),
     [customersQuery.data, search, status],
   );
+  const invoices = invoicesQuery.data ?? [];
+  const jobs = jobsQuery.data ?? [];
+  const selectedCustomer = useMemo(() => {
+    if (visibleCustomers.length === 0) {
+      return null;
+    }
+
+    return (
+      visibleCustomers.find((customer) => customer.id === selectedCustomerId) ??
+      (requestedCustomerId
+        ? visibleCustomers.find((customer) => customer.id === requestedCustomerId)
+        : null) ??
+      visibleCustomers[0] ??
+      null
+    );
+  }, [requestedCustomerId, selectedCustomerId, visibleCustomers]);
+
+  useEffect(() => {
+    if (visibleCustomers.length === 0) {
+      if (selectedCustomerId !== null) {
+        setSelectedCustomerId(null);
+      }
+
+      return;
+    }
+
+    if (
+      requestedCustomerId &&
+      requestedCustomerId !== appliedRequestedCustomerId
+    ) {
+      const requestedCustomer = visibleCustomers.find(
+        (customer) => customer.id === requestedCustomerId,
+      );
+
+      if (requestedCustomer) {
+        setAppliedRequestedCustomerId(requestedCustomerId);
+        setSelectedCustomerId(requestedCustomerId);
+        return;
+      }
+    }
+
+    if (!requestedCustomerId && appliedRequestedCustomerId) {
+      setAppliedRequestedCustomerId(null);
+    }
+
+    if (
+      !selectedCustomerId ||
+      !visibleCustomers.some((customer) => customer.id === selectedCustomerId)
+    ) {
+      setSelectedCustomerId(visibleCustomers[0]?.id ?? null);
+    }
+  }, [
+    appliedRequestedCustomerId,
+    requestedCustomerId,
+    selectedCustomerId,
+    visibleCustomers,
+  ]);
 
   const isSaving = createCustomer.isPending || updateCustomer.isPending;
 
   function resetForm() {
     setEditingCustomer(null);
-    setForm({ ...emptyForm, locations: [{ ...emptyLocation }] });
+    setForm(emptyCustomerForm());
+    setFormError(null);
+    setIsFormOpen(false);
+  }
+
+  function startNewCustomer() {
+    setEditingCustomer(null);
+    setForm(emptyCustomerForm());
     setFormError(null);
     setSaveMessage(null);
+    setArchiveConfirmationId(null);
+    setIsFormOpen(true);
   }
 
   function editCustomer(customer: Customer) {
@@ -640,6 +839,17 @@ export function CustomersClient() {
     setFormError(null);
     setSaveMessage(null);
     setArchiveConfirmationId(null);
+    setIsFormOpen(true);
+  }
+
+  function selectCustomer(customerId: string) {
+    setSelectedCustomerId(customerId);
+    setEditingCustomer(null);
+    setForm(emptyCustomerForm());
+    setFormError(null);
+    setSaveMessage(null);
+    setArchiveConfirmationId(null);
+    setIsFormOpen(false);
   }
 
   function updateLocation(
@@ -686,14 +896,20 @@ export function CustomersClient() {
     try {
       const input = validateCustomerInput(form);
       const isEditing = Boolean(editingCustomer);
+      const editingCustomerId = editingCustomer?.id ?? null;
+      let savedCustomer: Customer | null = null;
 
       if (editingCustomer) {
-        await updateCustomer.mutateAsync({ id: editingCustomer.id, input });
+        savedCustomer = await updateCustomer.mutateAsync({
+          id: editingCustomer.id,
+          input,
+        });
       } else {
-        await createCustomer.mutateAsync(input);
+        savedCustomer = await createCustomer.mutateAsync(input);
       }
 
       resetForm();
+      setSelectedCustomerId(savedCustomer?.id ?? editingCustomerId);
       setSaveMessage(isEditing ? updateSuccessMessage : createSuccessMessage);
     } catch (error) {
       setFormError(
@@ -704,8 +920,216 @@ export function CustomersClient() {
 
   function confirmArchive(customerId: string) {
     setArchiveConfirmationId(null);
+    if (editingCustomer?.id === customerId) {
+      resetForm();
+    }
     archiveCustomer.mutate(customerId);
   }
+
+  const customerForm = isFormOpen ? (
+    <Card className="h-fit" padding="none">
+      <form
+        className="flex h-fit flex-col gap-4 p-5"
+        onSubmit={submitCustomer}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-theme-text-primary">
+            {editingCustomer ? "Edit customer" : "Create customer"}
+          </h2>
+          <Button onClick={resetForm} variant="ghost">
+            {editingCustomer ? "Cancel edit" : "Cancel"}
+          </Button>
+        </div>
+
+        <details className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+            Customer setup notes
+          </summary>
+          <div className="hidden border-t border-status-alert-warning-border p-3 group-open:block">
+            <p className="text-sm text-status-alert-warning-fg">
+              Save the customer with one active service location, then schedule
+              the first job.
+            </p>
+            <p className="mt-1 text-sm text-status-alert-warning-fg">
+              Use portal links after closeout and billing are ready.
+            </p>
+            <Link
+              className={buttonClassName({
+                className:
+                  "mt-3 border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                size: "sm",
+                variant: "ghost",
+              })}
+              href="/jobs"
+            >
+              Schedule job
+            </Link>
+          </div>
+        </details>
+
+        <label className={labelClassName}>
+          Name
+          <input
+            className={fieldClassName}
+            onChange={(event) =>
+              setForm({ ...form, name: event.target.value })
+            }
+            value={form.name}
+          />
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={labelClassName}>
+            Phone
+            <input
+              className={fieldClassName}
+              onChange={(event) =>
+                setForm({ ...form, phone: event.target.value })
+              }
+              value={form.phone ?? ""}
+            />
+          </label>
+          <label className={labelClassName}>
+            Email
+            <input
+              className={fieldClassName}
+              onChange={(event) =>
+                setForm({ ...form, email: event.target.value })
+              }
+              type="email"
+              value={form.email ?? ""}
+            />
+          </label>
+        </div>
+
+        <label className={labelClassName}>
+          Property type
+          <select
+            className={fieldClassName}
+            onChange={(event) =>
+              setForm({
+                ...form,
+                property_type: event.target.value as PropertyType,
+              })
+            }
+            value={form.property_type}
+          >
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label className={labelClassName}>
+          Service notes
+          <textarea
+            className={formTextareaClassName}
+            onChange={(event) =>
+              setForm({ ...form, service_notes: event.target.value })
+            }
+            value={form.service_notes ?? ""}
+          />
+        </label>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-theme-text-primary">
+              Locations
+            </h3>
+            <Button
+              onClick={() =>
+                setForm({
+                  ...form,
+                  locations: [
+                    ...form.locations,
+                    {
+                      ...emptyLocation,
+                      is_primary: form.locations.length === 0,
+                    },
+                  ],
+                })
+              }
+              size="sm"
+              variant="ghost"
+            >
+              Add
+            </Button>
+          </div>
+
+          {form.locations.map((location, index) => (
+            <Card
+              className="flex flex-col gap-3 shadow-none"
+              key={location.id ?? index}
+              padding="sm"
+              tone="subtle"
+            >
+              <label className={labelClassName}>
+                Address
+                <input
+                  className={fieldClassName}
+                  onChange={(event) =>
+                    updateLocation(index, { address: event.target.value })
+                  }
+                  value={location.address}
+                />
+              </label>
+              <label className={labelClassName}>
+                Nickname
+                <input
+                  className={fieldClassName}
+                  onChange={(event) =>
+                    updateLocation(index, { nickname: event.target.value })
+                  }
+                  value={location.nickname ?? ""}
+                />
+              </label>
+              <label className={labelClassName}>
+                Location notes
+                <textarea
+                  className={`${formTextareaClassName} min-h-20`}
+                  onChange={(event) =>
+                    updateLocation(index, {
+                      service_notes: event.target.value,
+                    })
+                  }
+                  value={location.service_notes ?? ""}
+                />
+              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-theme-text-primary">
+                  <input
+                    checked={Boolean(location.is_primary)}
+                    onChange={(event) =>
+                      updateLocation(index, {
+                        is_primary: event.target.checked,
+                      })
+                    }
+                    type="checkbox"
+                  />
+                  Primary
+                </label>
+                <Button
+                  onClick={() => removeLocation(index)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Remove
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {formError ? (
+          <p className="text-sm text-status-alert-danger-fg">{formError}</p>
+        ) : null}
+
+        <Button disabled={isSaving} fullWidth size="lg" type="submit">
+          {isSaving ? "Saving" : "Save customer"}
+        </Button>
+      </form>
+    </Card>
+  ) : null;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
@@ -735,11 +1159,27 @@ export function CustomersClient() {
             <option value="active">Active</option>
             <option value="archived">Archived</option>
           </select>
+          <Button onClick={startNewCustomer}>New customer</Button>
         </div>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="flex flex-col gap-3">
+      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(26rem,1.1fr)]">
+        <section
+          aria-label="Customer list"
+          className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-6"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <Eyebrow tone="accent">Customer list</Eyebrow>
+              <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
+                Account index
+              </h2>
+            </div>
+            <StatusPill dot={false} tone="neutral">
+              {visibleCustomers.length} {status}
+            </StatusPill>
+          </div>
+
           {customersQuery.isLoading ? (
             <Card className="text-sm text-theme-text-secondary" padding="lg">
               Loading customers
@@ -749,310 +1189,170 @@ export function CustomersClient() {
               No customers found
             </Card>
           ) : (
-            visibleCustomers.map((customer) => (
-              <Card key={customer.id} padding="lg" role="article">
+            <div className="flex max-h-[32rem] flex-col gap-2 overflow-y-auto pr-1 xl:max-h-[calc(100vh-12rem)]">
+              {visibleCustomers.map((customer) => (
+                <CustomerListRow
+                  customer={customer}
+                  invoices={invoices}
+                  isSelected={selectedCustomer?.id === customer.id}
+                  jobs={jobs}
+                  key={customer.id}
+                  onSelect={() => selectCustomer(customer.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          aria-label="Customer workspace"
+          className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1"
+        >
+          {selectedCustomer ? (
+            <>
+              <Card padding="lg">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex min-w-0 gap-3">
-                    <Avatar name={customer.name} size="lg" />
+                    <Avatar name={selectedCustomer.name} size="lg" />
                     <div className="min-w-0">
-                      <h2 className="text-lg font-semibold text-theme-text-primary">
-                        {customer.name}
-                      </h2>
-                      <StatusPill dot={false} tone="neutral">
-                        {customer.property_type}
-                      </StatusPill>
-                      <p className="mt-2 text-sm text-theme-text-secondary">
-                        {[customer.phone, customer.email]
-                          .filter(Boolean)
-                          .join(" | ") || "No contact saved"}
-                      </p>
-                      <div className="mt-3 flex flex-col gap-1">
-                        {(customer.locations ?? []).map((location) => (
-                          <p
-                            className="text-sm text-theme-text-secondary"
-                            key={location.id}
-                          >
-                            {location.is_primary ? "Primary: " : ""}
-                            {location.address}
-                          </p>
-                        ))}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-xl font-bold text-theme-text-primary">
+                          {selectedCustomer.name}
+                        </h2>
+                        <StatusPill dot={false} tone="neutral">
+                          {selectedCustomer.property_type}
+                        </StatusPill>
+                        {selectedCustomer.status === "archived" ? (
+                          <StatusPill dot={false} tone="neutral">
+                            Archived
+                          </StatusPill>
+                        ) : null}
                       </div>
+                      <p className="mt-2 text-sm text-theme-text-secondary">
+                        {customerContactLabel(selectedCustomer) ||
+                          "No contact saved"}
+                      </p>
+                      <p className="mt-1 text-sm text-theme-text-secondary">
+                        {locationCountLabel(selectedCustomer)}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 md:items-end">
-                    <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 md:justify-end">
+                    <Button
+                      onClick={() => editCustomer(selectedCustomer)}
+                      variant="ghost"
+                    >
+                      Edit
+                    </Button>
+                    {selectedCustomer.status === "active" ? (
                       <Button
-                        onClick={() => editCustomer(customer)}
-                        variant="ghost"
+                        disabled={archiveCustomer.isPending}
+                        onClick={() =>
+                          setArchiveConfirmationId(selectedCustomer.id)
+                        }
+                        variant="danger"
                       >
-                        Edit
+                        Archive
                       </Button>
-                      {customer.status === "active" ? (
-                        <Button
-                          disabled={archiveCustomer.isPending}
-                          onClick={() => setArchiveConfirmationId(customer.id)}
-                          variant="danger"
-                        >
-                          Archive
-                        </Button>
-                      ) : null}
-                    </div>
-                    {archiveConfirmationId === customer.id ? (
-                      <div
-                        aria-label={`Confirm archive for ${customer.name}`}
-                        className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3 text-sm"
-                        role="group"
-                      >
-                        <p className="font-semibold text-status-alert-warning-fg">
-                          Archive this customer?
-                        </p>
-                        <div className="mt-3 flex flex-wrap justify-end gap-2">
-                          <Button
-                            onClick={() => setArchiveConfirmationId(null)}
-                            size="sm"
-                            variant="ghost"
-                          >
-                            Cancel archive
-                          </Button>
-                          <Button
-                            disabled={archiveCustomer.isPending}
-                            onClick={() => confirmArchive(customer.id)}
-                            size="sm"
-                            variant="danger"
-                          >
-                            Confirm archive
-                          </Button>
-                        </div>
-                      </div>
                     ) : null}
                   </div>
                 </div>
-                {customer.status === "active" ? (
-                  <CustomerAccountFollowUp
-                    customer={customer}
-                    invoices={invoicesQuery.data ?? []}
-                    jobs={jobsQuery.data ?? []}
-                  />
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {(selectedCustomer.locations ?? []).map((location) => (
+                    <div
+                      className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3"
+                      key={location.id}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-theme-text-primary">
+                          {location.nickname || "Service location"}
+                        </p>
+                        {location.is_primary ? (
+                          <StatusPill dot={false} tone="info">
+                            Primary
+                          </StatusPill>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-sm text-theme-text-secondary">
+                        {location.address}
+                      </p>
+                      {location.service_notes ? (
+                        <p className="mt-1 text-xs text-theme-text-muted">
+                          {location.service_notes}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+
+                {saveMessage ? (
+                  <Card
+                    className="mt-4 text-sm font-medium text-status-alert-success-fg shadow-none"
+                    padding="sm"
+                    role="status"
+                    statusTone="success"
+                  >
+                    {saveMessage}
+                  </Card>
+                ) : null}
+
+                {archiveConfirmationId === selectedCustomer.id ? (
+                  <div
+                    aria-label={`Confirm archive for ${selectedCustomer.name}`}
+                    className="mt-4 rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3 text-sm"
+                    role="group"
+                  >
+                    <p className="font-semibold text-status-alert-warning-fg">
+                      Archive this customer?
+                    </p>
+                    <div className="mt-3 flex flex-wrap justify-end gap-2">
+                      <Button
+                        onClick={() => setArchiveConfirmationId(null)}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        Cancel archive
+                      </Button>
+                      <Button
+                        disabled={archiveCustomer.isPending}
+                        onClick={() => confirmArchive(selectedCustomer.id)}
+                        size="sm"
+                        variant="danger"
+                      >
+                        Confirm archive
+                      </Button>
+                    </div>
+                  </div>
                 ) : null}
               </Card>
-            ))
-          )}
-        </div>
 
-        <Card className="h-fit" padding="none">
-          <form
-            className="flex h-fit flex-col gap-4 p-5"
-            onSubmit={submitCustomer}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-theme-text-primary">
-                {editingCustomer ? "Edit customer" : "Create customer"}
-              </h2>
-              {editingCustomer ? (
-                <Button onClick={resetForm} variant="ghost">
-                  New
-                </Button>
-              ) : null}
-            </div>
+              {customerForm}
 
-            <details className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg">
-              <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
-                Customer setup notes
-              </summary>
-              <div className="hidden border-t border-status-alert-warning-border p-3 group-open:block">
-                <p className="text-sm text-status-alert-warning-fg">
-                  Save the customer with one active service location, then
-                  schedule the first job.
-                </p>
-                <p className="mt-1 text-sm text-status-alert-warning-fg">
-                  Use portal links after closeout and billing are ready.
-                </p>
-                <Link
-                  className={buttonClassName({
-                    className:
-                      "mt-3 border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
-                    size: "sm",
-                    variant: "ghost",
-                  })}
-                  href="/jobs"
-                >
-                  Schedule job
-                </Link>
-              </div>
-            </details>
-
-            <label className={labelClassName}>
-              Name
-              <input
-                className={fieldClassName}
-                onChange={(event) =>
-                  setForm({ ...form, name: event.target.value })
-                }
-                value={form.name}
-              />
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className={labelClassName}>
-                Phone
-                <input
-                  className={fieldClassName}
-                  onChange={(event) =>
-                    setForm({ ...form, phone: event.target.value })
-                  }
-                  value={form.phone ?? ""}
+              {selectedCustomer.status === "active" ? (
+                <CustomerAccountFollowUp
+                  customer={selectedCustomer}
+                  invoices={invoices}
+                  jobs={jobs}
                 />
-              </label>
-              <label className={labelClassName}>
-                Email
-                <input
-                  className={fieldClassName}
-                  onChange={(event) =>
-                    setForm({ ...form, email: event.target.value })
-                  }
-                  type="email"
-                  value={form.email ?? ""}
-                />
-              </label>
-            </div>
-
-            <label className={labelClassName}>
-              Property type
-              <select
-                className={fieldClassName}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    property_type: event.target.value as PropertyType,
-                  })
-                }
-                value={form.property_type}
-              >
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-
-            <label className={labelClassName}>
-              Service notes
-              <textarea
-                className={formTextareaClassName}
-                onChange={(event) =>
-                  setForm({ ...form, service_notes: event.target.value })
-                }
-                value={form.service_notes ?? ""}
-              />
-            </label>
-
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-theme-text-primary">
-                  Locations
-                </h3>
-                <Button
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      locations: [
-                        ...form.locations,
-                        {
-                          ...emptyLocation,
-                          is_primary: form.locations.length === 0,
-                        },
-                      ],
-                    })
-                  }
-                  size="sm"
-                  variant="ghost"
-                >
-                  Add
-                </Button>
-              </div>
-
-              {form.locations.map((location, index) => (
-                <Card
-                  className="flex flex-col gap-3 shadow-none"
-                  key={location.id ?? index}
-                  padding="sm"
-                  tone="subtle"
-                >
-                  <label className={labelClassName}>
-                    Address
-                    <input
-                      className={fieldClassName}
-                      onChange={(event) =>
-                        updateLocation(index, { address: event.target.value })
-                      }
-                      value={location.address}
-                    />
-                  </label>
-                  <label className={labelClassName}>
-                    Nickname
-                    <input
-                      className={fieldClassName}
-                      onChange={(event) =>
-                        updateLocation(index, { nickname: event.target.value })
-                      }
-                      value={location.nickname ?? ""}
-                    />
-                  </label>
-                  <label className={labelClassName}>
-                    Location notes
-                    <textarea
-                      className={`${formTextareaClassName} min-h-20`}
-                      onChange={(event) =>
-                        updateLocation(index, {
-                          service_notes: event.target.value,
-                        })
-                      }
-                      value={location.service_notes ?? ""}
-                    />
-                  </label>
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 text-sm font-medium text-theme-text-primary">
-                      <input
-                        checked={Boolean(location.is_primary)}
-                        onChange={(event) =>
-                          updateLocation(index, {
-                            is_primary: event.target.checked,
-                          })
-                        }
-                        type="checkbox"
-                      />
-                      Primary
-                    </label>
-                    <Button
-                      onClick={() => removeLocation(index)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      Remove
-                    </Button>
-                  </div>
+              ) : (
+                <Card className="text-sm text-theme-text-secondary" padding="lg">
+                  Archived customers keep contact and location details here.
+                  Reactivate or create a new account before sharing portal
+                  links, scheduling jobs, or building a billing ledger.
                 </Card>
-              ))}
-            </div>
-
-            {formError ? (
-              <p className="text-sm text-status-alert-danger-fg">{formError}</p>
-            ) : null}
-            {saveMessage ? (
-              <Card
-                className="text-sm font-medium text-status-alert-success-fg shadow-none"
-                padding="sm"
-                role="status"
-                statusTone="success"
-              >
-                {saveMessage}
+              )}
+            </>
+          ) : (
+            <>
+              <Card className="text-sm text-theme-text-secondary" padding="lg">
+                Select a customer from the list to review account details, or
+                create a new customer when the current filters have no matches.
               </Card>
-            ) : null}
-
-            <Button disabled={isSaving} fullWidth size="lg" type="submit">
-              {isSaving ? "Saving" : "Save customer"}
-            </Button>
-          </form>
-        </Card>
+              {customerForm}
+            </>
+          )}
+        </section>
       </section>
     </main>
   );
