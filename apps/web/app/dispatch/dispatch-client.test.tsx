@@ -190,7 +190,7 @@ async function openJobControls(
 ) {
   await user.click(
     screen.getByRole("button", {
-      name: `Manage controls for ${jobId}: ${customerName}`,
+      name: `Details for ${jobId}: ${customerName}`,
     }),
   );
 }
@@ -307,9 +307,7 @@ describe("DispatchClient", () => {
     expect(
       screen.getAllByText("Missing service coordinates").length,
     ).toBeGreaterThan(0);
-    expect(screen.getByLabelText("GPS evidence for job-1")).toHaveTextContent(
-      "Latest GPS: Departure",
-    );
+    expect(screen.getByText("Latest GPS: Departure")).toBeInTheDocument();
     expect(
       screen.getAllByText("No synced GPS evidence yet").length,
     ).toBeGreaterThan(0);
@@ -317,6 +315,13 @@ describe("DispatchClient", () => {
     expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Unassigned").length).toBeGreaterThan(0);
     expect(screen.getByText("1 GPS captured")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Details for job-1: Apex Homes",
+      }),
+    );
+
     expect(
       screen.getByRole("link", { name: "Open service map for job-1" }),
     ).toHaveAttribute(
@@ -325,7 +330,7 @@ describe("DispatchClient", () => {
     );
   });
 
-  it("opens route intelligence by default while keeping route groups compact", () => {
+  it("keeps route intelligence and route groups collapsed by default", () => {
     render(<DispatchClient />);
 
     const intelligencePanel = screen
@@ -335,7 +340,7 @@ describe("DispatchClient", () => {
       .getByText("Route groups and compliance")
       .closest("details");
 
-    expect(intelligencePanel).toHaveAttribute("open");
+    expect(intelligencePanel).not.toHaveAttribute("open");
     expect(routeGroupsPanel).not.toHaveAttribute("open");
     expect(screen.getByRole("button", { name: "Previous week" })).toHaveClass(
       "border-theme-border-subtle",
@@ -343,6 +348,94 @@ describe("DispatchClient", () => {
     expect(screen.getByRole("button", { name: "Next week" })).toHaveClass(
       "border-theme-border-subtle",
     );
+  });
+
+  it("renders exception quick filters that stay synchronized with triage", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [scheduledJob, missingCoordinateJob, completedJob],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    expect(screen.getByRole("button", { name: "All 3" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Unassigned 1" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Missing GPS evidence 2" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Missing coordinates 1" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Unassigned 1" }));
+
+    expect(screen.getByLabelText("Dispatch triage")).toHaveValue("unassigned");
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", {
+        name: "Dispatch job job-missing-coordinates: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("quick-filters at-risk and missing GPS dispatch work", async () => {
+    const user = userEvent.setup();
+    const atRiskJob = {
+      ...scheduledJob,
+      assigned_tech_id: "technician-1",
+      scheduled_start: "2026-05-04T09:00:00",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [atRiskJob, missingCoordinateJob, completedJob],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    await user.click(screen.getByRole("button", { name: "At risk 1" }));
+
+    expect(screen.getByLabelText("Dispatch triage")).toHaveValue("at_risk");
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", {
+        name: "Dispatch job job-missing-coordinates: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Missing GPS evidence 2" }),
+    );
+
+    expect(screen.getByLabelText("Dispatch triage")).toHaveValue(
+      "missing_evidence",
+    );
+    expect(
+      screen.queryByRole("group", {
+        name: "Dispatch job job-1: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-missing-coordinates: Apex Homes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", {
+        name: "Dispatch job job-2: Apex Homes",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("renders a provider-free San Diego map with filtered route pins", () => {
@@ -380,6 +473,13 @@ describe("DispatchClient", () => {
     expect(
       screen.getByLabelText("Map pin Stop 2: Downtown Cafe, Testnician"),
     ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Details for job-san-diego: Downtown Cafe",
+      }),
+    );
+
     expect(
       screen.getByRole("link", { name: "Open service map for job-san-diego" }),
     ).toHaveAttribute(
@@ -671,18 +771,50 @@ describe("DispatchClient", () => {
   it("renders synced GPS evidence and provider-free map links", () => {
     render(<DispatchClient />);
 
-    // GPS evidence panel is shown for job with synced geofence events
     expect(
-      screen.getByLabelText("GPS evidence for job-1"),
-    ).toBeInTheDocument();
+      screen.queryByLabelText("GPS evidence for job-1"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Latest GPS: Departure")).toBeInTheDocument();
 
-    // Map link visible text is provider-free (not a raw job ID)
-    expect(screen.getByText("Open in Maps")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Details for job-1: Apex Homes",
+      }),
+    );
+
+    expect(screen.getByLabelText("GPS evidence for job-1")).toBeInTheDocument();
+
     expect(
       screen.getByRole("link", { name: "Open service map for job-1" }),
     ).toHaveAttribute(
       "href",
       "https://www.google.com/maps/search/?api=1&query=33.8121%2C-117.919",
     );
+  });
+
+  it("shows only one expanded details area at a time", async () => {
+    const user = userEvent.setup();
+    render(<DispatchClient />);
+
+    await openJobControls(user, "job-1", "Apex Homes");
+
+    expect(
+      screen.getByRole("button", { name: "Close details for job-1: Apex Homes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("GPS evidence for job-1")).toBeInTheDocument();
+
+    await openJobControls(user, "job-2", "Apex Homes");
+
+    expect(
+      screen.queryByRole("button", {
+        name: "Close details for job-1: Apex Homes",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Close details for job-2: Apex Homes" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("GPS evidence for job-1"),
+    ).not.toBeInTheDocument();
   });
 });
