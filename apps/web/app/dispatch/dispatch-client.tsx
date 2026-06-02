@@ -31,6 +31,7 @@ import {
   Eyebrow,
   SearchableSelect,
   StatusPill,
+  type StatusPillTone,
   buttonClassName,
   formControlClassName,
   formLabelClassName,
@@ -71,6 +72,17 @@ const triageLabels: Record<DispatchRouteTriageFilter, string> = {
   missing_coordinates: "Missing coordinates",
   missing_evidence: "Missing GPS evidence",
   unassigned: "Unassigned",
+};
+const quickTriageFilterOrder: DispatchRouteTriageFilter[] = [
+  "all",
+  "at_risk",
+  "unassigned",
+  "missing_evidence",
+  "missing_coordinates",
+];
+const quickTriageLabels: Record<DispatchRouteTriageFilter, string> = {
+  ...triageLabels,
+  all: "All",
 };
 
 function ChevronIcon({ direction }: { direction: "next" | "previous" }) {
@@ -162,6 +174,47 @@ function missingLocationEvidence(jobId: string): DispatchLocationEvidence {
     state: "missing",
     summary_label: "No synced GPS evidence yet",
   };
+}
+
+function locationEvidenceSummary(
+  evidence: DispatchLocationEvidence | undefined,
+  isLoading: boolean,
+  jobId: string,
+): { label: string; tone: StatusPillTone } {
+  if (isLoading) {
+    return {
+      label: "Loading GPS evidence",
+      tone: "neutral" as StatusPillTone,
+    };
+  }
+
+  const state = evidence ?? missingLocationEvidence(jobId);
+
+  return {
+    label: state.summary_label,
+    tone: state.latest_event ? "info" : "warning",
+  };
+}
+
+function quickTriageCount(
+  filter: DispatchRouteTriageFilter,
+  intelligence: DispatchRouteIntelligence,
+) {
+  const summary = intelligence.summary;
+
+  switch (filter) {
+    case "at_risk":
+      return summary.at_risk_stops;
+    case "missing_coordinates":
+      return summary.missing_coordinates_count;
+    case "missing_evidence":
+      return summary.missing_evidence_count;
+    case "unassigned":
+      return summary.unassigned_stops;
+    case "all":
+    default:
+      return summary.total_stops;
+  }
 }
 
 function GpsEvidenceEventRow({
@@ -693,6 +746,15 @@ export function DispatchClient() {
       }),
     [calendarDays, locationEvidenceByJob, technician],
   );
+  const quickTriageFilters = useMemo(
+    () =>
+      quickTriageFilterOrder.map((value) => ({
+        count: quickTriageCount(value, routeIntelligence),
+        label: quickTriageLabels[value],
+        value,
+      })),
+    [routeIntelligence],
+  );
   const visibleRouteStops = useMemo(
     () => filterDispatchRouteStops(routeIntelligence.stops, triage),
     [routeIntelligence.stops, triage],
@@ -984,13 +1046,41 @@ export function DispatchClient() {
             ? monthData?.monthLabel
             : `Week starting ${weekStart}`}
         </p>
+
+        <section
+          aria-label="Exception quick filters"
+          className="flex min-w-0 flex-wrap gap-2"
+        >
+          {quickTriageFilters.map((filter) => {
+            const isActive = triage === filter.value;
+
+            return (
+              <button
+                aria-label={`${filter.label} ${filter.count}`}
+                aria-pressed={isActive}
+                className={`inline-flex min-h-9 max-w-full items-center gap-2 rounded-md border px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2 ${
+                  isActive
+                    ? "border-theme-action-primary bg-primitive-sky-50 text-theme-action-primary"
+                    : "border-theme-border-subtle bg-theme-background-surface text-theme-text-secondary hover:bg-theme-background-subtle hover:text-theme-text-primary"
+                }`}
+                key={filter.value}
+                onClick={() => setTriage(filter.value)}
+                type="button"
+              >
+                <span className="min-w-0 break-words text-left">
+                  {filter.label}
+                </span>
+                <span className="rounded-full bg-theme-background-subtle px-2 py-0.5 text-[11px] text-theme-text-primary">
+                  {filter.count}
+                </span>
+              </button>
+            );
+          })}
+        </section>
       </header>
 
       <section aria-label="Dispatch intelligence" className="grid gap-4">
-        <details
-          className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm"
-          open
-        >
+        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
           <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
             Route intelligence
             <span className="ml-2 font-normal text-theme-text-muted">
@@ -1155,12 +1245,12 @@ export function DispatchClient() {
           </div>
         </section>
       ) : (
-        <section className="grid gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+        <section className="grid min-w-0 gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
           {visibleCalendarDays.map((day) => {
             const isDayToday = day.date === todayKey();
             return (
               <Card
-                className={`flex min-h-64 flex-col gap-3 ${isDayToday ? "ring-2 ring-inset ring-theme-action-primary" : ""}`}
+                className={`flex min-h-64 min-w-0 flex-col gap-3 ${isDayToday ? "ring-2 ring-inset ring-theme-action-primary" : ""}`}
                 key={day.date}
                 padding="sm"
               >
@@ -1191,92 +1281,102 @@ export function DispatchClient() {
                     const techLabel = job.assigned_tech_id
                       ? (technicianLabels[job.assigned_tech_id] ?? "Assigned")
                       : "Unassigned";
+                    const routeStop = routeStopsByJobId[job.id];
+                    const evidenceSummary = locationEvidenceSummary(
+                      locationEvidenceByJob[job.id],
+                      geofenceEventsQuery.isLoading,
+                      job.id,
+                    );
 
                     return (
                       <Card
                         aria-label={`Dispatch job ${job.id}: ${
                           job.customer?.name ?? "Unknown customer"
                         }`}
-                        className="flex flex-col gap-2"
+                        className="flex min-w-0 flex-col gap-2"
                         key={job.id}
                         padding="sm"
                         role="group"
                         tone="subtle"
                       >
-                        <div className="flex items-center justify-between gap-2 text-xs font-semibold">
-                          <StatusPill dot={false} tone="info">
-                            {routeStopsByJobId[job.id]
-                              ? `Stop ${routeStopsByJobId[job.id].sequence}`
-                              : "Outside route"}
-                          </StatusPill>
-                          <span className="text-theme-text-secondary">
-                            {routeStopLocationLabel(routeStopsByJobId[job.id])}
+                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 text-xs font-semibold">
+                          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                            <StatusPill
+                              className="max-w-full whitespace-normal break-words text-left"
+                              dot={false}
+                              tone="info"
+                            >
+                              {routeStop
+                                ? `Stop ${routeStop.sequence}`
+                                : "Outside route"}
+                            </StatusPill>
+                            <StatusPill
+                              className="max-w-full whitespace-normal break-words text-left"
+                              dot={false}
+                              tone={
+                                routeStop?.location_state === "ready"
+                                  ? "neutral"
+                                  : "warning"
+                              }
+                            >
+                              {routeStopLocationLabel(routeStop)}
+                            </StatusPill>
+                          </div>
+                          <span className="text-theme-text-muted">
+                            {formatTime(job.scheduled_start)}
                           </span>
                         </div>
 
-                        {routeStopsByJobId[job.id]?.triage_labels.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
-                            {routeStopsByJobId[job.id].triage_labels.map(
-                              (label) => (
-                                <StatusPill
-                                  dot={false}
-                                  key={label}
-                                  tone="warning"
-                                >
-                                  {label}
-                                </StatusPill>
-                              ),
-                            )}
+                        {routeStop?.triage_labels.length > 0 ? (
+                          <div className="flex min-w-0 flex-wrap gap-1.5 text-xs font-semibold">
+                            {routeStop.triage_labels.map((label) => (
+                              <StatusPill
+                                className="max-w-full whitespace-normal break-words text-left"
+                                dot={false}
+                                key={label}
+                                tone="warning"
+                              >
+                                {label}
+                              </StatusPill>
+                            ))}
                           </div>
                         ) : null}
 
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-                            {formatTime(job.scheduled_start)}
-                          </p>
+                        <div className="min-w-0">
                           <h3 className="mt-1 text-sm font-semibold text-theme-text-primary">
                             {job.customer?.name ?? "Unknown customer"}
                           </h3>
-                          <p className="mt-0.5 text-xs text-theme-text-secondary">
+                          <p className="mt-0.5 truncate text-xs text-theme-text-secondary">
                             {job.location?.address ?? "No location saved"}
                           </p>
-                          {routeStopsByJobId[job.id]?.location_map_url ? (
-                            <a
-                              className="mt-1 inline-flex text-xs font-semibold text-theme-action-primary underline-offset-2 hover:underline"
-                              href={
-                                routeStopsByJobId[job.id].location_map_url ??
-                                undefined
-                              }
-                              aria-label={`Open service map for ${job.id}`}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
-                              Open in Maps
-                            </a>
-                          ) : null}
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs">
-                          <StatusPill dot={false} tone="neutral">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
+                          <StatusPill
+                            className="max-w-full whitespace-normal break-words text-left"
+                            dot={false}
+                            tone="neutral"
+                          >
                             {statusLabels[job.status]}
                           </StatusPill>
-                          <span className="truncate text-theme-text-muted">
+                          <span className="min-w-0 max-w-full truncate text-theme-text-muted">
                             {techLabel}
                           </span>
+                          <StatusPill
+                            className="max-w-full whitespace-normal break-words text-left"
+                            dot={false}
+                            tone={evidenceSummary.tone}
+                          >
+                            {evidenceSummary.label}
+                          </StatusPill>
                         </div>
-
-                        <LocationEvidencePanel
-                          evidence={locationEvidenceByJob[job.id]}
-                          isLoading={geofenceEventsQuery.isLoading}
-                          jobId={job.id}
-                        />
 
                         <button
                           aria-expanded={isExpanded}
                           aria-label={`${
                             isExpanded
-                              ? "Close controls for"
-                              : "Manage controls for"
+                              ? "Close details for"
+                              : "Details for"
                           } ${job.id}: ${
                             job.customer?.name ?? "Unknown customer"
                           }`}
@@ -1291,11 +1391,29 @@ export function DispatchClient() {
                           }
                           type="button"
                         >
-                          {isExpanded ? "Close" : "Manage"}
+                          {isExpanded ? "Close" : "Details"}
                         </button>
 
                         {isExpanded ? (
                           <div className="flex flex-col gap-3 border-t border-theme-border-subtle pt-3">
+                            <LocationEvidencePanel
+                              evidence={locationEvidenceByJob[job.id]}
+                              isLoading={geofenceEventsQuery.isLoading}
+                              jobId={job.id}
+                            />
+
+                            {routeStop?.location_map_url ? (
+                              <a
+                                aria-label={`Open service map for ${job.id}`}
+                                className="inline-flex w-fit text-xs font-semibold text-theme-action-primary underline-offset-2 hover:underline"
+                                href={routeStop.location_map_url ?? undefined}
+                                rel="noreferrer"
+                                target="_blank"
+                              >
+                                Open in Maps
+                              </a>
+                            ) : null}
+
                             <label className="flex flex-col gap-1 text-xs font-medium text-theme-text-primary">
                               Status
                               <select
