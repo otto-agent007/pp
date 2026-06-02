@@ -9,6 +9,9 @@ import type {
   CustomerPortalProviderStatus,
   CustomerPortalSendInput,
   CustomerPortalSendResult,
+  CustomerPortalUpgradeIntentInput,
+  CustomerPortalUpgradeIntentRequest,
+  CustomerPortalUpgradeIntentResult,
 } from "@pest-patrol/types";
 
 import { supabase } from "./supabase";
@@ -69,6 +72,33 @@ export async function listCustomerPortalBillingRecords(
   const body = (await response.json()) as CustomerPortalBillingResponse;
 
   return body.invoices;
+}
+
+export async function requestCustomerPortalUpgradeIntentRecord(
+  customerId: string,
+  accessToken: string,
+  input: CustomerPortalUpgradeIntentInput,
+) {
+  const body: CustomerPortalUpgradeIntentRequest = {
+    access_token: accessToken,
+    ...input,
+  };
+  const response = await fetch(
+    `/api/portal/${encodeURIComponent(customerId)}/upgrade-intents`,
+    {
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(responseError(response.status));
+  }
+
+  return (await response.json()) as CustomerPortalUpgradeIntentResult;
 }
 
 export async function createCustomerPortalAccessTokenRecord(

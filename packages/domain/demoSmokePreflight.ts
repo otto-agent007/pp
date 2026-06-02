@@ -194,9 +194,21 @@ function evidenceFor(target: DemoSeedTarget): string[] {
 
 export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
   const fixtures = buildDemoWorkflowFixtures();
+  const customersWithPaymentLinks = new Set(
+    fixtures.invoices
+      .filter((invoice) => invoice.payment_url)
+      .map((invoice) => invoice.customer_id),
+  );
+  const customersWithCompletedHistory = new Set(
+    fixtures.jobs
+      .filter((job) => job.status === "completed")
+      .map((job) => job.customer_id),
+  );
   const portalCustomer =
     fixtures.customers.find(
-      (customer) => customer.name === "Demo - Rivera Cafe",
+      (customer) =>
+        customersWithPaymentLinks.has(customer.id) &&
+        customersWithCompletedHistory.has(customer.id),
     ) ??
     fixtures.customers[1] ??
     fixtures.customers[0];
@@ -284,7 +296,12 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
       requiresAdminSession: true,
     },
     {
-      expectedText: ["Demo - Rivera Cafe"],
+      expectedText: [
+        portalCustomer.name,
+        "Pay invoice",
+        "Service and billing history",
+        "General Pest recurring service",
+      ],
       id: "portal",
       label: "tokened /portal",
       path: portalPath,

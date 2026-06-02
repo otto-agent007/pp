@@ -210,6 +210,8 @@ describe("local demo editable fixture store", () => {
     const events =
       getLocalDemoFixtures()?.portalAccessTokenEventsByTokenId[grant.token_id];
 
+    expect(grant.portal_url).toContain("access_token=");
+    expect(grant.portal_url).not.toContain("?token=");
     expect(send).toEqual({ provider: "webhook", status: "requested" });
     expect(revoked.status).toBe("revoked");
     expect(events?.map((event) => event.kind)).toEqual([

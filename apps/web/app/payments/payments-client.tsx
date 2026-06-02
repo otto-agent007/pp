@@ -37,6 +37,7 @@ import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
+import { useCreateCustomerPortalAccessToken } from "../../hooks/useCustomerPortalAccess";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -45,6 +46,7 @@ import {
   useMarkInvoicePaid,
   useVoidInvoice,
 } from "../../hooks/usePayments";
+import { PortalShareCard } from "../portal-share-card";
 
 interface InvoiceFormState {
   amount: string;
@@ -113,6 +115,14 @@ function invoiceTitle(invoice: Invoice) {
   );
 }
 
+async function copyText(value: string) {
+  if (!navigator.clipboard) {
+    throw new Error("Clipboard is unavailable");
+  }
+
+  await navigator.clipboard.writeText(value);
+}
+
 const reconciliationToneByStatus: Record<
   InvoiceReconciliationStatus,
   StatusPillTone
@@ -141,9 +151,15 @@ function InvoiceHandoff({
   invoice: Invoice;
   job: Job | null;
 }) {
+  const createPortalLink = useCreateCustomerPortalAccessToken();
+  const [portalUrl, setPortalUrl] = useState<string | null>(null);
+  const [portalCopied, setPortalCopied] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+
   if (!job) {
     return null;
   }
+  const handoffJob = job;
 
   const actions = buildBillingPortalNextActions({
     hasPortalLink: false,
@@ -153,6 +169,38 @@ function InvoiceHandoff({
 
   if (actions.length === 0) {
     return null;
+  }
+
+  async function generatePortalLink() {
+    setPortalError(null);
+    setPortalCopied(false);
+
+    const grant = await createPortalLink
+      .mutateAsync({
+        customer_id: handoffJob.customer_id,
+        expires_at: null,
+      })
+      .catch(() => null);
+
+    if (!grant) {
+      setPortalError("Couldn't generate a customer portal link.");
+      return;
+    }
+
+    setPortalUrl(grant.portal_url);
+  }
+
+  async function copyPortalLink() {
+    if (!portalUrl) {
+      return;
+    }
+
+    try {
+      await copyText(portalUrl);
+      setPortalCopied(true);
+    } catch {
+      setPortalCopied(false);
+    }
   }
 
   return (
@@ -172,7 +220,34 @@ function InvoiceHandoff({
             {action.label}
           </a>
         ))}
+        <Button
+          aria-busy={createPortalLink.isPending}
+          disabled={createPortalLink.isPending}
+          onClick={() => void generatePortalLink()}
+          size="sm"
+          variant="ghost"
+        >
+          {createPortalLink.isPending
+            ? "Generating portal QR..."
+            : "Generate customer portal QR"}
+        </Button>
       </div>
+      {portalUrl ? (
+        <div className="mt-3">
+          <PortalShareCard
+            copied={portalCopied}
+            copyButtonLabel="Copy portal link"
+            description="Text this portal link or add the QR code to the invoice handoff."
+            onCopy={() => void copyPortalLink()}
+            portalUrl={portalUrl}
+          />
+        </div>
+      ) : null}
+      {portalError || createPortalLink.error ? (
+        <p className="mt-2 text-xs font-semibold text-status-alert-danger-fg">
+          {portalError ?? "Couldn't generate a customer portal link."}
+        </p>
+      ) : null}
     </div>
   );
 }

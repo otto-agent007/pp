@@ -112,6 +112,7 @@ export {
   listCustomerPortalBillingRecords,
   listCustomerPortalAccessTokenRecords,
   listCustomerPortalCloseoutRecords,
+  requestCustomerPortalUpgradeIntentRecord,
   revokeCustomerPortalAccessTokenRecord,
   sendCustomerPortalAccessTokenRecord,
 } from "./portal";

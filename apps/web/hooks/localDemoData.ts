@@ -9,6 +9,8 @@ import {
   validateCustomerPortalAccessInput,
   validateCustomerPortalAccessTokenId,
   validateCustomerPortalSendInput,
+  validateCustomerPortalUpgradeIntentInput,
+  buildCustomerPortalUpgradeGeneratedKey,
   validateInvoiceInput,
   validateJobInput,
   validateTechnicianInviteInput,
@@ -27,6 +29,8 @@ import type {
   CustomerPortalAccessTokenSummary,
   CustomerPortalSendInput,
   CustomerPortalSendResult,
+  CustomerPortalUpgradeIntentInput,
+  CustomerPortalUpgradeIntentResult,
   Invoice,
   InvoiceInput,
   InvoiceLineItem,
@@ -49,6 +53,7 @@ function stableFixtureNow() {
 let localDemoFixtures = buildDemoWorkflowFixtures({ now: stableFixtureNow() });
 let localDemoIdCounter = 0;
 let localDemoFixtureSessionActive = false;
+let localDemoPortalUpgradeIntentKeys = new Set<string>();
 const localDemoFixtureSessionKey = "pest-patrol-demo-fixture-session";
 
 function nowIso() {
@@ -292,6 +297,7 @@ export function deactivateLocalDemoFixtureSession() {
 export function resetLocalDemoFixtures() {
   localDemoFixtures = buildDemoWorkflowFixtures({ now: stableFixtureNow() });
   localDemoIdCounter = 0;
+  localDemoPortalUpgradeIntentKeys = new Set<string>();
 
   return localDemoFixtures;
 }
@@ -757,7 +763,7 @@ export function createLocalDemoPortalAccessToken(
   const accessToken = `local-demo-token-${tokenId}`;
   const portalUrl = `/portal/${encodeURIComponent(
     normalized.customer_id,
-  )}?token=${encodeURIComponent(accessToken)}`;
+  )}?access_token=${encodeURIComponent(accessToken)}`;
   const tokenSummary: CustomerPortalAccessTokenSummary = {
     id: tokenId,
     customer_id: normalized.customer_id,
@@ -875,4 +881,31 @@ export function sendLocalDemoPortalAccessToken(
   };
 
   return { provider: "webhook", status: "requested" };
+}
+
+export function requestLocalDemoPortalUpgradeIntent(
+  customerId: string,
+  input: CustomerPortalUpgradeIntentInput,
+): CustomerPortalUpgradeIntentResult {
+  const fixtures = requireLocalDemoFixtures();
+  const normalized = validateCustomerPortalUpgradeIntentInput(input);
+  const customer = requireCustomer(fixtures, customerId);
+  const generatedKey = buildCustomerPortalUpgradeGeneratedKey(
+    customer.id,
+    normalized.plan_id,
+  );
+  const alreadyRequested =
+    localDemoPortalUpgradeIntentKeys.has(generatedKey);
+
+  if (!alreadyRequested) {
+    localDemoPortalUpgradeIntentKeys.add(generatedKey);
+  }
+
+  return {
+    notification_id: alreadyRequested
+      ? null
+      : nextLocalId("portal-upgrade-notification"),
+    plan_id: normalized.plan_id,
+    status: alreadyRequested ? "already_requested" : "requested",
+  };
 }

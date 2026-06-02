@@ -162,6 +162,14 @@ describe("demo smoke preflight", () => {
     expect(routes.find((route) => route.id === "portal")?.path).toContain(
       "access_token=portal-token",
     );
+    expect(routes.find((route) => route.id === "portal")?.expectedText).toEqual(
+      [
+        "Demo - Seabreeze Apartments",
+        "Pay invoice",
+        "Service and billing history",
+        "General Pest recurring service",
+      ],
+    );
     expect(
       routes.find((route) => route.id === "portal")?.redactedPath,
     ).not.toContain("portal-token");

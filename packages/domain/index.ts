@@ -214,9 +214,12 @@ export {
   getCustomerPortalAccessTokenReadiness,
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
+  buildCustomerPortalUpgradeGeneratedKey,
+  buildCustomerPortalUpgradeNotificationInput,
   getCustomerPortalProofHandoff,
   getCustomerPortalProviderStatus,
   getCustomerPortalSendProviderStatusLabel,
+  getCustomerPortalUpgradeSummary,
   buildCustomerPortalTimeline,
   getCustomerPortalServiceSummary,
   getCloseoutCounts,
@@ -227,12 +230,14 @@ export {
   listCustomerPortalAccessTokenEvents,
   listCustomerPortalBilling,
   listCustomerPortalCloseouts,
+  requestCustomerPortalUpgradeIntent,
   revokeCustomerPortalAccessToken,
   sendCustomerPortalAccessToken,
   validateCustomerPortalAccessInput,
   validateCustomerPortalAccessToken,
   validateCustomerPortalAccessTokenId,
   validateCustomerPortalCustomerId,
+  validateCustomerPortalUpgradeIntentInput,
   validateCustomerPortalSendInput,
 } from "./closeouts";
 export type {
@@ -254,6 +259,7 @@ export type {
   CustomerPortalServiceSummary,
   CustomerPortalTimelineItem,
   CustomerPortalTimelineItemType,
+  CustomerPortalUpgradeSummary,
 } from "./closeouts";
 export {
   archiveCustomer,

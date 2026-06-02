@@ -1,6 +1,46 @@
 # Implementation Plan
 
-## Current Priority: Technician Access Handoff
+## Current Priority: Pest Patrol Customer Portal V1
+
+This portal-first customer workflow keeps the existing tokened
+`/portal/<customerId>` trust boundary and turns QR/text invoice links into a
+single customer-facing route for payment, service history, and General Pest
+recurring-service follow-up. It does not add Stripe Billing, saved payment
+methods, subscription schema, recurring charge creation, migrations, provider
+setup, environment variables, preview data, production data, or live
+compliance ingestion.
+
+Completed in this batch:
+
+1. Added shared portal upgrade-intent contracts and domain helpers for the
+   V1 `general_pest_recurring` plan, generated keys, sanitized notification
+   input, duplicate-day behavior, and customer-safe portal summary copy.
+2. Added
+   `POST /api/portal/[customerId]/upgrade-intents`, validating the raw portal
+   access token server-side and creating one pending
+   `recurring_service_prompt` notification event per customer/day through the
+   existing generated-key idempotency path.
+3. Polished the tokened customer portal with account overview, open-balance
+   payment actions, service and billing history, proof cards, and a compact
+   General Pest recurring-service request CTA.
+4. Added reusable portal share cards with client-rendered QR codes for fresh
+   `/customers` and `/payments` portal-link handoffs while keeping historical
+   active token rows from exposing old raw URLs.
+5. Updated local fixture smoke to prove tokened portal pay actions, service
+   and billing history, and the upgrade CTA without Supabase env values.
+
+Next decision points:
+
+1. Keep Stripe Billing, Stripe Price IDs, saved payment methods, subscription
+   schema, recurring charge creation, and webhook scope for a later approved
+   pricing/provider slice.
+2. Keep provider delivery receipts and richer provider failure states deferred
+   until webhook-backed portal send evidence exists.
+3. Keep local/preview seed/reset and authenticated browser smoke gated on
+   approved Supabase env names, protected-preview access, and
+   admin/dispatcher sign-in.
+
+## Previous Priority: Technician Access Handoff
 
 This product polish pass starts from local `main` after merged PR #75 and keeps
 the next slice away from the open draft PR surfaces for mobile capture,

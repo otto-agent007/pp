@@ -1,5 +1,26 @@
 # Done
 
+## Pest Patrol Customer Portal V1
+
+- Added a portal-first customer workflow where QR/text links target the
+  tokened `/portal/<customerId>` route for account summary, open invoice
+  payment actions, service history, billing timeline, proof-of-service cards,
+  and a General Pest recurring-service request CTA
+- Added reusable admin portal share cards with client-rendered QR codes and
+  copyable portal URLs on `/customers` and `/payments`, keeping old active
+  token rows from pretending to recover historical raw URLs
+- Added token-validated
+  `POST /api/portal/[customerId]/upgrade-intents` so the General Pest CTA
+  creates one pending `recurring_service_prompt` follow-up per customer/day via
+  existing `notification_events.generated_key` idempotency
+- Kept Stripe Billing, saved payment methods, subscription schema, recurring
+  charge creation, migrations, provider setup, env changes, direct Supabase UI
+  calls, preview mutations, and production mutations out of scope
+- Verified with focused domain/API-client/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`,
+  `corepack pnpm demo:fixture-smoke`, in-app browser QA on tokened
+  `/portal` and `/customers` QR generation, and `git diff --check`
+
 ## Technician Access Handoff V1
 
 - Added provider-neutral `/technicians` invite handoff guidance for confirming

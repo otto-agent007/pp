@@ -6,12 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   useCustomerPortalBilling,
   useCustomerPortalCloseouts,
+  useCustomerPortalUpgradeIntent,
 } from "../../../hooks/useCustomerPortal";
 import { CustomerPortalClient } from "./portal-client";
 
 vi.mock("../../../hooks/useCustomerPortal", () => ({
   useCustomerPortalBilling: vi.fn(),
   useCustomerPortalCloseouts: vi.fn(),
+  useCustomerPortalUpgradeIntent: vi.fn(),
 }));
 
 const now = "2026-05-05T00:00:00Z";
@@ -108,6 +110,8 @@ const invoice = {
 } as const;
 
 describe("CustomerPortalClient", () => {
+  const requestUpgrade = vi.fn();
+
   beforeEach(() => {
     vi.mocked(useCustomerPortalBilling).mockReturnValue({
       error: null,
@@ -118,6 +122,17 @@ describe("CustomerPortalClient", () => {
       closeouts: [closeout],
       error: null,
       isLoading: false,
+    } as never);
+    requestUpgrade.mockReset();
+    requestUpgrade.mockResolvedValue({
+      notification_id: "notification-1",
+      plan_id: "general_pest_recurring",
+      status: "requested",
+    });
+    vi.mocked(useCustomerPortalUpgradeIntent).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutateAsync: requestUpgrade,
     } as never);
   });
 
@@ -178,6 +193,38 @@ describe("CustomerPortalClient", () => {
     expect(screen.getByText("Ants")).toBeInTheDocument();
     expect(screen.getByText("Kitchen photo")).toBeInTheDocument();
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
+  });
+
+  it("lets customers request a General Pest recurring service follow-up once", async () => {
+    const user = userEvent.setup();
+    render(
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
+    );
+
+    expect(useCustomerPortalUpgradeIntent).toHaveBeenCalledWith(
+      "customer-1",
+      "portal-token",
+    );
+    expect(
+      screen.getByText("General Pest recurring service"),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Request recurring service" }),
+    );
+
+    expect(requestUpgrade).toHaveBeenCalledTimes(1);
+    expect(requestUpgrade).toHaveBeenCalledWith({
+      plan_id: "general_pest_recurring",
+    });
+    expect(
+      screen.getByText(
+        "Request sent. Our office will follow up before anything recurring is scheduled or billed.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("uses semantic portal polish tokens without nested metric cards", () => {

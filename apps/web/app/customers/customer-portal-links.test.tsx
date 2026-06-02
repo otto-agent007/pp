@@ -405,6 +405,16 @@ describe("CustomerPortalLinks", () => {
     expect(screen.getByText("✓ Link copied to clipboard.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy again" })).toBeInTheDocument();
     expect(
+      await screen.findByRole("img", {
+        name: "QR code for customer portal link",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(
+        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Send portal link via provider" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Send link ▶")).toBeInTheDocument();
@@ -576,6 +586,11 @@ describe("CustomerPortalLinks", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("✓ Fresh link copied to clipboard.")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("img", {
+        name: "QR code for customer portal link",
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("✓ Send requested for the fresh link."),
     ).toBeInTheDocument();

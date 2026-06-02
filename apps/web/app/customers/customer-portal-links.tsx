@@ -30,6 +30,7 @@ import {
   useRevokeCustomerPortalAccessToken,
   useSendCustomerPortalAccessToken,
 } from "../../hooks/useCustomerPortalAccess";
+import { PortalShareCard } from "../portal-share-card";
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -848,51 +849,42 @@ export function CustomerPortalLinks({
 
       {latestLink ? (
         <Card className="mt-3 shadow-none" padding="sm" tone="subtle">
-          {copyUnavailable ? (
-            <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
+            {copyUnavailable ? (
               <p className="text-xs font-semibold text-neutralDark">
                 Link ready — copy it manually:
               </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  className="min-h-10 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-theme-action-primary"
-                  onFocus={(event) => event.currentTarget.select()}
-                  readOnly
-                  value={latestLink}
-                />
-                <Button onClick={() => void copyLatestLink()} variant="ghost">
-                  {copyFlash ? "Copied!" : "Copy"}
-                </Button>
-              </div>
-              <p className="text-xs text-theme-text-muted">
-                Paste this into an email or text to share with the customer.
-              </p>
-              <div className="mt-1">{sendButton}</div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            ) : (
               <div className="flex flex-col gap-1">
                 <StatusPill tone="success">
                   {message ?? "✓ Link copied to clipboard."}
                 </StatusPill>
-                {sendRequested ? sendButton : null}
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  className={buttonClassName({ size: "sm", variant: "ghost" })}
-                  onClick={() => void copyLatestLink()}
-                  ref={copyAgainRef}
-                  type="button"
-                >
-                  {copyFlash ? "Copied!" : "Copy again"}
-                </button>
-                {sendRequested ? null : sendButton}
-                <Button onClick={resetLatestLink} size="sm" variant="text">
-                  Generate new
-                </Button>
-              </div>
+            )}
+            <PortalShareCard
+              copyButtonRef={copyAgainRef}
+              copied={!copyUnavailable && copyFlash}
+              copyButtonLabel={copyUnavailable ? "Copy" : "Copy again"}
+              description={
+                copyUnavailable
+                  ? "Copy or scan this portal URL for manual sharing."
+                  : "Text this link or place the QR code on the invoice so the customer opens their portal."
+              }
+              onCopy={() => void copyLatestLink()}
+              portalUrl={latestLink}
+            />
+            {copyUnavailable ? (
+              <p className="text-xs text-theme-text-muted">
+                Paste this into an email or text to share with the customer.
+              </p>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              {sendButton}
+              <Button onClick={resetLatestLink} size="sm" variant="text">
+                Generate new
+              </Button>
             </div>
-          )}
+          </div>
           {sendError ? (
             <p
               className="mt-2 text-xs font-semibold text-status-alert-danger-fg"
@@ -1063,20 +1055,14 @@ export function CustomerPortalLinks({
                           Copy the fresh link manually:
                         </p>
                       )}
-                      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                        <input
-                          className="min-h-9 flex-1 rounded-md border border-theme-border-default bg-theme-background-surface px-3 font-mono text-xs text-neutralDark outline-none focus:border-theme-action-primary"
-                          onFocus={(event) => event.currentTarget.select()}
-                          readOnly
-                          value={freshManualLink.portalUrl}
+                      <div className="mt-2">
+                        <PortalShareCard
+                          copyButtonLabel="Copy fresh link"
+                          description="Use only this newly generated portal link for the send or manual fallback."
+                          onCopy={() => void copyFreshManualLink()}
+                          portalUrl={freshManualLink.portalUrl}
+                          title="Fresh portal link"
                         />
-                        <Button
-                          onClick={() => void copyFreshManualLink()}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          Copy fresh link
-                        </Button>
                       </div>
                     </Card>
                   ) : null}

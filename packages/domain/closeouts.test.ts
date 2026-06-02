@@ -17,14 +17,18 @@ import {
   getCustomerPortalAccessTokenReadiness,
   getCustomerPortalAccessTokenReadinessSummary,
   getCustomerPortalAccessTokenState,
+  buildCustomerPortalUpgradeGeneratedKey,
+  buildCustomerPortalUpgradeNotificationInput,
   getCustomerPortalProofHandoff,
   getCloseoutProofHandoffSummary,
   buildCustomerPortalTimeline,
   getCustomerPortalServiceSummary,
+  getCustomerPortalUpgradeSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
   getCloseoutReviewReadinessFromCounts,
   getCustomerPortalSendProviderStatusLabel,
+  validateCustomerPortalUpgradeIntentInput,
   validateCustomerPortalAccessInput,
   validateCustomerPortalSendInput,
   validateCustomerPortalAccessToken,
@@ -964,5 +968,58 @@ describe("closeouts domain", () => {
     });
     expect(JSON.stringify(timeline)).not.toContain("provider_payment_id");
     expect(JSON.stringify(timeline)).not.toContain("storage_path");
+  });
+
+  it("builds a customer-safe General Pest upgrade request notification", () => {
+    const input = validateCustomerPortalUpgradeIntentInput({
+      plan_id: "general_pest_recurring",
+    });
+    const requestedAt = new Date("2026-06-02T16:30:00.000Z");
+
+    expect(input).toEqual({ plan_id: "general_pest_recurring" });
+    expect(
+      buildCustomerPortalUpgradeGeneratedKey(
+        "customer-1",
+        input.plan_id,
+        requestedAt,
+      ),
+    ).toBe("portal-upgrade:customer-1:general-pest:2026-06-02");
+    expect(
+      buildCustomerPortalUpgradeNotificationInput(
+        "customer-1",
+        input,
+        requestedAt,
+      ),
+    ).toEqual({
+      customer_id: "customer-1",
+      due_at: "2026-06-02T16:30:00.000Z",
+      generated_key: "portal-upgrade:customer-1:general-pest:2026-06-02",
+      job_id: null,
+      message:
+        "Customer requested a General Pest recurring service follow-up from the customer portal. Contact them to confirm pricing, cadence, and start date.",
+      rule_id: null,
+      title: "General Pest recurring service request",
+      type: "recurring_service_prompt",
+    });
+    expect(JSON.stringify(getCustomerPortalUpgradeSummary())).not.toContain(
+      "access_token",
+    );
+    expect(JSON.stringify(getCustomerPortalUpgradeSummary())).not.toContain(
+      "provider_payment_id",
+    );
+    expect(JSON.stringify(getCustomerPortalUpgradeSummary())).not.toContain(
+      "payment_url",
+    );
+    expect(JSON.stringify(getCustomerPortalUpgradeSummary())).not.toContain(
+      "stripe",
+    );
+  });
+
+  it("rejects unsupported portal upgrade plans", () => {
+    expect(() =>
+      validateCustomerPortalUpgradeIntentInput({
+        plan_id: "termite_monitoring" as never,
+      }),
+    ).toThrow("Unsupported portal upgrade plan");
   });
 });

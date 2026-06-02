@@ -1,6 +1,12 @@
-import { useMemo, useRef, useState } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type RefAttributes,
+} from "react";
 import { Text, TextInput } from "react-native";
-import SignatureCanvas, {
+import SignatureCanvasModule, {
   type SignatureViewRef,
 } from "react-native-signature-canvas";
 import { CaptureCard, CaptureSection } from "@pest-patrol/ui-native";
@@ -15,6 +21,21 @@ import {
 interface JobSignatureCaptureFormProps {
   jobId: string;
 }
+
+type SignatureCanvasProps = {
+  autoClear?: boolean;
+  clearText?: string;
+  confirmText?: string;
+  descriptionText?: string;
+  onEmpty?: () => void;
+  onOK?: (signature: string) => void;
+  penColor?: string;
+  webStyle?: string;
+} & RefAttributes<SignatureViewRef>;
+
+const SignatureCanvas = SignatureCanvasModule as unknown as ComponentType<
+  SignatureCanvasProps
+>;
 
 const signatureWebStyle = `
   .m-signature-pad {
