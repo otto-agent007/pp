@@ -34,10 +34,10 @@ export default function EscrowRePage() {
     <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+          <p className="text-sm font-semibold uppercase tracking-wide text-theme-text-secondary">
             Real estate handoff
           </p>
-          <h1 className="text-3xl font-bold text-neutralDark">Escrow/RE</h1>
+          <h1 className="text-3xl font-bold text-theme-text-primary">Escrow/RE</h1>
         </div>
         <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface px-4 py-3 text-sm font-bold text-theme-text-secondary shadow-sm">
           WDO, escrow, billing, and customer handoff

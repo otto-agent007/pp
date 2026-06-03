@@ -39,7 +39,7 @@ export function DemoSeedControls() {
         <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
           Demo data
         </p>
-        <h3 className="text-base font-semibold text-neutralDark">Demo data</h3>
+        <h3 className="text-base font-semibold text-theme-text-primary">Demo data</h3>
         <p className="text-sm text-theme-text-secondary">
           {status?.environment_label ?? "Checking demo seed status"}
         </p>
@@ -59,7 +59,7 @@ export function DemoSeedControls() {
 
       {summary ? (
         <>
-          <p className="mt-3 text-sm font-semibold text-neutralDark">
+          <p className="mt-3 text-sm font-semibold text-theme-text-primary">
             Demo login: {DEMO_SEED_ADMIN_EMAIL} / {DEMO_SEED_ADMIN_PASSWORD}
           </p>
           <p className="mt-2 text-sm text-theme-text-secondary">
@@ -100,7 +100,7 @@ export function DemoSeedControls() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-theme-text-inverse disabled:cursor-not-allowed disabled:bg-theme-border-default"
+          className="rounded-md bg-theme-action-primary px-4 py-2 text-sm font-semibold text-theme-text-inverse disabled:cursor-not-allowed disabled:bg-theme-border-default"
           disabled={!available}
           onClick={() => run("seed")}
           type="button"
@@ -108,7 +108,7 @@ export function DemoSeedControls() {
           {actionMutation.isPending ? "Working..." : "Seed demo story"}
         </button>
         <button
-          className="rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-neutralDark disabled:cursor-not-allowed disabled:text-theme-text-muted/70"
+          className="rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-theme-text-primary disabled:cursor-not-allowed disabled:text-theme-text-muted/70"
           disabled={!available}
           onClick={() => run("reset")}
           type="button"
@@ -116,7 +116,7 @@ export function DemoSeedControls() {
           Reset demo data
         </button>
         <button
-          className="rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-neutralDark"
+          className="rounded-md border border-theme-border-default px-4 py-2 text-sm font-semibold text-theme-text-primary"
           onClick={() => void statusQuery.refetch()}
           type="button"
         >

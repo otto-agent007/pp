@@ -307,7 +307,7 @@ function CustomerPortalTokenHistory({
         {events.map((event) => (
           <li className="flex justify-between gap-3 px-3 py-2" key={event.id}>
             <div>
-              <p className="text-xs font-semibold text-neutralDark">
+              <p className="text-xs font-semibold text-theme-text-primary">
                 {getCustomerPortalAccessTokenEventLabel(event)}
               </p>
               <p className="text-xs text-theme-text-muted">
@@ -776,7 +776,7 @@ export function CustomerPortalLinks({
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <Eyebrow>Portal handoff review</Eyebrow>
-              <p className="mt-1 font-semibold text-neutralDark">
+              <p className="mt-1 font-semibold text-theme-text-primary">
                 {portalHandoff.label}
               </p>
               <p className="mt-1 text-xs text-theme-text-secondary">
@@ -826,7 +826,7 @@ export function CustomerPortalLinks({
         <label className="flex flex-col gap-1 text-xs font-semibold text-theme-text-secondary">
           Expires
           <input
-            className="min-h-10 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-neutralDark outline-none focus:border-theme-action-primary"
+            className="min-h-10 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none focus:border-theme-action-primary"
             disabled={createToken.isPending}
             onChange={(event) => setExpiresAt(event.target.value)}
             ref={expiresInputRef}
@@ -851,7 +851,7 @@ export function CustomerPortalLinks({
         <Card className="mt-3 shadow-none" padding="sm" tone="subtle">
           <div className="flex flex-col gap-3">
             {copyUnavailable ? (
-              <p className="text-xs font-semibold text-neutralDark">
+              <p className="text-xs font-semibold text-theme-text-primary">
                 Link ready — copy it manually:
               </p>
             ) : (
@@ -1044,7 +1044,7 @@ export function CustomerPortalLinks({
                   ) : null}
                   {freshManualLink?.tokenId === token.id ? (
                     <Card className="mt-2 shadow-none" padding="sm">
-                      <p className="text-xs font-semibold text-neutralDark">
+                      <p className="text-xs font-semibold text-theme-text-primary">
                         Fresh active link created. Older active links remain
                         available until revoked.
                       </p>
@@ -1093,7 +1093,7 @@ export function CustomerPortalLinks({
                       padding="sm"
                       role="group"
                     >
-                      <p className="text-xs font-semibold text-neutralDark">
+                      <p className="text-xs font-semibold text-theme-text-primary">
                         Revoke this link?
                       </p>
                       <p className="mt-0.5 text-xs text-theme-text-secondary">

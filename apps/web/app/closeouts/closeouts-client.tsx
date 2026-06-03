@@ -30,6 +30,7 @@ import {
   StatTile,
   StatusPill,
   buttonClassName,
+  formControlClassName,
   statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
@@ -76,8 +77,6 @@ const emptyChemicalLogs: ChemicalLog[] = [];
 const emptyChunks: ComplianceChunk[] = [];
 const emptyDocuments: ComplianceDocument[] = [];
 const emptySources: ComplianceSource[] = [];
-const fieldClassName =
-  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20";
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
@@ -344,7 +343,7 @@ function QueueRowContent({
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
-        <p className="text-sm font-semibold text-neutralDark">
+        <p className="text-sm font-semibold text-theme-text-primary">
           {jobTitle(job)}
         </p>
         <p className="mt-1 text-sm text-theme-text-secondary">
@@ -441,7 +440,7 @@ function QueueSection({
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutralDark">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-theme-text-primary">
           {title}{" "}
           <span className="font-medium text-theme-text-muted">
             ({items.length})
@@ -473,7 +472,7 @@ function FormSubmissionCard({ submission }: { submission: JobFormSubmission }) {
   return (
     <Card padding="md" role="article">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-        <h3 className="text-base font-semibold text-neutralDark">
+        <h3 className="text-base font-semibold text-theme-text-primary">
           {submission.template?.name ?? "Treatment form"}
         </h3>
         <p className="text-xs font-medium text-theme-text-muted">
@@ -523,7 +522,7 @@ function MediaTile({ media }: { media: JobMedia }) {
         </div>
       )}
       <div className="mt-3">
-        <p className="text-sm font-semibold text-neutralDark">
+        <p className="text-sm font-semibold text-theme-text-primary">
           {media.description ?? media.storage_path}
         </p>
         <p className="mt-1 break-all text-xs text-theme-text-muted">
@@ -547,7 +546,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
     return (
       <Card className="shadow-none" padding="md" statusTone="success">
-        <p className="text-sm font-semibold text-neutralDark">Ready to bill</p>
+        <p className="text-sm font-semibold text-theme-text-primary">Ready to bill</p>
         <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
         </p>
@@ -572,7 +571,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
   if (!item.invoice) {
     return (
       <Card className="shadow-none" padding="md" statusTone="warning">
-        <p className="text-sm font-semibold text-neutralDark">
+        <p className="text-sm font-semibold text-theme-text-primary">
           {item.readiness.label}
         </p>
         <p className="mt-1 text-sm text-theme-text-secondary">
@@ -615,7 +614,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
   return (
     <Card className="shadow-none" padding="md" statusTone="info">
-      <p className="text-sm font-semibold text-neutralDark">
+      <p className="text-sm font-semibold text-theme-text-primary">
         {titleByStatus[invoice.status]}
       </p>
       <p className="mt-1 text-sm text-theme-text-secondary">
@@ -769,10 +768,10 @@ function ProofHandoffCard({
     <Card className="shadow-none" padding="md" statusTone={completionTone}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-neutralDark">
+          <p className="text-sm font-semibold text-theme-text-primary">
             Proof handoff readiness
           </p>
-          <p className="mt-2 text-sm font-semibold text-neutralDark">
+          <p className="mt-2 text-sm font-semibold text-theme-text-primary">
             {handoff.proof_label}
           </p>
           <p className="mt-1 text-sm text-theme-text-secondary">
@@ -816,7 +815,7 @@ function ProofHandoffCard({
           {handoff.missing_capture_guidance}
         </p>
       ) : null}
-      <p className="mt-3 text-sm font-semibold text-neutralDark">
+      <p className="mt-3 text-sm font-semibold text-theme-text-primary">
         {handoff.portal_handoff_label}
       </p>
       <p className="mt-3 text-xs font-medium text-theme-text-secondary">
@@ -1016,7 +1015,7 @@ export function CloseoutsClient() {
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="inverse">Admin</Eyebrow>
-          <h1 className="text-3xl font-bold text-neutralDark">
+          <h1 className="text-3xl font-bold text-theme-text-primary">
             Billing work queue
           </h1>
           <p className="mt-3 max-w-3xl text-sm text-theme-text-secondary">
@@ -1027,14 +1026,14 @@ export function CloseoutsClient() {
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             aria-label="Search closeouts"
-            className={fieldClassName}
+            className={formControlClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Queue status"
-            className={fieldClassName}
+            className={formControlClassName}
             onChange={(event) =>
               setStatus(event.target.value as CloseoutStatusFilter)
             }
@@ -1127,7 +1126,7 @@ export function CloseoutsClient() {
               />
               {otherJobs.length > 0 ? (
                 <section className="flex flex-col gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-neutralDark">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-theme-text-primary">
                     Other jobs{" "}
                     <span className="font-medium text-theme-text-muted">
                       ({otherJobs.length})
@@ -1173,7 +1172,7 @@ export function CloseoutsClient() {
                     <p className="text-sm font-semibold uppercase tracking-wide text-theme-text-secondary">
                       {selectedJob.status}
                     </p>
-                    <h2 className="mt-1 break-words text-2xl font-bold text-neutralDark">
+                    <h2 className="mt-1 break-words text-2xl font-bold text-theme-text-primary">
                       {jobTitle(selectedJob)}
                     </h2>
                     <p className="mt-2 text-sm text-theme-text-secondary">
@@ -1213,7 +1212,7 @@ export function CloseoutsClient() {
                       readiness.billingReady ? "success" : "warning",
                     )}`}
                   >
-                    <p className="text-sm font-semibold text-neutralDark">
+                    <p className="text-sm font-semibold text-theme-text-primary">
                       {readiness.label}
                     </p>
                     <p className="mt-1 text-sm text-theme-text-secondary">
@@ -1234,7 +1233,7 @@ export function CloseoutsClient() {
               ) : closeout.review ? (
                 <>
                   <section className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-neutralDark">
+                    <h2 className="text-xl font-semibold text-theme-text-primary">
                       Treatment forms
                     </h2>
                     {closeout.review.form_submissions.length === 0 ? (
@@ -1252,7 +1251,7 @@ export function CloseoutsClient() {
                   </section>
 
                   <section className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-neutralDark">
+                    <h2 className="text-xl font-semibold text-theme-text-primary">
                       Chemical logs
                     </h2>
                     {closeout.review.chemical_logs.length === 0 ? (
@@ -1266,7 +1265,7 @@ export function CloseoutsClient() {
                             className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-4"
                             key={log.id}
                           >
-                            <p className="font-semibold text-neutralDark">
+                            <p className="font-semibold text-theme-text-primary">
                               {log.chemical?.name ?? "Unknown chemical"}
                             </p>
                             <p className="mt-1 text-sm text-theme-text-secondary">
@@ -1284,7 +1283,7 @@ export function CloseoutsClient() {
                   </section>
 
                   <section className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-neutralDark">
+                    <h2 className="text-xl font-semibold text-theme-text-primary">
                       Photos
                     </h2>
                     {closeout.review.photos.length === 0 ? (
@@ -1299,7 +1298,7 @@ export function CloseoutsClient() {
                   </section>
 
                   <section className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-neutralDark">
+                    <h2 className="text-xl font-semibold text-theme-text-primary">
                       Signatures
                     </h2>
                     {closeout.review.signatures.length === 0 ? (
