@@ -438,7 +438,7 @@ describe("DispatchClient", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders a provider-free San Diego map with filtered route pins", () => {
+  it("renders a provider-free San Diego map with filtered technician signals", () => {
     vi.mocked(useJobs).mockReturnValue({
       data: [sanDiegoJob, missingCoordinateJob],
       isLoading: false,
@@ -466,12 +466,12 @@ describe("DispatchClient", () => {
     expect(within(mapPanel).getByText("I-5")).toBeInTheDocument();
     expect(within(mapPanel).getByText("Escondido")).toBeInTheDocument();
     expect(within(mapPanel).getByText("Tijuana")).toBeInTheDocument();
-    expect(within(mapPanel).getByText("1 plotted")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("1 technician signal")).toBeInTheDocument();
     expect(
       within(mapPanel).getByText("1 missing coordinates"),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Map pin Stop 2: Downtown Cafe, Testnician"),
+      screen.getByLabelText("Technician signal Testnician: Downtown Cafe"),
     ).toBeInTheDocument();
 
     fireEvent.click(
@@ -488,7 +488,7 @@ describe("DispatchClient", () => {
     );
   });
 
-  it("colors San Diego map markers by assigned technician", () => {
+  it("colors San Diego map signals by assigned technician", () => {
     vi.mocked(useJobs).mockReturnValue({
       data: [sanDiegoJob, secondSanDiegoJob],
       isLoading: false,
@@ -506,14 +506,14 @@ describe("DispatchClient", () => {
     openDispatchDisclosure("Route intelligence");
 
     const firstMarker = screen.getByLabelText(
-      "Map pin Stop 1: Downtown Cafe, Testnician",
+      "Technician signal Testnician: Downtown Cafe",
     );
     const secondMarker = screen.getByLabelText(
-      "Map pin Stop 2: North Park Office, Second Tech",
+      "Technician signal Second Tech: North Park Office",
     );
 
-    expect(firstMarker).toHaveTextContent("1");
-    expect(secondMarker).toHaveTextContent("2");
+    expect(firstMarker).toHaveTextContent("T");
+    expect(secondMarker).toHaveTextContent("S");
     expect(firstMarker.className).not.toBe(secondMarker.className);
     expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Second Tech").length).toBeGreaterThan(0);
@@ -539,7 +539,7 @@ describe("DispatchClient", () => {
     expect(
       screen.getByRole("heading", { name: "San Diego dispatch map" }),
     ).toBeInTheDocument();
-    expect(within(mapPanel).getByText("0 plotted")).toBeInTheDocument();
+    expect(within(mapPanel).getByText("0 technician signals")).toBeInTheDocument();
     expect(
       within(mapPanel).getByText("1 missing coordinates"),
     ).toBeInTheDocument();

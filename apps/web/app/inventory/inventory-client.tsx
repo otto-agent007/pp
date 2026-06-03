@@ -39,6 +39,7 @@ import {
   useCreateChemicalLog,
   useUpdateChemicalInventory,
 } from "../../hooks/useInventory";
+import { adminWorkspaceClassName } from "../admin-workspace";
 
 type InventoryStatusFilter = InventoryStatus | "all";
 
@@ -275,7 +276,7 @@ export function InventoryClient() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="inverse">Admin</Eyebrow>

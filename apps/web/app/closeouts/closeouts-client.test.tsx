@@ -606,7 +606,7 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("button", { name: /Missing captures 1/i }),
     ).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Needs photo and signature")).toBeInTheDocument();
+    expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(1);
     expect(screen.getByText("Missing: photo · signature")).toBeInTheDocument();
     expect(
       screen.getByText("Billing handoff is blocked until captures sync."),

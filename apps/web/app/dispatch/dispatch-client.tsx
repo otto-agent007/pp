@@ -47,6 +47,7 @@ import {
   useJobs,
   useTechnicians,
 } from "../../hooks/useJobs";
+import { adminWorkspaceClassName } from "../admin-workspace";
 import {
   SanDiegoMapBackdrop,
   dispatchMapMarkerClassName,
@@ -137,6 +138,13 @@ function formatCapturedTime(value: string) {
 
 function gpsEventLabel(eventType: DispatchLocationEvidenceEvent["event_type"]) {
   return eventType === "departure" ? "Departure" : "Arrival";
+}
+
+function technicianSignalInitial(label: string) {
+  const cleaned = label.replace(/^Demo\s*-\s*/i, "").trim();
+  const firstWord = cleaned.split(/\s+/).find((part) => /[a-z0-9]/i.test(part));
+
+  return firstWord?.[0]?.toUpperCase() ?? "T";
 }
 
 function accuracyLabel(value: number | null) {
@@ -440,13 +448,17 @@ function DispatchStaticMapPanel({
             San Diego dispatch map
           </h2>
           <p className="mt-1 text-xs text-theme-text-secondary">
-            Custom schematic for the demo route story. Pins use service
-            coordinates first, then latest synced GPS evidence.
+            Custom schematic for the demo route story. Signals group stops by
+            technician, with latest synced GPS shown when available.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-theme-text-secondary">
           <StatusPill dot={false} tone="info">
-            {plural(mapState.summary.plotted_stops, "plotted", "plotted")}
+            {plural(
+              mapState.summary.plotted_technicians_count,
+              "technician signal",
+              "technician signals",
+            )}
           </StatusPill>
           <StatusPill dot={false} tone="warning">
             {plural(
@@ -485,20 +497,21 @@ function DispatchStaticMapPanel({
                   top: `${point.y_percent}%`,
                 }}
               >
-                {/* Blinking GPS signal ring */}
+                {point.source === "latest_gps" ? (
+                  <span
+                    aria-hidden="true"
+                    className={`absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-60 ${pingColor}`}
+                  />
+                ) : null}
                 <span
-                  className={`absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-60 ${pingColor}`}
-                />
-                {/* Solid marker */}
-                <span
-                  aria-label={`Map pin ${point.label}: ${point.customer_label}, ${point.technician_label}`}
+                  aria-label={`Technician signal ${point.technician_label}: ${point.customer_label}`}
                   className={`absolute inline-flex min-h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 px-1 text-xs font-bold shadow-sm ${dispatchMapMarkerClassName(
                     point.marker_tone,
                   )}`}
                   role="img"
-                  title={`${point.label}: ${point.customer_label} - ${point.technician_label}`}
+                  title={`${point.technician_label}: ${point.customer_label}`}
                 >
-                  {point.label.replace("Stop ", "")}
+                  {technicianSignalInitial(point.technician_label)}
                 </span>
               </div>
             );
@@ -507,8 +520,8 @@ function DispatchStaticMapPanel({
         <div className="space-y-2">
           {mapState.points.length === 0 ? (
             <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-surface p-3 text-sm text-theme-text-muted">
-              Add San Diego service coordinates or sync GPS evidence to place
-              pins on this overview.
+              Assign technicians, add San Diego service coordinates, or sync GPS
+              evidence to place signals on this overview.
             </p>
           ) : (
             mapState.points.map((point) => {
@@ -520,7 +533,7 @@ function DispatchStaticMapPanel({
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold text-theme-text-muted">
-                        {point.label}
+                        {point.technician_label}
                       </p>
                       <h3 className="text-sm font-semibold text-theme-text-primary">
                         {point.customer_label}
@@ -884,7 +897,7 @@ export function DispatchClient() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>

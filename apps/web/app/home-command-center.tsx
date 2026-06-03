@@ -25,6 +25,10 @@ import type {
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
+import {
+  adminWorkspaceGridClassName,
+  adminWorkspaceHeaderClassName,
+} from "./admin-workspace";
 import { useBrowserSpeechTranscribe } from "../hooks/useBrowserSpeechTranscribe";
 import { useWhisperTranscribe } from "../hooks/useWhisperTranscribe";
 
@@ -282,6 +286,13 @@ function techInitials(label: string) {
   return initials.toUpperCase() || "T";
 }
 
+function technicianSignalInitial(label: string) {
+  const cleaned = label.replace(/^Demo\s*-\s*/i, "").trim();
+  const firstWord = cleaned.split(/\s+/).find((part) => /[a-z0-9]/i.test(part));
+
+  return firstWord?.[0]?.toUpperCase() ?? "T";
+}
+
 // ---------------------------------------------------------------------------
 // Spark bars — 7-bar inline mini-chart used inside BiKpiCard.
 // ---------------------------------------------------------------------------
@@ -450,19 +461,20 @@ function DashboardMap({
                 top: `${point.y_percent}%`,
               }}
             >
-              {/* Blinking GPS signal ring */}
-              <span
-                className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-60 ${pingColor}`}
-              />
-              {/* Solid marker */}
+              {point.source === "latest_gps" ? (
+                <span
+                  aria-hidden="true"
+                  className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-60 ${pingColor}`}
+                />
+              ) : null}
               <Link
-                aria-label={`${point.technician_label} GPS marker ${point.label}: ${point.customer_label}`}
+                aria-label={`${point.technician_label} technician signal: ${point.customer_label}`}
                 className={`absolute inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-[10px] font-extrabold shadow-sm ${dispatchMapMarkerClassName(
                   point.marker_tone,
                 )}`}
                 href={`/jobs/${point.job_id}`}
               >
-                {point.label.replace("Stop ", "")}
+                {technicianSignalInitial(point.technician_label)}
               </Link>
             </div>
           );
@@ -475,18 +487,22 @@ function DashboardMap({
         ) : null}
       </div>
       <div className="grid grid-cols-2 divide-x divide-y divide-theme-border-subtle border-t border-theme-border-subtle text-center text-xs font-bold text-theme-text-secondary sm:grid-cols-4 sm:divide-y-0">
-        <p className="px-2 py-2">{mapState.summary.plotted_stops} plotted</p>
-        {/* Link "missing GPS" to dispatch so operators have an action path */}
+        <p className="px-2 py-2">
+          {mapState.summary.plotted_technicians_count}{" "}
+          {mapState.summary.plotted_technicians_count === 1
+            ? "technician signal"
+            : "technician signals"}
+        </p>
         {mapState.summary.missing_coordinates_count > 0 ? (
           <Link
             className="px-2 py-2 text-theme-text-secondary underline-offset-2 hover:text-theme-action-primary hover:underline"
             href="/dispatch"
-            title="View jobs missing GPS coordinates in Dispatch"
+            title="View jobs missing coordinates in Dispatch"
           >
-            {mapState.summary.missing_coordinates_count} missing GPS
+            {mapState.summary.missing_coordinates_count} missing coordinates
           </Link>
         ) : (
-          <p className="px-2 py-2">All GPS plotted</p>
+          <p className="px-2 py-2">All signals plotted</p>
         )}
         <p className="px-2 py-2">{mapState.bounds.label}</p>
         <p className="px-2 py-2">
@@ -830,7 +846,7 @@ export function HomeCommandCenter() {
   return (
     <main className="min-h-screen bg-theme-background-canvas text-theme-text-primary">
       <section className="border-b border-theme-border-subtle bg-theme-background-surface">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className={adminWorkspaceHeaderClassName}>
           <div className="grid gap-3 lg:grid-cols-[1fr_minmax(18rem,26rem)_auto] lg:items-center">
             <div>
               <Eyebrow tone="accent">Operations</Eyebrow>
@@ -915,7 +931,7 @@ export function HomeCommandCenter() {
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:px-8">
+      <div className={adminWorkspaceGridClassName}>
         {query ? (
           <Card>
             <div className="flex items-start justify-between gap-3">
@@ -1351,121 +1367,9 @@ export function HomeCommandCenter() {
 
         <InsightBanner href={insightHref} narrative={insightNarrative} />
 
-        <details className="group rounded-lg border border-theme-border-subtle bg-theme-background-surface shadow-sm">
-          <summary className="cursor-pointer px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <Eyebrow tone="muted">Admin tools</Eyebrow>
-                <h2 className="mt-1 text-lg font-bold">
-                  Launch readiness tools
-                </h2>
-              </div>
-              <StatusPill tone="neutral">Demo tools</StatusPill>
-            </div>
-          </summary>
-          <div className="hidden gap-4 border-t border-theme-border-subtle p-4 group-open:grid">
-            <section className="grid gap-4 xl:grid-cols-[1fr_.8fr]">
-              <Card className="shadow-none">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <Eyebrow tone="muted">Launch gates</Eyebrow>
-                    <h2 className="mt-1 text-xl font-bold">Smoke readiness</h2>
-                  </div>
-                  <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
-                    Operator checks stay provider-free until approved env and
-                    access are available.
-                  </p>
-                </div>
-                <div className="mt-4 divide-y divide-theme-border-subtle">
-                  {state.launchReadiness.map((item) => (
-                    <Link
-                      className={`mb-3 block rounded-md border p-3 transition hover:border-theme-action-primary ${statusSurfaceClassName(
-                        severityTones[item.severity],
-                      )}`}
-                      href={item.href}
-                      key={item.id}
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-primitive-navy-950">
-                            {item.label}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-                            {item.summary}
-                          </p>
-                        </div>
-                        <StatusPill tone={severityTones[item.severity]}>
-                          {item.stateLabel}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-2 text-xs font-semibold text-theme-text-muted">
-                        {item.action}
-                      </p>
-                      {item.command ? (
-                        <p className="mt-2 rounded-md bg-primitive-slate-100 px-2 py-1 font-mono text-xs text-theme-text-secondary">
-                          {item.command}
-                        </p>
-                      ) : null}
-                    </Link>
-                  ))}
-                </div>
-              </Card>
-              <DemoSeedControls />
-            </section>
-
-            <section>
-              <Card className="shadow-none">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <Eyebrow tone="muted">Demo readiness</Eyebrow>
-                    <h2 className="mt-1 text-xl font-bold">
-                      Guided demo smoke
-                    </h2>
-                  </div>
-                  <p className="max-w-xl text-sm font-semibold text-theme-text-secondary">
-                    Route links and evidence prompts are operator aids only.
-                    They do not store checklist state or require production
-                    customer data.
-                  </p>
-                </div>
-                <div className="mt-4 grid gap-3 lg:grid-cols-5">
-                  {state.smokeChecklist.map((item, index) => (
-                    <Link
-                      className={`flex min-h-64 flex-col gap-4 rounded-md border p-4 transition hover:border-theme-action-primary hover:bg-theme-background-surface hover:shadow-sm ${statusSurfaceClassName(
-                        "info",
-                      )}`}
-                      href={item.href}
-                      key={item.id}
-                    >
-                      <div>
-                        <p className="text-xs font-bold uppercase text-theme-text-muted">
-                          Step {index + 1}
-                        </p>
-                        <p className="mt-2 text-sm font-bold text-primitive-navy-950">
-                          {item.label}
-                        </p>
-                        <p className="mt-2 text-xs font-bold uppercase text-primitive-sky-500">
-                          {item.routeLabel}
-                        </p>
-                      </div>
-                      <div className="flex flex-1 flex-col justify-end gap-3 text-sm">
-                        <p className="text-theme-text-secondary">
-                          {item.action}
-                        </p>
-                        <p className="font-semibold text-theme-text-secondary">
-                          Success: {item.successSignal}
-                        </p>
-                        <p className="text-xs font-semibold text-theme-text-muted">
-                          {item.evidencePrompt}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </Card>
-            </section>
-          </div>
-        </details>
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,26rem)]">
+          <DemoSeedControls />
+        </section>
       </div>
     </main>
   );
