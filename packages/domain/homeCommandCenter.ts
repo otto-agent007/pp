@@ -6,7 +6,6 @@ import type {
   TechnicianStatus,
 } from "@pest-patrol/types";
 
-import { getDemoWorkflowSteps } from "./demoReadiness";
 import {
   formatJobScheduleTime,
   getJobScheduleDateKey,
@@ -57,41 +56,12 @@ export interface HomeCommandCenterNextAction {
   summary: string;
 }
 
-export interface HomeSmokeChecklistItem {
-  action: string;
-  evidencePrompt: string;
-  href: string;
-  id: "closeout" | "customer" | "dispatch" | "follow-up" | "job";
-  label: string;
-  routeLabel: string;
-  successSignal: string;
-}
-
-export type HomeLaunchReadinessId =
-  | "compliance-setup"
-  | "local-smoke"
-  | "preview-smoke"
-  | "provider-mode";
-
-export interface HomeLaunchReadinessItem {
-  action: string;
-  command?: string;
-  href: string;
-  id: HomeLaunchReadinessId;
-  label: string;
-  severity: HomeCommandCenterSeverity;
-  stateLabel: string;
-  summary: string;
-}
-
 export interface HomeCommandCenterState {
   alerts: HomeCommandCenterAlert[];
   kpis: HomeCommandCenterKpi[];
-  launchReadiness: HomeLaunchReadinessItem[];
   nextAction: HomeCommandCenterNextAction;
   portalProviderLabel: string;
   schedule: HomeCommandCenterScheduleItem[];
-  smokeChecklist: HomeSmokeChecklistItem[];
 }
 
 export interface HomeCommandCenterInput {
@@ -153,19 +123,6 @@ function formatCurrency(cents: number) {
   }).format(cents / 100);
 }
 
-function buildSmokeChecklist(): HomeSmokeChecklistItem[] {
-  return getDemoWorkflowSteps().map((step) => ({
-    action: step.action,
-    evidencePrompt:
-      "Record the route, action taken, and visible success signal without adding provider secrets or production customer data.",
-    href: step.href,
-    id: step.id,
-    label: step.label,
-    routeLabel: step.routeLabel,
-    successSignal: step.successSignal,
-  }));
-}
-
 function buildPortalProviderLabel(
   status: CustomerPortalProviderStatus | null | undefined,
 ) {
@@ -174,75 +131,6 @@ function buildPortalProviderLabel(
   }
 
   return getProviderReadinessCopy("portal", status).label;
-}
-
-function buildLaunchReadiness(
-  portalProviderStatus: CustomerPortalProviderStatus | null | undefined,
-): HomeLaunchReadinessItem[] {
-  const webhookReady =
-    portalProviderStatus?.provider === "webhook" &&
-    portalProviderStatus.webhook_configured &&
-    portalProviderStatus.webhook_secret_configured;
-  const providerCopy = getProviderReadinessCopy("portal", portalProviderStatus);
-
-  return [
-    {
-      action:
-        "Load the approved local Supabase values in the operator shell, then rerun the read-only preflight before seed/reset or browser smoke.",
-      command: "corepack pnpm demo:smoke -- --target local",
-      href: "/",
-      id: "local-smoke",
-      label: "Local smoke preflight",
-      severity: "warning",
-      stateLabel: "Blocked on approved local env",
-      summary:
-        "Seed/reset and Browser smoke stay gated until local preflight is ready.",
-    },
-    {
-      action:
-        "Use the latest Ready preview URL only after preview Supabase values, protected-preview access, and an admin/dispatcher sign-in path are approved.",
-      command:
-        "corepack pnpm demo:smoke -- --target preview --base-url <ready-preview-url>",
-      href: "/dispatch",
-      id: "preview-smoke",
-      label: "Protected preview smoke",
-      severity: "warning",
-      stateLabel: "Blocked on operator access",
-      summary:
-        "Preview seed/reset and authenticated smoke stop at missing access.",
-    },
-    {
-      action:
-        "Run the no-write source preflight first; apply schema and ingest sources only against an approved local target.",
-      command: "corepack pnpm compliance:ingest -- --dry-run --no-embed",
-      href: "/compliance",
-      id: "compliance-setup",
-      label: "Compliance source setup",
-      severity: "neutral",
-      stateLabel: "Dry-run first",
-      summary:
-        "Source-backed advisories require explicit migration and ingestion approval.",
-    },
-    webhookReady
-      ? {
-          action: providerCopy.action,
-          href: "/customers",
-          id: "provider-mode",
-          label: "Portal delivery mode",
-          severity: "good",
-          stateLabel: providerCopy.stateLabel,
-          summary: providerCopy.summary,
-        }
-      : {
-          action: providerCopy.action,
-          href: "/customers",
-          id: "provider-mode",
-          label: "Portal delivery mode",
-          severity: "good",
-          stateLabel: providerCopy.stateLabel,
-          summary: providerCopy.summary,
-        },
-  ];
 }
 
 export function buildHomeCommandCenterState(
@@ -374,7 +262,7 @@ export function buildHomeCommandCenterState(
   let nextAction: HomeCommandCenterNextAction = {
     href: "/",
     label: "Seed demo story",
-    summary: "Use local demo data controls before running the guided smoke.",
+    summary: "Use local demo data controls before presenting the workflow.",
   };
 
   if (openInvoices.length > 0) {
@@ -407,10 +295,8 @@ export function buildHomeCommandCenterState(
   return {
     alerts,
     kpis,
-    launchReadiness: buildLaunchReadiness(input.portalProviderStatus),
     nextAction,
     portalProviderLabel: buildPortalProviderLabel(input.portalProviderStatus),
     schedule,
-    smokeChecklist: buildSmokeChecklist(),
   };
 }

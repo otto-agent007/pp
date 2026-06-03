@@ -8,7 +8,6 @@ import {
   buildBillingQueue,
   filterCloseoutJobs,
   formatJobScheduleDateTime,
-  formatMissingCaptureList,
   getAdminCloseoutProofReview,
   getBillingQueueCounts,
   getCloseoutProofHandoffSummary,
@@ -62,6 +61,7 @@ import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
+import { adminWorkspaceClassName } from "../admin-workspace";
 
 type QueueFilter =
   | "all"
@@ -382,9 +382,7 @@ function QueueRow({
     item.state === "ready" ? (
       <StatusPill tone="success">Ready</StatusPill>
     ) : item.state === "needsCaptures" ? (
-      <StatusPill tone="warning">
-        {`Needs ${formatMissingCaptureList(item.readiness.missing)}`}
-      </StatusPill>
+      <StatusPill tone="warning">Needs captures</StatusPill>
     ) : item.invoice ? (
       <StatusPill tone={item.invoice.status === "paid" ? "success" : "info"}>
         {invoiceStatusLabel(item.invoice)}
@@ -1014,7 +1012,7 @@ export function CloseoutsClient() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="inverse">Admin</Eyebrow>

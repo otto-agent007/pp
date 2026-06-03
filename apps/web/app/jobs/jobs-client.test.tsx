@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -168,11 +168,12 @@ describe("JobsClient", () => {
 
     expect(screen.getByText("No jobs found")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Create first job" }),
-    ).toHaveAttribute("href", "#job-form");
+      screen.getByRole("button", { name: "Create first job" }),
+    ).toBeInTheDocument();
   });
 
-  it("shows demo scheduling helpers without creating records", () => {
+  it("keeps job creation details hidden until the operator opens the panel", async () => {
+    const user = userEvent.setup();
     render(<JobsClient />);
 
     expect(screen.getByText("Job queue")).toBeInTheDocument();
@@ -181,6 +182,13 @@ describe("JobsClient", () => {
     expect(screen.getByText("Scheduled jobs").closest(".rounded-lg")).toHaveClass(
       "bg-status-alert-info-bg",
     );
+    expect(
+      screen.queryByRole("combobox", { name: "Customer" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Job setup notes")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "New job" }));
+
     const helper = screen.getByText("Job setup notes").closest("details");
     expect(helper).not.toHaveAttribute("open");
     expect(
@@ -202,8 +210,11 @@ describe("JobsClient", () => {
     ).toHaveAttribute("href", "/dispatch");
   });
 
-  it("labels technician options by display name", () => {
+  it("labels technician options by display name after opening the job panel", async () => {
+    const user = userEvent.setup();
     render(<JobsClient />);
+
+    await user.click(screen.getByRole("button", { name: "New job" }));
 
     const technician = screen.getByRole("combobox", { name: "Technician" });
     expect(technician).toHaveValue("Unassigned");
@@ -256,6 +267,7 @@ describe("JobsClient", () => {
     const user = userEvent.setup();
     render(<JobsClient />);
 
+    await user.click(screen.getByRole("button", { name: "New job" }));
     await user.click(screen.getByRole("button", { name: "Save job" }));
 
     expect(screen.getByText("Scheduled start is required")).toBeInTheDocument();
@@ -265,6 +277,7 @@ describe("JobsClient", () => {
     const user = userEvent.setup();
     render(<JobsClient />);
 
+    await user.click(screen.getByRole("button", { name: "New job" }));
     await chooseSearchableOption(user, "Customer", "apex", "Apex Homes");
     expect(screen.getByRole("combobox", { name: "Location" })).toHaveValue(
       "10 Pine Street",
@@ -293,6 +306,11 @@ describe("JobsClient", () => {
     expect(
       screen.getByRole("link", { name: "Open dispatch review" }),
     ).toHaveAttribute("href", "/dispatch");
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("combobox", { name: "Customer" }),
+      ).not.toBeInTheDocument(),
+    );
   });
 
   it("edits an existing job", async () => {
@@ -300,6 +318,7 @@ describe("JobsClient", () => {
     render(<JobsClient />);
 
     await user.click(screen.getAllByRole("button", { name: "Edit" })[0]);
+    expect(screen.getByRole("heading", { name: "Edit job" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Status"), "en_route");
     await user.click(screen.getByRole("button", { name: "Save job" }));
 
@@ -314,6 +333,32 @@ describe("JobsClient", () => {
         "Job updated. Review dispatch to confirm assignment and route handoff.",
       ),
     ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Status")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("shows long job queues in batches of 24", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: Array.from({ length: 30 }, (_, index) => ({
+        ...scheduledJob,
+        id: `job-${index + 1}`,
+        service_notes: `Visit ${index + 1}`,
+        scheduled_start: `2026-05-06T${String(8 + Math.floor(index / 2)).padStart(2, "0")}:00:00Z`,
+      })),
+      isLoading: false,
+    } as never);
+
+    render(<JobsClient />);
+
+    expect(screen.getByText("Visit 24")).toBeInTheDocument();
+    expect(screen.queryByText("Visit 25")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show 24 more" }));
+
+    expect(screen.getByText("Visit 25")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show 24 more" })).not.toBeInTheDocument();
   });
 
   it("cancels a scheduled job", async () => {

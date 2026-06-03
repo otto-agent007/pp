@@ -75,6 +75,7 @@ import {
   useUpdateNotificationTemplate,
   useUpdateAutomationRuleStatus,
 } from "../../hooks/useAutomation";
+import { adminWorkspaceClassName } from "../admin-workspace";
 
 interface RuleFormState {
   id: string | null;
@@ -613,7 +614,7 @@ export function AutomationClient() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow>Admin</Eyebrow>

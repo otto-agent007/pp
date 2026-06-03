@@ -247,12 +247,12 @@ describe("HomePage", () => {
     expect(screen.getByText("Point Loma")).toBeInTheDocument();
     expect(
       screen.getByRole("link", {
-        name: /Eli Brooks GPS marker Stop 1: Demo - Rivera Cafe/,
+        name: /Eli Brooks technician signal: Demo - Rivera Cafe/,
       }),
     ).toHaveClass("bg-status-alert-success-solid");
     expect(
       screen.getByRole("link", {
-        name: /Maya Chen GPS marker Stop 2: Demo - Harbor Heights HOA/,
+        name: /Maya Chen technician signal: Demo - Harbor Heights HOA/,
       }),
     ).toHaveClass("bg-status-alert-info-solid");
     expect(screen.getByText("Scheduled").closest("span")).toHaveClass(
@@ -291,13 +291,10 @@ describe("HomePage", () => {
         "Dispatch is running normally. Seed demo data to see revenue insights.",
       ),
     ).toBeInTheDocument();
-    const toolsPanel = screen
-      .getByText("Launch readiness tools")
-      .closest("details");
-    expect(toolsPanel).not.toHaveAttribute("open");
-    expect(
-      within(toolsPanel as HTMLElement).getByText("Demo data controls"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Demo data controls")).toBeInTheDocument();
+    expect(screen.queryByText("Launch readiness tools")).not.toBeInTheDocument();
+    expect(screen.queryByText("Smoke readiness")).not.toBeInTheDocument();
+    expect(screen.queryByText("Guided demo smoke")).not.toBeInTheDocument();
   }, 10_000);
 
   it("filters loaded overview items from the dashboard search", () => {
@@ -345,55 +342,16 @@ describe("HomePage", () => {
     expect(screen.getAllByText(/Demo - Rivera Cafe/).length).toBeGreaterThan(0);
   });
 
-  it("renders guided smoke links with sanitized evidence prompts", () => {
+  it("keeps readiness and smoke tooling out of the visible overview", () => {
     render(<HomePage />);
 
-    fireEvent.click(screen.getByText("Launch readiness tools"));
-
-    expect(
-      screen.getByRole("heading", { name: "Guided demo smoke" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Create customer and location/ }),
-    ).toHaveAttribute("href", "/customers");
-    expect(
-      screen.getByRole("link", { name: /Schedule a job/ }),
-    ).toHaveAttribute("href", "/jobs");
-    expect(
-      screen.getAllByText(
-        "Record the route, action taken, and visible success signal without adding provider secrets or production customer data.",
-      ),
-    ).toHaveLength(5);
-    expect(
-      screen.getByText(/Success: Customer appears active/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/seed fake production data/i),
-    ).not.toBeInTheDocument();
-  });
-
-  it("renders provider-free launch gate guidance without secret values", () => {
-    render(<HomePage />);
-
-    fireEvent.click(screen.getByText("Launch readiness tools"));
-
-    expect(
-      screen.getByRole("heading", { name: "Smoke readiness" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Local smoke preflight")).toBeInTheDocument();
-    expect(screen.getByText("Protected preview smoke")).toBeInTheDocument();
-    expect(screen.getByText("Compliance source setup")).toBeInTheDocument();
-    expect(screen.getByText("Manual fallback accepted")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Portal links can be copied and shared manually without changing provider settings.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "corepack pnpm compliance:ingest -- --dry-run --no-embed",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Demo data controls")).toBeInTheDocument();
+    expect(screen.queryByText("Launch readiness tools")).not.toBeInTheDocument();
+    expect(screen.queryByText("Smoke readiness")).not.toBeInTheDocument();
+    expect(screen.queryByText("Guided demo smoke")).not.toBeInTheDocument();
+    expect(screen.queryByText("Local smoke preflight")).not.toBeInTheDocument();
+    expect(screen.queryByText("Protected preview smoke")).not.toBeInTheDocument();
+    expect(screen.queryByText("Compliance source setup")).not.toBeInTheDocument();
     expect(screen.queryByText(/service-role key/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/webhook secret/i)).not.toBeInTheDocument();
   });

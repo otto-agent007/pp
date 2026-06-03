@@ -49,6 +49,7 @@ import {
   useCreateComplianceAdvisory,
   isComplianceSchemaUnavailableError,
 } from "../../hooks/useCompliance";
+import { adminWorkspaceClassName } from "../admin-workspace";
 
 const workflowOptions: Array<{ label: string; value: ComplianceWorkflow }> = [
   { label: "Chemical EPA/DPR", value: "chemical_application" },
@@ -358,7 +359,7 @@ export function ComplianceClient() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow>California compliance</Eyebrow>

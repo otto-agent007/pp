@@ -179,6 +179,9 @@ describe("demo smoke preflight", () => {
     expect(
       routes.find((route) => route.id === "payments")?.expectedText,
     ).toEqual(["Payments"]);
+    expect(
+      routes.find((route) => route.id === "compliance")?.expectedText,
+    ).toEqual(["Compliance Command Center"]);
   });
 
   it("shares fixture auth storage keys and sensitive-pattern guardrails", () => {

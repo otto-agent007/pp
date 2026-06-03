@@ -5,7 +5,7 @@ import { buildHomeCommandCenterState } from "./homeCommandCenter";
 const now = new Date("2026-05-14T16:00:00.000Z");
 
 describe("home command center", () => {
-  it("builds field-command KPIs, alerts, next action, and demo checklist state", () => {
+  it("builds field-command KPIs, alerts, next action, and portal label state", () => {
     const state = buildHomeCommandCenterState({
       now,
       customers: [{ status: "active" }, { status: "archived" }],
@@ -97,37 +97,8 @@ describe("home command center", () => {
       summary: "Send or reconcile open customer billing before handoff.",
     });
     expect(state.portalProviderLabel).toBe("Manual portal sharing");
-    expect(state.launchReadiness).toContainEqual({
-      action:
-        "Load the approved local Supabase values in the operator shell, then rerun the read-only preflight before seed/reset or browser smoke.",
-      command: "corepack pnpm demo:smoke -- --target local",
-      href: "/",
-      id: "local-smoke",
-      label: "Local smoke preflight",
-      severity: "warning",
-      stateLabel: "Blocked on approved local env",
-      summary: "Seed/reset and Browser smoke stay gated until local preflight is ready.",
-    });
-    expect(state.launchReadiness).toContainEqual({
-      action:
-        "Use manual portal sharing for provider-free demos; keep delivery receipts deferred until webhook-backed evidence exists.",
-      href: "/customers",
-      id: "provider-mode",
-      label: "Portal delivery mode",
-      severity: "good",
-      stateLabel: "Manual fallback accepted",
-      summary: "Portal links can be copied and shared manually without changing provider settings.",
-    });
-    expect(state.smokeChecklist[0]).toEqual({
-      action: "Add the customer, primary contact, and first service address.",
-      evidencePrompt:
-        "Record the route, action taken, and visible success signal without adding provider secrets or production customer data.",
-      href: "/customers",
-      id: "customer",
-      label: "Create customer and location",
-      routeLabel: "Customers",
-      successSignal: "Customer appears active with at least one active location.",
-    });
+    expect("launchReadiness" in state).toBe(false);
+    expect("smokeChecklist" in state).toBe(false);
   });
 
   it("uses safe empty-state copy when live data is still unavailable", () => {
@@ -144,18 +115,13 @@ describe("home command center", () => {
     expect(state.nextAction).toEqual({
       href: "/",
       label: "Seed demo story",
-      summary: "Use local demo data controls before running the guided smoke.",
+      summary: "Use local demo data controls before presenting the workflow.",
     });
-    expect(state.launchReadiness.map((item) => item.id)).toEqual([
-      "local-smoke",
-      "preview-smoke",
-      "compliance-setup",
-      "provider-mode",
-    ]);
-    expect(state.smokeChecklist).toHaveLength(5);
+    expect("launchReadiness" in state).toBe(false);
+    expect("smokeChecklist" in state).toBe(false);
   });
 
-  it("marks portal delivery mode as webhook configured only when both webhook values are present", () => {
+  it("keeps the portal provider label without launch-gate state", () => {
     const state = buildHomeCommandCenterState({
       now,
       portalProviderStatus: {
@@ -165,15 +131,7 @@ describe("home command center", () => {
       },
     });
 
-    expect(state.launchReadiness).toContainEqual({
-      action:
-        "Use approved preview smoke to prove provider delivery before adding receipt or retry follow-ups.",
-      href: "/customers",
-      id: "provider-mode",
-      label: "Portal delivery mode",
-      severity: "good",
-      stateLabel: "Webhook configured",
-      summary: "Provider delivery is configured, but receipts remain evidence-gated until provider smoke passes.",
-    });
+    expect(state.portalProviderLabel).toBe("Webhook portal delivery");
+    expect("launchReadiness" in state).toBe(false);
   });
 });

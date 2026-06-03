@@ -165,8 +165,10 @@ export interface DispatchStaticMapPoint {
 export interface DispatchStaticMapSummary {
   missing_coordinates_count: number;
   outside_map_count: number;
+  plotted_technicians_count: number;
   plotted_stops: number;
   total_stops: number;
+  unassigned_stop_count: number;
 }
 
 export interface DispatchStaticMapState {
@@ -1012,6 +1014,33 @@ function projectDispatchStaticMapPoint(latitude: number, longitude: number) {
   };
 }
 
+interface DispatchStaticMapCandidate extends DispatchStaticMapPoint {
+  captured_at_ms: number;
+  sequence: number;
+}
+
+function isBetterStaticMapCandidate(
+  next: DispatchStaticMapCandidate,
+  current: DispatchStaticMapCandidate | undefined,
+) {
+  if (!current) {
+    return true;
+  }
+
+  if (next.source !== current.source) {
+    return next.source === "latest_gps";
+  }
+
+  if (
+    next.source === "latest_gps" &&
+    next.captured_at_ms !== current.captured_at_ms
+  ) {
+    return next.captured_at_ms > current.captured_at_ms;
+  }
+
+  return next.sequence < current.sequence;
+}
+
 export function buildDispatchStaticMapState(
   stops: DispatchRouteStop[],
   options: DispatchStaticMapStateOptions = {},
@@ -1020,9 +1049,15 @@ export function buildDispatchStaticMapState(
   const markerTonesByTechnician = buildStaticMapMarkerTones(stops);
   let missingCoordinatesCount = 0;
   let outsideMapCount = 0;
-  const points: DispatchStaticMapPoint[] = [];
+  let unassignedStopCount = 0;
+  const candidatesByTechnician = new Map<string, DispatchStaticMapCandidate>();
 
   for (const stop of stops) {
+    if (!stop.technician_id) {
+      unassignedStopCount += 1;
+      continue;
+    }
+
     const coordinate = stopMapCoordinate(stop, evidenceByJob);
 
     if (!coordinate) {
@@ -1035,30 +1070,65 @@ export function buildDispatchStaticMapState(
       continue;
     }
 
-    points.push({
+    const technicianLabel = dispatchRouteGroupLabel(
+      stop.technician_id,
+      options.technicianLabels ?? {},
+    );
+    const latestCapturedAt =
+      coordinate.source === "latest_gps"
+        ? Date.parse(evidenceByJob[stop.job.id]?.latest_event?.captured_at ?? "")
+        : Number.NaN;
+    const nextCandidate: DispatchStaticMapCandidate = {
       address_label: stop.address_label,
       customer_label: stop.customer_label,
+      captured_at_ms: Number.isFinite(latestCapturedAt)
+        ? latestCapturedAt
+        : 0,
       evidence_state: stop.evidence_state,
       job_id: stop.job.id,
-      label: `Stop ${stop.sequence}`,
+      label: technicianLabel,
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
       marker_tone: stop.technician_id
         ? (markerTonesByTechnician.get(stop.technician_id) ?? "sky")
         : "navy",
+      sequence: stop.sequence,
       source: coordinate.source,
       status_state: stop.status_state,
       technician_id: stop.technician_id,
-      technician_label: dispatchRouteGroupLabel(
-        stop.technician_id,
-        options.technicianLabels ?? {},
-      ),
+      technician_label: technicianLabel,
       ...projectDispatchStaticMapPoint(
         coordinate.latitude,
         coordinate.longitude,
       ),
-    });
+    };
+    const currentCandidate = candidatesByTechnician.get(stop.technician_id);
+
+    if (isBetterStaticMapCandidate(nextCandidate, currentCandidate)) {
+      candidatesByTechnician.set(stop.technician_id, nextCandidate);
+    }
   }
+
+  const points: DispatchStaticMapPoint[] = [...candidatesByTechnician.values()]
+    .sort((left, right) =>
+      left.technician_label.localeCompare(right.technician_label),
+    )
+    .map((candidate) => ({
+      address_label: candidate.address_label,
+      customer_label: candidate.customer_label,
+      evidence_state: candidate.evidence_state,
+      job_id: candidate.job_id,
+      label: candidate.label,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      marker_tone: candidate.marker_tone,
+      source: candidate.source,
+      status_state: candidate.status_state,
+      technician_id: candidate.technician_id,
+      technician_label: candidate.technician_label,
+      x_percent: candidate.x_percent,
+      y_percent: candidate.y_percent,
+    }));
 
   return {
     bounds: dispatchStaticMapBounds,
@@ -1066,8 +1136,10 @@ export function buildDispatchStaticMapState(
     summary: {
       missing_coordinates_count: missingCoordinatesCount,
       outside_map_count: outsideMapCount,
+      plotted_technicians_count: points.length,
       plotted_stops: points.length,
       total_stops: stops.length,
+      unassigned_stop_count: unassignedStopCount,
     },
   };
 }

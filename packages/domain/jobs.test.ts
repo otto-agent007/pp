@@ -834,7 +834,7 @@ describe("job domain", () => {
       customer_label: "Downtown Cafe",
       evidence_state: "missing",
       job_id: "job-downtown",
-      label: "Stop 1",
+      label: "Technician technician-1",
       marker_tone: expect.any(String),
       source: "service_location",
       status_state: "active",
@@ -943,6 +943,148 @@ describe("job domain", () => {
     });
     expect(mapState.points[0].x_percent).toBeCloseTo(37.7, 1);
     expect(mapState.points[0].y_percent).toBeCloseTo(51.9, 1);
+  });
+
+  it("plots at most one static map signal per assigned technician", () => {
+    const customer = {
+      id: "customer-1",
+      name: "Downtown Cafe",
+      phone: null,
+      email: null,
+      property_type: "commercial",
+      service_notes: null,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    } as const;
+    const jobs = [
+      {
+        id: "job-service",
+        customer_id: "customer-1",
+        location_id: "location-1",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T08:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer,
+        location: {
+          id: "location-1",
+          customer_id: "customer-1",
+          address: "500 Demo Harbor Dr, San Diego, CA 92101",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.7157,
+          longitude: -117.1611,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-latest-gps",
+        customer_id: "customer-1",
+        location_id: "location-2",
+        assigned_tech_id: "technician-1",
+        scheduled_start: "2026-05-06T09:00:00",
+        scheduled_end: null,
+        status: "completed",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer,
+        location: {
+          id: "location-2",
+          customer_id: "customer-1",
+          address: "900 Demo Prospect St, San Diego, CA 92037",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.8429,
+          longitude: -117.2721,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+      {
+        id: "job-unassigned",
+        customer_id: "customer-1",
+        location_id: "location-3",
+        assigned_tech_id: null,
+        scheduled_start: "2026-05-06T10:00:00",
+        scheduled_end: null,
+        status: "scheduled",
+        service_notes: null,
+        created_at: now,
+        updated_at: now,
+        customer,
+        location: {
+          id: "location-3",
+          customer_id: "customer-1",
+          address: "300 Demo University Ave, San Diego, CA 92104",
+          nickname: null,
+          service_notes: null,
+          is_primary: true,
+          latitude: 32.7488,
+          longitude: -117.1376,
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      },
+    ] satisfies Job[];
+    const evidenceByJob = {
+      "job-latest-gps": {
+        job_id: "job-latest-gps",
+        latest_arrival: null,
+        latest_departure: null,
+        latest_event: {
+          accuracy_m: 18,
+          captured_at: "2026-05-06T09:45:00.000Z",
+          distance_m: null,
+          event_type: "departure",
+          latitude: 32.8328,
+          longitude: -117.2713,
+          map_url:
+            "https://www.google.com/maps/search/?api=1&query=32.8328%2C-117.2713",
+          radius_label: "Service coordinates unavailable",
+          radius_state: "unavailable",
+          within_radius: null,
+        },
+        state: "captured",
+        summary_label: "Latest GPS: Departure",
+      },
+    } as const;
+    const intelligence = buildDispatchRouteIntelligence(
+      jobs,
+      "2026-05-06",
+      "all",
+      { evidenceByJob },
+    );
+
+    const mapState = buildDispatchStaticMapState(intelligence.stops, {
+      evidenceByJob,
+      technicianLabels: { "technician-1": "Demo - Eli Brooks" },
+    });
+
+    expect(mapState.summary).toMatchObject({
+      plotted_stops: 1,
+      plotted_technicians_count: 1,
+      total_stops: 3,
+      unassigned_stop_count: 1,
+    });
+    expect(mapState.points).toHaveLength(1);
+    expect(mapState.points[0]).toMatchObject({
+      job_id: "job-latest-gps",
+      label: "Demo - Eli Brooks",
+      source: "latest_gps",
+      technician_id: "technician-1",
+      technician_label: "Demo - Eli Brooks",
+    });
   });
 
   it("keeps San Diego demo truck markers on the land portion of the static map", () => {
@@ -1115,8 +1257,8 @@ describe("job domain", () => {
     });
 
     expect(mapState.points.map((point) => point.technician_label)).toEqual([
-      "Demo - Maya Chen",
       "Demo - Eli Brooks",
+      "Demo - Maya Chen",
     ]);
     expect(mapState.points[0].marker_tone).not.toBe(
       mapState.points[1].marker_tone,

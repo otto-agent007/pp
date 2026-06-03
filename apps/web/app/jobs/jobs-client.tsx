@@ -22,7 +22,7 @@ import {
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useCustomers } from "../../hooks/useCustomers";
 import {
@@ -32,8 +32,12 @@ import {
   useTechnicians,
   useUpdateJob,
 } from "../../hooks/useJobs";
+import { adminWorkspaceClassName } from "../admin-workspace";
 
 type JobStatusFilter = JobStatus | "all";
+type JobPanelMode = "closed" | "create" | "edit";
+
+const INITIAL_VISIBLE_JOBS = 24;
 
 const emptyForm: JobInput = {
   customer_id: "",
@@ -127,6 +131,8 @@ export function JobsClient() {
   const [status, setStatus] = useState<JobStatusFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [jobPanelMode, setJobPanelMode] = useState<JobPanelMode>("closed");
+  const [visibleJobCount, setVisibleJobCount] = useState(INITIAL_VISIBLE_JOBS);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [form, setForm] = useState<JobInput>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
@@ -235,12 +241,30 @@ export function JobsClient() {
     () => filterJobs(decoratedJobs, search, status, dateFrom, dateTo),
     [dateFrom, dateTo, decoratedJobs, search, status],
   );
+  const displayedJobs = visibleJobs.slice(0, visibleJobCount);
+  const hiddenJobCount = Math.max(visibleJobs.length - displayedJobs.length, 0);
+  const isJobPanelOpen = jobPanelMode !== "closed";
   const isSaving = createJob.isPending || updateJob.isPending;
+
+  useEffect(() => {
+    setVisibleJobCount(INITIAL_VISIBLE_JOBS);
+  }, [dateFrom, dateTo, search, status]);
 
   function resetForm() {
     setEditingJob(null);
     setForm(emptyForm);
     setFormError(null);
+  }
+
+  function closeJobPanel() {
+    resetForm();
+    setJobPanelMode("closed");
+  }
+
+  function openCreateJob() {
+    resetForm();
+    setSaveMessage(null);
+    setJobPanelMode("create");
   }
 
   function updateForm(update: Partial<JobInput>) {
@@ -271,6 +295,7 @@ export function JobsClient() {
     setForm(jobToInput(job));
     setFormError(null);
     setSaveMessage(null);
+    setJobPanelMode("edit");
   }
 
   async function submitJob(event: FormEvent<HTMLFormElement>) {
@@ -290,8 +315,8 @@ export function JobsClient() {
         await createJob.mutateAsync(input);
       }
 
-      resetForm();
       setSaveMessage(nextMessage);
+      closeJobPanel();
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to save job",
@@ -300,13 +325,13 @@ export function JobsClient() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="accent">Admin</Eyebrow>
           <h1 className="text-3xl font-bold text-theme-text-primary">Jobs</h1>
         </div>
-        <div className="grid gap-3 sm:grid-cols-[2fr_1fr] lg:grid-cols-[minmax(14rem,1fr)_9rem_8rem_8rem]">
+        <div className="grid gap-3 sm:grid-cols-[2fr_1fr] lg:grid-cols-[minmax(14rem,1fr)_9rem_8rem_8rem_auto]">
           <input
             aria-label="Search jobs"
             className={formControlClassName}
@@ -343,6 +368,7 @@ export function JobsClient() {
             type="date"
             value={dateTo}
           />
+          <Button onClick={openCreateJob}>New job</Button>
         </div>
       </header>
 
@@ -410,6 +436,27 @@ export function JobsClient() {
         </div>
       </section>
 
+      {saveMessage ? (
+        <div
+          className={`rounded-md border p-3 text-sm text-status-alert-success-fg ${statusSurfaceClassName(
+            "success",
+          )}`}
+          role="status"
+        >
+          <p>{saveMessage}</p>
+          <Link
+            className={buttonClassName({
+              className:
+                "mt-3 border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
+              variant: "ghost",
+            })}
+            href="/dispatch"
+          >
+            Open dispatch review
+          </Link>
+        </div>
+      ) : null}
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3">
           {jobsQuery.isLoading ? (
@@ -425,19 +472,21 @@ export function JobsClient() {
                 Adjust the filters or start a new service visit from the job
                 form.
               </p>
-              <a
+              <button
                 className={buttonClassName({
                   className: "mt-4",
                   size: "sm",
                   variant: "ghost",
                 })}
-                href="#job-form"
+                onClick={openCreateJob}
+                type="button"
               >
                 Create first job
-              </a>
+              </button>
             </Card>
           ) : (
-            visibleJobs.map((job) => {
+            <>
+              {displayedJobs.map((job) => {
               const assignedTechnician = job.assigned_tech_id
                 ? technicianById.get(job.assigned_tech_id)
                 : null;
@@ -514,11 +563,23 @@ export function JobsClient() {
                   </Card>
                 </article>
               );
-            })
+              })}
+              {hiddenJobCount > 0 ? (
+                <Button
+                  onClick={() =>
+                    setVisibleJobCount((count) => count + INITIAL_VISIBLE_JOBS)
+                  }
+                  variant="ghost"
+                >
+                  Show 24 more
+                </Button>
+              ) : null}
+            </>
           )}
         </div>
 
-        <form
+        {isJobPanelOpen ? (
+          <form
           className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
           id="job-form"
           onSubmit={submitJob}
@@ -527,9 +588,12 @@ export function JobsClient() {
             <h2 className="text-xl font-semibold text-theme-text-primary">
               {editingJob ? "Edit job" : "Create job"}
             </h2>
+            <Button onClick={closeJobPanel} variant="ghost">
+              Close
+            </Button>
             {editingJob ? (
-              <Button onClick={resetForm} variant="ghost">
-                New
+              <Button onClick={openCreateJob} variant="ghost">
+                New job
               </Button>
             ) : null}
           </div>
@@ -575,27 +639,6 @@ export function JobsClient() {
               </div>
             </div>
           </details>
-
-          {saveMessage ? (
-            <div
-              className={`rounded-md border p-3 text-sm text-status-alert-success-fg ${statusSurfaceClassName(
-                "success",
-              )}`}
-              role="status"
-            >
-              <p>{saveMessage}</p>
-              <Link
-                className={buttonClassName({
-                  className:
-                    "mt-3 border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
-                  variant: "ghost",
-                })}
-                href="/dispatch"
-              >
-                Open dispatch review
-              </Link>
-            </div>
-          ) : null}
 
           {formError ? (
             <p
@@ -692,7 +735,8 @@ export function JobsClient() {
           <Button disabled={isSaving} type="submit">
             Save job
           </Button>
-        </form>
+          </form>
+        ) : null}
       </section>
     </main>
   );

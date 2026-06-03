@@ -24,6 +24,7 @@ import {
   useInviteTechnician,
   useTechnicianDirectory,
 } from "../../hooks/useTechnicians";
+import { adminWorkspaceClassName } from "../admin-workspace";
 
 const emptyForm: TechnicianInviteInput = {
   email: "",
@@ -123,7 +124,7 @@ export function TechniciansClient() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-secondary">

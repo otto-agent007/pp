@@ -280,7 +280,7 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
       requiresAdminSession: true,
     },
     {
-      expectedText: ["Compliance RAG"],
+      expectedText: ["Compliance Command Center"],
       id: "compliance",
       label: "/compliance",
       path: "/compliance",

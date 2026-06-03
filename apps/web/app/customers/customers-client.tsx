@@ -41,6 +41,7 @@ import {
   useUpdateCustomer,
 } from "../../hooks/useCustomers";
 import { useInvoices } from "../../hooks/usePayments";
+import { adminWorkspaceClassName } from "../admin-workspace";
 import { CustomerPortalLinks } from "./customer-portal-links";
 
 const emptyLocation: CustomerLocationInput = {
@@ -1132,7 +1133,7 @@ export function CustomersClient({
   ) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+    <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="accent">Admin</Eyebrow>
