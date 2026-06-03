@@ -12,7 +12,11 @@ For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WO
 - Use Claude as a design partner through the file relay in `.claude/design/*` for UI-heavy slices; treat Claude output as advisory until Codex reviews it against AGENTS rules.
 - Use subagents mostly as narrow scouts, test investigators, and reviewers. Use worker subagents only for isolated implementation scopes with explicit file or package ownership.
 - Treat active uncommitted work as protected. Do not overwrite, clean up, stash, revert, or merge it unless explicitly asked.
-- Treat the active branch as protected. Do not create, switch, delete, push, merge, or rebase branches unless the current task explicitly calls for that Git action or the user approves it.
+- Treat the active branch as protected, but every new Pest Patrol slice must
+  start on a fresh correctly named `codex/*` branch from the intended base.
+  Do not continue new slice work on an old, merged, unrelated, or mismatched
+  branch. Do not delete, force-push, merge, or rebase branches unless the
+  current task explicitly calls for that Git action or the user approves it.
 
 ## Batch Workflow
 
@@ -36,7 +40,10 @@ For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WO
    - For code batches, run `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build` unless the change scope or environment makes a check impractical.
    - For docs-only changes, run at least `git diff --check`.
 6. Ship:
-   - Commit grouped changes, prepare or open the PR, summarize verification, update task docs, and name the next recommended slice.
+   - Commit grouped changes, push the verified branch, open a draft PR,
+     summarize verification, update task docs, and name the next recommended
+     slice. Do not call an implementation slice done before the draft PR
+     exists unless the user explicitly asked to stop before publishing.
 
 ## Subagent Rules
 

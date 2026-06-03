@@ -1,6 +1,52 @@
 # Implementation Plan
 
-## Current Priority: Pest Patrol Customer Portal V1
+## Current Priority: Current Status and Draft PR Stewardship
+
+As of June 3, 2026, the active work is docs/status stewardship plus review of
+two open draft PRs:
+
+1. Draft PR #89, `[codex] Chemical Product Binder V1`, adds a deterministic
+   Chemical Product Binder to `/compliance` from existing inventory, chemical
+   log, job, and compliance source data. It has green GitHub `verify` and
+   Vercel checks, with Supabase Preview skipped.
+2. Draft PR #90, `[codex] Require fresh branch and draft PR per slice`, updates
+   AGENTS instructions so every new slice starts on a fresh correctly named
+   `codex/*` branch and is not complete until the verified branch has a draft
+   PR unless the user explicitly stops early. It has green GitHub `verify` and
+   Vercel checks, with Supabase Preview skipped.
+3. This status-docs refresh should remain docs-only, ship from its own fresh
+   `codex/docs-current-status-refresh` branch, and open a draft PR after
+   `git diff --check` passes.
+
+Current product baseline:
+
+1. `/compliance` is advisory-only. Existing RAG/source advisory behavior
+   remains setup-aware, and Chemical Product Binder V1 is deterministic without
+   OpenAI, live EPA label fetches, or migrations.
+2. Local fixture/demo coverage remains the dependable no-env gate for the
+   current admin/customer surfaces; recent verified slices cover dashboard,
+   dispatch, customers, jobs, technicians, inventory, payments, closeouts,
+   compliance, automation, and tokened portal workflows.
+3. Preview/production mutation remains operator-gated. Codex has not applied
+   preview or production migrations, changed provider dashboards/env vars,
+   run real seed/reset writes, run live compliance ingestion, or mutated
+   production data.
+4. Real local and protected-preview seed/reset or authenticated browser smoke
+   remain blocked on approved Supabase env names, local Docker/Postgres
+   availability when local Supabase is the target, protected-preview access,
+   and an admin/dispatcher sign-in path.
+
+Next decision points:
+
+1. Review, merge, or request changes on PR #89 and PR #90.
+2. Choose whether the next implementation slice is operator-assisted preview
+   smoke, approved migration-target verification, live compliance ingestion
+   after migration approval, provider delivery receipts, production launch
+   checklist work, or later map-provider planning.
+3. Keep every new slice on a fresh correctly named `codex/*` branch with a
+   draft PR before calling it complete.
+
+## Previous Priority: Pest Patrol Customer Portal V1
 
 This portal-first customer workflow keeps the existing tokened
 `/portal/<customerId>` trust boundary and turns QR/text invoice links into a

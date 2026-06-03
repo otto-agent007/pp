@@ -23,8 +23,14 @@ This is the durable collaboration loop for Pest Patrol OS. Codex owns engineerin
    - Docs-only or skill-only changes require the relevant validator and `git diff --check`.
    - Completion claims must cite checks that ran in the current session.
 5. Steward GitHub:
-   - Codex may branch, verify, commit, push, open a draft PR, and triage CI for normal slices.
+   - Every new slice starts on a fresh correctly named `codex/*` branch from
+     the intended base branch.
+   - Codex may verify, commit, push, open a draft PR, and triage CI for normal
+     slices.
    - Draft PRs are the default shipping container.
+   - Do not call an implementation slice complete until the verified branch is
+     pushed and the draft PR exists unless the user explicitly asked to stop
+     before publishing.
    - Codex must inspect diff scope and task docs before staging.
 
 ## Claude Contract
@@ -53,7 +59,7 @@ Claude may write `critique.md` after implementation. Codex separates valid fixes
 ## GitHub Stewardship Contract
 
 Codex can run full autopilot for routine verified slices:
-- create or use a `codex/*` feature branch
+- create a fresh correctly named `codex/*` feature branch
 - stage only owned files
 - commit verified changes
 - push the branch
