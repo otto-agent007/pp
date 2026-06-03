@@ -4,7 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
+import {
+  useComplianceAdvisoryAudits,
+  useComplianceChunks,
+  useComplianceDocuments,
+  useComplianceSources,
+} from "../../hooks/useCompliance";
 import { useCreateCustomerPortalAccessToken } from "../../hooks/useCustomerPortalAccess";
+import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -29,6 +36,17 @@ vi.mock("../../hooks/useCloseouts", () => ({
 
 vi.mock("../../hooks/useCustomerPortalAccess", () => ({
   useCreateCustomerPortalAccessToken: vi.fn(),
+}));
+
+vi.mock("../../hooks/useCompliance", () => ({
+  useComplianceAdvisoryAudits: vi.fn(),
+  useComplianceChunks: vi.fn(),
+  useComplianceDocuments: vi.fn(),
+  useComplianceSources: vi.fn(),
+}));
+
+vi.mock("../../hooks/useInventory", () => ({
+  useChemicalLogs: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -174,6 +192,26 @@ const sentInvoice = {
   status: "sent",
   stripe_payment_link_id: "plink_1",
 } as const;
+const complianceChemicalLog = {
+  id: "log-1",
+  job_id: "job-1",
+  chemical_id: "chemical-1",
+  amount_used: 2,
+  notes: "Kitchen baseboards",
+  created_at: now,
+  chemical: {
+    id: "chemical-1",
+    name: "Bait Gel",
+    epa_number: "EPA-123",
+    current_stock: 10,
+    unit: "oz",
+    reorder_level: 4,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+  },
+  job: completedJob,
+} as const;
 
 async function chooseSearchableOption(
   user: ReturnType<typeof userEvent.setup>,
@@ -208,6 +246,26 @@ describe("PaymentsClient", () => {
     } as never);
     vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
       data: [fullSummary("job-1")],
+      isLoading: false,
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceSources).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceDocuments).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceChunks).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
+      data: [],
       isLoading: false,
     } as never);
     vi.mocked(useCreateInvoice).mockReturnValue({
@@ -477,8 +535,21 @@ describe("PaymentsClient", () => {
       data: [sentInvoice],
       isLoading: false,
     } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [complianceChemicalLog],
+      isLoading: false,
+    } as never);
 
     render(<PaymentsClient />);
+
+    expect(
+      screen.getByText("Internal compliance warning"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Customer-safe portal proof must not expose internal compliance warnings.",
+      ),
+    ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Generate customer portal QR" }),
@@ -501,6 +572,26 @@ describe("PaymentsClient", () => {
     expect(
       screen.queryByDisplayValue("https://pay.example/invoice-1"),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows a compliance guardrail for the selected completed job", () => {
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [complianceChemicalLog],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(
+      screen.getByText("Compliance review recommended"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Review missing evidence before closeout, invoice, or portal handoff/i),
+    ).toBeInTheDocument();
   });
 
   it("creates an invoice from a completed job", async () => {
@@ -579,6 +670,39 @@ describe("PaymentsClient", () => {
         notes: "Quarterly service",
       }),
     );
+  });
+
+  it("shows invoice compliance badges and confirms payment links with unresolved items", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [complianceChemicalLog],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(
+      screen.getAllByText("Compliance review recommended").length,
+    ).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "Create link" }));
+
+    expect(createPaymentLink).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(
+        "This invoice has unresolved compliance review items.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Review first" })).toHaveAttribute(
+      "href",
+      "/compliance",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Create link anyway" }),
+    );
+
+    expect(createPaymentLink).toHaveBeenCalledWith(invoice);
   });
 
   it("creates payment links and confirms paid or void status changes", async () => {

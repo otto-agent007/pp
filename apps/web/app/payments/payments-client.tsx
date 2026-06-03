@@ -3,6 +3,8 @@
 import {
   buildBillingPortalNextActions,
   buildBillingQueue,
+  buildComplianceGuardrailForJob,
+  buildComplianceReviewItems,
   buildInvoiceInputFromJob,
   filterInvoices,
   formatJobScheduleDateTime,
@@ -14,10 +16,19 @@ import {
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
   getProviderReadinessCopy,
+  type ComplianceGuardrail,
   type InvoiceReconciliationStatus,
   type InvoiceStatusFilter,
 } from "@pest-patrol/domain";
-import type { Invoice, Job } from "@pest-patrol/types";
+import type {
+  ChemicalLog,
+  ComplianceAdvisoryAudit,
+  ComplianceChunk,
+  ComplianceDocument,
+  ComplianceSource,
+  Invoice,
+  Job,
+} from "@pest-patrol/types";
 import {
   Button,
   Card,
@@ -37,7 +48,14 @@ import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
+import {
+  useComplianceAdvisoryAudits,
+  useComplianceChunks,
+  useComplianceDocuments,
+  useComplianceSources,
+} from "../../hooks/useCompliance";
 import { useCreateCustomerPortalAccessToken } from "../../hooks/useCustomerPortalAccess";
+import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -63,8 +81,13 @@ const emptyForm: InvoiceFormState = {
   job_id: "",
   notes: "",
 };
+const emptyAudits: ComplianceAdvisoryAudit[] = [];
+const emptyChemicalLogs: ChemicalLog[] = [];
+const emptyChunks: ComplianceChunk[] = [];
+const emptyDocuments: ComplianceDocument[] = [];
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
+const emptySources: ComplianceSource[] = [];
 type ReconciliationFilter = InvoiceReconciliationStatus | "all";
 type InvoiceActionConfirmation = {
   action: "mark_paid" | "void";
@@ -136,6 +159,55 @@ const reconciliationToneByStatus: Record<
   void: "neutral",
 };
 
+function guardrailTone(status: ComplianceGuardrail["status"]): StatusPillTone {
+  if (status === "critical") return "danger";
+  if (status === "warning") return "warning";
+  return "success";
+}
+
+function ComplianceGuardrailCard({
+  guardrail,
+}: {
+  guardrail: ComplianceGuardrail;
+}) {
+  const tone = guardrailTone(guardrail.status);
+
+  return (
+    <div className={`rounded-md border p-3 ${statusSurfaceClassName(tone)}`}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-theme-text-primary">
+            {guardrail.label}
+          </p>
+          <p className="mt-1 text-xs text-theme-text-secondary">
+            {guardrail.summary}
+          </p>
+          <p className="mt-1 text-xs font-semibold text-theme-text-secondary">
+            {guardrail.nextStep}
+          </p>
+        </div>
+        <StatusPill dot={false} tone={tone}>
+          {guardrail.items.length} review
+        </StatusPill>
+      </div>
+      {guardrail.items.length > 0 ? (
+        <ul className="mt-3 grid gap-2 text-xs text-theme-text-secondary">
+          {guardrail.items.slice(0, 3).map((item) => (
+            <li key={item.id}>
+              <span className="font-semibold text-theme-text-primary">
+                {item.title}
+              </span>{" "}
+              {item.missingEvidence.length > 0
+                ? item.missingEvidence.slice(0, 3).join(", ")
+                : item.description}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function EmptyState({ children }: { children: string }) {
   return (
     <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
@@ -145,9 +217,11 @@ function EmptyState({ children }: { children: string }) {
 }
 
 function InvoiceHandoff({
+  guardrail,
   invoice,
   job,
 }: {
+  guardrail?: ComplianceGuardrail | null;
   invoice: Invoice;
   job: Job | null;
 }) {
@@ -166,8 +240,11 @@ function InvoiceHandoff({
     invoice,
     job,
   }).filter((action) => action.id !== "review_payment");
+  const hasComplianceWarning = Boolean(
+    guardrail && guardrail.status !== "clear",
+  );
 
-  if (actions.length === 0) {
+  if (actions.length === 0 && !hasComplianceWarning) {
     return null;
   }
 
@@ -210,28 +287,47 @@ function InvoiceHandoff({
       <p className="text-sm font-semibold text-theme-text-primary">
         Customer handoff
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {actions.map((action) => (
-          <a
-            className="rounded-md bg-theme-background-surface px-3 py-2 text-sm font-semibold text-theme-action-primary hover:bg-primitive-sky-100"
-            href={action.href}
-            key={action.id}
-          >
-            {action.label}
-          </a>
-        ))}
-        <Button
-          aria-busy={createPortalLink.isPending}
-          disabled={createPortalLink.isPending}
-          onClick={() => void generatePortalLink()}
-          size="sm"
-          variant="ghost"
+      {hasComplianceWarning && guardrail ? (
+        <div
+          className={`mt-3 rounded-md border p-3 ${statusSurfaceClassName(
+            guardrailTone(guardrail.status),
+          )}`}
         >
-          {createPortalLink.isPending
-            ? "Generating portal QR..."
-            : "Generate customer portal QR"}
-        </Button>
-      </div>
+          <p className="text-sm font-semibold text-theme-text-primary">
+            Internal compliance warning
+          </p>
+          <p className="mt-1 text-xs text-theme-text-secondary">
+            {guardrail.label}: {guardrail.summary}
+          </p>
+          <p className="mt-1 text-xs font-semibold text-theme-text-secondary">
+            Customer-safe portal proof must not expose internal compliance warnings.
+          </p>
+        </div>
+      ) : null}
+      {actions.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {actions.map((action) => (
+            <a
+              className="rounded-md bg-theme-background-surface px-3 py-2 text-sm font-semibold text-theme-action-primary hover:bg-primitive-sky-100"
+              href={action.href}
+              key={action.id}
+            >
+              {action.label}
+            </a>
+          ))}
+          <Button
+            aria-busy={createPortalLink.isPending}
+            disabled={createPortalLink.isPending}
+            onClick={() => void generatePortalLink()}
+            size="sm"
+            variant="ghost"
+          >
+            {createPortalLink.isPending
+              ? "Generating portal QR..."
+              : "Generate customer portal QR"}
+          </Button>
+        </div>
+      ) : null}
       {portalUrl ? (
         <div className="mt-3">
           <PortalShareCard
@@ -256,6 +352,11 @@ export function PaymentsClient() {
   const searchParams = useSearchParams();
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
+  const chemicalLogsQuery = useChemicalLogs();
+  const complianceSourcesQuery = useComplianceSources();
+  const complianceDocumentsQuery = useComplianceDocuments();
+  const complianceChunksQuery = useComplianceChunks();
+  const complianceAuditsQuery = useComplianceAdvisoryAudits();
   const createInvoice = useCreateInvoice();
   const createPaymentLink = useCreateInvoicePaymentLink();
   const markPaid = useMarkInvoicePaid();
@@ -274,9 +375,31 @@ export function PaymentsClient() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionConfirmation, setActionConfirmation] =
     useState<InvoiceActionConfirmation>(null);
+  const [paymentLinkConfirmationId, setPaymentLinkConfirmationId] = useState<
+    string | null
+  >(null);
   const highlightedInvoiceId = searchParams.get("invoice_id") ?? "";
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
+  const complianceReviewItems = useMemo(
+    () =>
+      buildComplianceReviewItems({
+        audits: complianceAuditsQuery.data ?? emptyAudits,
+        chemicalLogs: chemicalLogsQuery.data ?? emptyChemicalLogs,
+        chunks: complianceChunksQuery.data ?? emptyChunks,
+        documents: complianceDocumentsQuery.data ?? emptyDocuments,
+        jobs,
+        sources: complianceSourcesQuery.data ?? emptySources,
+      }),
+    [
+      chemicalLogsQuery.data,
+      complianceAuditsQuery.data,
+      complianceChunksQuery.data,
+      complianceDocumentsQuery.data,
+      complianceSourcesQuery.data,
+      jobs,
+    ],
+  );
   const completedJobIds = useMemo(
     () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
     [jobs],
@@ -359,6 +482,16 @@ export function PaymentsClient() {
     completedJobs.find((job) => job.id === form.job_id) ??
     completedJobs[0] ??
     null;
+  const selectedJobGuardrail = useMemo(
+    () =>
+      selectedJob
+        ? buildComplianceGuardrailForJob({
+            items: complianceReviewItems,
+            jobId: selectedJob.id,
+          })
+        : null,
+    [complianceReviewItems, selectedJob],
+  );
   const closeoutHandoffJob =
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
@@ -407,6 +540,23 @@ export function PaymentsClient() {
     }
 
     voidInvoice.mutate(invoiceId);
+  }
+
+  function requestPaymentLink(
+    invoice: Invoice,
+    guardrail: ComplianceGuardrail | null,
+  ) {
+    if (guardrail && guardrail.status !== "clear") {
+      setPaymentLinkConfirmationId(invoice.id);
+      return;
+    }
+
+    createPaymentLink.mutate(invoice);
+  }
+
+  function createPaymentLinkAnyway(invoice: Invoice) {
+    setPaymentLinkConfirmationId(null);
+    createPaymentLink.mutate(invoice);
   }
 
   function applyPaymentFilter(
@@ -611,10 +761,18 @@ export function PaymentsClient() {
                 invoice.job ??
                 jobs.find((job) => job.id === invoice.job_id) ??
                 null;
+              const invoiceGuardrail = invoiceJob
+                ? buildComplianceGuardrailForJob({
+                    items: complianceReviewItems,
+                    jobId: invoiceJob.id,
+                  })
+                : null;
               const confirmingAction =
                 actionConfirmation?.invoiceId === invoice.id
                   ? actionConfirmation.action
                   : null;
+              const confirmingPaymentLink =
+                paymentLinkConfirmationId === invoice.id;
               const confirmationContext = `${invoiceTitle(invoice)} · invoice ${
                 invoice.id
               } · ${formatMoney(invoice.total_cents, invoice.currency)}`;
@@ -642,6 +800,15 @@ export function PaymentsClient() {
                           >
                             {reconciliation.label}
                           </StatusPill>
+                          {invoiceGuardrail &&
+                          invoiceGuardrail.status !== "clear" ? (
+                            <StatusPill
+                              dot={false}
+                              tone={guardrailTone(invoiceGuardrail.status)}
+                            >
+                              {invoiceGuardrail.label}
+                            </StatusPill>
+                          ) : null}
                         </div>
                         <p className="mt-2 text-sm text-theme-text-secondary">
                           {invoice.job?.location?.address ?? "No location"}
@@ -684,7 +851,11 @@ export function PaymentsClient() {
                             Open payment link
                           </a>
                         ) : null}
-                        <InvoiceHandoff invoice={invoice} job={invoiceJob} />
+                        <InvoiceHandoff
+                          guardrail={invoiceGuardrail}
+                          invoice={invoice}
+                          job={invoiceJob}
+                        />
                       </div>
                       <div className="flex min-w-52 flex-col gap-3">
                         <p className="text-right text-2xl font-bold text-theme-text-primary">
@@ -710,7 +881,9 @@ export function PaymentsClient() {
                           {invoice.status === "draft" ? (
                             <Button
                               disabled={createPaymentLink.isPending}
-                              onClick={() => createPaymentLink.mutate(invoice)}
+                              onClick={() =>
+                                requestPaymentLink(invoice, invoiceGuardrail)
+                              }
                               size="sm"
                             >
                               Create link
@@ -750,6 +923,41 @@ export function PaymentsClient() {
                             </Button>
                           ) : null}
                         </div>
+                        {confirmingPaymentLink ? (
+                          <div
+                            aria-label={`Confirm payment link for ${invoiceTitle(
+                              invoice,
+                            )}`}
+                            className={`rounded-md border px-3 py-2 text-left ${statusSurfaceClassName(
+                              guardrailTone(
+                                invoiceGuardrail?.status ?? "warning",
+                              ),
+                            )}`}
+                            role="group"
+                          >
+                            <p className="text-sm font-semibold text-theme-text-primary">
+                              This invoice has unresolved compliance review items.
+                            </p>
+                            <div className="mt-3 flex flex-wrap justify-end gap-2">
+                              <a
+                                className={buttonClassName({
+                                  size: "sm",
+                                  variant: "ghost",
+                                })}
+                                href="/compliance"
+                              >
+                                Review first
+                              </a>
+                              <Button
+                                disabled={createPaymentLink.isPending}
+                                onClick={() => createPaymentLinkAnyway(invoice)}
+                                size="sm"
+                              >
+                                Create link anyway
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
                         {confirmingAction ? (
                           <div
                             aria-label={
@@ -867,6 +1075,9 @@ export function PaymentsClient() {
             options={completedJobOptions}
             value={form.job_id || selectedJob?.id || ""}
           />
+          {selectedJobGuardrail ? (
+            <ComplianceGuardrailCard guardrail={selectedJobGuardrail} />
+          ) : null}
           <p className="-mt-2 text-xs font-semibold text-theme-text-secondary">
             Only completed jobs appear here so invoices start from
             closeout-ready work.

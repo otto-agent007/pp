@@ -368,7 +368,9 @@ export type {
 } from "./inventory";
 export {
   buildComplianceAdvisory,
+  buildComplianceGuardrailForJob,
   buildComplianceNeedsReviewQueue,
+  buildComplianceReviewItems,
   buildComplianceIngestionPlan,
   buildComplianceQueryText,
   buildComplianceSourceHash,
@@ -376,6 +378,8 @@ export {
   COMPLIANCE_RAG_MIGRATION_NAME,
   complianceSourceAnchors,
   filterComplianceReviewItems,
+  filterComplianceReviewItemsForJob,
+  getComplianceGuardrailSummary,
   getComplianceNeedsReviewSummary,
   getComplianceKnowledgeBaseReadiness,
   createComplianceAdvisoryAudit,
@@ -401,6 +405,9 @@ export type {
   ComplianceAdvisoryEvaluationCheck,
   ComplianceAdvisoryEvaluationCheckState,
   ComplianceAdvisoryEvaluationStatus,
+  ComplianceGuardrail,
+  ComplianceGuardrailStatus,
+  ComplianceGuardrailSummary,
   ComplianceNeedsReviewQueueInput,
   ComplianceNeedsReviewSummary,
   ComplianceChunkSearchInput,

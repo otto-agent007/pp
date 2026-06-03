@@ -12,19 +12,24 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildComplianceAdvisory,
+  buildComplianceGuardrailForJob,
   buildComplianceIngestionPlan,
   buildComplianceNeedsReviewQueue,
   buildComplianceQueryText,
+  buildComplianceReviewItems,
   buildComplianceSourceHash,
   chunkComplianceDocumentText,
   evaluateComplianceAdvisory,
   filterComplianceReviewItems,
+  filterComplianceReviewItemsForJob,
+  getComplianceGuardrailSummary,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
   getComplianceNeedsReviewSummary,
   getComplianceRuntimeStatus,
   getComplianceSchemaUnavailableReadiness,
   getComplianceSourceFilters,
+  type ComplianceReviewItem,
   validateComplianceSourceManifestEntry,
   validateComplianceAdvisoryRequest,
 } from "./compliance";
@@ -138,6 +143,26 @@ const chemicalLog = {
     },
   },
 } satisfies ChemicalLog;
+
+function reviewItem(input: {
+  jobId: string;
+  severity: ComplianceReviewItem["severity"];
+}): ComplianceReviewItem {
+  return {
+    category: "chemical",
+    description:
+      "Missing evidence review recommended before billing handoff.",
+    id: `review-${input.jobId}-${input.severity}`,
+    jobId: input.jobId,
+    missingEvidence: ["EPA/California registration number"],
+    nextAction:
+      "Operator review required to resolve missing evidence before relying on this advisory.",
+    severity: input.severity,
+    status: "open",
+    title: "Chemical review recommended",
+    workflow: "chemical_application",
+  };
+}
 
 describe("compliance domain", () => {
   it("reports OpenAI RAG as disabled when the server key is missing", () => {
@@ -515,6 +540,153 @@ describe("compliance domain", () => {
         workflow: "wdo_branch3",
       }),
     );
+  });
+
+  it("returns a clear guardrail when no review items are linked to the job", () => {
+    const guardrail = buildComplianceGuardrailForJob({
+      items: [],
+      jobId: "job-clear",
+    });
+
+    expect(guardrail).toEqual({
+      items: [],
+      jobId: "job-clear",
+      label: "Compliance clear",
+      nextStep: "Continue normal closeout or billing handoff after office review.",
+      status: "clear",
+      summary: "No missing evidence review items are linked to this job.",
+    });
+  });
+
+  it("returns a warning guardrail for non-critical review items", () => {
+    const item = reviewItem({
+      jobId: "job-warning",
+      severity: "warning",
+    });
+    const guardrail = buildComplianceGuardrailForJob({
+      items: [item],
+      jobId: "job-warning",
+    });
+
+    expect(guardrail).toMatchObject({
+      items: [item],
+      jobId: "job-warning",
+      label: "Compliance review recommended",
+      status: "warning",
+    });
+    expect(guardrail.summary).toContain("review recommended");
+    expect(guardrail.nextStep).toContain("missing evidence");
+  });
+
+  it("returns a critical guardrail when critical review items exist", () => {
+    const item = reviewItem({
+      jobId: "job-critical",
+      severity: "critical",
+    });
+    const guardrail = buildComplianceGuardrailForJob({
+      items: [item],
+      jobId: "job-critical",
+    });
+
+    expect(guardrail).toMatchObject({
+      items: [item],
+      jobId: "job-critical",
+      label: "Critical compliance review",
+      status: "critical",
+    });
+    expect(guardrail.summary).toContain("operator review required");
+  });
+
+  it("summarizes clear warning and critical job guardrails", () => {
+    expect(
+      getComplianceGuardrailSummary({
+        items: [
+          reviewItem({ jobId: "job-warning", severity: "warning" }),
+          reviewItem({ jobId: "job-critical", severity: "critical" }),
+        ],
+        jobIds: ["job-clear", "job-warning", "job-critical"],
+      }),
+    ).toEqual({
+      clearJobs: 1,
+      criticalJobs: 1,
+      totalJobs: 3,
+      warningJobs: 1,
+    });
+  });
+
+  it("uses review and missing evidence language without violation copy", () => {
+    const guardrail = buildComplianceGuardrailForJob({
+      items: [reviewItem({ jobId: "job-1", severity: "warning" })],
+      jobId: "job-1",
+    });
+    const copy = `${guardrail.label} ${guardrail.summary} ${guardrail.nextStep}`;
+
+    expect(copy.toLowerCase()).toMatch(/review|missing evidence/);
+    expect(copy.toLowerCase()).not.toMatch(/violation|non-compliant/);
+  });
+
+  it("filters compliance review items to a specific job", () => {
+    const queue = buildComplianceReviewItems({
+      audits: [],
+      chemicalLogs: [
+        chemicalLog,
+        {
+          ...chemicalLog,
+          id: "log-2",
+          job_id: "job-2",
+          job: {
+            ...chemicalLog.job,
+            id: "job-2",
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source],
+    });
+    const jobOneItems = filterComplianceReviewItemsForJob({
+      items: queue,
+      jobId: "job-1",
+    });
+
+    expect(jobOneItems.length).toBeGreaterThan(0);
+    expect(jobOneItems.every((item) => item.jobId === "job-1")).toBe(true);
+  });
+
+  it("links scoped advisory audit review items to the audit job", () => {
+    const audit = {
+      id: "audit-scoped",
+      workflow: "chemical_application",
+      request: { context: { chemical_log_id: "log-1" } },
+      response: buildComplianceAdvisory({
+        chunks: [],
+        chemicalLog,
+        now,
+        workflow: "chemical_application",
+      }),
+      citation_chunk_ids: [],
+      status: "insufficient_sources",
+      created_by: null,
+      created_at: now,
+    } satisfies ComplianceAdvisoryAudit;
+    const queue = buildComplianceReviewItems({
+      audits: [audit],
+      chemicalLogs: [chemicalLog],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source],
+    });
+
+    expect(filterComplianceReviewItemsForJob({ items: queue, jobId: "job-1" }))
+      .toContainEqual(
+        expect.objectContaining({
+          auditId: "audit-scoped",
+          chemicalLogId: "log-1",
+          jobId: "job-1",
+        }),
+      );
   });
 
   it("evaluates fixture-backed advisories for operator-facing copy without live providers", () => {
