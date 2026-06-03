@@ -7,7 +7,14 @@ import {
   useCloseoutCaptureSummaries,
   useJobCloseoutReview,
 } from "../../hooks/useCloseouts";
+import {
+  useComplianceAdvisoryAudits,
+  useComplianceChunks,
+  useComplianceDocuments,
+  useComplianceSources,
+} from "../../hooks/useCompliance";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
+import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 import { CloseoutsClient } from "./closeouts-client";
@@ -21,8 +28,19 @@ vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
 }));
 
+vi.mock("../../hooks/useCompliance", () => ({
+  useComplianceAdvisoryAudits: vi.fn(),
+  useComplianceChunks: vi.fn(),
+  useComplianceDocuments: vi.fn(),
+  useComplianceSources: vi.fn(),
+}));
+
 vi.mock("../../hooks/useGeofencing", () => ({
   useJobGeofenceEvents: vi.fn(),
+}));
+
+vi.mock("../../hooks/useInventory", () => ({
+  useChemicalLogs: vi.fn(),
 }));
 
 vi.mock("../../hooks/usePayments", () => ({
@@ -222,6 +240,39 @@ const review = {
     },
   ],
 } as const;
+const warningChemicalLog = {
+  id: "log-warning",
+  job_id: "job-1",
+  chemical_id: "chemical-1",
+  amount_used: 2,
+  notes: "Kitchen baseboards",
+  created_at: now,
+  chemical: {
+    id: "chemical-1",
+    name: "Bait Gel",
+    epa_number: "EPA-123",
+    current_stock: 10,
+    unit: "oz",
+    reorder_level: 4,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+  },
+  job: completedJob,
+} as const;
+const criticalChemicalLog = {
+  ...warningChemicalLog,
+  id: "log-critical",
+  job_id: "job-needs",
+  amount_used: 0,
+  chemical: {
+    ...warningChemicalLog.chemical,
+    epa_number: null,
+    name: "",
+    unit: "",
+  },
+  job: needsCapturesJob,
+} as const;
 
 describe("CloseoutsClient", () => {
   beforeEach(() => {
@@ -243,6 +294,26 @@ describe("CloseoutsClient", () => {
       error: null,
       isLoading: false,
       refetch: vi.fn(),
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceSources).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceDocuments).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceChunks).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
+      data: [],
+      isLoading: false,
     } as never);
     vi.mocked(useJobCloseoutReview).mockReturnValue({
       error: null,
@@ -270,14 +341,14 @@ describe("CloseoutsClient", () => {
     expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
     expect(screen.getByText("Total completed")).toBeInTheDocument();
-    expect(screen.getByText("Closeout compliance audit")).toHaveClass(
-      "text-status-alert-warning-fg",
-    );
+    expect(screen.getByText("Compliance guardrails")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Branch 3 and multi-unit evidence stays advisory in V1. 3 WDO report fields need review before source-backed handoff.",
-      ),
+      screen.getByText("3 clear, 0 review recommended, 0 critical review."),
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "Open compliance" })[0],
+    ).toHaveAttribute("href", "/compliance");
+    expect(screen.getByText("Compliance clear")).toBeInTheDocument();
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
     expect(
       screen.getByText("Ready for office proof review"),
@@ -329,6 +400,36 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("link", { name: "Open customer ledger" }),
     ).toHaveAttribute("href", "/customers?customer_id=customer-1");
+  });
+
+  it("surfaces warning and critical compliance guardrails for closeouts", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [warningChemicalLog, criticalChemicalLog],
+      isLoading: false,
+    } as never);
+
+    render(<CloseoutsClient />);
+
+    expect(
+      screen.getByText("1 clear, 1 review recommended, 1 critical review."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Compliance review recommended").length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText("Bait Gel chemical review")).toBeInTheDocument();
+    expect(screen.getByText("License or supervision detail")).toBeInTheDocument();
+
+    await user.click(screen.getByText("20 Oak Avenue"));
+
+    expect(
+      screen.getAllByText("Critical compliance review").length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText("Chemical application review")).toBeInTheDocument();
+    expect(screen.getByText("Product name")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "Open compliance" }).length,
+    ).toBeGreaterThan(0);
   });
 
   it("points invoiced closeouts toward portal sharing", async () => {

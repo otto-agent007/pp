@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  buildComplianceAdvisory,
+  buildComplianceGuardrailForJob,
+  buildComplianceReviewItems,
   buildDispatchLocationEvidenceByJob,
   buildBillingPortalNextActions,
   buildBillingQueue,
@@ -14,7 +15,9 @@ import {
   getCloseoutCounts,
   getCloseoutReviewReadiness,
   getCloseoutReviewQueueFilters,
+  getComplianceGuardrailSummary,
   getInvoiceBalanceCents,
+  type ComplianceGuardrail,
   type BillingQueueGroup,
   type BillingQueueItem,
   type CloseoutReviewQueueFilterId,
@@ -32,6 +35,11 @@ import {
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import type {
+  ChemicalLog,
+  ComplianceAdvisoryAudit,
+  ComplianceChunk,
+  ComplianceDocument,
+  ComplianceSource,
   FormValue,
   Invoice,
   Job,
@@ -44,7 +52,14 @@ import {
   useCloseoutCaptureSummaries,
   useJobCloseoutReview,
 } from "../../hooks/useCloseouts";
+import {
+  useComplianceAdvisoryAudits,
+  useComplianceChunks,
+  useComplianceDocuments,
+  useComplianceSources,
+} from "../../hooks/useCompliance";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
+import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 
@@ -56,6 +71,11 @@ type QueueFilter =
   | CloseoutReviewQueueFilterId;
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
+const emptyAudits: ComplianceAdvisoryAudit[] = [];
+const emptyChemicalLogs: ChemicalLog[] = [];
+const emptyChunks: ComplianceChunk[] = [];
+const emptyDocuments: ComplianceDocument[] = [];
+const emptySources: ComplianceSource[] = [];
 const fieldClassName =
   "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20";
 
@@ -201,6 +221,91 @@ function proofCompletionTone(label: string): StatusPillTone {
   return "warning";
 }
 
+function guardrailTone(status: ComplianceGuardrail["status"]): StatusPillTone {
+  if (status === "critical") return "danger";
+  if (status === "warning") return "warning";
+  return "success";
+}
+
+function formatGuardrailSummary(summary: {
+  clearJobs: number;
+  criticalJobs: number;
+  warningJobs: number;
+}) {
+  return `${summary.clearJobs} clear, ${summary.warningJobs} review recommended, ${summary.criticalJobs} critical review.`;
+}
+
+function ComplianceGuardrailBadge({
+  guardrail,
+}: {
+  guardrail?: ComplianceGuardrail | null;
+}) {
+  if (!guardrail || guardrail.status === "clear") {
+    return null;
+  }
+
+  return (
+    <StatusPill dot={false} tone={guardrailTone(guardrail.status)}>
+      {guardrail.label}
+    </StatusPill>
+  );
+}
+
+function ComplianceGuardrailPanel({
+  guardrail,
+}: {
+  guardrail: ComplianceGuardrail;
+}) {
+  const tone = guardrailTone(guardrail.status);
+
+  return (
+    <Card padding="md" statusTone={tone}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Eyebrow>Compliance</Eyebrow>
+          <h3 className="mt-1 text-base font-semibold text-theme-text-primary">
+            {guardrail.label}
+          </h3>
+          <p className="mt-2 text-sm text-theme-text-secondary">
+            {guardrail.summary}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+            {guardrail.nextStep}
+          </p>
+        </div>
+        <a
+          className={buttonClassName({ size: "sm", variant: "ghost" })}
+          href="/compliance"
+        >
+          Open compliance
+        </a>
+      </div>
+      {guardrail.items.length > 0 ? (
+        <ul className="mt-4 grid gap-2 text-sm text-theme-text-secondary">
+          {guardrail.items.slice(0, 3).map((item) => (
+            <li
+              className="rounded-md border border-theme-border-subtle bg-theme-background-surface p-3"
+              key={item.id}
+            >
+              <p className="font-semibold text-theme-text-primary">
+                {item.title}
+              </p>
+              <p className="mt-1 text-xs">{item.description}</p>
+              {item.missingEvidence.length > 0 ? (
+                <ul className="mt-2 grid gap-1 text-xs">
+                  {item.missingEvidence.slice(0, 3).map((evidence) => (
+                    <li key={evidence}>{evidence}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Card>
+  );
+}
+
 function QueueRowBase({
   children,
   isSelected,
@@ -226,10 +331,12 @@ function QueueRowBase({
 }
 
 function QueueRowContent({
+  guardrail,
   job,
   pill,
   summary,
 }: {
+  guardrail?: ComplianceGuardrail | null;
   job: Job;
   pill?: React.ReactNode;
   summary?: string | null;
@@ -250,16 +357,23 @@ function QueueRowContent({
           {summary ?? job.service_notes}
         </p>
       </div>
-      {pill}
+      {pill || guardrail ? (
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {pill}
+          <ComplianceGuardrailBadge guardrail={guardrail} />
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function QueueRow({
+  guardrail,
   item,
   isSelected,
   onSelect,
 }: {
+  guardrail?: ComplianceGuardrail | null;
   item: BillingQueueItem;
   isSelected: boolean;
   onSelect: () => void;
@@ -280,6 +394,7 @@ function QueueRow({
   return (
     <QueueRowBase isSelected={isSelected} onSelect={onSelect}>
       <QueueRowContent
+        guardrail={guardrail}
         job={item.job}
         pill={pill}
         summary={
@@ -293,29 +408,33 @@ function QueueRow({
 }
 
 function OtherJobRow({
+  guardrail,
   isSelected,
   job,
   onSelect,
 }: {
+  guardrail?: ComplianceGuardrail | null;
   isSelected: boolean;
   job: Job;
   onSelect: () => void;
 }) {
   return (
     <QueueRowBase isSelected={isSelected} onSelect={onSelect}>
-      <QueueRowContent job={job} />
+      <QueueRowContent guardrail={guardrail} job={job} />
     </QueueRowBase>
   );
 }
 
 function QueueSection({
   emptyCopy,
+  guardrailByJobId,
   items,
   onSelect,
   selectedJobId,
   title,
 }: {
   emptyCopy: string;
+  guardrailByJobId: Map<string, ComplianceGuardrail>;
   items: BillingQueueItem[];
   onSelect: (jobId: string) => void;
   selectedJobId: string | null;
@@ -338,6 +457,7 @@ function QueueSection({
       ) : (
         items.map((item) => (
           <QueueRow
+            guardrail={guardrailByJobId.get(item.job.id)}
             isSelected={selectedJobId === item.job.id}
             item={item}
             key={item.job.id}
@@ -712,6 +832,11 @@ export function CloseoutsClient() {
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
   const geofenceEventsQuery = useJobGeofenceEvents();
+  const chemicalLogsQuery = useChemicalLogs();
+  const complianceSourcesQuery = useComplianceSources();
+  const complianceDocumentsQuery = useComplianceDocuments();
+  const complianceChunksQuery = useComplianceChunks();
+  const complianceAuditsQuery = useComplianceAdvisoryAudits();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CloseoutStatusFilter>("completed");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>(() => {
@@ -738,6 +863,46 @@ export function CloseoutsClient() {
   const completedJobIds = useMemo(
     () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
     [jobs],
+  );
+  const complianceReviewItems = useMemo(
+    () =>
+      buildComplianceReviewItems({
+        audits: complianceAuditsQuery.data ?? emptyAudits,
+        chemicalLogs: chemicalLogsQuery.data ?? emptyChemicalLogs,
+        chunks: complianceChunksQuery.data ?? emptyChunks,
+        documents: complianceDocumentsQuery.data ?? emptyDocuments,
+        jobs,
+        sources: complianceSourcesQuery.data ?? emptySources,
+      }),
+    [
+      chemicalLogsQuery.data,
+      complianceAuditsQuery.data,
+      complianceChunksQuery.data,
+      complianceDocumentsQuery.data,
+      complianceSourcesQuery.data,
+      jobs,
+    ],
+  );
+  const guardrailByJobId = useMemo(
+    () =>
+      new Map(
+        completedJobIds.map((jobId) => [
+          jobId,
+          buildComplianceGuardrailForJob({
+            items: complianceReviewItems,
+            jobId,
+          }),
+        ]),
+      ),
+    [completedJobIds, complianceReviewItems],
+  );
+  const complianceGuardrailSummary = useMemo(
+    () =>
+      getComplianceGuardrailSummary({
+        items: complianceReviewItems,
+        jobIds: completedJobIds,
+      }),
+    [completedJobIds, complianceReviewItems],
   );
   const summariesQuery = useCloseoutCaptureSummaries(completedJobIds);
   const locationEvidenceByJob = useMemo(
@@ -805,44 +970,19 @@ export function CloseoutsClient() {
         review: closeout.review,
       })
     : null;
-  const branchCompliancePreview = useMemo(
-    () =>
-      buildComplianceAdvisory({
-        chunks: [],
-        job: selectedJob ?? null,
-        workflow: "wdo_branch3",
-      }),
-    [selectedJob],
-  );
-  const branchComplianceMissingFieldCount =
-    branchCompliancePreview.required_fields.filter(
-      (field) => field.status !== "present",
-    ).length;
-  const branchComplianceNeedsReview =
-    branchCompliancePreview.status !== "advisory_ready" ||
-    branchComplianceMissingFieldCount > 0;
-  const branchComplianceSummary =
-    branchComplianceMissingFieldCount > 0
-      ? `${branchComplianceMissingFieldCount} WDO report fields need review before source-backed handoff.`
-      : branchComplianceNeedsReview
-        ? "Source chunks are not ingested yet; keep this as advisory review before billing handoff."
-        : "WDO report fields are ready for cited review once source chunks are ingested.";
-  const branchComplianceTone: StatusPillTone = branchComplianceNeedsReview
-    ? "warning"
-    : "success";
-  const branchComplianceToneClasses = branchComplianceNeedsReview
-    ? {
-        action:
-          "border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
-        eyebrow: "text-status-alert-warning-fg",
-        text: "text-status-alert-warning-fgStrong",
-      }
-    : {
-        action:
-          "border-status-alert-success-border text-status-alert-success-fgStrong hover:bg-status-alert-success-bg",
-        eyebrow: "text-status-alert-success-fg",
-        text: "text-status-alert-success-fgStrong",
-      };
+  const selectedGuardrail = selectedJob
+    ? (guardrailByJobId.get(selectedJob.id) ??
+      buildComplianceGuardrailForJob({
+        items: complianceReviewItems,
+        jobId: selectedJob.id,
+      }))
+    : null;
+  const complianceSummaryTone: StatusPillTone =
+    complianceGuardrailSummary.criticalJobs > 0
+      ? "danger"
+      : complianceGuardrailSummary.warningJobs > 0
+        ? "warning"
+        : "success";
   const noQueueAction = search.trim()
     ? "Clear the search, show all jobs, or wait for completed jobs to reach the queue."
     : "No completed jobs yet. As technicians finish jobs in dispatch, they will appear here.";
@@ -926,20 +1066,20 @@ export function CloseoutsClient() {
         />
       </section>
 
-      <Card padding="md" statusTone={branchComplianceTone}>
+      <Card padding="md" statusTone={complianceSummaryTone}>
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <Eyebrow className={branchComplianceToneClasses.eyebrow}>
-              Closeout compliance audit
-            </Eyebrow>
-            <p className={`mt-1 text-sm ${branchComplianceToneClasses.text}`}>
-              Branch 3 and multi-unit evidence stays advisory in V1.{" "}
-              {branchComplianceSummary}
+            <Eyebrow>Compliance guardrails</Eyebrow>
+            <p className="mt-1 text-sm font-semibold text-theme-text-primary">
+              {formatGuardrailSummary(complianceGuardrailSummary)}
+            </p>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              Advisory review items stay internal for completed-job closeout
+              and billing handoff.
             </p>
           </div>
           <a
             className={buttonClassName({
-              className: branchComplianceToneClasses.action,
               variant: "ghost",
             })}
             href="/compliance"
@@ -965,6 +1105,7 @@ export function CloseoutsClient() {
             <>
               <QueueSection
                 emptyCopy="Nothing ready to bill — check Needs captures."
+                guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.ready}
                 onSelect={setSelectedJobId}
                 selectedJobId={selectedJob?.id ?? null}
@@ -972,6 +1113,7 @@ export function CloseoutsClient() {
               />
               <QueueSection
                 emptyCopy="No completed jobs are missing captures."
+                guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.needsCaptures}
                 onSelect={setSelectedJobId}
                 selectedJobId={selectedJob?.id ?? null}
@@ -979,6 +1121,7 @@ export function CloseoutsClient() {
               />
               <QueueSection
                 emptyCopy="No completed jobs have invoices yet."
+                guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.invoiced}
                 onSelect={setSelectedJobId}
                 selectedJobId={selectedJob?.id ?? null}
@@ -994,6 +1137,7 @@ export function CloseoutsClient() {
                   </h2>
                   {otherJobs.map((job) => (
                     <OtherJobRow
+                      guardrail={guardrailByJobId.get(job.id)}
                       isSelected={selectedJob?.id === job.id}
                       key={job.id}
                       job={job}
@@ -1022,6 +1166,9 @@ export function CloseoutsClient() {
                     invoice={selectedQueueItem?.invoice ?? null}
                     review={adminProofReview}
                   />
+                ) : null}
+                {selectedGuardrail ? (
+                  <ComplianceGuardrailPanel guardrail={selectedGuardrail} />
                 ) : null}
                 <div className="mt-5 flex flex-col gap-4">
                   <div className="min-w-0">

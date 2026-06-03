@@ -217,6 +217,24 @@ export interface ComplianceNeedsReviewSummary {
   wdoItems: number;
 }
 
+export type ComplianceGuardrailStatus = "clear" | "warning" | "critical";
+
+export interface ComplianceGuardrail {
+  items: ComplianceReviewItem[];
+  jobId: string;
+  label: string;
+  nextStep: string;
+  status: ComplianceGuardrailStatus;
+  summary: string;
+}
+
+export interface ComplianceGuardrailSummary {
+  clearJobs: number;
+  criticalJobs: number;
+  totalJobs: number;
+  warningJobs: number;
+}
+
 export type ComplianceAdvisoryEvaluationStatus =
   | "blocked"
   | "operator_review_required"
@@ -1267,14 +1285,41 @@ function buildSourceReadinessReviewItems(input: {
   });
 }
 
-function buildAdvisoryAuditReviewItems(
-  audits: ComplianceAdvisoryAudit[],
-  limit: number,
-) {
-  return [...audits]
+function advisoryAuditContext(input: {
+  audit: ComplianceAdvisoryAudit;
+  chemicalLogJobIdById: Map<string, string>;
+}) {
+  const request = input.audit.request as unknown as ComplianceAdvisoryRequest;
+  const context = request.context ?? {};
+  const chemicalLogId =
+    typeof context.chemical_log_id === "string" &&
+    hasText(context.chemical_log_id)
+    ? context.chemical_log_id
+    : undefined;
+  const jobId =
+    typeof context.job_id === "string" && hasText(context.job_id)
+    ? context.job_id
+    : chemicalLogId
+      ? input.chemicalLogJobIdById.get(chemicalLogId)
+      : undefined;
+
+  return { chemicalLogId, jobId };
+}
+
+function buildAdvisoryAuditReviewItems(input: {
+  audits: ComplianceAdvisoryAudit[];
+  chemicalLogs: ChemicalLog[];
+  limit: number;
+}) {
+  const chemicalLogJobIdById = new Map(
+    input.chemicalLogs.map((log) => [log.id, log.job_id]),
+  );
+
+  return [...input.audits]
     .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
-    .slice(0, limit)
+    .slice(0, input.limit)
     .flatMap((audit): ComplianceReviewItem[] => {
+      const context = advisoryAuditContext({ audit, chemicalLogJobIdById });
       if (
         audit.status === "rag_disabled" ||
         audit.status === "insufficient_sources"
@@ -1283,11 +1328,13 @@ function buildAdvisoryAuditReviewItems(
           {
             auditId: audit.id,
             category: audit.status === "rag_disabled" ? "source" : "advisory",
+            chemicalLogId: context.chemicalLogId,
             description:
               audit.status === "rag_disabled"
                 ? "Recent advisory audit shows RAG disabled; setup/source review required before source-backed advisory use."
                 : "Recent advisory audit has insufficient sources; operator review required before relying on this workflow.",
             id: `audit:${audit.id}:status`,
+            jobId: context.jobId,
             missingEvidence:
               audit.status === "rag_disabled"
                 ? ["RAG runtime setup and reviewed source chunks"]
@@ -1313,9 +1360,11 @@ function buildAdvisoryAuditReviewItems(
         {
           auditId: audit.id,
           category: "advisory",
+          chemicalLogId: context.chemicalLogId,
           description:
             "Recent advisory audit includes findings or a review task; operator review required before closeout reliance.",
           id: `audit:${audit.id}:review`,
+          jobId: context.jobId,
           missingEvidence: [
             ...findings.map((finding) => finding.title),
             ...(hasReviewTask ? ["Advisory review task"] : []),
@@ -1340,8 +1389,18 @@ export function buildComplianceNeedsReviewQueue(
     ...buildChemicalReviewItems(input.chemicalLogs),
     ...buildWdoReviewItems(input.jobs),
     ...buildSourceReadinessReviewItems(input),
-    ...buildAdvisoryAuditReviewItems(input.audits, input.advisoryAuditLimit ?? 6),
+    ...buildAdvisoryAuditReviewItems({
+      audits: input.audits,
+      chemicalLogs: input.chemicalLogs,
+      limit: input.advisoryAuditLimit ?? 6,
+    }),
   ]);
+}
+
+export function buildComplianceReviewItems(
+  input: ComplianceNeedsReviewQueueInput,
+) {
+  return buildComplianceNeedsReviewQueue(input);
 }
 
 export function getComplianceNeedsReviewSummary(
@@ -1356,6 +1415,93 @@ export function getComplianceNeedsReviewSummary(
     warningItems: items.filter((item) => item.severity === "warning").length,
     wdoItems: items.filter((item) => item.category === "wdo").length,
   };
+}
+
+export function filterComplianceReviewItemsForJob(input: {
+  items: ComplianceReviewItem[];
+  jobId: string;
+}) {
+  return sortComplianceReviewItems(
+    input.items.filter((item) => item.jobId === input.jobId),
+  );
+}
+
+export function buildComplianceGuardrailForJob(input: {
+  items: ComplianceReviewItem[];
+  jobId: string;
+}): ComplianceGuardrail {
+  const items = filterComplianceReviewItemsForJob(input);
+  const criticalItems = items.filter((item) => item.severity === "critical");
+
+  if (items.length === 0) {
+    return {
+      items,
+      jobId: input.jobId,
+      label: "Compliance clear",
+      nextStep: "Continue normal closeout or billing handoff after office review.",
+      status: "clear",
+      summary: "No missing evidence review items are linked to this job.",
+    };
+  }
+
+  if (criticalItems.length > 0) {
+    return {
+      items,
+      jobId: input.jobId,
+      label: "Critical compliance review",
+      nextStep:
+        "Resolve or document missing evidence before customer handoff; advisory only.",
+      status: "critical",
+      summary: `operator review required for ${plural(
+        criticalItems.length,
+        "critical item",
+      )} with missing evidence.`,
+    };
+  }
+
+  return {
+    items,
+    jobId: input.jobId,
+    label: "Compliance review recommended",
+    nextStep:
+      "Review missing evidence before closeout, invoice, or portal handoff; advisory only.",
+    status: "warning",
+    summary: `Compliance review recommended for ${plural(
+      items.length,
+      "item",
+    )} with missing evidence.`,
+  };
+}
+
+export function getComplianceGuardrailSummary(input: {
+  items: ComplianceReviewItem[];
+  jobIds: string[];
+}): ComplianceGuardrailSummary {
+  const counts: ComplianceGuardrailSummary = {
+    clearJobs: 0,
+    criticalJobs: 0,
+    totalJobs: 0,
+    warningJobs: 0,
+  };
+
+  for (const jobId of new Set(input.jobIds)) {
+    const guardrail = buildComplianceGuardrailForJob({
+      items: input.items,
+      jobId,
+    });
+
+    counts.totalJobs += 1;
+
+    if (guardrail.status === "critical") {
+      counts.criticalJobs += 1;
+    } else if (guardrail.status === "warning") {
+      counts.warningJobs += 1;
+    } else {
+      counts.clearJobs += 1;
+    }
+  }
+
+  return counts;
 }
 
 export function filterComplianceReviewItems(
