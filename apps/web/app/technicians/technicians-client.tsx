@@ -127,14 +127,14 @@ export function TechniciansClient() {
     <main className={adminWorkspaceClassName}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">
+          <p className="text-sm font-semibold uppercase tracking-wide text-theme-text-secondary">
             Admin
           </p>
-          <h1 className="text-3xl font-bold text-neutralDark">Technicians</h1>
+          <h1 className="text-3xl font-bold text-theme-text-primary">Technicians</h1>
         </div>
         <input
           aria-label="Search technicians"
-          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-primary"
+          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search technicians"
           value={search}
@@ -172,7 +172,7 @@ export function TechniciansClient() {
         <div className="flex flex-col gap-3">
           <div>
             <Eyebrow tone="accent">Technician roster</Eyebrow>
-            <h2 className="mt-1 text-2xl font-bold text-neutralDark">
+            <h2 className="mt-1 text-2xl font-bold text-theme-text-primary">
               Dispatch-ready crew
             </h2>
           </div>
@@ -204,7 +204,7 @@ export function TechniciansClient() {
                           size="lg"
                         />
                         <div className="min-w-0">
-                          <h2 className="text-lg font-semibold text-neutralDark">
+                          <h2 className="text-lg font-semibold text-theme-text-primary">
                             {getTechnicianLabel(technician)}
                           </h2>
                           <p className="mt-1 text-sm text-theme-text-secondary">
@@ -258,7 +258,7 @@ export function TechniciansClient() {
           onSubmit={submitTechnician}
         >
           <div>
-            <h2 className="text-xl font-semibold text-neutralDark">
+            <h2 className="text-xl font-semibold text-theme-text-primary">
               Invite technician
             </h2>
             <p className="mt-1 text-sm text-theme-text-secondary">
@@ -316,10 +316,10 @@ export function TechniciansClient() {
             </p>
           ) : null}
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
             Display name
             <input
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
               onChange={(event) =>
                 updateForm({ display_name: event.target.value })
               }
@@ -328,10 +328,10 @@ export function TechniciansClient() {
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-neutralDark">
+          <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
             Email
             <input
-              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-primary"
+              className="min-h-11 rounded-md border border-theme-border-default px-3 text-sm outline-none focus:border-theme-action-primary"
               onChange={(event) => updateForm({ email: event.target.value })}
               placeholder="testnician@example.com"
               type="email"

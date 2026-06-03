@@ -17,6 +17,9 @@ import {
   StatTile,
   StatusPill,
   buttonClassName,
+  formControlClassName,
+  formLabelClassName,
+  formTextareaClassName,
   statusSurfaceClassName,
 } from "@pest-patrol/ui";
 import type {
@@ -59,10 +62,6 @@ const emptyLogForm: ChemicalLogInput = {
 };
 
 const emptyInventoryItems: ChemicalInventoryItem[] = [];
-const fieldClassName =
-  "min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm font-normal text-theme-text-primary outline-none transition focus:border-theme-action-primary focus:ring-2 focus:ring-theme-action-primary/20";
-const labelClassName =
-  "flex flex-col gap-1 text-sm font-medium text-theme-text-primary";
 
 function itemToInput(item: ChemicalInventoryItem): ChemicalInventoryInput {
   return {
@@ -280,7 +279,7 @@ export function InventoryClient() {
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow tone="inverse">Admin</Eyebrow>
-          <h1 className="text-3xl font-bold text-neutralDark">Inventory</h1>
+          <h1 className="text-3xl font-bold text-theme-text-primary">Inventory</h1>
           <p className="mt-2 max-w-3xl text-sm text-theme-text-secondary">
             Stock, EPA labels, and field usage in one scan-first operations
             view.
@@ -289,14 +288,14 @@ export function InventoryClient() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             aria-label="Search inventory"
-            className={fieldClassName}
+            className={formControlClassName}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
             value={search}
           />
           <select
             aria-label="Inventory status"
-            className={fieldClassName}
+            className={formControlClassName}
             onChange={(event) =>
               setStatus(event.target.value as InventoryStatusFilter)
             }
@@ -370,7 +369,7 @@ export function InventoryClient() {
                 )}`}
                 key={field.field}
               >
-                <p className="font-semibold text-neutralDark">{field.label}</p>
+                <p className="font-semibold text-theme-text-primary">{field.label}</p>
                 <p className="mt-1 text-status-alert-warning-fgStrong">
                   {field.reason}
                 </p>
@@ -383,7 +382,7 @@ export function InventoryClient() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Eyebrow tone="danger">Low-stock review</Eyebrow>
-            <h2 className="mt-1 text-xl font-bold text-neutralDark">
+            <h2 className="mt-1 text-xl font-bold text-theme-text-primary">
               Reorder watchlist
             </h2>
           </div>
@@ -406,7 +405,7 @@ export function InventoryClient() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-neutralDark">
+                      <p className="font-semibold text-theme-text-primary">
                         {item.name}
                       </p>
                       <p className="mt-1 text-sm text-status-alert-danger-fg">
@@ -479,7 +478,7 @@ export function InventoryClient() {
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="break-words text-lg font-semibold text-neutralDark">
+                        <h2 className="break-words text-lg font-semibold text-theme-text-primary">
                           {item.name}
                         </h2>
                         {isLowStock ? (
@@ -590,7 +589,7 @@ export function InventoryClient() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Eyebrow tone="accent">Product cockpit</Eyebrow>
-                <h2 className="mt-1 text-xl font-semibold text-neutralDark">
+                <h2 className="mt-1 text-xl font-semibold text-theme-text-primary">
                   {selectedCockpitRow
                     ? `${selectedCockpitRow.item.name} selected`
                     : "Select product"}
@@ -605,7 +604,7 @@ export function InventoryClient() {
             {selectedCockpitRow ? (
               <div className="mt-4 grid gap-3 text-sm text-theme-text-secondary">
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
-                  <p className="font-semibold text-neutralDark">
+                  <p className="font-semibold text-theme-text-primary">
                     {selectedCockpitRow.item.current_stock}{" "}
                     {selectedCockpitRow.item.unit} on hand
                   </p>
@@ -616,7 +615,7 @@ export function InventoryClient() {
                   </p>
                 </div>
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
-                  <p className="font-semibold text-neutralDark">
+                  <p className="font-semibold text-theme-text-primary">
                     Usage evidence: {selectedCockpitRow.usageCount}
                   </p>
                   <p className="mt-1">
@@ -626,7 +625,7 @@ export function InventoryClient() {
                   </p>
                 </div>
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">
-                  <p className="font-semibold text-neutralDark">
+                  <p className="font-semibold text-theme-text-primary">
                     {selectedCockpitRow.hasEpaNumber
                       ? `EPA ${selectedCockpitRow.item.epa_number}`
                       : "EPA detail missing"}
@@ -650,7 +649,7 @@ export function InventoryClient() {
             onSubmit={submitInventory}
           >
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold text-neutralDark">
+              <h2 className="text-xl font-semibold text-theme-text-primary">
                 {editingItem ? "Edit chemical" : "Add chemical"}
               </h2>
               {editingItem ? (
@@ -671,10 +670,10 @@ export function InventoryClient() {
               </Card>
             ) : null}
 
-            <label className={labelClassName}>
+            <label className={formLabelClassName}>
               Name
               <input
-                className={fieldClassName}
+                className={formControlClassName}
                 onChange={(event) =>
                   setInventoryForm((current) => ({
                     ...current,
@@ -684,10 +683,10 @@ export function InventoryClient() {
                 value={inventoryForm.name}
               />
             </label>
-            <label className={labelClassName}>
+            <label className={formLabelClassName}>
               EPA number
               <input
-                className={fieldClassName}
+                className={formControlClassName}
                 onChange={(event) =>
                   setInventoryForm((current) => ({
                     ...current,
@@ -698,10 +697,10 @@ export function InventoryClient() {
               />
             </label>
             <div className="grid gap-3 sm:grid-cols-3">
-              <label className={labelClassName}>
+              <label className={formLabelClassName}>
                 Stock
                 <input
-                  className={fieldClassName}
+                  className={formControlClassName}
                   min="0"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
@@ -713,10 +712,10 @@ export function InventoryClient() {
                   value={inventoryForm.current_stock}
                 />
               </label>
-              <label className={labelClassName}>
+              <label className={formLabelClassName}>
                 Unit
                 <select
-                  className={fieldClassName}
+                  className={formControlClassName}
                   onChange={(event) =>
                     setInventoryForm((current) => ({
                       ...current,
@@ -731,10 +730,10 @@ export function InventoryClient() {
                   <option value="each">each</option>
                 </select>
               </label>
-              <label className={labelClassName}>
+              <label className={formLabelClassName}>
                 Reorder
                 <input
-                  className={fieldClassName}
+                  className={formControlClassName}
                   min="0"
                   onChange={(event) =>
                     setInventoryForm((current) => ({
@@ -765,7 +764,7 @@ export function InventoryClient() {
             className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
             onSubmit={submitLog}
           >
-            <h2 className="text-xl font-semibold text-neutralDark">
+            <h2 className="text-xl font-semibold text-theme-text-primary">
               Log usage
             </h2>
             {logError ? (
@@ -805,10 +804,10 @@ export function InventoryClient() {
               options={chemicalOptions}
               value={logForm.chemical_id}
             />
-            <label className={labelClassName}>
+            <label className={formLabelClassName}>
               Amount used
               <input
-                className={fieldClassName}
+                className={formControlClassName}
                 min="0"
                 onChange={(event) =>
                   setLogForm((current) => ({
@@ -820,10 +819,10 @@ export function InventoryClient() {
                 value={logForm.amount_used}
               />
             </label>
-            <label className={labelClassName}>
+            <label className={formLabelClassName}>
               Notes
               <textarea
-                className={`${fieldClassName} min-h-24 py-2`}
+                className={formTextareaClassName}
                 onChange={(event) =>
                   setLogForm((current) => ({
                     ...current,
@@ -844,7 +843,7 @@ export function InventoryClient() {
           </form>
 
           <Card padding="lg">
-            <h2 className="text-xl font-semibold text-neutralDark">
+            <h2 className="text-xl font-semibold text-theme-text-primary">
               Recent usage
             </h2>
             <div className="mt-4 flex flex-col gap-3">
@@ -853,7 +852,7 @@ export function InventoryClient() {
                   className="text-sm text-theme-text-secondary"
                   key={log.id}
                 >
-                  <p className="font-medium text-neutralDark">
+                  <p className="font-medium text-theme-text-primary">
                     {log.chemical?.name ?? "Unknown chemical"}
                   </p>
                   <p>

@@ -127,7 +127,7 @@ function adminLinkClassName(active: boolean) {
   return [
     "group inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold transition md:w-full md:px-2.5",
     active
-      ? "bg-primitive-sky-500 text-theme-text-inverse shadow-sm"
+      ? "bg-theme-action-primary text-theme-text-inverse shadow-sm"
       : "text-primitive-sky-100 hover:bg-primitive-navy-800 hover:text-theme-text-inverse",
   ].join(" ");
 }
