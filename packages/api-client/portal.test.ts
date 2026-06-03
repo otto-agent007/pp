@@ -7,6 +7,7 @@ import {
   listCustomerPortalAccessTokenRecords,
   listCustomerPortalBillingRecords,
   listCustomerPortalCloseoutRecords,
+  requestCustomerPortalUpgradeIntentRecord,
   revokeCustomerPortalAccessTokenRecord,
   sendCustomerPortalAccessTokenRecord,
 } from "./portal";
@@ -76,6 +77,43 @@ describe("portal api client", () => {
     expect(invoices).toEqual([]);
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/portal/customer-1/billing?access_token=portal-token",
+    );
+  });
+
+  it("requests portal upgrade intents through the tokened server boundary", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        notification_id: "notification-1",
+        plan_id: "general_pest_recurring",
+        status: "requested",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await requestCustomerPortalUpgradeIntentRecord(
+      "customer-1",
+      "portal-token",
+      { plan_id: "general_pest_recurring" },
+    );
+
+    expect(result).toEqual({
+      notification_id: "notification-1",
+      plan_id: "general_pest_recurring",
+      status: "requested",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/portal/customer-1/upgrade-intents",
+      expect.objectContaining({
+        body: JSON.stringify({
+          access_token: "portal-token",
+          plan_id: "general_pest_recurring",
+        }),
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
+        method: "POST",
+      }),
     );
   });
 

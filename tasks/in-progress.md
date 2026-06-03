@@ -4,6 +4,17 @@ No active implementation slice is currently open.
 
 Recent closure:
 
+- Pest Patrol Customer Portal V1 added a portal-first QR/text workflow for
+  tokened `/portal/<customerId>` links, open invoice pay actions, service and
+  billing history, proof cards, and a General Pest recurring-service request
+  follow-up.
+- Admin `/customers` and `/payments` now show session-only portal share cards
+  with copyable URLs and QR codes after fresh link generation; historical
+  active token rows still do not expose old raw URLs.
+- The upgrade CTA creates an idempotent pending `recurring_service_prompt`
+  notification event for admin follow-up without Stripe Billing,
+  subscriptions, saved payment methods, recurring charge creation, migrations,
+  provider setup, env changes, preview mutations, or production mutations.
 - Technician Access Handoff V1 added provider-neutral `/technicians` invite
   handoff guidance and included `/technicians` in the local fixture smoke route
   plan, without auth behavior, provider, env, seed/reset, preview, or

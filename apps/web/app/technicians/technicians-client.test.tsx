@@ -43,6 +43,13 @@ function addDays(date: Date, days: number) {
   return copy;
 }
 
+function localDateKey(date: Date) {
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 describe("TechniciansClient", () => {
   const inviteMutateAsync = vi.fn();
 
@@ -56,6 +63,7 @@ describe("TechniciansClient", () => {
       isPending: false,
     } as never);
     const today = new Date();
+    const tomorrow = addDays(today, 1);
     vi.mocked(useJobs).mockReturnValue({
       data: [
         {
@@ -64,7 +72,7 @@ describe("TechniciansClient", () => {
           location_id: "location-1",
           assigned_tech_id: "technician-1",
           status: "en_route",
-          scheduled_start: today.toISOString(),
+          scheduled_start: `${localDateKey(today)}T09:00:00`,
           scheduled_end: null,
           service_notes: null,
           created_at: now,
@@ -76,7 +84,7 @@ describe("TechniciansClient", () => {
           location_id: "location-2",
           assigned_tech_id: "technician-1",
           status: "scheduled",
-          scheduled_start: addDays(today, 1).toISOString(),
+          scheduled_start: `${localDateKey(tomorrow)}T09:00:00`,
           scheduled_end: null,
           service_notes: null,
           created_at: now,

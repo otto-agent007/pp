@@ -5,11 +5,16 @@ import {
   buildCustomerPortalInvoices,
   listCustomerPortalBilling,
   listCustomerPortalCloseouts,
+  requestCustomerPortalUpgradeIntent,
   validateCustomerPortalAccessToken,
   validateCustomerPortalCustomerId,
 } from "@pest-patrol/domain";
-import { useQuery } from "@tanstack/react-query";
-import { getLocalDemoFixtures } from "./localDemoData";
+import type { CustomerPortalUpgradeIntentInput } from "@pest-patrol/types";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  getLocalDemoFixtures,
+  requestLocalDemoPortalUpgradeIntent,
+} from "./localDemoData";
 
 export const customerPortalCloseoutsQueryKey = (
   customerId: string,
@@ -117,4 +122,32 @@ export function useCustomerPortalBilling(
     invoices: fixtureInvoices ?? billingQuery.data ?? [],
     isLoading: fixtures ? false : billingQuery.isLoading,
   };
+}
+
+export function useCustomerPortalUpgradeIntent(
+  customerId: string,
+  accessToken: string,
+) {
+  const validCustomerId = validateCustomerPortalCustomerId(customerId);
+  const validAccessToken = accessToken.trim()
+    ? validateCustomerPortalAccessToken(accessToken)
+    : "";
+
+  return useMutation({
+    mutationFn: (input: CustomerPortalUpgradeIntentInput) => {
+      const fixtures = getLocalDemoFixtures();
+
+      if (fixtures) {
+        return Promise.resolve(
+          requestLocalDemoPortalUpgradeIntent(validCustomerId, input),
+        );
+      }
+
+      return requestCustomerPortalUpgradeIntent(
+        validCustomerId,
+        validAccessToken,
+        input,
+      );
+    },
+  });
 }

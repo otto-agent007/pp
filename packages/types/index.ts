@@ -106,6 +106,10 @@ export type CustomerPortalAccessEventKind =
   | "send_succeeded"
   | "send_failed";
 export type CustomerPortalDeliveryProvider = "manual" | "webhook";
+export type CustomerPortalUpgradePlanId = "general_pest_recurring";
+export type CustomerPortalUpgradeIntentStatus =
+  | "requested"
+  | "already_requested";
 
 export type AutomationRuleType =
   | "follow_up_reminder"
@@ -748,6 +752,21 @@ export interface CustomerPortalSendInput {
 export interface CustomerPortalSendResult {
   provider: "webhook";
   status: "requested";
+}
+
+export interface CustomerPortalUpgradeIntentInput {
+  plan_id: CustomerPortalUpgradePlanId;
+}
+
+export interface CustomerPortalUpgradeIntentRequest
+  extends CustomerPortalUpgradeIntentInput {
+  access_token: string;
+}
+
+export interface CustomerPortalUpgradeIntentResult {
+  notification_id: string | null;
+  plan_id: CustomerPortalUpgradePlanId;
+  status: CustomerPortalUpgradeIntentStatus;
 }
 
 export interface CustomerPortalSendProviderPayload {

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
+import { useCreateCustomerPortalAccessToken } from "../../hooks/useCustomerPortalAccess";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -24,6 +25,10 @@ vi.mock("../../hooks/useJobs", () => ({
 
 vi.mock("../../hooks/useCloseouts", () => ({
   useCloseoutCaptureSummaries: vi.fn(),
+}));
+
+vi.mock("../../hooks/useCustomerPortalAccess", () => ({
+  useCreateCustomerPortalAccessToken: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -162,6 +167,13 @@ const needsReviewInvoice = {
     },
   ],
 } as const;
+const sentInvoice = {
+  ...invoice,
+  id: "invoice-sent",
+  payment_url: "https://pay.example/invoice-1",
+  status: "sent",
+  stripe_payment_link_id: "plink_1",
+} as const;
 
 async function chooseSearchableOption(
   user: ReturnType<typeof userEvent.setup>,
@@ -180,6 +192,7 @@ async function chooseSearchableOption(
 describe("PaymentsClient", () => {
   const createInvoice = vi.fn();
   const createPaymentLink = vi.fn();
+  const createPortalLink = vi.fn();
   const markPaid = vi.fn();
   const voidInvoice = vi.fn();
 
@@ -205,6 +218,11 @@ describe("PaymentsClient", () => {
       mutate: createPaymentLink,
       isPending: false,
     } as never);
+    vi.mocked(useCreateCustomerPortalAccessToken).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutateAsync: createPortalLink,
+    } as never);
     vi.mocked(useMarkInvoicePaid).mockReturnValue({
       mutate: markPaid,
       isPending: false,
@@ -215,9 +233,18 @@ describe("PaymentsClient", () => {
     } as never);
     createInvoice.mockReset();
     createPaymentLink.mockReset();
+    createPortalLink.mockReset();
     markPaid.mockReset();
     voidInvoice.mockReset();
     createInvoice.mockResolvedValue(invoice);
+    createPortalLink.mockResolvedValue({
+      access_token: "portal-token",
+      customer_id: "customer-1",
+      expires_at: null,
+      portal_url:
+        "http://localhost:3000/portal/customer-1?access_token=portal-token",
+      token_id: "token-portal",
+    });
   });
 
   it("renders invoice summaries and filters invoices", async () => {
@@ -442,6 +469,38 @@ describe("PaymentsClient", () => {
         name: "Open customer ledger",
       }),
     ).toHaveAttribute("href", "/customers?customer_id=customer-1");
+  });
+
+  it("generates a portal QR from invoice handoff without exposing direct payment URLs", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [sentInvoice],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Generate customer portal QR" }),
+    );
+
+    expect(createPortalLink).toHaveBeenCalledWith({
+      customer_id: "customer-1",
+      expires_at: null,
+    });
+    expect(
+      await screen.findByRole("img", {
+        name: "QR code for customer portal link",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(
+        "http://localhost:3000/portal/customer-1?access_token=portal-token",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByDisplayValue("https://pay.example/invoice-1"),
+    ).not.toBeInTheDocument();
   });
 
   it("creates an invoice from a completed job", async () => {

@@ -9,12 +9,16 @@ import type {
   CustomerPortalInvoice,
   CustomerPortalJob,
   CustomerPortalMedia,
+  CustomerPortalUpgradeIntentInput,
+  CustomerPortalUpgradeIntentResult,
+  CustomerPortalUpgradePlanId,
   Job,
   JobCloseoutReview,
   JobFormSubmission,
   JobMedia,
   CloseoutCaptureSummary,
   Invoice,
+  NotificationEventInput,
 } from "@pest-patrol/types";
 import {
   createCustomerPortalAccessTokenRecord,
@@ -26,6 +30,7 @@ import {
   revokeCustomerPortalAccessTokenRecord,
   sendCustomerPortalAccessTokenRecord,
   listCustomerPortalBillingRecords,
+  requestCustomerPortalUpgradeIntentRecord,
 } from "@pest-patrol/api-client";
 import { formatJobScheduleDateTime, getJobScheduleTime } from "./jobs";
 import type { DispatchLocationEvidence } from "./geofencing";
@@ -126,6 +131,14 @@ export interface CustomerPortalProofHandoff {
   privacy_label: string;
   service_date_label: string;
   summary_label: string;
+}
+
+export interface CustomerPortalUpgradeSummary {
+  action_label: string;
+  confirmation_label: string;
+  plan_id: CustomerPortalUpgradePlanId;
+  summary: string;
+  title: string;
 }
 
 export type CustomerPortalAccessTokenReadinessState =
@@ -604,6 +617,95 @@ export function validateCustomerPortalSendInput(
   };
 }
 
+const customerPortalUpgradePlans = {
+  general_pest_recurring: {
+    actionLabel: "Request recurring service",
+    confirmationLabel:
+      "Request sent. Our office will follow up before anything recurring is scheduled or billed.",
+    keySlug: "general-pest",
+    message:
+      "Customer requested a General Pest recurring service follow-up from the customer portal. Contact them to confirm pricing, cadence, and start date.",
+    summary:
+      "Keep year-round protection on a recurring schedule. Our office will confirm pricing, cadence, and start date before anything is scheduled or billed.",
+    title: "General Pest recurring service",
+  },
+} satisfies Record<
+  CustomerPortalUpgradePlanId,
+  {
+    actionLabel: string;
+    confirmationLabel: string;
+    keySlug: string;
+    message: string;
+    summary: string;
+    title: string;
+  }
+>;
+
+export function validateCustomerPortalUpgradeIntentInput(
+  input: CustomerPortalUpgradeIntentInput,
+) {
+  if (input?.plan_id !== "general_pest_recurring") {
+    throw new Error("Unsupported portal upgrade plan");
+  }
+
+  return {
+    plan_id: input.plan_id,
+  };
+}
+
+export function getCustomerPortalUpgradeSummary(
+  planId: CustomerPortalUpgradePlanId = "general_pest_recurring",
+): CustomerPortalUpgradeSummary {
+  const input = validateCustomerPortalUpgradeIntentInput({ plan_id: planId });
+  const plan = customerPortalUpgradePlans[input.plan_id];
+
+  return {
+    action_label: plan.actionLabel,
+    confirmation_label: plan.confirmationLabel,
+    plan_id: input.plan_id,
+    summary: plan.summary,
+    title: plan.title,
+  };
+}
+
+export function buildCustomerPortalUpgradeGeneratedKey(
+  customerId: string,
+  planId: CustomerPortalUpgradePlanId,
+  requestedAt = new Date(),
+) {
+  const input = validateCustomerPortalUpgradeIntentInput({ plan_id: planId });
+  const plan = customerPortalUpgradePlans[input.plan_id];
+  const date = requestedAt.toISOString().slice(0, 10);
+
+  return `portal-upgrade:${validateCustomerPortalCustomerId(
+    customerId,
+  )}:${plan.keySlug}:${date}`;
+}
+
+export function buildCustomerPortalUpgradeNotificationInput(
+  customerId: string,
+  input: CustomerPortalUpgradeIntentInput,
+  requestedAt = new Date(),
+): NotificationEventInput {
+  const normalized = validateCustomerPortalUpgradeIntentInput(input);
+  const plan = customerPortalUpgradePlans[normalized.plan_id];
+
+  return {
+    customer_id: validateCustomerPortalCustomerId(customerId),
+    due_at: requestedAt.toISOString(),
+    generated_key: buildCustomerPortalUpgradeGeneratedKey(
+      customerId,
+      normalized.plan_id,
+      requestedAt,
+    ),
+    job_id: null,
+    message: plan.message,
+    rule_id: null,
+    title: `${plan.title} request`,
+    type: "recurring_service_prompt",
+  };
+}
+
 export function getCustomerPortalSendProviderStatusLabel(configured: boolean) {
   return configured
     ? "Portal delivery provider configured"
@@ -635,6 +737,18 @@ export async function listCustomerPortalBilling(
   return listCustomerPortalBillingRecords(
     validateCustomerPortalCustomerId(customerId),
     validateCustomerPortalAccessToken(accessToken),
+  );
+}
+
+export async function requestCustomerPortalUpgradeIntent(
+  customerId: string,
+  accessToken: string,
+  input: CustomerPortalUpgradeIntentInput,
+): Promise<CustomerPortalUpgradeIntentResult> {
+  return requestCustomerPortalUpgradeIntentRecord(
+    validateCustomerPortalCustomerId(customerId),
+    validateCustomerPortalAccessToken(accessToken),
+    validateCustomerPortalUpgradeIntentInput(input),
   );
 }
 

@@ -8,6 +8,7 @@ import {
   getCustomerPortalInvoiceStatusLabel,
   getCustomerPortalProofHandoff,
   getCustomerPortalServiceSummary,
+  getCustomerPortalUpgradeSummary,
   type CustomerPortalTimelineItem,
 } from "@pest-patrol/domain";
 import type {
@@ -29,6 +30,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useCustomerPortalBilling,
   useCustomerPortalCloseouts,
+  useCustomerPortalUpgradeIntent,
 } from "../../../hooks/useCustomerPortal";
 
 function formatDateTime(value: string | null | undefined) {
@@ -86,6 +88,70 @@ function EmptyState({ children }: { children: string }) {
     <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-surface p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
+  );
+}
+
+function GeneralPestUpgradeCard({
+  accessToken,
+  customerId,
+}: {
+  accessToken: string;
+  customerId: string;
+}) {
+  const upgradeSummary = getCustomerPortalUpgradeSummary();
+  const upgradeIntent = useCustomerPortalUpgradeIntent(customerId, accessToken);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+
+  async function requestUpgrade() {
+    const result = await upgradeIntent
+      .mutateAsync({ plan_id: upgradeSummary.plan_id })
+      .catch(() => null);
+
+    if (!result) {
+      return;
+    }
+
+    setConfirmation(
+      result.status === "already_requested"
+        ? "Request already sent today. Our office will follow up before anything recurring is scheduled or billed."
+        : upgradeSummary.confirmation_label,
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <Eyebrow>Upgrade</Eyebrow>
+          <h2 className="mt-1 text-xl font-bold text-theme-text-primary">
+            {upgradeSummary.title}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
+            {upgradeSummary.summary}
+          </p>
+          {confirmation ? (
+            <p className="mt-2 text-sm font-semibold text-status-alert-success-fg">
+              {confirmation}
+            </p>
+          ) : null}
+          {upgradeIntent.error ? (
+            <p className="mt-2 text-sm font-semibold text-status-alert-danger-fg">
+              Unable to send request. Please contact the office.
+            </p>
+          ) : null}
+        </div>
+        <button
+          className={buttonClassName({ variant: "primary" })}
+          disabled={upgradeIntent.isPending || Boolean(confirmation)}
+          onClick={() => void requestUpgrade()}
+          type="button"
+        >
+          {upgradeIntent.isPending
+            ? "Sending request..."
+            : upgradeSummary.action_label}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -611,6 +677,11 @@ export function CustomerPortalClient({
           />
         </div>
       </section>
+
+      <GeneralPestUpgradeCard
+        accessToken={accessToken}
+        customerId={customerId}
+      />
 
       <BillingSection
         error={billingError}
