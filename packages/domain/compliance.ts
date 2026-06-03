@@ -8,6 +8,7 @@ import {
 } from "@pest-patrol/api-client";
 import type { AuthSupabaseClient } from "@pest-patrol/api-client";
 import type {
+  ChemicalInventoryItem,
   ChemicalLog,
   ComplianceAdvisory,
   ComplianceAdvisoryAudit,
@@ -233,6 +234,65 @@ export interface ComplianceGuardrailSummary {
   criticalJobs: number;
   totalJobs: number;
   warningJobs: number;
+}
+
+export type ChemicalProductBinderStatus =
+  | "clear"
+  | "review_recommended"
+  | "critical_review";
+
+export type ChemicalProductBinderFilter =
+  | "all"
+  | "needs_review"
+  | "missing_epa"
+  | "license_review"
+  | "low_stock";
+
+export interface ChemicalProductBinderRecentLog {
+  amountUsed: number;
+  createdAt: string;
+  customerName: string | null;
+  id: string;
+  jobHref?: string;
+  jobId: string;
+  targetSiteLabel: string | null;
+  unit: string | null;
+}
+
+export interface ChemicalProductBinderItem {
+  chemicalId: string;
+  currentStock: number | null;
+  epaRegistrationNumber: string | null;
+  lowStock: boolean;
+  logsMissingAmountUnit: number;
+  logsMissingTargetSite: number;
+  missingEvidenceCount: number;
+  missingLabels: string[];
+  nextStep: string;
+  productName: string;
+  recentLogs: ChemicalProductBinderRecentLog[];
+  recentUsageCount: number;
+  sourceReadinessLabel: string;
+  status: ChemicalProductBinderStatus;
+  unit: string | null;
+  unknownLicenseReviewCount: number;
+}
+
+export interface ChemicalProductBinderSummary {
+  logsMissingAmountUnit: number;
+  logsMissingTargetSite: number;
+  logsNeedingLicenseReview: number;
+  productsMissingEpa: number;
+  productsWithReviewItems: number;
+  totalProducts: number;
+}
+
+export interface ChemicalProductBinderInput {
+  chemicalLogs: ChemicalLog[];
+  chunks: ComplianceChunk[];
+  documents: ComplianceDocument[];
+  inventory: ChemicalInventoryItem[];
+  sources: ComplianceSource[];
 }
 
 export type ComplianceAdvisoryEvaluationStatus =
@@ -1117,6 +1177,300 @@ export function getComplianceKnowledgeBaseReadiness(input: {
     },
     workflows,
   };
+}
+
+type ChemicalProductBinderProduct = {
+  current_stock: number | null;
+  epa_number: string | null;
+  id: string;
+  name: string;
+  reorder_level: number | null;
+  unit: string | null;
+};
+
+function hasValidRegistrationNumber(value: string | null | undefined) {
+  const normalized = value?.trim().toLowerCase();
+
+  return Boolean(normalized && normalized !== "n/a");
+}
+
+function hasLicenseOrSupervisionEvidence(log: ChemicalLog) {
+  return /\b(license|licensed|operator|supervised|supervision)\b/i.test(
+    log.notes ?? "",
+  );
+}
+
+function chemicalLogTargetSite(log: ChemicalLog) {
+  const job = itemJobContext(log);
+
+  return (
+    job?.location?.address?.trim() ||
+    job?.location?.nickname?.trim() ||
+    job?.service_notes?.trim() ||
+    null
+  );
+}
+
+function binderSourceReadiness(input: ChemicalProductBinderInput) {
+  const readiness = getComplianceKnowledgeBaseReadiness({
+    chunks: input.chunks,
+    documents: input.documents,
+    sources: input.sources,
+  });
+  const chemicalReadiness = readiness.workflows.find(
+    (workflow) => workflow.workflow === "chemical_application",
+  );
+
+  if (chemicalReadiness?.status === "ready") {
+    return {
+      label: "Reviewed chemical source chunks ready",
+      ready: true,
+    };
+  }
+
+  if (chemicalReadiness?.status === "draft_only") {
+    return {
+      label: "Chemical source review recommended",
+      ready: false,
+    };
+  }
+
+  return {
+    label: "Chemical source missing evidence",
+    ready: false,
+  };
+}
+
+function productNextStep(input: {
+  hasCriticalReview: boolean;
+  lowStock: boolean;
+  sourceReady: boolean;
+  unknownLicenseReviewCount: number;
+}) {
+  if (input.hasCriticalReview) {
+    return "Review recommended: resolve missing evidence in inventory or job records before relying on this binder.";
+  }
+
+  if (input.unknownLicenseReviewCount > 0) {
+    return "operator review required: capture license or supervision detail in chemical log notes before relying on this binder.";
+  }
+
+  if (input.lowStock) {
+    return "Review recommended: reconcile stock and reorder before field use.";
+  }
+
+  if (!input.sourceReady) {
+    return "Review recommended: review chemical source readiness before source-backed advisory use.";
+  }
+
+  return "Product record is clear for office binder review.";
+}
+
+function productStatusRank(status: ChemicalProductBinderStatus) {
+  if (status === "critical_review") return 3;
+  if (status === "review_recommended") return 2;
+  return 1;
+}
+
+function sortChemicalProductBinderItems(items: ChemicalProductBinderItem[]) {
+  return [...items].sort((left, right) => {
+    const statusDelta = productStatusRank(right.status) - productStatusRank(left.status);
+
+    if (statusDelta !== 0) return statusDelta;
+
+    return left.productName.localeCompare(right.productName);
+  });
+}
+
+export function buildChemicalProductBinder(
+  input: ChemicalProductBinderInput,
+): ChemicalProductBinderItem[] {
+  const productsById = new Map<string, ChemicalProductBinderProduct>();
+  const logsByChemicalId = new Map<string, ChemicalLog[]>();
+  const sourceReadiness = binderSourceReadiness(input);
+
+  for (const item of input.inventory) {
+    productsById.set(item.id, {
+      current_stock: item.current_stock,
+      epa_number: item.epa_number,
+      id: item.id,
+      name: item.name,
+      reorder_level: item.reorder_level,
+      unit: item.unit,
+    });
+  }
+
+  for (const log of input.chemicalLogs) {
+    const chemicalLogs = logsByChemicalId.get(log.chemical_id) ?? [];
+    chemicalLogs.push(log);
+    logsByChemicalId.set(log.chemical_id, chemicalLogs);
+
+    if (!productsById.has(log.chemical_id)) {
+      productsById.set(log.chemical_id, {
+        current_stock: log.chemical?.current_stock ?? null,
+        epa_number: log.chemical?.epa_number ?? null,
+        id: log.chemical_id,
+        name: log.chemical?.name ?? "Unknown product",
+        reorder_level: log.chemical?.reorder_level ?? null,
+        unit: log.chemical?.unit ?? null,
+      });
+    }
+  }
+
+  for (const chemicalLogs of logsByChemicalId.values()) {
+    chemicalLogs.sort(
+      (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at),
+    );
+  }
+
+  const items = Array.from(productsById.values()).map((product) => {
+    const logs = logsByChemicalId.get(product.id) ?? [];
+    const missingLabels = new Set<string>();
+    const missingEpa = !hasValidRegistrationNumber(product.epa_number);
+    const lowStock =
+      product.current_stock !== null &&
+      (product.current_stock < 0 ||
+        (product.reorder_level !== null &&
+          product.current_stock <= product.reorder_level));
+    const logsMissingAmountUnit = logs.filter(
+      (log) => !(log.amount_used > 0) || !hasText(product.unit),
+    ).length;
+    const logsMissingTargetSite = logs.filter(
+      (log) => !hasText(chemicalLogTargetSite(log)),
+    ).length;
+    const unknownLicenseReviewCount = logs.filter(
+      (log) => !hasLicenseOrSupervisionEvidence(log),
+    ).length;
+
+    if (missingEpa) {
+      missingLabels.add("EPA/California registration number");
+    }
+
+    if (logsMissingAmountUnit > 0) {
+      missingLabels.add("Amount and unit");
+    }
+
+    if (logsMissingTargetSite > 0) {
+      missingLabels.add("Target site or treated area");
+    }
+
+    if (unknownLicenseReviewCount > 0) {
+      missingLabels.add("License or supervision detail");
+    }
+
+    if (lowStock) {
+      missingLabels.add(
+        product.current_stock !== null && product.current_stock < 0
+          ? "Negative stock balance"
+          : "Low stock review",
+      );
+    }
+
+    if (!sourceReadiness.ready) {
+      missingLabels.add("Reviewed chemical source chunks");
+    }
+
+    const hasCriticalReview =
+      missingEpa ||
+      logsMissingAmountUnit > 0 ||
+      logsMissingTargetSite > 0 ||
+      (product.current_stock !== null && product.current_stock < 0);
+    const status: ChemicalProductBinderStatus = hasCriticalReview
+      ? "critical_review"
+      : unknownLicenseReviewCount > 0 || lowStock || !sourceReadiness.ready
+        ? "review_recommended"
+        : "clear";
+
+    return {
+      chemicalId: product.id,
+      currentStock: product.current_stock,
+      epaRegistrationNumber: product.epa_number,
+      lowStock,
+      logsMissingAmountUnit,
+      logsMissingTargetSite,
+      missingEvidenceCount: logsMissingAmountUnit + logsMissingTargetSite,
+      missingLabels: Array.from(missingLabels),
+      nextStep: productNextStep({
+        hasCriticalReview,
+        lowStock,
+        sourceReady: sourceReadiness.ready,
+        unknownLicenseReviewCount,
+      }),
+      productName: product.name,
+      recentLogs: logs.slice(0, 3).map((log) => {
+        const job = itemJobContext(log);
+
+        return {
+          amountUsed: log.amount_used,
+          createdAt: log.created_at,
+          customerName: job?.customer?.name ?? null,
+          id: log.id,
+          jobHref: job ? itemJobHref(job) : undefined,
+          jobId: log.job_id,
+          targetSiteLabel: chemicalLogTargetSite(log),
+          unit: product.unit,
+        };
+      }),
+      recentUsageCount: logs.length,
+      sourceReadinessLabel: sourceReadiness.label,
+      status,
+      unit: product.unit,
+      unknownLicenseReviewCount,
+    };
+  });
+
+  return sortChemicalProductBinderItems(items);
+}
+
+export function getChemicalProductBinderSummary(
+  items: ChemicalProductBinderItem[],
+): ChemicalProductBinderSummary {
+  return {
+    logsMissingAmountUnit: items.reduce(
+      (total, item) => total + item.logsMissingAmountUnit,
+      0,
+    ),
+    logsMissingTargetSite: items.reduce(
+      (total, item) => total + item.logsMissingTargetSite,
+      0,
+    ),
+    logsNeedingLicenseReview: items.reduce(
+      (total, item) => total + item.unknownLicenseReviewCount,
+      0,
+    ),
+    productsMissingEpa: items.filter(
+      (item) => !hasValidRegistrationNumber(item.epaRegistrationNumber),
+    ).length,
+    productsWithReviewItems: items.filter((item) => item.status !== "clear")
+      .length,
+    totalProducts: items.length,
+  };
+}
+
+export function filterChemicalProductBinderItems(
+  items: ChemicalProductBinderItem[],
+  filter: ChemicalProductBinderFilter,
+) {
+  if (filter === "all") return sortChemicalProductBinderItems(items);
+  if (filter === "needs_review") {
+    return sortChemicalProductBinderItems(
+      items.filter((item) => item.status !== "clear"),
+    );
+  }
+  if (filter === "missing_epa") {
+    return sortChemicalProductBinderItems(
+      items.filter(
+        (item) => !hasValidRegistrationNumber(item.epaRegistrationNumber),
+      ),
+    );
+  }
+  if (filter === "license_review") {
+    return sortChemicalProductBinderItems(
+      items.filter((item) => item.unknownLicenseReviewCount > 0),
+    );
+  }
+
+  return sortChemicalProductBinderItems(items.filter((item) => item.lowStock));
 }
 
 function buildChemicalReviewItems(logs: ChemicalLog[]) {

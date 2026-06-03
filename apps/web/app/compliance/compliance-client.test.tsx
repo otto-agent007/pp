@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useJobs } from "../../hooks/useJobs";
-import { useChemicalLogs } from "../../hooks/useInventory";
+import { useChemicalInventory, useChemicalLogs } from "../../hooks/useInventory";
 import {
   isComplianceSchemaUnavailableError,
   useComplianceAdvisoryAudits,
@@ -20,6 +20,7 @@ vi.mock("../../hooks/useJobs", () => ({
 }));
 
 vi.mock("../../hooks/useInventory", () => ({
+  useChemicalInventory: vi.fn(),
   useChemicalLogs: vi.fn(),
 }));
 
@@ -173,6 +174,9 @@ describe("ComplianceClient", () => {
     vi.mocked(useJobs).mockReturnValue({
       data: [],
     } as never);
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [],
+    } as never);
     vi.mocked(useChemicalLogs).mockReturnValue({
       data: [],
     } as never);
@@ -318,15 +322,15 @@ describe("ComplianceClient", () => {
 
     render(<ComplianceClient />);
 
-    expect(screen.getByText("Needs review")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Needs review" })).toBeInTheDocument();
     expect(screen.getByText("Open review items")).toBeInTheDocument();
     expect(screen.getByText("Critical items")).toBeInTheDocument();
     expect(screen.getByText("Chemical review items")).toBeInTheDocument();
     expect(screen.getByText("Source readiness items")).toBeInTheDocument();
     expect(screen.getByText("Bait Gel chemical review")).toBeInTheDocument();
     expect(
-      screen.getByText("EPA/California registration number"),
-    ).toBeInTheDocument();
+      screen.getAllByText("EPA/California registration number").length,
+    ).toBeGreaterThan(0);
     expect(
       screen.getByText("WDO / Branch 3 operator review required"),
     ).toBeInTheDocument();
@@ -341,6 +345,47 @@ describe("ComplianceClient", () => {
     expect(
       screen.getByText("WDO / Branch 3 advisory setup review"),
     ).toBeInTheDocument();
+  });
+
+  it("renders and filters the chemical product binder from loaded inventory", async () => {
+    const user = userEvent.setup();
+    const clearProduct = {
+      ...chemicalLog.chemical,
+      id: "chemical-clear",
+      name: "Clear Product",
+      epa_number: "EPA-999",
+    };
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [chemicalLog.chemical, clearProduct],
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [chemicalLog],
+    } as never);
+
+    render(<ComplianceClient />);
+
+    expect(screen.getByText("Chemical Product Binder")).toBeInTheDocument();
+    expect(screen.getByText("Products tracked")).toBeInTheDocument();
+    expect(screen.getByText("Products needing review")).toBeInTheDocument();
+    expect(screen.getByText("Logs missing evidence")).toBeInTheDocument();
+    expect(screen.getByText("License/supervision reviews")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bait Gel" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Missing EPA #", { selector: "span" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("operator review required")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("link", { name: "Open inventory" })
+        .every((link) => link.getAttribute("href") === "/inventory"),
+    ).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "License review" }));
+
+    expect(screen.getByRole("heading", { name: "Bait Gel" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Clear Product" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders schema-unavailable setup state without raw Supabase details", () => {
