@@ -619,15 +619,15 @@ export function validateCustomerPortalSendInput(
 
 const customerPortalUpgradePlans = {
   general_pest_recurring: {
-    actionLabel: "Request recurring service",
+    actionLabel: "Request review",
     confirmationLabel:
-      "Request sent. Our office will follow up before anything recurring is scheduled or billed.",
+      "Request received. Our office will follow up before anything recurring is scheduled or billed.",
     keySlug: "general-pest",
     message:
-      "Customer requested a General Pest recurring service follow-up from the customer portal. Contact them to confirm pricing, cadence, and start date.",
+      "Customer requested a recurring service review from the customer portal. Contact them to confirm service type, pricing, cadence, and start date.",
     summary:
-      "Keep year-round protection on a recurring schedule. Our office will confirm pricing, cadence, and start date before anything is scheduled or billed.",
-    title: "General Pest recurring service",
+      "Ask our office to review whether recurring service makes sense for this property. We will confirm service type, pricing, cadence, and start date before anything is scheduled or billed.",
+    title: "Recurring service review",
   },
 } satisfies Record<
   CustomerPortalUpgradePlanId,

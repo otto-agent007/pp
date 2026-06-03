@@ -300,7 +300,7 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
         portalCustomer.name,
         "Pay invoice",
         "Service and billing history",
-        "General Pest recurring service",
+        "Recurring service review",
       ],
       id: "portal",
       label: "tokened /portal",

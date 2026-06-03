@@ -170,7 +170,7 @@ describe("customer portal upgrade intent route", () => {
       generated_key: "portal-upgrade:customer-1:general-pest:2026-06-02",
       job_id: null,
       rule_id: null,
-      title: "General Pest recurring service request",
+      title: "Recurring service review request",
       type: "recurring_service_prompt",
     });
     expect(call?.[1]).toBe(serviceClient);

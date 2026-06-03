@@ -970,7 +970,7 @@ describe("closeouts domain", () => {
     expect(JSON.stringify(timeline)).not.toContain("storage_path");
   });
 
-  it("builds a customer-safe General Pest upgrade request notification", () => {
+  it("builds a customer-safe recurring service review notification", () => {
     const input = validateCustomerPortalUpgradeIntentInput({
       plan_id: "general_pest_recurring",
     });
@@ -996,11 +996,21 @@ describe("closeouts domain", () => {
       generated_key: "portal-upgrade:customer-1:general-pest:2026-06-02",
       job_id: null,
       message:
-        "Customer requested a General Pest recurring service follow-up from the customer portal. Contact them to confirm pricing, cadence, and start date.",
+        "Customer requested a recurring service review from the customer portal. Contact them to confirm service type, pricing, cadence, and start date.",
       rule_id: null,
-      title: "General Pest recurring service request",
+      title: "Recurring service review request",
       type: "recurring_service_prompt",
     });
+    expect(getCustomerPortalUpgradeSummary()).toMatchObject({
+      action_label: "Request review",
+      confirmation_label:
+        "Request received. Our office will follow up before anything recurring is scheduled or billed.",
+      plan_id: "general_pest_recurring",
+      title: "Recurring service review",
+    });
+    expect(JSON.stringify(getCustomerPortalUpgradeSummary())).not.toContain(
+      "General Pest",
+    );
     expect(JSON.stringify(getCustomerPortalUpgradeSummary())).not.toContain(
       "access_token",
     );
