@@ -295,13 +295,13 @@ function InvoiceHandoff({
           )}`}
         >
           <p className="text-sm font-semibold text-theme-text-primary">
-            Internal compliance warning
+            Review service proof before sharing
           </p>
           <p className="mt-1 text-xs text-theme-text-secondary">
             {guardrail.label}: {guardrail.summary}
           </p>
           <p className="mt-1 text-xs font-semibold text-theme-text-secondary">
-            Customer-safe portal proof must not expose internal compliance warnings.
+            Confirm service records and invoice details before sending the portal link.
           </p>
         </div>
       ) : null}
@@ -599,25 +599,6 @@ export function PaymentsClient() {
             <option value="paid">Paid</option>
             <option value="void">Void</option>
           </select>
-          <select
-            aria-label="Reconciliation status"
-            className={formControlClassName}
-            onChange={(event) =>
-              setReconciliationStatus(
-                event.target.value as ReconciliationFilter,
-              )
-            }
-            value={reconciliationStatus}
-          >
-            <option value="all">All reconciliation</option>
-            <option value="needs_review">Needs review</option>
-            <option value="partially_paid">Partially paid</option>
-            <option value="reconciled_paid">Reconciled paid</option>
-            <option value="manual_paid">Manually marked paid</option>
-            <option value="awaiting_payment">Awaiting payment</option>
-            <option value="draft">Draft</option>
-            <option value="void">Void</option>
-          </select>
         </div>
       </header>
 
@@ -675,36 +656,30 @@ export function PaymentsClient() {
         </div>
       </section>
 
-      <details
-        className={`group rounded-lg border shadow-sm ${statusSurfaceClassName(
+      <section
+        className={`rounded-lg border p-4 shadow-sm ${statusSurfaceClassName(
           "warning",
         )}`}
       >
-        <summary className="cursor-pointer px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <Eyebrow tone="danger">Manual fallback mode</Eyebrow>
-              <h2 className="mt-1 text-lg font-semibold text-theme-text-primary">
-                Payment provider readiness
-              </h2>
-            </div>
-            <StatusPill tone="warning">
-              {paymentProviderCopy.stateLabel}
-            </StatusPill>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Eyebrow tone="danger">Manual fallback mode</Eyebrow>
+            <h2 className="mt-1 text-lg font-semibold text-theme-text-primary">
+              Payment provider readiness
+            </h2>
+            <p className="mt-2 text-sm text-theme-text-secondary">
+              {paymentProviderCopy.label}
+            </p>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              {paymentProviderCopy.summary}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
+              {paymentProviderCopy.detail}
+            </p>
           </div>
-        </summary>
-        <div className="hidden border-t border-status-alert-warning-border px-4 py-3 group-open:block">
-          <p className="text-sm text-theme-text-secondary">
-            {paymentProviderCopy.label}
-          </p>
-          <p className="mt-2 text-sm text-theme-text-secondary">
-            {paymentProviderCopy.summary}
-          </p>
-          <p className="mt-2 text-sm text-theme-text-secondary">
-            {paymentProviderCopy.detail}
-          </p>
+          <StatusPill tone="warning">{paymentProviderCopy.stateLabel}</StatusPill>
         </div>
-      </details>
+      </section>
 
       <section className="grid gap-3 sm:grid-cols-5">
         <CountTile
@@ -801,15 +776,6 @@ export function PaymentsClient() {
                           >
                             {reconciliation.label}
                           </StatusPill>
-                          {invoiceGuardrail &&
-                          invoiceGuardrail.status !== "clear" ? (
-                            <StatusPill
-                              dot={false}
-                              tone={guardrailTone(invoiceGuardrail.status)}
-                            >
-                              {invoiceGuardrail.label}
-                            </StatusPill>
-                          ) : null}
                         </div>
                         <p className="mt-2 text-sm text-theme-text-secondary">
                           {invoice.job?.location?.address ?? "No location"}
@@ -858,26 +824,39 @@ export function PaymentsClient() {
                           job={invoiceJob}
                         />
                       </div>
-                      <div className="flex min-w-52 flex-col gap-3">
-                        <p className="text-right text-2xl font-bold text-theme-text-primary">
-                          {formatMoney(invoice.total_cents, invoice.currency)}
-                        </p>
-                        <div className="text-right text-xs font-medium text-theme-text-muted">
-                          <p>
-                            Paid{" "}
-                            {formatMoney(
-                              reconciliation.paidCents,
-                              invoice.currency,
-                            )}
-                          </p>
-                          <p>
-                            Balance{" "}
-                            {formatMoney(
-                              reconciliation.balanceCents,
-                              invoice.currency,
-                            )}
-                          </p>
-                        </div>
+                      <div className="flex min-w-52 flex-col gap-3 text-right">
+                        <dl className="grid gap-2">
+                          <div>
+                            <dt className="text-xs font-semibold uppercase text-theme-text-muted">
+                              Invoice total
+                            </dt>
+                            <dd className="text-2xl font-bold text-theme-text-primary">
+                              {formatMoney(invoice.total_cents, invoice.currency)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs font-semibold uppercase text-theme-text-muted">
+                              Paid to date
+                            </dt>
+                            <dd className="text-sm font-semibold text-theme-text-secondary">
+                              {formatMoney(
+                                reconciliation.paidCents,
+                                invoice.currency,
+                              )}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs font-semibold uppercase text-theme-text-muted">
+                              Balance due
+                            </dt>
+                            <dd className="text-sm font-semibold text-theme-text-primary">
+                              {formatMoney(
+                                reconciliation.balanceCents,
+                                invoice.currency,
+                              )}
+                            </dd>
+                          </div>
+                        </dl>
                         <div className="flex flex-wrap justify-end gap-2">
                           {invoice.status === "draft" ? (
                             <Button
