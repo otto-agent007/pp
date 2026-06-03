@@ -1,7 +1,7 @@
 "use client";
 
 import QRCode from "qrcode";
-import { useEffect, useState, type Ref } from "react";
+import { useEffect, useState } from "react";
 
 import { buttonClassName } from "@pest-patrol/ui";
 
@@ -14,7 +14,7 @@ export function PortalShareCard({
   portalUrl,
   title = "Customer portal link",
 }: {
-  copyButtonRef?: Ref<HTMLButtonElement>;
+  copyButtonRef?: (element: HTMLButtonElement | null) => void;
   copied?: boolean;
   copyButtonLabel?: string;
   description?: string;

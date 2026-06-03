@@ -862,7 +862,9 @@ export function CustomerPortalLinks({
               </div>
             )}
             <PortalShareCard
-              copyButtonRef={copyAgainRef}
+              copyButtonRef={(element) => {
+                copyAgainRef.current = element;
+              }}
               copied={!copyUnavailable && copyFlash}
               copyButtonLabel={copyUnavailable ? "Copy" : "Copy again"}
               description={
