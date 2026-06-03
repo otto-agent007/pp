@@ -152,11 +152,16 @@ describe("CustomerPortalClient", () => {
       "customer-1",
       "portal-token",
     );
-    expect(screen.getByText("Portal summary")).toBeInTheDocument();
+    expect(screen.getByText("Service history")).toBeInTheDocument();
     expect(screen.getByText("Services")).toBeInTheDocument();
     expect(screen.getByText("Open balance")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Apex Homes" }),
+      screen.getByRole("heading", { name: "Apex Homes service history" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Customer records for completed services, invoices, forms, photos, and signatures.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Quarterly service invoice")).toBeInTheDocument();
     expect(screen.getByText("Quarterly service")).toBeInTheDocument();
@@ -195,7 +200,7 @@ describe("CustomerPortalClient", () => {
     expect(screen.getByText("Signed by Jamie")).toBeInTheDocument();
   });
 
-  it("lets customers request a General Pest recurring service follow-up once", async () => {
+  it("lets customers request a recurring service review once", async () => {
     const user = userEvent.setup();
     render(
       <CustomerPortalClient
@@ -208,12 +213,10 @@ describe("CustomerPortalClient", () => {
       "customer-1",
       "portal-token",
     );
-    expect(
-      screen.getByText("General Pest recurring service"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Recurring service review")).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "Request recurring service" }),
+      screen.getByRole("button", { name: "Request review" }),
     );
 
     expect(requestUpgrade).toHaveBeenCalledTimes(1);
@@ -222,8 +225,32 @@ describe("CustomerPortalClient", () => {
     });
     expect(
       screen.getByText(
-        "Request sent. Our office will follow up before anything recurring is scheduled or billed.",
+        "Request received. Our office will follow up before anything recurring is scheduled or billed.",
       ),
+    ).toBeInTheDocument();
+  });
+
+  it("offers print/save actions for customer records", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    const user = userEvent.setup();
+
+    render(
+      <CustomerPortalClient
+        accessToken="portal-token"
+        customerId="customer-1"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Print or save records" }),
+    );
+
+    expect(print).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("button", { name: "Print invoice record" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Print service record" }),
     ).toBeInTheDocument();
   });
 
@@ -238,9 +265,9 @@ describe("CustomerPortalClient", () => {
     expect(screen.getByLabelText("Search portal activity")).toHaveClass(
       "focus:border-theme-action-primary",
     );
-    expect(screen.getByRole("heading", { name: "Apex Homes" })).toHaveClass(
-      "text-theme-text-primary",
-    );
+    expect(
+      screen.getByRole("heading", { name: "Apex Homes service history" }),
+    ).toHaveClass("text-theme-text-primary");
     expect(screen.getByText("Completed service")).toHaveClass(
       "text-xs",
       "font-extrabold",
@@ -346,7 +373,7 @@ describe("CustomerPortalClient", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders access errors", () => {
+  it("renders customer-safe missing portal link errors", () => {
     vi.mocked(useCustomerPortalCloseouts).mockReturnValue({
       closeouts: [],
       error: new Error("Portal access token is required"),
@@ -356,7 +383,30 @@ describe("CustomerPortalClient", () => {
     render(<CustomerPortalClient accessToken="" customerId="customer-1" />);
 
     expect(
-      screen.getAllByText("Portal access token is required").length,
+      screen.getAllByText(
+        "This portal link is missing. Contact your pest control provider for a new link.",
+      ).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("renders customer-safe invalid or expired portal link errors", () => {
+    vi.mocked(useCustomerPortalCloseouts).mockReturnValue({
+      closeouts: [],
+      error: new Error("Portal access is invalid or expired"),
+      isLoading: false,
+    } as never);
+
+    render(
+      <CustomerPortalClient
+        accessToken="expired-token"
+        customerId="customer-1"
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "This portal link is invalid or expired. Contact your pest control provider for a new link.",
+      ),
+    ).toBeInTheDocument();
   });
 });

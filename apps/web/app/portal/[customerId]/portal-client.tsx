@@ -159,7 +159,47 @@ const emptyCloseouts: CustomerPortalCloseout[] = [];
 const emptyInvoices: CustomerPortalInvoice[] = [];
 
 function accessErrorMessage(error: Error | null, fallback: string) {
-  return error?.message ?? fallback;
+  if (!error) {
+    return fallback;
+  }
+
+  const message = error.message.toLowerCase();
+
+  if (message.includes("required") || message.includes("missing")) {
+    return "This portal link is missing. Contact your pest control provider for a new link.";
+  }
+
+  if (
+    message.includes("invalid") ||
+    message.includes("expired") ||
+    message.includes("token")
+  ) {
+    return "This portal link is invalid or expired. Contact your pest control provider for a new link.";
+  }
+
+  return fallback;
+}
+
+function printPortalRecord() {
+  window.print();
+}
+
+function PrintRecordButton({
+  children,
+  className,
+}: {
+  children: string;
+  className?: string;
+}) {
+  return (
+    <button
+      className={buttonClassName({ className, variant: "ghost" })}
+      onClick={printPortalRecord}
+      type="button"
+    >
+      {children}
+    </button>
+  );
 }
 
 function PortalMediaTile({ media }: { media: CustomerPortalMedia }) {
@@ -281,6 +321,9 @@ function BillingCard({ invoice }: { invoice: CustomerPortalInvoice }) {
               Pay invoice
             </a>
           ) : null}
+          <PrintRecordButton className="mt-3">
+            Print invoice record
+          </PrintRecordButton>
         </div>
       </div>
       {invoice.line_items.length > 0 ? (
@@ -503,6 +546,7 @@ function CloseoutCard({
           </div>
         </div>
       </div>
+      <PrintRecordButton className="mt-4">Print service record</PrintRecordButton>
 
       <section className="mt-6 rounded-md border border-status-alert-success-border bg-status-alert-success-bg p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -619,8 +663,12 @@ export function CustomerPortalClient({
   const customerName = mounted
     ? (visibleCloseouts[0]?.job.customer?.name ??
       portalCloseouts[0]?.job.customer?.name ??
-      "Customer portal")
-    : "Customer portal";
+      billingInvoices[0]?.job?.customer?.name ??
+      null)
+    : null;
+  const documentTitle = customerName
+    ? `${customerName} service history`
+    : "Your service history";
   const openBalanceCents = useMemo(
     () =>
       billingInvoices.reduce(
@@ -640,23 +688,27 @@ export function CustomerPortalClient({
         <div>
           <Eyebrow>Customer portal</Eyebrow>
           <h1 className="text-3xl font-bold text-theme-text-primary">
-            {customerName}
+            {documentTitle}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
-            Completed service visits, invoices, forms, photos, and signatures.
+            Customer records for completed services, invoices, forms, photos,
+            and signatures.
           </p>
         </div>
-        <input
-          aria-label="Search portal activity"
-          className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary md:w-80"
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search activity"
-          value={search}
-        />
+        <div className="flex flex-col gap-2 md:w-80">
+          <PrintRecordButton>Print or save records</PrintRecordButton>
+          <input
+            aria-label="Search portal activity"
+            className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm shadow-sm outline-none focus:border-theme-action-primary"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search activity"
+            value={search}
+          />
+        </div>
       </header>
 
       <section className="flex flex-col gap-3">
-        <Eyebrow tone="accent">Portal summary</Eyebrow>
+        <Eyebrow tone="accent">Service history</Eyebrow>
         <div className="grid gap-3 sm:grid-cols-3">
           <StatTile
             detail="Completed visits in this portal"

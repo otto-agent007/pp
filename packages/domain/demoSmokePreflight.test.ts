@@ -167,7 +167,7 @@ describe("demo smoke preflight", () => {
         "Demo - Seabreeze Apartments",
         "Pay invoice",
         "Service and billing history",
-        "General Pest recurring service",
+        "Recurring service review",
       ],
     );
     expect(
