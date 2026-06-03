@@ -2,11 +2,20 @@
 
 import {
   buildComplianceAdvisory,
+  buildComplianceNeedsReviewQueue,
   complianceSourceAnchors,
   evaluateComplianceAdvisory,
+  filterComplianceReviewItems,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
+  getComplianceNeedsReviewSummary,
   getComplianceSchemaUnavailableReadiness,
+} from "@pest-patrol/domain";
+import type {
+  ComplianceReviewItem,
+  ComplianceReviewItemCategory,
+  ComplianceReviewItemFilter,
+  ComplianceReviewItemSeverity,
 } from "@pest-patrol/domain";
 import type {
   ChemicalLog,
@@ -46,6 +55,18 @@ const workflowOptions: Array<{ label: string; value: ComplianceWorkflow }> = [
   { label: "Recurring routes", value: "recurring_route" },
   { label: "WDO / Branch 3", value: "wdo_branch3" },
   { label: "Multi-unit audits", value: "multi_unit_audit" },
+];
+
+const reviewFilterOptions: Array<{
+  filter: ComplianceReviewItemFilter;
+  label: string;
+}> = [
+  { filter: "all", label: "All" },
+  { filter: "critical", label: "Critical" },
+  { filter: "chemical", label: "Chemical" },
+  { filter: "wdo", label: "WDO" },
+  { filter: "source", label: "Sources" },
+  { filter: "advisory", label: "Advisory" },
 ];
 
 const emptySources: ComplianceSource[] = [];
@@ -116,6 +137,21 @@ function readinessTone(status: string): StatusPillTone {
   return "warning";
 }
 
+function reviewSeverityTone(
+  severity: ComplianceReviewItemSeverity,
+): StatusPillTone {
+  if (severity === "critical") return "danger";
+  if (severity === "warning") return "warning";
+  return "info";
+}
+
+function reviewCategoryLabel(category: ComplianceReviewItemCategory) {
+  if (category === "chemical") return "Chemical";
+  if (category === "wdo") return "WDO";
+  if (category === "source") return "Sources";
+  return "Advisory";
+}
+
 function runtimeCopy(runtime: ComplianceRuntime) {
   if (runtime.available) {
     return "Runtime: OpenAI retrieval available.";
@@ -151,6 +187,55 @@ function EmptyState({ children }: { children: string }) {
   );
 }
 
+function ReviewItemCard({ item }: { item: ComplianceReviewItem }) {
+  return (
+    <article
+      className={`rounded-md border p-4 text-sm shadow-sm ${statusSurfaceClassName(
+        reviewSeverityTone(item.severity),
+      )}`}
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="font-semibold text-theme-text-primary">{item.title}</p>
+          <p className="mt-1 text-theme-text-secondary">{item.description}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <StatusPill dot={false} tone={reviewSeverityTone(item.severity)}>
+            {item.severity}
+          </StatusPill>
+          <StatusPill dot={false} tone="neutral">
+            {reviewCategoryLabel(item.category)}
+          </StatusPill>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs text-theme-text-muted">
+        <span>{formatWorkflow(item.workflow)}</span>
+        {item.customerName ? <span>{item.customerName}</span> : null}
+        {item.jobId ? <span>Job {item.jobId}</span> : null}
+      </div>
+      <div className="mt-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+          Missing evidence
+        </p>
+        <ul className="mt-2 grid gap-1 text-theme-text-secondary sm:grid-cols-2">
+          {item.missingEvidence.map((evidence) => (
+            <li key={evidence}>{evidence}</li>
+          ))}
+        </ul>
+      </div>
+      <p className="mt-3 text-theme-text-secondary">{item.nextAction}</p>
+      {item.jobHref ? (
+        <a
+          className="mt-3 inline-flex text-sm font-semibold text-theme-action-primary hover:underline"
+          href={item.jobHref}
+        >
+          Open linked job
+        </a>
+      ) : null}
+    </article>
+  );
+}
+
 export function ComplianceClient() {
   const sourcesQuery = useComplianceSources();
   const documentsQuery = useComplianceDocuments();
@@ -162,6 +247,8 @@ export function ComplianceClient() {
   const [workflow, setWorkflow] = useState<ComplianceWorkflow>(
     "chemical_application",
   );
+  const [reviewFilter, setReviewFilter] =
+    useState<ComplianceReviewItemFilter>("all");
   const [prompt, setPrompt] = useState(
     "Review this workflow for missing California structural pest compliance evidence.",
   );
@@ -192,6 +279,26 @@ export function ComplianceClient() {
   const logs = logsQuery.data ?? emptyLogs;
   const reviewedSources = sources.filter(
     (source) => source.review_status === "reviewed",
+  );
+  const reviewQueue = useMemo(
+    () =>
+      buildComplianceNeedsReviewQueue({
+        audits,
+        chemicalLogs: logs,
+        chunks,
+        documents,
+        jobs,
+        sources,
+      }),
+    [audits, chunks, documents, jobs, logs, sources],
+  );
+  const reviewSummary = useMemo(
+    () => getComplianceNeedsReviewSummary(reviewQueue),
+    [reviewQueue],
+  );
+  const filteredReviewItems = useMemo(
+    () => filterComplianceReviewItems(reviewQueue, reviewFilter),
+    [reviewFilter, reviewQueue],
   );
   const knowledgeBaseReadiness = useMemo(
     () =>
@@ -256,11 +363,11 @@ export function ComplianceClient() {
         <div>
           <Eyebrow>California compliance</Eyebrow>
           <h1 className="text-3xl font-bold text-theme-text-primary">
-            Compliance RAG
+            Compliance Command Center
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-theme-text-secondary">
-            Advisory review for EPA labels, DPR structural-use records, WDO
-            Branch 3 evidence, recurring route prompts, and multi-unit audits.
+            Deterministic operator review queue for chemical-use records, WDO
+            Branch 3 evidence, source readiness, and advisory audit follow-up.
           </p>
         </div>
       </header>
@@ -281,6 +388,37 @@ export function ComplianceClient() {
           </p>
         </section>
       ) : null}
+
+      <section className="flex flex-col gap-3">
+        <Eyebrow tone="accent">Command center snapshot</Eyebrow>
+        <div className="grid gap-3 md:grid-cols-5">
+          <StatTile
+            label="Open review items"
+            tone={reviewSummary.openItems > 0 ? "warning" : "success"}
+            value={reviewSummary.openItems}
+          />
+          <StatTile
+            label="Critical items"
+            tone={reviewSummary.criticalItems > 0 ? "danger" : "success"}
+            value={reviewSummary.criticalItems}
+          />
+          <StatTile
+            label="Chemical review items"
+            tone={reviewSummary.chemicalItems > 0 ? "warning" : "success"}
+            value={reviewSummary.chemicalItems}
+          />
+          <StatTile
+            label="WDO / Branch 3 items"
+            tone={reviewSummary.wdoItems > 0 ? "warning" : "success"}
+            value={reviewSummary.wdoItems}
+          />
+          <StatTile
+            label="Source readiness items"
+            tone={reviewSummary.sourceItems > 0 ? "warning" : "success"}
+            value={reviewSummary.sourceItems}
+          />
+        </div>
+      </section>
 
       <section className="flex flex-col gap-3">
         <Eyebrow tone="accent">Compliance workspace</Eyebrow>
@@ -440,6 +578,58 @@ export function ComplianceClient() {
                   : "Schema is ready for unit roster and per-unit treatment evidence."}
             </p>
           </article>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-theme-text-primary">
+              Needs review
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-theme-text-secondary">
+              Operator review required for records with missing evidence,
+              source readiness gaps, or recent advisory audit follow-up.
+            </p>
+          </div>
+          <StatusPill
+            dot={false}
+            tone={reviewSummary.criticalItems > 0 ? "danger" : "warning"}
+          >
+            {reviewSummary.openItems} open
+          </StatusPill>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {reviewFilterOptions.map((option) => {
+            const active = reviewFilter === option.filter;
+
+            return (
+              <button
+                aria-pressed={active}
+                className={`min-h-9 rounded-md border px-3 text-sm font-semibold transition ${
+                  active
+                    ? "border-theme-action-primary bg-theme-background-subtle text-theme-action-primary"
+                    : "border-theme-border-default bg-theme-background-surface text-theme-text-secondary hover:bg-theme-background-subtle"
+                }`}
+                key={option.filter}
+                onClick={() => setReviewFilter(option.filter)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {filteredReviewItems.length === 0 ? (
+            <div className="lg:col-span-2">
+              <EmptyState>No review items match this filter</EmptyState>
+            </div>
+          ) : (
+            filteredReviewItems.map((item) => (
+              <ReviewItemCard item={item} key={item.id} />
+            ))
+          )}
         </div>
       </section>
 

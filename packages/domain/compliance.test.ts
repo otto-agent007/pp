@@ -1,8 +1,10 @@
 import type {
   ChemicalLog,
+  ComplianceAdvisoryAudit,
   ComplianceChunk,
   ComplianceDocument,
   ComplianceSource,
+  Job,
   JobUnitAuditItem,
   LocationUnit,
 } from "@pest-patrol/types";
@@ -11,12 +13,15 @@ import { describe, expect, it } from "vitest";
 import {
   buildComplianceAdvisory,
   buildComplianceIngestionPlan,
+  buildComplianceNeedsReviewQueue,
   buildComplianceQueryText,
   buildComplianceSourceHash,
   chunkComplianceDocumentText,
   evaluateComplianceAdvisory,
+  filterComplianceReviewItems,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
+  getComplianceNeedsReviewSummary,
   getComplianceRuntimeStatus,
   getComplianceSchemaUnavailableReadiness,
   getComplianceSourceFilters,
@@ -316,6 +321,199 @@ describe("compliance domain", () => {
       expect.arrayContaining([
         expect.objectContaining({ title: "Label citation check" }),
       ]),
+    );
+  });
+
+  it("creates a chemical review item when the EPA number is missing", () => {
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          id: "log-missing-epa",
+          chemical: {
+            ...chemicalLog.chemical,
+            epa_number: null,
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source],
+    });
+    const chemicalItems = filterComplianceReviewItems(queue, "chemical");
+
+    expect(chemicalItems).toContainEqual(
+      expect.objectContaining({
+        category: "chemical",
+        chemicalLogId: "log-missing-epa",
+        missingEvidence: expect.arrayContaining([
+          "EPA/California registration number",
+        ]),
+        severity: "critical",
+        title: "Bait Gel chemical review",
+      }),
+    );
+  });
+
+  it("creates a chemical review item for unknown license or supervision detail", () => {
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [chemicalLog],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source],
+    });
+    const chemicalItems = filterComplianceReviewItems(queue, "chemical");
+
+    expect(chemicalItems).toContainEqual(
+      expect.objectContaining({
+        category: "chemical",
+        missingEvidence: expect.arrayContaining([
+          "License or supervision detail",
+        ]),
+      }),
+    );
+  });
+
+  it("creates source readiness review items when workflows have no reviewed chunks", () => {
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [],
+      chunks: [],
+      documents: [],
+      jobs: [],
+      sources: [],
+    });
+
+    expect(queue).toContainEqual(
+      expect.objectContaining({
+        category: "source",
+        missingEvidence: ["Reviewed source lane"],
+        nextAction: "Ingest and review official source chunks for this workflow.",
+        title: "Chemical application source readiness",
+        workflow: "chemical_application",
+      }),
+    );
+  });
+
+  it("creates review items for advisory audits with insufficient sources", () => {
+    const audit = {
+      id: "audit-1",
+      workflow: "wdo_branch3",
+      request: {},
+      response: buildComplianceAdvisory({
+        chunks: [],
+        now,
+        workflow: "wdo_branch3",
+      }),
+      citation_chunk_ids: [],
+      status: "insufficient_sources",
+      created_by: null,
+      created_at: now,
+    } satisfies ComplianceAdvisoryAudit;
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [audit],
+      chemicalLogs: [],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source],
+    });
+
+    expect(queue).toContainEqual(
+      expect.objectContaining({
+        auditId: "audit-1",
+        category: "advisory",
+        missingEvidence: ["Reviewed source citations"],
+        severity: "critical",
+        workflow: "wdo_branch3",
+      }),
+    );
+  });
+
+  it("summarizes critical warning source and chemical review items", () => {
+    const draftSource = {
+      ...source,
+      id: "source-draft",
+      review_status: "draft",
+      source_hash: "hash-draft",
+      workflow: "recurring_route",
+    } satisfies ComplianceSource;
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          id: "log-missing-epa",
+          chemical: {
+            ...chemicalLog.chemical,
+            epa_number: null,
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source, draftSource],
+    });
+
+    expect(getComplianceNeedsReviewSummary(queue)).toEqual(
+      expect.objectContaining({
+        chemicalItems: 1,
+        criticalItems: 3,
+        sourceItems: 3,
+        warningItems: 1,
+      }),
+    );
+  });
+
+  it("labels missing reviewed source chunks as source readiness, not a legal violation", () => {
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [],
+      chunks: [],
+      documents: [],
+      jobs: [],
+      sources: [],
+    });
+    const sourceItem = queue.find(
+      (item) =>
+        item.category === "source" && item.workflow === "chemical_application",
+    );
+
+    expect(sourceItem?.title).toBe("Chemical application source readiness");
+    expect(
+      `${sourceItem?.description} ${sourceItem?.nextAction}`.toLowerCase(),
+    ).not.toContain("violation");
+  });
+
+  it("infers WDO jobs from notes and links operator review to the job", () => {
+    const termiteJob = {
+      ...chemicalLog.job,
+      id: "job-wdo",
+      service_notes: "Termite escrow inspection with Branch 3 follow-up.",
+    } satisfies Job;
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [termiteJob],
+      sources: [source],
+    });
+
+    expect(queue).toContainEqual(
+      expect.objectContaining({
+        category: "wdo",
+        jobHref: "/closeouts?job_id=job-wdo",
+        missingEvidence: expect.arrayContaining([
+          "WDO report or inspection draft",
+        ]),
+        workflow: "wdo_branch3",
+      }),
     );
   });
 

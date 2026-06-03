@@ -76,6 +76,82 @@ const chunk = {
   document,
   source,
 } as const;
+const job = {
+  id: "job-1",
+  customer_id: "customer-1",
+  location_id: "location-1",
+  assigned_tech_id: "tech-1",
+  status: "completed",
+  scheduled_start: now,
+  scheduled_end: now,
+  service_notes: "Termite escrow inspection with Branch 3 follow-up.",
+  created_at: now,
+  updated_at: now,
+  customer: {
+    id: "customer-1",
+    name: "Acme Apartments",
+    phone: null,
+    email: null,
+    property_type: "commercial",
+    service_notes: null,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+  },
+  location: {
+    id: "location-1",
+    customer_id: "customer-1",
+    address: "100 Main St",
+    nickname: null,
+    service_notes: null,
+    is_primary: true,
+    latitude: null,
+    longitude: null,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+  },
+} as const;
+const chemicalLog = {
+  id: "log-1",
+  job_id: "job-1",
+  chemical_id: "chemical-1",
+  amount_used: 2,
+  notes: null,
+  created_at: now,
+  chemical: {
+    id: "chemical-1",
+    name: "Bait Gel",
+    epa_number: null,
+    current_stock: 12,
+    unit: "oz",
+    reorder_level: null,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+  },
+  job,
+} as const;
+const insufficientSourceAudit = {
+  id: "audit-1",
+  workflow: "wdo_branch3",
+  request: {},
+  response: {
+    citations: [],
+    findings: [],
+    generated_at: now,
+    required_fields: [],
+    review_task:
+      "Ingest and review official EPA, DPR, or SPCB source chunks before relying on this advisory.",
+    status: "insufficient_sources",
+    summary: "No reviewed source citations were retrieved for WDO / Branch 3.",
+    workflow: "wdo_branch3",
+  },
+  citation_chunk_ids: [],
+  status: "insufficient_sources",
+  created_by: null,
+  created_at: now,
+} as const;
 
 describe("ComplianceClient", () => {
   const mutateAsync = vi.fn();
@@ -145,8 +221,9 @@ describe("ComplianceClient", () => {
     render(<ComplianceClient />);
 
     expect(
-      screen.getByRole("heading", { name: "Compliance RAG" }),
+      screen.getByRole("heading", { name: "Compliance Command Center" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Command center snapshot")).toBeInTheDocument();
     expect(screen.getByText("Compliance workspace")).toBeInTheDocument();
     expect(screen.getByText("Advisory readiness")).toBeInTheDocument();
     expect(screen.getByText("Reviewed sources")).toBeInTheDocument();
@@ -188,7 +265,7 @@ describe("ComplianceClient", () => {
     render(<ComplianceClient />);
 
     expect(
-      screen.getByRole("heading", { name: "Compliance RAG" }),
+      screen.getByRole("heading", { name: "Compliance Command Center" }),
     ).toHaveClass("text-theme-text-primary");
     expect(screen.getByLabelText("Advisory workflow")).toHaveClass(
       "focus:border-theme-action-primary",
@@ -224,6 +301,45 @@ describe("ComplianceClient", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText("DPR structural recordkeeping"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the deterministic needs review queue from loaded page data", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [job],
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [chemicalLog],
+    } as never);
+    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
+      data: [insufficientSourceAudit],
+    } as never);
+
+    render(<ComplianceClient />);
+
+    expect(screen.getByText("Needs review")).toBeInTheDocument();
+    expect(screen.getByText("Open review items")).toBeInTheDocument();
+    expect(screen.getByText("Critical items")).toBeInTheDocument();
+    expect(screen.getByText("Chemical review items")).toBeInTheDocument();
+    expect(screen.getByText("Source readiness items")).toBeInTheDocument();
+    expect(screen.getByText("Bait Gel chemical review")).toBeInTheDocument();
+    expect(
+      screen.getByText("EPA/California registration number"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("WDO / Branch 3 operator review required"),
+    ).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("link", { name: "Open linked job" })
+        .some((link) => link.getAttribute("href") === "/closeouts?job_id=job-1"),
+    ).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Advisory" }));
+
+    expect(
+      screen.getByText("WDO / Branch 3 advisory setup review"),
     ).toBeInTheDocument();
   });
 
