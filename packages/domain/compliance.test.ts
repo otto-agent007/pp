@@ -1,4 +1,5 @@
 import type {
+  ChemicalInventoryItem,
   ChemicalLog,
   ComplianceAdvisoryAudit,
   ComplianceChunk,
@@ -18,10 +19,13 @@ import {
   buildComplianceQueryText,
   buildComplianceReviewItems,
   buildComplianceSourceHash,
+  buildChemicalProductBinder,
   chunkComplianceDocumentText,
   evaluateComplianceAdvisory,
+  filterChemicalProductBinderItems,
   filterComplianceReviewItems,
   filterComplianceReviewItemsForJob,
+  getChemicalProductBinderSummary,
   getComplianceGuardrailSummary,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
@@ -513,6 +517,197 @@ describe("compliance domain", () => {
     expect(
       `${sourceItem?.description} ${sourceItem?.nextAction}`.toLowerCase(),
     ).not.toContain("violation");
+  });
+
+  it("builds product binder review items for missing EPA numbers", () => {
+    const inventory = [
+      {
+        ...chemicalLog.chemical,
+        epa_number: null,
+      },
+    ] satisfies ChemicalInventoryItem[];
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [],
+      chunks: [chunk],
+      documents: [document],
+      inventory,
+      sources: [source],
+    });
+
+    expect(binder).toContainEqual(
+      expect.objectContaining({
+        chemicalId: "chemical-1",
+        epaRegistrationNumber: null,
+        missingLabels: expect.arrayContaining([
+          "EPA/California registration number",
+        ]),
+        productName: "Bait Gel",
+        status: "critical_review",
+      }),
+    );
+  });
+
+  it("tracks product binder missing amount or unit evidence", () => {
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          amount_used: 0,
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      inventory: [chemicalLog.chemical],
+      sources: [source],
+    });
+
+    expect(binder[0].missingEvidenceCount).toBe(1);
+    expect(binder[0].missingLabels).toContain("Amount and unit");
+    expect(binder[0].status).toBe("critical_review");
+  });
+
+  it("tracks product binder missing target site or location evidence", () => {
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          job: {
+            ...chemicalLog.job,
+            location: {
+              ...chemicalLog.job.location,
+              address: "",
+            },
+            service_notes: "",
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      inventory: [chemicalLog.chemical],
+      sources: [source],
+    });
+
+    expect(binder[0].missingLabels).toContain("Target site or treated area");
+    expect(binder[0].missingEvidenceCount).toBe(1);
+  });
+
+  it("tracks product binder operator review when license evidence is unknown", () => {
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [chemicalLog],
+      chunks: [chunk],
+      documents: [document],
+      inventory: [chemicalLog.chemical],
+      sources: [source],
+    });
+
+    expect(binder[0]).toEqual(
+      expect.objectContaining({
+        nextStep: expect.stringContaining("operator review required"),
+        status: "review_recommended",
+        unknownLicenseReviewCount: 1,
+      }),
+    );
+    expect(binder[0].missingLabels).toContain("License or supervision detail");
+  });
+
+  it("returns clear product binder status for clean product and log evidence", () => {
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          notes: "License PAC-123 verified under operator supervision.",
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      inventory: [chemicalLog.chemical],
+      sources: [source],
+    });
+
+    expect(binder[0]).toEqual(
+      expect.objectContaining({
+        missingEvidenceCount: 0,
+        missingLabels: [],
+        status: "clear",
+        unknownLicenseReviewCount: 0,
+      }),
+    );
+  });
+
+  it("summarizes and filters product binder review counts", () => {
+    const missingEpaProduct = {
+      ...chemicalLog.chemical,
+      id: "chemical-missing-epa",
+      name: "Dust Product",
+      epa_number: null,
+    } satisfies ChemicalInventoryItem;
+    const lowStockProduct = {
+      ...chemicalLog.chemical,
+      id: "chemical-low-stock",
+      name: "Low Stock Bait",
+      current_stock: 1,
+      reorder_level: 2,
+    } satisfies ChemicalInventoryItem;
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [
+        chemicalLog,
+        {
+          ...chemicalLog,
+          id: "log-missing-amount",
+          amount_used: 0,
+        },
+        {
+          ...chemicalLog,
+          id: "log-missing-site",
+          job: {
+            ...chemicalLog.job,
+            location: {
+              ...chemicalLog.job.location,
+              address: "",
+            },
+            service_notes: "",
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      inventory: [chemicalLog.chemical, missingEpaProduct, lowStockProduct],
+      sources: [source],
+    });
+
+    expect(getChemicalProductBinderSummary(binder)).toEqual({
+      logsMissingAmountUnit: 1,
+      logsMissingTargetSite: 1,
+      logsNeedingLicenseReview: 3,
+      productsMissingEpa: 1,
+      productsWithReviewItems: 3,
+      totalProducts: 3,
+    });
+    expect(filterChemicalProductBinderItems(binder, "missing_epa")).toHaveLength(
+      1,
+    );
+    expect(filterChemicalProductBinderItems(binder, "license_review")).toHaveLength(
+      1,
+    );
+    expect(filterChemicalProductBinderItems(binder, "low_stock")).toHaveLength(1);
+  });
+
+  it("uses product binder review copy without violation language", () => {
+    const [item] = buildChemicalProductBinder({
+      chemicalLogs: [chemicalLog],
+      chunks: [],
+      documents: [],
+      inventory: [chemicalLog.chemical],
+      sources: [],
+    });
+    const copy = `${item.sourceReadinessLabel} ${item.nextStep} ${item.missingLabels.join(
+      " ",
+    )}`;
+
+    expect(copy.toLowerCase()).toMatch(
+      /review recommended|missing evidence|operator review required/,
+    );
+    expect(copy.toLowerCase()).not.toMatch(/violation|non-compliant/);
   });
 
   it("infers WDO jobs from notes and links operator review to the job", () => {

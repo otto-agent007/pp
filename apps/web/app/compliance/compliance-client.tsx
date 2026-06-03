@@ -1,23 +1,29 @@
 "use client";
 
 import {
+  buildChemicalProductBinder,
   buildComplianceAdvisory,
   buildComplianceNeedsReviewQueue,
   complianceSourceAnchors,
   evaluateComplianceAdvisory,
+  filterChemicalProductBinderItems,
   filterComplianceReviewItems,
+  getChemicalProductBinderSummary,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
   getComplianceNeedsReviewSummary,
   getComplianceSchemaUnavailableReadiness,
 } from "@pest-patrol/domain";
 import type {
+  ChemicalProductBinderFilter,
+  ChemicalProductBinderItem,
   ComplianceReviewItem,
   ComplianceReviewItemCategory,
   ComplianceReviewItemFilter,
   ComplianceReviewItemSeverity,
 } from "@pest-patrol/domain";
 import type {
+  ChemicalInventoryItem,
   ChemicalLog,
   ComplianceAdvisory,
   ComplianceAdvisoryAudit,
@@ -39,7 +45,7 @@ import {
 import { FormEvent, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
-import { useChemicalLogs } from "../../hooks/useInventory";
+import { useChemicalInventory, useChemicalLogs } from "../../hooks/useInventory";
 import {
   type ComplianceAdvisoryResponse,
   useComplianceAdvisoryAudits,
@@ -70,12 +76,24 @@ const reviewFilterOptions: Array<{
   { filter: "advisory", label: "Advisory" },
 ];
 
+const binderFilterOptions: Array<{
+  filter: ChemicalProductBinderFilter;
+  label: string;
+}> = [
+  { filter: "all", label: "All" },
+  { filter: "needs_review", label: "Needs review" },
+  { filter: "missing_epa", label: "Missing EPA #" },
+  { filter: "license_review", label: "License review" },
+  { filter: "low_stock", label: "Low stock" },
+];
+
 const emptySources: ComplianceSource[] = [];
 const emptyDocuments: ComplianceDocument[] = [];
 const emptyChunks: ComplianceChunk[] = [];
 const emptyAudits: ComplianceAdvisoryAudit[] = [];
 const emptyJobs: Job[] = [];
 const emptyLogs: ChemicalLog[] = [];
+const emptyInventory: ChemicalInventoryItem[] = [];
 
 type ComplianceRuntime = ComplianceAdvisoryResponse["runtime"];
 
@@ -151,6 +169,24 @@ function reviewCategoryLabel(category: ComplianceReviewItemCategory) {
   if (category === "wdo") return "WDO";
   if (category === "source") return "Sources";
   return "Advisory";
+}
+
+function binderStatusTone(status: ChemicalProductBinderItem["status"]) {
+  if (status === "critical_review") return "danger";
+  if (status === "review_recommended") return "warning";
+  return "success";
+}
+
+function binderStatusLabel(status: ChemicalProductBinderItem["status"]) {
+  if (status === "critical_review") return "critical review";
+  if (status === "review_recommended") return "review recommended";
+  return "clear";
+}
+
+function formatStock(item: ChemicalProductBinderItem) {
+  if (item.currentStock === null) return "Stock not tracked";
+
+  return `${item.currentStock} ${item.unit ?? ""}`.trim();
 }
 
 function runtimeCopy(runtime: ComplianceRuntime) {
@@ -237,12 +273,146 @@ function ReviewItemCard({ item }: { item: ComplianceReviewItem }) {
   );
 }
 
+function ChemicalProductBinderCard({
+  item,
+}: {
+  item: ChemicalProductBinderItem;
+}) {
+  return (
+    <article
+      className={`rounded-md border p-4 text-sm shadow-sm ${statusSurfaceClassName(
+        binderStatusTone(item.status),
+      )}`}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-theme-text-primary">
+            {item.productName}
+          </h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <StatusPill dot={false} tone={binderStatusTone(item.status)}>
+              {binderStatusLabel(item.status)}
+            </StatusPill>
+            <StatusPill dot={false} tone={item.lowStock ? "warning" : "info"}>
+              {item.sourceReadinessLabel}
+            </StatusPill>
+          </div>
+        </div>
+        <a
+          className="inline-flex min-h-9 items-center text-sm font-semibold text-theme-action-primary hover:underline"
+          href="/inventory"
+        >
+          Open inventory
+        </a>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+            EPA number
+          </p>
+          {item.epaRegistrationNumber ? (
+            <p className="mt-1 font-semibold text-theme-text-primary">
+              {item.epaRegistrationNumber}
+            </p>
+          ) : (
+            <StatusPill className="mt-1" dot={false} tone="warning">
+              Missing EPA #
+            </StatusPill>
+          )}
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+            Current stock
+          </p>
+          <p className="mt-1 font-semibold text-theme-text-primary">
+            {formatStock(item)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+            Recent usage
+          </p>
+          <p className="mt-1 font-semibold text-theme-text-primary">
+            {item.recentUsageCount} log
+            {item.recentUsageCount === 1 ? "" : "s"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+          Missing evidence
+        </p>
+        {item.missingLabels.length === 0 ? (
+          <p className="mt-2 text-theme-text-secondary">
+            No missing evidence labels for this product.
+          </p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {item.missingLabels.map((label) => (
+              <StatusPill key={label} dot={false} tone="warning">
+                {label}
+              </StatusPill>
+            ))}
+            {item.unknownLicenseReviewCount > 0 ? (
+              <StatusPill dot={false} tone="warning">
+                operator review required
+              </StatusPill>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      <p className="mt-4 text-theme-text-secondary">{item.nextStep}</p>
+
+      {item.recentLogs.length > 0 ? (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+            Recent logs
+          </p>
+          <ul className="mt-2 grid gap-2">
+            {item.recentLogs.map((log) => (
+              <li
+                className="rounded-md border border-theme-border-default bg-theme-background-surface px-3 py-2"
+                key={log.id}
+              >
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="font-semibold text-theme-text-primary">
+                    {log.amountUsed} {log.unit ?? item.unit ?? ""}
+                  </span>
+                  <span className="text-xs text-theme-text-muted">
+                    {formatDate(log.createdAt)}
+                  </span>
+                </div>
+                <p className="mt-1 text-theme-text-secondary">
+                  {log.customerName ?? "Customer not attached"} -{" "}
+                  {log.targetSiteLabel ?? "Target site missing"}
+                </p>
+                {log.jobHref ? (
+                  <a
+                    className="mt-2 inline-flex text-xs font-semibold text-theme-action-primary hover:underline"
+                    href={log.jobHref}
+                  >
+                    Open linked job
+                  </a>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export function ComplianceClient() {
   const sourcesQuery = useComplianceSources();
   const documentsQuery = useComplianceDocuments();
   const chunksQuery = useComplianceChunks();
   const auditsQuery = useComplianceAdvisoryAudits();
   const jobsQuery = useJobs();
+  const inventoryQuery = useChemicalInventory();
   const logsQuery = useChemicalLogs();
   const createAdvisory = useCreateComplianceAdvisory();
   const [workflow, setWorkflow] = useState<ComplianceWorkflow>(
@@ -250,6 +420,8 @@ export function ComplianceClient() {
   );
   const [reviewFilter, setReviewFilter] =
     useState<ComplianceReviewItemFilter>("all");
+  const [binderFilter, setBinderFilter] =
+    useState<ChemicalProductBinderFilter>("all");
   const [prompt, setPrompt] = useState(
     "Review this workflow for missing California structural pest compliance evidence.",
   );
@@ -277,6 +449,7 @@ export function ComplianceClient() {
   const chunks = chunksQuery.data ?? emptyChunks;
   const audits = auditsQuery.data ?? emptyAudits;
   const jobs = jobsQuery.data ?? emptyJobs;
+  const inventory = inventoryQuery.data ?? emptyInventory;
   const logs = logsQuery.data ?? emptyLogs;
   const reviewedSources = sources.filter(
     (source) => source.review_status === "reviewed",
@@ -309,6 +482,25 @@ export function ComplianceClient() {
         sources,
       }),
     [chunks, documents, sources],
+  );
+  const chemicalProductBinder = useMemo(
+    () =>
+      buildChemicalProductBinder({
+        chemicalLogs: logs,
+        chunks,
+        documents,
+        inventory,
+        sources,
+      }),
+    [chunks, documents, inventory, logs, sources],
+  );
+  const chemicalProductBinderSummary = useMemo(
+    () => getChemicalProductBinderSummary(chemicalProductBinder),
+    [chemicalProductBinder],
+  );
+  const filteredBinderItems = useMemo(
+    () => filterChemicalProductBinderItems(chemicalProductBinder, binderFilter),
+    [binderFilter, chemicalProductBinder],
   );
   const chemicalReadiness = useMemo(
     () =>
@@ -473,6 +665,105 @@ export function ComplianceClient() {
               </p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <Eyebrow tone="accent">Chemical records</Eyebrow>
+            <h2 className="mt-1 text-lg font-semibold text-theme-text-primary">
+              Chemical Product Binder
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-theme-text-secondary">
+              Product-level binder for EPA/DPR details, recent use evidence,
+              source readiness, and office review recommended follow-up.
+            </p>
+          </div>
+          <StatusPill
+            dot={false}
+            tone={
+              chemicalProductBinderSummary.productsWithReviewItems > 0
+                ? "warning"
+                : "success"
+            }
+          >
+            {chemicalProductBinderSummary.productsWithReviewItems} products
+            needing review
+          </StatusPill>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <StatTile
+            label="Products tracked"
+            value={chemicalProductBinderSummary.totalProducts}
+          />
+          <StatTile
+            label="Products needing review"
+            tone={
+              chemicalProductBinderSummary.productsWithReviewItems > 0
+                ? "warning"
+                : "success"
+            }
+            value={chemicalProductBinderSummary.productsWithReviewItems}
+          />
+          <StatTile
+            label="Logs missing evidence"
+            tone={
+              chemicalProductBinderSummary.logsMissingAmountUnit +
+                chemicalProductBinderSummary.logsMissingTargetSite >
+              0
+                ? "warning"
+                : "success"
+            }
+            value={
+              chemicalProductBinderSummary.logsMissingAmountUnit +
+              chemicalProductBinderSummary.logsMissingTargetSite
+            }
+          />
+          <StatTile
+            label="License/supervision reviews"
+            tone={
+              chemicalProductBinderSummary.logsNeedingLicenseReview > 0
+                ? "warning"
+                : "success"
+            }
+            value={chemicalProductBinderSummary.logsNeedingLicenseReview}
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {binderFilterOptions.map((option) => {
+            const active = binderFilter === option.filter;
+
+            return (
+              <button
+                aria-pressed={active}
+                className={`min-h-9 rounded-md border px-3 text-sm font-semibold transition ${
+                  active
+                    ? "border-theme-action-primary bg-theme-background-subtle text-theme-action-primary"
+                    : "border-theme-border-default bg-theme-background-surface text-theme-text-secondary hover:bg-theme-background-subtle"
+                }`}
+                key={option.filter}
+                onClick={() => setBinderFilter(option.filter)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 grid gap-3 xl:grid-cols-2">
+          {filteredBinderItems.length === 0 ? (
+            <div className="xl:col-span-2">
+              <EmptyState>No chemical products match this filter</EmptyState>
+            </div>
+          ) : (
+            filteredBinderItems.map((item) => (
+              <ChemicalProductBinderCard item={item} key={item.chemicalId} />
+            ))
+          )}
         </div>
       </section>
 
