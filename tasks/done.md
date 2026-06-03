@@ -1,5 +1,36 @@
 # Done
 
+## AGENTS Fresh Branch + Draft PR Rule
+
+- Added the required operating rule to root `AGENTS.md` and durable
+  `docs/AGENTS.md`: every new Pest Patrol implementation slice starts on a
+  fresh correctly named `codex/*` branch from the intended base, and the slice
+  is not complete until the verified branch is committed, pushed, and opened
+  as a draft PR unless the user explicitly stops before publishing.
+- Published the instruction update as draft PR #90 from
+  `codex/agents-branch-draft-pr-rule`.
+- GitHub `verify` and Vercel checks are green; Supabase Preview is skipped.
+- Verified locally with `git diff --check`.
+
+## Chemical Product Binder V1
+
+- Added deterministic domain helpers for a Chemical Product Binder that groups
+  inventory products and chemical logs, counts missing EPA, amount/unit,
+  target-site, license/supervision, source-readiness, and low-stock review
+  states without OpenAI or live EPA label fetching.
+- Added a `/compliance` Chemical Product Binder section with summary tiles,
+  filter chips, product cards, recent usage, missing evidence labels, source
+  readiness, and handoff links to existing inventory/job workflows.
+- Kept migrations, schema changes, direct Supabase UI calls, provider setup,
+  environment changes, live compliance ingestion, preview mutations, and
+  production mutations out of scope.
+- Published the slice as draft PR #89 from
+  `codex/chemical-product-binder-v1`.
+- GitHub `verify` and Vercel checks are green; Supabase Preview is skipped.
+- Verified with focused compliance domain/web tests, full `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
+
 ## Pest Patrol Customer Portal V1
 
 - Added a portal-first customer workflow where QR/text links target the

@@ -100,7 +100,21 @@ Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
 For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
-Latest local preflight note: the May 27, 2026 readiness pass found the latest Ready preview at `https://pest-patrol-5j7ihwnvs-ottoagent007-gmailcoms-projects.vercel.app` and latest Ready production deployment at `https://pest-patrol-xd9td65tl-ottoagent007-gmailcoms-projects.vercel.app`; `vercel inspect` reported the preview Ready and `vercel curl` verified the protected app shell. Vercel Preview env names exist for Supabase and scheduler secrets, but Stripe, portal/notification webhook, OpenAI compliance, and Expo public Supabase names were not present in the safe env-name list. The local shell still lacks `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, so local and preview `demo:smoke` preflights remain blocked before seed/reset or authenticated preview browser smoke. Local Supabase target inspection is also blocked until Docker Desktop's Linux engine pipe and local Postgres on `127.0.0.1:54322` are reachable for `supabase status -o env` and `supabase migration list --local`. A May 28, 2026 local fixture smoke pass covered `http://127.0.0.1:3300` for `/`, `/dispatch`, `/customers`, `/jobs`, `/technicians`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal` at desktop and narrow widths with route signals rendered, no horizontal overflow, no page/console errors, and no sensitive patterns. Local Vercel packaging also passed on the synced PR #74 baseline with `corepack pnpm dlx vercel build --yes`, producing `.vercel/output` for the preview target. No seed/reset, browser login, provider dashboard mutation, environment mutation, migration, live compliance ingestion, preview mutation, or production data action was attempted during this pass.
+Latest status note: as of June 3, 2026, draft PR #89 (`Chemical Product
+Binder V1`) and draft PR #90 (`Require fresh branch and draft PR per slice`)
+are both open against `main`, have clean merge state, and have green GitHub
+`verify` plus Vercel checks; Supabase Preview is skipped on both. The binder
+slice does not add a migration, provider setup, live EPA fetch, or OpenAI
+dependency for product status. The AGENTS slice only updates repo operating
+instructions. The local shell still lacks approved Supabase env names, so
+local and preview `demo:smoke` preflights remain blocked before seed/reset or
+authenticated preview browser smoke. Local Supabase target inspection remains
+blocked until Docker Desktop's Linux engine pipe and local Postgres on
+`127.0.0.1:54322` are reachable for `supabase status -o env` and
+`supabase migration list --local`. No seed/reset, browser login, provider
+dashboard mutation, environment mutation, migration, live compliance
+ingestion, preview mutation, or production data action was attempted during
+these PRs.
 
 Run these in order after the preview deployment has the approved environment variables:
 
@@ -116,7 +130,7 @@ Run these in order after the preview deployment has the approved environment var
 10. Expand the customer ledger and confirm service, invoice, open-balance, and review filters do not expose provider internals.
 11. Confirm `/customers` portal handoff review reflects contact readiness, active link state, recent service/proof, invoice/balance state, and manual/provider send mode without raw portal tokens, token hashes, provider payloads, exact GPS, storage paths, or internal notes.
 12. Run `corepack pnpm compliance:ingest -- --dry-run --no-embed` to validate the checked-in EPA/DPR/SPCB manifest without writes.
-13. Open `/compliance` and confirm source counts, source-readiness workflow cards, and advisory status render; if `OPENAI_API_KEY` is intentionally unset, confirm the disabled state is explicit and no secret values appear. If `20260516175724_california_compliance_rag_v1.sql` is not applied, confirm the setup-required state is explicit and no raw Supabase error appears.
+13. Open `/compliance` and confirm source counts, source-readiness workflow cards, Chemical Product Binder summary/cards, and advisory status render; if `OPENAI_API_KEY` is intentionally unset, confirm the disabled state is explicit and no secret values appear. If `20260516175724_california_compliance_rag_v1.sql` is not applied, confirm the setup-required state is explicit and no raw Supabase error appears.
 14. Generate a portal token, copy the session link, and open `/portal/<customer-id>?access_token=<token>`.
 15. Confirm portal provider readiness shows webhook-backed or manual-only mode without exposing env values.
 16. If portal webhook is configured, use `Send link ▶` and active-row `Send new link`; confirm the UI says `Send requested` without claiming delivery and the history drawer shows provider-safe send attempt events.

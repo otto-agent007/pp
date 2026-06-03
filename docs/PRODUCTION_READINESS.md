@@ -130,7 +130,7 @@ created during the check.
 | Revoke portal access | `/customers` | Active portal links require confirmation before revoke and revoked links stop loading customer portal data. |
 | Run scheduler | `/automation` | Manual scheduler run records a successful run history row. |
 | Check billing path | `/payments` | Invoice or payment setup state is visible without secret exposure. |
-| Review compliance RAG | `/compliance` | Source counts, source-readiness workflow cards, and advisory audit state render; when `OPENAI_API_KEY` is absent the page reports RAG disabled without exposing secrets, and when `20260516175724_california_compliance_rag_v1.sql` is not applied the page reports setup required without raw Supabase errors. |
+| Review compliance workspace | `/compliance` | Source counts, source-readiness workflow cards, Chemical Product Binder summaries/cards, and advisory audit state render; binder status is deterministic from existing records, and when `OPENAI_API_KEY` is absent the page reports RAG disabled without exposing secrets. If `20260516175724_california_compliance_rag_v1.sql` is not applied, the page reports setup required without raw Supabase errors. |
 
 Admin web:
 

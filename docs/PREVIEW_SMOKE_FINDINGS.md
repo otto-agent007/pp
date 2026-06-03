@@ -2,6 +2,30 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-06-03 Draft PR Readiness Status
+
+Status: this docs refresh is based on live GitHub PR state. No Supabase,
+provider, environment, preview, production, seed/reset, migration, or
+live-ingest mutation was performed.
+
+Open draft PRs:
+- PR #89, `[codex] Chemical Product Binder V1`, is open from
+  `codex/chemical-product-binder-v1` to `main`; merge state is clean, GitHub
+  `verify` succeeded, Vercel succeeded, Vercel Preview Comments succeeded, and
+  Supabase Preview is skipped.
+- PR #90, `[codex] Require fresh branch and draft PR per slice`, is open from
+  `codex/agents-branch-draft-pr-rule` to `main`; merge state is clean, GitHub
+  `verify` succeeded, Vercel succeeded, Vercel Preview Comments succeeded, and
+  Supabase Preview is skipped.
+
+Remaining launch gates:
+- Real local and protected-preview seed/reset or authenticated browser smoke
+  still require approved Supabase env names, protected-preview access, and an
+  admin/dispatcher sign-in path.
+- Local Supabase migration-history inspection still requires reachable Docker
+  Desktop Linux engine and local Postgres on `127.0.0.1:54322`.
+- No preview or production migration has been applied by Codex.
+
 ## 2026-05-27 Local Vercel Packaging Evidence Refresh
 
 Status: this evidence pass ran on `codex/vercel-packaging-evidence-v1` after

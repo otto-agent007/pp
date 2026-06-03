@@ -1,6 +1,34 @@
 # In Progress
 
-No active implementation slice is currently open.
+Active docs/status slice:
+
+- `codex/docs-current-status-refresh` refreshes README, implementation plan,
+  task ledgers, and readiness docs to the live June 3, 2026 repo state.
+- Scope is docs-only: no app behavior, migrations, provider setup, environment
+  changes, seed/reset writes, preview mutations, production mutations, or live
+  compliance ingestion.
+- Done when `git diff --check` passes, the branch is committed and pushed, and
+  a draft PR exists.
+
+Open draft PRs:
+
+- PR #89, `[codex] Chemical Product Binder V1`, is open against `main` from
+  `codex/chemical-product-binder-v1`; GitHub `verify` and Vercel are green,
+  and Supabase Preview is skipped.
+- PR #90, `[codex] Require fresh branch and draft PR per slice`, is open
+  against `main` from `codex/agents-branch-draft-pr-rule`; GitHub `verify` and
+  Vercel are green, and Supabase Preview is skipped.
+
+Current blockers and guardrails:
+
+- Real local and protected-preview seed/reset or authenticated browser smoke
+  remain blocked until approved Supabase env names, protected-preview access,
+  and an admin/dispatcher sign-in path are available.
+- Local Supabase target verification remains blocked until Docker Desktop's
+  Linux engine and local Postgres on `127.0.0.1:54322` are reachable.
+- No Codex-run preview/production migration, provider/env mutation,
+  seed/reset write, live compliance ingestion, or production data action has
+  been performed.
 
 Recent closure:
 
