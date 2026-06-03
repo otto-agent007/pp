@@ -164,6 +164,59 @@ export interface ComplianceKnowledgeBaseReadiness {
   workflows: ComplianceWorkflowKnowledgeBaseReadiness[];
 }
 
+export type ComplianceReviewItemSeverity = "info" | "warning" | "critical";
+export type ComplianceReviewItemStatus = "open" | "review";
+export type ComplianceReviewItemCategory =
+  | "advisory"
+  | "chemical"
+  | "source"
+  | "wdo";
+export type ComplianceReviewItemFilter =
+  | "advisory"
+  | "all"
+  | "chemical"
+  | "critical"
+  | "source"
+  | "wdo";
+
+export interface ComplianceReviewItem {
+  auditId?: string;
+  category: ComplianceReviewItemCategory;
+  chemicalLogId?: string;
+  customerName?: string;
+  description: string;
+  id: string;
+  jobHref?: string;
+  jobId?: string;
+  missingEvidence: string[];
+  nextAction: string;
+  severity: ComplianceReviewItemSeverity;
+  sourceId?: string;
+  status: ComplianceReviewItemStatus;
+  title: string;
+  workflow: ComplianceWorkflow;
+}
+
+export interface ComplianceNeedsReviewQueueInput {
+  advisoryAuditLimit?: number;
+  audits: ComplianceAdvisoryAudit[];
+  chemicalLogs: ChemicalLog[];
+  chunks: ComplianceChunk[];
+  documents: ComplianceDocument[];
+  jobs: Job[];
+  sources: ComplianceSource[];
+}
+
+export interface ComplianceNeedsReviewSummary {
+  advisoryItems: number;
+  chemicalItems: number;
+  criticalItems: number;
+  openItems: number;
+  sourceItems: number;
+  warningItems: number;
+  wdoItems: number;
+}
+
 export type ComplianceAdvisoryEvaluationStatus =
   | "blocked"
   | "operator_review_required"
@@ -351,6 +404,41 @@ function latestDate(values: string[]) {
 
 function plural(value: number, noun: string) {
   return `${value} ${noun}${value === 1 ? "" : "s"}`;
+}
+
+function severityRank(severity: ComplianceReviewItemSeverity) {
+  if (severity === "critical") return 3;
+  if (severity === "warning") return 2;
+  return 1;
+}
+
+function sortComplianceReviewItems(items: ComplianceReviewItem[]) {
+  return [...items].sort((left, right) => {
+    const severityDelta =
+      severityRank(right.severity) - severityRank(left.severity);
+
+    if (severityDelta !== 0) return severityDelta;
+
+    return left.title.localeCompare(right.title);
+  });
+}
+
+function itemJobHref(job: Job) {
+  const route = job.status === "completed" ? "/closeouts" : "/jobs";
+
+  return `${route}?job_id=${encodeURIComponent(job.id)}`;
+}
+
+function itemCustomerName(job: Job | null | undefined) {
+  return job?.customer?.name ?? undefined;
+}
+
+function itemJobContext(log: ChemicalLog) {
+  return log.job ?? null;
+}
+
+function hasText(value: string | null | undefined) {
+  return Boolean(value?.trim());
 }
 
 function toCitation(chunk: ComplianceChunk): ComplianceCitation {
@@ -1011,6 +1099,279 @@ export function getComplianceKnowledgeBaseReadiness(input: {
     },
     workflows,
   };
+}
+
+function buildChemicalReviewItems(logs: ChemicalLog[]) {
+  return logs.flatMap((log): ComplianceReviewItem[] => {
+    const job = itemJobContext(log);
+    const missingEvidence: string[] = [];
+    let hasCriticalMissingEvidence = false;
+
+    function addMissing(label: string, critical = true) {
+      missingEvidence.push(label);
+      hasCriticalMissingEvidence ||= critical;
+    }
+
+    if (!hasText(log.created_at)) {
+      addMissing("Application time");
+    }
+
+    if (!hasText(log.chemical?.name)) {
+      addMissing("Product name");
+    }
+
+    if (!hasText(log.chemical?.epa_number)) {
+      addMissing("EPA/California registration number");
+    }
+
+    if (!(log.amount_used > 0) || !hasText(log.chemical?.unit)) {
+      addMissing("Amount and unit");
+    }
+
+    if (!hasText(job?.location?.address) && !hasText(job?.service_notes)) {
+      addMissing("Target site or treated area");
+    }
+
+    addMissing("License or supervision detail", false);
+
+    if (missingEvidence.length === 0) return [];
+
+    return [
+      {
+        category: "chemical",
+        chemicalLogId: log.id,
+        customerName: itemCustomerName(job),
+        description:
+          "Chemical application record has missing evidence; operator review required before relying on this advisory workflow.",
+        id: `chemical:${log.id}`,
+        jobHref: job ? itemJobHref(job) : undefined,
+        jobId: job?.id ?? log.job_id,
+        missingEvidence,
+        nextAction:
+          "Open the job or closeout and capture the missing chemical-use evidence; advisory only; verify against cited source.",
+        severity: hasCriticalMissingEvidence ? "critical" : "warning",
+        status: "open",
+        title: log.chemical?.name
+          ? `${log.chemical.name} chemical review`
+          : "Chemical application review",
+        workflow: "chemical_application",
+      },
+    ];
+  });
+}
+
+const wdoSignalPattern =
+  /\b(termite|wdo|wood[- ]destroying|branch 3|branch three|drywood|subterranean|fungus|beetle|escrow)\b/i;
+
+function jobWdoText(job: Job) {
+  return [
+    job.service_notes,
+    job.customer?.service_notes,
+    job.location?.service_notes,
+    job.location?.nickname,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildWdoReviewItems(jobs: Job[]) {
+  return jobs
+    .filter((job) => wdoSignalPattern.test(jobWdoText(job)))
+    .map(
+      (job): ComplianceReviewItem => ({
+        category: "wdo",
+        customerName: itemCustomerName(job),
+        description:
+          "WDO/Branch 3-like job signal found, but current records cannot prove the report, findings, and recommendation evidence.",
+        id: `wdo:${job.id}`,
+        jobHref: itemJobHref(job),
+        jobId: job.id,
+        missingEvidence: [
+          "WDO report or inspection draft",
+          "Findings, damaged members, or inaccessible-area evidence",
+          "Corrective recommendations or follow-up disposition",
+        ],
+        nextAction:
+          "Review the job closeout and attach WDO/Branch 3 evidence where applicable; advisory only; verify against cited source.",
+        severity: "warning",
+        status: "open",
+        title: "WDO / Branch 3 operator review required",
+        workflow: "wdo_branch3",
+      }),
+    );
+}
+
+function reviewedChunkCountForWorkflow(input: {
+  chunks: ComplianceChunk[];
+  sources: ComplianceSource[];
+  workflow: ComplianceWorkflow;
+}) {
+  const reviewedSourceIds = new Set(
+    input.sources
+      .filter(
+        (source) =>
+          source.workflow === input.workflow &&
+          source.review_status === "reviewed",
+      )
+      .map((source) => source.id),
+  );
+
+  return input.chunks.filter((chunk) => reviewedSourceIds.has(chunk.source_id))
+    .length;
+}
+
+function buildSourceReadinessReviewItems(input: {
+  chunks: ComplianceChunk[];
+  documents: ComplianceDocument[];
+  sources: ComplianceSource[];
+}) {
+  const readiness = getComplianceKnowledgeBaseReadiness(input);
+
+  return readiness.workflows.flatMap((workflow): ComplianceReviewItem[] => {
+    const reviewedChunkCount = reviewedChunkCountForWorkflow({
+      chunks: input.chunks,
+      sources: input.sources,
+      workflow: workflow.workflow,
+    });
+
+    if (reviewedChunkCount > 0) return [];
+
+    const draftOnly = workflow.draftSources > 0;
+    const hasReviewedSourceWithoutChunks = workflow.reviewedSources > 0;
+    const title = draftOnly
+      ? `${workflowLabels[workflow.workflow]} draft source review`
+      : `${workflowLabels[workflow.workflow]} source readiness`;
+    const missingEvidence = draftOnly
+      ? ["Reviewed source chunks for advisory citations"]
+      : hasReviewedSourceWithoutChunks
+        ? ["Reviewed source chunks are not available for this source lane"]
+        : ["Reviewed source lane"];
+
+    return [
+      {
+        category: "source",
+        description: draftOnly
+          ? "Source lane has draft material only; operator review required before source-backed advisories rely on it."
+          : "Source readiness needs reviewed chunks before source-backed advisories can cite this workflow.",
+        id: `source:${workflow.workflow}`,
+        missingEvidence,
+        nextAction: draftOnly
+          ? "Review and promote source material, then ingest reviewed chunks."
+          : "Ingest and review official source chunks for this workflow.",
+        severity: draftOnly ? "warning" : "critical",
+        status: "open",
+        title,
+        workflow: workflow.workflow,
+      },
+    ];
+  });
+}
+
+function buildAdvisoryAuditReviewItems(
+  audits: ComplianceAdvisoryAudit[],
+  limit: number,
+) {
+  return [...audits]
+    .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
+    .slice(0, limit)
+    .flatMap((audit): ComplianceReviewItem[] => {
+      if (
+        audit.status === "rag_disabled" ||
+        audit.status === "insufficient_sources"
+      ) {
+        return [
+          {
+            auditId: audit.id,
+            category: audit.status === "rag_disabled" ? "source" : "advisory",
+            description:
+              audit.status === "rag_disabled"
+                ? "Recent advisory audit shows RAG disabled; setup/source review required before source-backed advisory use."
+                : "Recent advisory audit has insufficient sources; operator review required before relying on this workflow.",
+            id: `audit:${audit.id}:status`,
+            missingEvidence:
+              audit.status === "rag_disabled"
+                ? ["RAG runtime setup and reviewed source chunks"]
+                : ["Reviewed source citations"],
+            nextAction:
+              "Check setup readiness and reviewed source coverage; advisory only; verify against cited source.",
+            severity: audit.status === "rag_disabled" ? "warning" : "critical",
+            status: "open",
+            title: `${workflowLabels[audit.workflow]} advisory setup review`,
+            workflow: audit.workflow,
+          },
+        ];
+      }
+
+      const findings = audit.response.findings.filter(
+        (finding) => finding.severity !== "info",
+      );
+      const hasReviewTask = hasText(audit.response.review_task);
+
+      if (findings.length === 0 && !hasReviewTask) return [];
+
+      return [
+        {
+          auditId: audit.id,
+          category: "advisory",
+          description:
+            "Recent advisory audit includes findings or a review task; operator review required before closeout reliance.",
+          id: `audit:${audit.id}:review`,
+          missingEvidence: [
+            ...findings.map((finding) => finding.title),
+            ...(hasReviewTask ? ["Advisory review task"] : []),
+          ],
+          nextAction:
+            "Resolve advisory findings or attach missing evidence; advisory only; verify against cited source.",
+          severity: findings.some((finding) => finding.severity === "critical")
+            ? "critical"
+            : "warning",
+          status: "review",
+          title: `${workflowLabels[audit.workflow]} advisory operator review`,
+          workflow: audit.workflow,
+        },
+      ];
+    });
+}
+
+export function buildComplianceNeedsReviewQueue(
+  input: ComplianceNeedsReviewQueueInput,
+) {
+  return sortComplianceReviewItems([
+    ...buildChemicalReviewItems(input.chemicalLogs),
+    ...buildWdoReviewItems(input.jobs),
+    ...buildSourceReadinessReviewItems(input),
+    ...buildAdvisoryAuditReviewItems(input.audits, input.advisoryAuditLimit ?? 6),
+  ]);
+}
+
+export function getComplianceNeedsReviewSummary(
+  items: ComplianceReviewItem[],
+): ComplianceNeedsReviewSummary {
+  return {
+    advisoryItems: items.filter((item) => item.category === "advisory").length,
+    chemicalItems: items.filter((item) => item.category === "chemical").length,
+    criticalItems: items.filter((item) => item.severity === "critical").length,
+    openItems: items.length,
+    sourceItems: items.filter((item) => item.category === "source").length,
+    warningItems: items.filter((item) => item.severity === "warning").length,
+    wdoItems: items.filter((item) => item.category === "wdo").length,
+  };
+}
+
+export function filterComplianceReviewItems(
+  items: ComplianceReviewItem[],
+  filter: ComplianceReviewItemFilter,
+) {
+  if (filter === "all") return sortComplianceReviewItems(items);
+  if (filter === "critical") {
+    return sortComplianceReviewItems(
+      items.filter((item) => item.severity === "critical"),
+    );
+  }
+
+  return sortComplianceReviewItems(
+    items.filter((item) => item.category === filter),
+  );
 }
 
 export async function listComplianceSources() {
