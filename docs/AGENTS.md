@@ -17,6 +17,12 @@ Pest Patrol OS — pest control operations platform replacing PestPac.
 - Use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for Codex-Claude-GitHub handoffs, draft PR stewardship, CI follow-up, and design relay work.
 - Keep task prompts grounded in goal, context, constraints, and done-when criteria.
 
+## Branch And PR Rules
+- Every new implementation slice MUST start on a new correctly named `codex/*` branch from the intended base branch, usually the latest `origin/main`.
+- Do not continue new slice work on an old, already-merged, unrelated, or mismatched branch; create or switch to the correct branch before editing.
+- A Pest Patrol implementation slice is not complete until the intended files are verified, committed, pushed, and opened as a draft PR.
+- Stop short of a draft PR only when the user explicitly asks to stop before publishing, and report that the slice is intentionally unpublished.
+
 ## Architecture Rules
 - ALL database access goes through /packages/api-client
 - NEVER query Supabase directly inside UI components
@@ -68,11 +74,13 @@ Pest Patrol OS — pest control operations platform replacing PestPac.
 ## Task Workflow
 1. Read `docs/AGENTS.md`, relevant `docs/`, `tasks/in-progress.md`, and `git status --short --branch`.
 2. Identify dirty worktree risk before editing; never overwrite, clean, stash, revert, or stage unrelated user or prior-agent work.
-3. For ambiguous, multi-slice, agentic, security-sensitive, migration, provider, or production-touching work, use Plan Mode and follow `docs/CODEX_OPERATING_PLAN.md`.
-4. Before implementation, state the goal, files or packages likely to change, data flow, tests, and boundary risks.
-5. Implement step-by-step inside the approved scope.
-6. Verify according to scope: code changes require focused checks when useful plus `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`; docs-only changes require at least `git diff --check`.
-7. Update task docs only when the current slice status actually changes.
+3. Before editing a new slice, create or switch to a fresh correctly named `codex/*` branch from the intended base.
+4. For ambiguous, multi-slice, agentic, security-sensitive, migration, provider, or production-touching work, use Plan Mode and follow `docs/CODEX_OPERATING_PLAN.md`.
+5. Before implementation, state the goal, files or packages likely to change, data flow, tests, and boundary risks.
+6. Implement step-by-step inside the approved scope.
+7. Verify according to scope: code changes require focused checks when useful plus `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`; docs-only changes require at least `git diff --check`.
+8. Commit and push the verified branch, then open a draft PR before calling an implementation slice done unless the user explicitly requested otherwise.
+9. Update task docs only when the current slice status actually changes.
 
 ## Output Rules
 - Keep changes minimal
