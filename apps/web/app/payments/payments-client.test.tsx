@@ -2,16 +2,17 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  buildComplianceGuardrailForJob,
+  buildComplianceReviewItems,
+  getComplianceGuardrailSummary,
+  getComplianceNeedsReviewSummary,
+} from "@pest-patrol/domain";
+import type { ChemicalLog, Job } from "@pest-patrol/types";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
-import {
-  useComplianceAdvisoryAudits,
-  useComplianceChunks,
-  useComplianceDocuments,
-  useComplianceSources,
-} from "../../hooks/useCompliance";
+import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useCreateCustomerPortalAccessToken } from "../../hooks/useCustomerPortalAccess";
-import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -38,15 +39,8 @@ vi.mock("../../hooks/useCustomerPortalAccess", () => ({
   useCreateCustomerPortalAccessToken: vi.fn(),
 }));
 
-vi.mock("../../hooks/useCompliance", () => ({
-  useComplianceAdvisoryAudits: vi.fn(),
-  useComplianceChunks: vi.fn(),
-  useComplianceDocuments: vi.fn(),
-  useComplianceSources: vi.fn(),
-}));
-
-vi.mock("../../hooks/useInventory", () => ({
-  useChemicalLogs: vi.fn(),
+vi.mock("../../hooks/useComplianceReviewItems", () => ({
+  useComplianceReviewItems: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -233,6 +227,48 @@ const complianceChemicalLog = {
   job: completedJob,
 } as const;
 
+function mockComplianceReview(
+  chemicalLogs: ChemicalLog[] = [],
+  jobs: Job[] = [
+    completedJob,
+    secondCompletedJob,
+    rodentJob,
+    escrowJob,
+  ] as Job[],
+  overrides: Partial<ReturnType<typeof useComplianceReviewItems>> = {},
+) {
+  const items = buildComplianceReviewItems({
+    audits: [],
+    chemicalLogs,
+    chunks: [],
+    documents: [],
+    jobs,
+    sources: [],
+  });
+
+  vi.mocked(useComplianceReviewItems).mockReturnValue({
+    buildGuardrailForJob: (jobId: string) =>
+      buildComplianceGuardrailForJob({ items, jobId }),
+    guardrailByJobId: (jobIds: string[]) =>
+      new Map(
+        Array.from(new Set(jobIds)).map((jobId) => [
+          jobId,
+          buildComplianceGuardrailForJob({ items, jobId }),
+        ]),
+      ),
+    guardrailSummaryForJobs: (jobIds: string[]) =>
+      getComplianceGuardrailSummary({ items, jobIds }),
+    isError: false,
+    isLoading: false,
+    items,
+    schemaUnavailable: false,
+    setupReadiness: null,
+    setupWarning: null,
+    summary: getComplianceNeedsReviewSummary(items),
+    ...overrides,
+  });
+}
+
 async function chooseSearchableOption(
   user: ReturnType<typeof userEvent.setup>,
   name: string | RegExp,
@@ -268,26 +304,7 @@ describe("PaymentsClient", () => {
       data: [fullSummary("job-1")],
       isLoading: false,
     } as never);
-    vi.mocked(useChemicalLogs).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceSources).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceDocuments).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceChunks).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
+    mockComplianceReview();
     vi.mocked(useCreateInvoice).mockReturnValue({
       mutateAsync: createInvoice,
       isPending: false,
@@ -631,10 +648,7 @@ describe("PaymentsClient", () => {
       data: [sentInvoice],
       isLoading: false,
     } as never);
-    vi.mocked(useChemicalLogs).mockReturnValue({
-      data: [complianceChemicalLog],
-      isLoading: false,
-    } as never);
+    mockComplianceReview([complianceChemicalLog as ChemicalLog]);
 
     render(<PaymentsClient />);
 
@@ -678,10 +692,7 @@ describe("PaymentsClient", () => {
       data: [],
       isLoading: false,
     } as never);
-    vi.mocked(useChemicalLogs).mockReturnValue({
-      data: [complianceChemicalLog],
-      isLoading: false,
-    } as never);
+    mockComplianceReview([complianceChemicalLog as ChemicalLog]);
 
     render(<PaymentsClient />);
 
@@ -773,10 +784,7 @@ describe("PaymentsClient", () => {
 
   it("confirms payment links with unresolved compliance review items", async () => {
     const user = userEvent.setup();
-    vi.mocked(useChemicalLogs).mockReturnValue({
-      data: [complianceChemicalLog],
-      isLoading: false,
-    } as never);
+    mockComplianceReview([complianceChemicalLog as ChemicalLog]);
 
     render(<PaymentsClient />);
 
@@ -798,6 +806,35 @@ describe("PaymentsClient", () => {
     await user.click(
       screen.getByRole("button", { name: "Create link anyway" }),
     );
+
+    expect(createPaymentLink).toHaveBeenCalledWith(invoice);
+  });
+
+  it("keeps payment actions usable when compliance review setup is unavailable", async () => {
+    const user = userEvent.setup();
+    mockComplianceReview([], undefined, {
+      isError: false,
+      items: [],
+      schemaUnavailable: true,
+      setupWarning:
+        "Compliance advisory review data is unavailable. Continue the workflow, then review compliance setup from the Compliance page.",
+      summary: {
+        advisoryItems: 0,
+        chemicalItems: 0,
+        criticalItems: 0,
+        openItems: 0,
+        sourceItems: 0,
+        warningItems: 0,
+        wdoItems: 0,
+      },
+    });
+
+    render(<PaymentsClient />);
+
+    expect(screen.queryByText(/relation/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/compliance_sources/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Create link" }));
 
     expect(createPaymentLink).toHaveBeenCalledWith(invoice);
   });
