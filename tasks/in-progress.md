@@ -2,14 +2,18 @@
 
 Active implementation slice:
 
-- No active implementation slice is currently open in GitHub. Local status
-  should still be checked before starting work because untracked artifacts or
-  branch-specific residue may exist.
+- PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, is open as a
+  draft on branch `codex/service-billing-catalog-v1`.
+- The slice adds a static checked-in service billing catalog, shared service
+  inference helpers, Payments service presets/guidance, review-only promotion
+  suggestions, and service-aware invoice search without migrations, provider
+  setup, runtime website scraping, or automatic discount/total changes.
 - PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
 - PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
   June 3, 2026.
-- Recommended next implementation candidate: Pest Patrol Service Billing
-  Catalog V1.
+- Recommended next implementation candidates after PR #98 lands: shared safe
+  compliance review hook, inventory deep-linking from Chemical Product Binder,
+  or technician license/Branch credential tracking.
 
 Current blockers and guardrails:
 
