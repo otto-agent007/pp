@@ -272,7 +272,7 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
       requiresAdminSession: true,
     },
     {
-      expectedText: ["Billing work queue"],
+      expectedText: ["Closeouts"],
       id: "closeouts",
       label: "/closeouts",
       path: "/closeouts",

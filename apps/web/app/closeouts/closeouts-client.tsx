@@ -261,7 +261,7 @@ function ComplianceGuardrailPanel({
     <Card padding="md" statusTone={tone}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Eyebrow>Compliance</Eyebrow>
+          <Eyebrow>Compliance review</Eyebrow>
           <h3 className="mt-1 text-base font-semibold text-theme-text-primary">
             {guardrail.label}
           </h3>
@@ -423,6 +423,7 @@ function OtherJobRow({
 }
 
 function QueueSection({
+  defaultOpen,
   emptyCopy,
   guardrailByJobId,
   items,
@@ -430,6 +431,7 @@ function QueueSection({
   selectedJobId,
   title,
 }: {
+  defaultOpen?: boolean;
   emptyCopy: string;
   guardrailByJobId: Map<string, ComplianceGuardrail>;
   items: BillingQueueItem[];
@@ -438,31 +440,34 @@ function QueueSection({
   title: string;
 }) {
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-theme-text-primary">
-          {title}{" "}
-          <span className="font-medium text-theme-text-muted">
-            ({items.length})
-          </span>
-        </h2>
-      </div>
+    <details
+      aria-label={`Queue section ${title}`}
+      className="rounded-md border border-theme-border-subtle bg-theme-background-surface"
+      open={defaultOpen}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-sm font-semibold uppercase tracking-wide text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+        <span>
+          {title} ({items.length})
+        </span>
+      </summary>
       {items.length === 0 ? (
-        <p className="rounded-md border border-dashed border-theme-border-subtle bg-theme-background-subtle p-3 text-sm text-theme-text-muted">
+        <p className="border-t border-theme-border-subtle bg-theme-background-subtle p-3 text-sm text-theme-text-muted">
           {emptyCopy}
         </p>
       ) : (
-        items.map((item) => (
-          <QueueRow
-            guardrail={guardrailByJobId.get(item.job.id)}
-            isSelected={selectedJobId === item.job.id}
-            item={item}
-            key={item.job.id}
-            onSelect={() => onSelect(item.job.id)}
-          />
-        ))
+        <div className="grid gap-2 border-t border-theme-border-subtle p-2">
+          {items.map((item) => (
+            <QueueRow
+              guardrail={guardrailByJobId.get(item.job.id)}
+              isSelected={selectedJobId === item.job.id}
+              item={item}
+              key={item.job.id}
+              onSelect={() => onSelect(item.job.id)}
+            />
+          ))}
+        </div>
       )}
-    </section>
+    </details>
   );
 }
 
@@ -546,7 +551,10 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
     return (
       <Card className="shadow-none" padding="md" statusTone="success">
-        <p className="text-sm font-semibold text-theme-text-primary">Ready to bill</p>
+        <Eyebrow>Next action</Eyebrow>
+        <p className="text-sm font-semibold text-theme-text-primary">
+          Ready to bill
+        </p>
         <p className="mt-1 text-sm text-theme-text-secondary">
           {item.readiness.summary}
         </p>
@@ -571,6 +579,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
   if (!item.invoice) {
     return (
       <Card className="shadow-none" padding="md" statusTone="warning">
+        <Eyebrow>Next action</Eyebrow>
         <p className="text-sm font-semibold text-theme-text-primary">
           {item.readiness.label}
         </p>
@@ -614,6 +623,7 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
 
   return (
     <Card className="shadow-none" padding="md" statusTone="info">
+      <Eyebrow>Next action</Eyebrow>
       <p className="text-sm font-semibold text-theme-text-primary">
         {titleByStatus[invoice.status]}
       </p>
@@ -766,6 +776,7 @@ function ProofHandoffCard({
 
   return (
     <Card className="shadow-none" padding="md" statusTone={completionTone}>
+      <Eyebrow>Proof handoff</Eyebrow>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-theme-text-primary">
@@ -1016,10 +1027,10 @@ export function CloseoutsClient() {
         <div>
           <Eyebrow tone="inverse">Admin</Eyebrow>
           <h1 className="text-3xl font-bold text-theme-text-primary">
-            Billing work queue
+            Closeouts
           </h1>
           <p className="mt-3 max-w-3xl text-sm text-theme-text-secondary">
-            Completed jobs grouped by billing readiness. Open one to review
+            Completed jobs grouped by closeout readiness. Open one to review
             captures or create an invoice.
           </p>
         </div>
@@ -1063,10 +1074,14 @@ export function CloseoutsClient() {
         />
       </section>
 
-      <Card padding="md" statusTone={complianceSummaryTone}>
+      <section
+        className={`rounded-md border px-4 py-3 ${statusSurfaceClassName(
+          complianceSummaryTone,
+        )}`}
+      >
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <Eyebrow>Compliance guardrails</Eyebrow>
+            <Eyebrow>Compliance advisory</Eyebrow>
             <p className="mt-1 text-sm font-semibold text-theme-text-primary">
               {formatGuardrailSummary(complianceGuardrailSummary)}
             </p>
@@ -1084,7 +1099,7 @@ export function CloseoutsClient() {
             Open compliance
           </a>
         </div>
-      </Card>
+      </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <aside className="flex flex-col gap-4">
@@ -1101,6 +1116,7 @@ export function CloseoutsClient() {
           ) : (
             <>
               <QueueSection
+                defaultOpen
                 emptyCopy="Nothing ready to bill — check Needs captures."
                 guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.ready}
@@ -1110,6 +1126,10 @@ export function CloseoutsClient() {
               />
               <QueueSection
                 emptyCopy="No completed jobs are missing captures."
+                defaultOpen={
+                  queueFilter === "needsCaptures" ||
+                  queueFilter === "missing_capture"
+                }
                 guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.needsCaptures}
                 onSelect={setSelectedJobId}
@@ -1118,6 +1138,9 @@ export function CloseoutsClient() {
               />
               <QueueSection
                 emptyCopy="No completed jobs have invoices yet."
+                defaultOpen={
+                  queueFilter === "invoiced" || queueFilter === "billing_ready"
+                }
                 guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.invoiced}
                 onSelect={setSelectedJobId}
@@ -1168,6 +1191,9 @@ export function CloseoutsClient() {
                   <ComplianceGuardrailPanel guardrail={selectedGuardrail} />
                 ) : null}
                 <div className="mt-5 flex flex-col gap-4">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-theme-text-primary">
+                    Job details
+                  </h2>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold uppercase tracking-wide text-theme-text-secondary">
                       {selectedJob.status}
