@@ -499,7 +499,7 @@ describe("CustomersClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "New customer" }));
 
     const helper = screen.getByText("Customer setup notes").closest("details");
-    expect(helper).not.toHaveAttribute("open");
+    expect(helper).toHaveAttribute("open");
     expect(
       screen.getByText(
         "Save the customer with one active service location, then schedule the first job.",
@@ -633,6 +633,11 @@ describe("CustomersClient", () => {
 
     expect(mutateArchive).not.toHaveBeenCalled();
     expect(screen.getByText("Archive this customer?")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Archiving removes the customer from active scheduling and portal-link handoff. Existing jobs, invoices, and service history stay available for review.",
+      ),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Confirm archive" }));
 

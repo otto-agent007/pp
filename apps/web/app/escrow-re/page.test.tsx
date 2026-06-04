@@ -20,25 +20,33 @@ vi.mock("next/link", () => ({
 }));
 
 describe("EscrowRePage", () => {
-  it("renders a lightweight real-estate handoff workspace with links into existing workflows", () => {
+  it("renders a WDO escrow placeholder with links into existing workflows", () => {
     render(<EscrowRePage />);
 
     expect(
       screen.getByRole("heading", { name: "Escrow/RE" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Real estate handoff")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Review jobs" })).toHaveAttribute(
+    expect(screen.getByText("WDO / escrow view")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Escrow packets are assembled from jobs, closeouts, customers, and payments.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Empty state")).toBeInTheDocument();
+    expect(screen.queryByText("Provider-free")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Review jobs/ })).toHaveAttribute(
       "href",
       "/jobs",
     );
     expect(
-      screen.getByRole("link", { name: "Open customers" }),
+      screen.getByRole("link", { name: /Open customers/ }),
     ).toHaveAttribute("href", "/customers");
     expect(
-      screen.getByRole("link", { name: "Check closeouts" }),
+      screen.getByRole("link", { name: /Check closeouts/ }),
     ).toHaveAttribute("href", "/closeouts");
     expect(
-      screen.getByRole("link", { name: "Review payments" }),
+      screen.getByRole("link", { name: /Review payments/ }),
     ).toHaveAttribute("href", "/payments");
   });
 });

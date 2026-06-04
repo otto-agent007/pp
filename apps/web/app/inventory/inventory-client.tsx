@@ -45,6 +45,7 @@ import {
 import { adminWorkspaceClassName } from "../admin-workspace";
 
 type InventoryStatusFilter = InventoryStatus | "all";
+type InventoryWorkspaceMode = "product" | "usage";
 
 const emptyInventoryForm: ChemicalInventoryInput = {
   name: "",
@@ -133,6 +134,8 @@ export function InventoryClient() {
   const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(
     null,
   );
+  const [workspaceMode, setWorkspaceMode] =
+    useState<InventoryWorkspaceMode>("product");
 
   const inventoryItems = inventoryQuery.data ?? emptyInventoryItems;
   const canShowChemicalUsage = !logsQuery.isLoading && !logsQuery.error;
@@ -230,12 +233,14 @@ export function InventoryClient() {
     setEditingItem(null);
     setInventoryForm(emptyInventoryForm);
     setInventoryError(null);
+    setWorkspaceMode("product");
   }
 
   function editInventoryItem(item: ChemicalInventoryItem) {
     setEditingItem(item);
     setInventoryForm(itemToInput(item));
     setInventoryError(null);
+    setWorkspaceMode("product");
   }
 
   async function submitInventory(event: FormEvent<HTMLFormElement>) {
@@ -588,7 +593,7 @@ export function InventoryClient() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow tone="accent">Product cockpit</Eyebrow>
+                <Eyebrow tone="accent">Product detail</Eyebrow>
                 <h2 className="mt-1 text-xl font-semibold text-theme-text-primary">
                   {selectedCockpitRow
                     ? `${selectedCockpitRow.item.name} selected`
@@ -644,203 +649,230 @@ export function InventoryClient() {
             )}
           </Card>
 
-          <form
-            className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-            onSubmit={submitInventory}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold text-theme-text-primary">
-                {editingItem ? "Edit chemical" : "Add chemical"}
-              </h2>
-              {editingItem ? (
-                <Button onClick={resetInventoryForm} variant="ghost">
-                  New
-                </Button>
-              ) : null}
-            </div>
+          <div className="flex rounded-md border border-theme-border-subtle bg-theme-background-surface p-1 shadow-sm">
+            <button
+              aria-pressed={workspaceMode === "product"}
+              className={buttonClassName({
+                className: "flex-1 justify-center",
+                variant: workspaceMode === "product" ? "primary" : "ghost",
+              })}
+              onClick={() => setWorkspaceMode("product")}
+              type="button"
+            >
+              Add product
+            </button>
+            <button
+              aria-pressed={workspaceMode === "usage"}
+              className={buttonClassName({
+                className: "flex-1 justify-center",
+                variant: workspaceMode === "usage" ? "primary" : "ghost",
+              })}
+              onClick={() => setWorkspaceMode("usage")}
+              type="button"
+            >
+              Log use
+            </button>
+          </div>
 
-            {inventoryError ? (
-              <Card
-                className="text-sm text-status-alert-danger-fg shadow-none"
-                padding="sm"
-                role="alert"
-                statusTone="danger"
-              >
-                {inventoryError}
-              </Card>
-            ) : null}
+          {workspaceMode === "product" ? (
+            <form
+              className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
+              onSubmit={submitInventory}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold text-theme-text-primary">
+                  {editingItem ? "Edit product" : "Add product"}
+                </h2>
+                {editingItem ? (
+                  <Button onClick={resetInventoryForm} variant="ghost">
+                    New
+                  </Button>
+                ) : null}
+              </div>
 
-            <label className={formLabelClassName}>
-              Name
-              <input
-                className={formControlClassName}
-                onChange={(event) =>
-                  setInventoryForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                value={inventoryForm.name}
-              />
-            </label>
-            <label className={formLabelClassName}>
-              EPA number
-              <input
-                className={formControlClassName}
-                onChange={(event) =>
-                  setInventoryForm((current) => ({
-                    ...current,
-                    epa_number: event.target.value,
-                  }))
-                }
-                value={inventoryForm.epa_number ?? ""}
-              />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <label className={formLabelClassName}>
-                Stock
-                <input
-                  className={formControlClassName}
-                  min="0"
-                  onChange={(event) =>
-                    setInventoryForm((current) => ({
-                      ...current,
-                      current_stock: Number(event.target.value),
-                    }))
-                  }
-                  type="number"
-                  value={inventoryForm.current_stock}
-                />
-              </label>
-              <label className={formLabelClassName}>
-                Unit
-                <select
-                  className={formControlClassName}
-                  onChange={(event) =>
-                    setInventoryForm((current) => ({
-                      ...current,
-                      unit: event.target.value as InventoryUnit,
-                    }))
-                  }
-                  value={inventoryForm.unit}
+              {inventoryError ? (
+                <Card
+                  className="text-sm text-status-alert-danger-fg shadow-none"
+                  padding="sm"
+                  role="alert"
+                  statusTone="danger"
                 >
-                  <option value="oz">oz</option>
-                  <option value="gal">gal</option>
-                  <option value="lb">lb</option>
-                  <option value="each">each</option>
-                </select>
+                  {inventoryError}
+                </Card>
+              ) : null}
+
+              <label className={formLabelClassName}>
+                Name
+                <input
+                  className={formControlClassName}
+                  onChange={(event) =>
+                    setInventoryForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  value={inventoryForm.name}
+                />
               </label>
               <label className={formLabelClassName}>
-                Reorder
+                EPA number
+                <input
+                  className={formControlClassName}
+                  onChange={(event) =>
+                    setInventoryForm((current) => ({
+                      ...current,
+                      epa_number: event.target.value,
+                    }))
+                  }
+                  value={inventoryForm.epa_number ?? ""}
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className={formLabelClassName}>
+                  Stock
+                  <input
+                    className={formControlClassName}
+                    min="0"
+                    onChange={(event) =>
+                      setInventoryForm((current) => ({
+                        ...current,
+                        current_stock: Number(event.target.value),
+                      }))
+                    }
+                    type="number"
+                    value={inventoryForm.current_stock}
+                  />
+                </label>
+                <label className={formLabelClassName}>
+                  Unit
+                  <select
+                    className={formControlClassName}
+                    onChange={(event) =>
+                      setInventoryForm((current) => ({
+                        ...current,
+                        unit: event.target.value as InventoryUnit,
+                      }))
+                    }
+                    value={inventoryForm.unit}
+                  >
+                    <option value="oz">oz</option>
+                    <option value="gal">gal</option>
+                    <option value="lb">lb</option>
+                    <option value="each">each</option>
+                  </select>
+                </label>
+                <label className={formLabelClassName}>
+                  Reorder
+                  <input
+                    className={formControlClassName}
+                    min="0"
+                    onChange={(event) =>
+                      setInventoryForm((current) => ({
+                        ...current,
+                        reorder_level:
+                          event.target.value === ""
+                            ? null
+                            : Number(event.target.value),
+                      }))
+                    }
+                    type="number"
+                    value={inventoryForm.reorder_level ?? ""}
+                  />
+                </label>
+              </div>
+
+              <Button
+                disabled={isSavingInventory}
+                fullWidth
+                size="lg"
+                type="submit"
+              >
+                Save product
+              </Button>
+            </form>
+          ) : (
+            <form
+              className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
+              onSubmit={submitLog}
+            >
+              <h2 className="text-xl font-semibold text-theme-text-primary">
+                Log use
+              </h2>
+              {logError ? (
+                <Card
+                  className="text-sm text-status-alert-danger-fg shadow-none"
+                  padding="sm"
+                  role="alert"
+                  statusTone="danger"
+                >
+                  {logError}
+                </Card>
+              ) : null}
+
+              <SearchableSelect
+                ariaLabel="Job"
+                emptyMessage="No jobs found"
+                label="Job"
+                onChange={(jobId) =>
+                  setLogForm((current) => ({
+                    ...current,
+                    job_id: jobId,
+                  }))
+                }
+                options={jobOptions}
+                value={logForm.job_id}
+              />
+              <SearchableSelect
+                ariaLabel="Chemical"
+                emptyMessage="No active chemicals found"
+                label="Chemical"
+                onChange={(chemicalId) =>
+                  setLogForm((current) => ({
+                    ...current,
+                    chemical_id: chemicalId,
+                  }))
+                }
+                options={chemicalOptions}
+                value={logForm.chemical_id}
+              />
+              <label className={formLabelClassName}>
+                Amount used
                 <input
                   className={formControlClassName}
                   min="0"
                   onChange={(event) =>
-                    setInventoryForm((current) => ({
+                    setLogForm((current) => ({
                       ...current,
-                      reorder_level:
-                        event.target.value === ""
-                          ? null
-                          : Number(event.target.value),
+                      amount_used: Number(event.target.value),
                     }))
                   }
                   type="number"
-                  value={inventoryForm.reorder_level ?? ""}
+                  value={logForm.amount_used}
                 />
               </label>
-            </div>
-
-            <Button
-              disabled={isSavingInventory}
-              fullWidth
-              size="lg"
-              type="submit"
-            >
-              Save chemical
-            </Button>
-          </form>
-
-          <form
-            className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-            onSubmit={submitLog}
-          >
-            <h2 className="text-xl font-semibold text-theme-text-primary">
-              Log usage
-            </h2>
-            {logError ? (
-              <Card
-                className="text-sm text-status-alert-danger-fg shadow-none"
-                padding="sm"
-                role="alert"
-                statusTone="danger"
+              <label className={formLabelClassName}>
+                Notes
+                <textarea
+                  className={formTextareaClassName}
+                  onChange={(event) =>
+                    setLogForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                  value={logForm.notes ?? ""}
+                />
+              </label>
+              <Button
+                disabled={createLog.isPending}
+                fullWidth
+                size="lg"
+                type="submit"
               >
-                {logError}
-              </Card>
-            ) : null}
-
-            <SearchableSelect
-              ariaLabel="Job"
-              emptyMessage="No jobs found"
-              label="Job"
-              onChange={(jobId) =>
-                setLogForm((current) => ({
-                  ...current,
-                  job_id: jobId,
-                }))
-              }
-              options={jobOptions}
-              value={logForm.job_id}
-            />
-            <SearchableSelect
-              ariaLabel="Chemical"
-              emptyMessage="No active chemicals found"
-              label="Chemical"
-              onChange={(chemicalId) =>
-                setLogForm((current) => ({
-                  ...current,
-                  chemical_id: chemicalId,
-                }))
-              }
-              options={chemicalOptions}
-              value={logForm.chemical_id}
-            />
-            <label className={formLabelClassName}>
-              Amount used
-              <input
-                className={formControlClassName}
-                min="0"
-                onChange={(event) =>
-                  setLogForm((current) => ({
-                    ...current,
-                    amount_used: Number(event.target.value),
-                  }))
-                }
-                type="number"
-                value={logForm.amount_used}
-              />
-            </label>
-            <label className={formLabelClassName}>
-              Notes
-              <textarea
-                className={formTextareaClassName}
-                onChange={(event) =>
-                  setLogForm((current) => ({
-                    ...current,
-                    notes: event.target.value,
-                  }))
-                }
-                value={logForm.notes ?? ""}
-              />
-            </label>
-            <Button
-              disabled={createLog.isPending}
-              fullWidth
-              size="lg"
-              type="submit"
-            >
-              Log chemical use
-            </Button>
-          </form>
+                Save use log
+              </Button>
+            </form>
+          )}
 
           <Card padding="lg">
             <h2 className="text-xl font-semibold text-theme-text-primary">

@@ -222,8 +222,20 @@ describe("InventoryClient", () => {
       "bg-status-alert-danger-bg",
     );
     expect(screen.getAllByText("Bait Gel").length).toBeGreaterThan(0);
-    expect(screen.getByText("Product cockpit")).toBeInTheDocument();
+    expect(screen.getByText("Product detail")).toBeInTheDocument();
     expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add product" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Log use" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("heading", { name: "Add product" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Log use" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Inspect aging stock")).toBeInTheDocument();
     expect(screen.getByText("2 oz | Reorder at 4 oz")).toBeInTheDocument();
     expect(
@@ -267,7 +279,7 @@ describe("InventoryClient", () => {
     const user = userEvent.setup();
     render(<InventoryClient />);
 
-    await user.click(screen.getByRole("button", { name: "Save chemical" }));
+    await user.click(screen.getByRole("button", { name: "Save product" }));
 
     expect(screen.getByText("Chemical name is required")).toBeInTheDocument();
   });
@@ -281,7 +293,7 @@ describe("InventoryClient", () => {
     fireEvent.change(screen.getByLabelText("EPA number"), {
       target: { value: "EPA-999" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save chemical" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save product" }));
 
     await waitFor(() =>
       expect(createInventoryMutateAsync).toHaveBeenCalledWith(
@@ -290,7 +302,7 @@ describe("InventoryClient", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save chemical" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save product" }));
 
     await waitFor(() =>
       expect(updateInventoryMutateAsync).toHaveBeenCalledWith(
@@ -315,11 +327,17 @@ describe("InventoryClient", () => {
     const user = userEvent.setup();
     render(<InventoryClient />);
 
+    await user.click(screen.getByRole("button", { name: "Log use" }));
+    expect(screen.getByRole("heading", { name: "Log use" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Add product" }),
+    ).not.toBeInTheDocument();
+
     await chooseSearchableOption(user, "Job", "apex", /Apex Homes/);
     await chooseSearchableOption(user, "Chemical", "bait", /Bait Gel/);
     await user.clear(screen.getByLabelText("Amount used"));
     await user.type(screen.getByLabelText("Amount used"), "2");
-    await user.click(screen.getByRole("button", { name: "Log chemical use" }));
+    await user.click(screen.getByRole("button", { name: "Save use log" }));
 
     expect(createLogMutateAsync).toHaveBeenCalledWith({
       job_id: "job-1",
@@ -338,6 +356,7 @@ describe("InventoryClient", () => {
 
     render(<InventoryClient />);
 
+    await user.click(screen.getByRole("button", { name: "Log use" }));
     await user.click(screen.getByRole("combobox", { name: "Job" }));
 
     expect(
