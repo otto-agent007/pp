@@ -339,6 +339,25 @@ export type {
   TechnicianRouteStatus,
 } from "./technicians";
 export {
+  archiveTechnicianLicense,
+  CHEMICAL_LOG_MISSING_TECHNICIAN_CREDENTIAL_COPY,
+  createTechnicianLicense,
+  getBranchCredentialSummary,
+  getChemicalLogCredentialReview,
+  getCredentialReadinessForJob,
+  getTechnicianCredentialStatus,
+  getWdoCredentialReview,
+  listTechnicianLicenses,
+  updateTechnicianLicense,
+  validateTechnicianLicenseInput,
+} from "./technicianLicenses";
+export type {
+  BranchCredentialSummary,
+  CredentialReadinessReview,
+  TechnicianCredentialReadinessStatus,
+  TechnicianCredentialStatus,
+} from "./technicianLicenses";
+export {
   archiveChemicalInventory,
   buildInventoryCockpitRows,
   createChemicalInventory,

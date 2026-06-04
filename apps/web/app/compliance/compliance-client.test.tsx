@@ -4,7 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useJobs } from "../../hooks/useJobs";
-import { useChemicalInventory, useChemicalLogs } from "../../hooks/useInventory";
+import {
+  useChemicalInventory,
+  useChemicalLogs,
+} from "../../hooks/useInventory";
 import {
   isComplianceSchemaUnavailableError,
   useComplianceAdvisoryAudits,
@@ -13,6 +16,7 @@ import {
   useComplianceSources,
   useCreateComplianceAdvisory,
 } from "../../hooks/useCompliance";
+import { useTechnicianLicenses } from "../../hooks/useTechnicians";
 import { ComplianceClient } from "./compliance-client";
 
 vi.mock("../../hooks/useJobs", () => ({
@@ -31,6 +35,10 @@ vi.mock("../../hooks/useCompliance", () => ({
   useComplianceDocuments: vi.fn(),
   useComplianceSources: vi.fn(),
   useCreateComplianceAdvisory: vi.fn(),
+}));
+
+vi.mock("../../hooks/useTechnicians", () => ({
+  useTechnicianLicenses: vi.fn(),
 }));
 
 const now = "2026-05-16T12:00:00.000Z";
@@ -153,6 +161,20 @@ const insufficientSourceAudit = {
   created_by: null,
   created_at: now,
 } as const;
+const technicianLicense = {
+  id: "license-1",
+  technician_id: "tech-1",
+  license_type: "operator",
+  branch: "branch_3",
+  license_number: "OPR-123",
+  issuing_authority: "spcb",
+  status: "active",
+  expires_at: "2026-12-31",
+  notes: null,
+  archived_at: null,
+  created_at: now,
+  updated_at: now,
+} as const;
 
 describe("ComplianceClient", () => {
   const mutateAsync = vi.fn();
@@ -179,6 +201,12 @@ describe("ComplianceClient", () => {
     } as never);
     vi.mocked(useChemicalLogs).mockReturnValue({
       data: [],
+    } as never);
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [],
+      isLoading: false,
+      schemaUnavailable: false,
+      setupWarning: null,
     } as never);
     mutateAsync.mockReset();
     mutateAsync.mockResolvedValue({
@@ -234,7 +262,9 @@ describe("ComplianceClient", () => {
     expect(screen.getByText("Source readiness")).toBeInTheDocument();
     expect(screen.getByText(/Ready workflows:/)).toBeInTheDocument();
     expect(screen.getByText("Chemical review")).toBeInTheDocument();
-    expect(screen.getByText("Chemical review").closest(".rounded-lg")).toHaveClass(
+    expect(
+      screen.getByText("Chemical review").closest(".rounded-lg"),
+    ).toHaveClass(
       "bg-status-alert-success-bg",
       "border-status-alert-success-border",
     );
@@ -322,7 +352,9 @@ describe("ComplianceClient", () => {
 
     render(<ComplianceClient />);
 
-    expect(screen.getByRole("heading", { name: "Needs review" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Needs review" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Open review items")).toBeInTheDocument();
     expect(screen.getByText("Critical items")).toBeInTheDocument();
     expect(screen.getByText("Chemical review items")).toBeInTheDocument();
@@ -337,7 +369,9 @@ describe("ComplianceClient", () => {
     expect(
       screen
         .getAllByRole("link", { name: "Open linked job" })
-        .some((link) => link.getAttribute("href") === "/closeouts?job_id=job-1"),
+        .some(
+          (link) => link.getAttribute("href") === "/closeouts?job_id=job-1",
+        ),
     ).toBe(true);
 
     await user.click(screen.getByRole("button", { name: "Advisory" }));
@@ -369,7 +403,9 @@ describe("ComplianceClient", () => {
     expect(screen.getByText("Products needing review")).toBeInTheDocument();
     expect(screen.getByText("Logs missing evidence")).toBeInTheDocument();
     expect(screen.getByText("License/supervision reviews")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Bait Gel" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Bait Gel" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Missing EPA #", { selector: "span" }),
     ).toBeInTheDocument();
@@ -382,9 +418,47 @@ describe("ComplianceClient", () => {
 
     await user.click(screen.getByRole("button", { name: "License review" }));
 
-    expect(screen.getByRole("heading", { name: "Bait Gel" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Bait Gel" }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Clear Product" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders credential alerts and uses structured evidence for chemical review", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [job],
+    } as never);
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [chemicalLog.chemical],
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: [chemicalLog],
+    } as never);
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [technicianLicense],
+      isLoading: false,
+      schemaUnavailable: false,
+      setupWarning: null,
+    } as never);
+
+    render(<ComplianceClient />);
+
+    expect(screen.getByText("Credential alerts")).toBeInTheDocument();
+    expect(screen.getByText("Expiring soon")).toBeInTheDocument();
+    expect(screen.getByText("Expired")).toBeInTheDocument();
+    expect(screen.getByText("Missing Branch 3 reviewer")).toBeInTheDocument();
+    expect(
+      screen.getByText("Missing chemical license evidence"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Structured credential evidence is available for chemical records.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("License or supervision detail"),
     ).not.toBeInTheDocument();
   });
 

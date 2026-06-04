@@ -141,6 +141,22 @@ export type ComplianceWorkflow =
 
 export type ComplianceBranch = "branch_2" | "branch_3" | "general";
 
+export type TechnicianLicenseType =
+  | "applicator"
+  | "field_representative"
+  | "operator"
+  | "registered_company"
+  | "other";
+
+export type TechnicianLicenseBranch = ComplianceBranch;
+
+export type TechnicianLicenseStatus =
+  | "active"
+  | "expired"
+  | "expiring_soon"
+  | "suspended"
+  | "unknown";
+
 export type ComplianceReviewStatus = "draft" | "reviewed" | "archived";
 
 export type ComplianceFindingSeverity = "info" | "warning" | "critical";
@@ -197,6 +213,33 @@ export interface TechnicianInviteInput {
 
 export interface TechnicianInviteResult {
   technician: TechnicianProfile;
+}
+
+export interface TechnicianLicense {
+  id: string;
+  technician_id: string;
+  license_type: TechnicianLicenseType;
+  branch: TechnicianLicenseBranch;
+  license_number: string;
+  issuing_authority: string;
+  status: TechnicianLicenseStatus;
+  expires_at: string | null;
+  notes: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+  technician?: TechnicianProfile | null;
+}
+
+export interface TechnicianLicenseInput {
+  technician_id: string;
+  license_type: TechnicianLicenseType;
+  branch: TechnicianLicenseBranch;
+  license_number: string;
+  issuing_authority?: string | null;
+  status?: TechnicianLicenseStatus;
+  expires_at?: string | null;
+  notes?: string | null;
 }
 
 export interface Customer {
@@ -851,8 +894,7 @@ export interface CustomerPortalUpgradeIntentInput {
   plan_id: CustomerPortalUpgradePlanId;
 }
 
-export interface CustomerPortalUpgradeIntentRequest
-  extends CustomerPortalUpgradeIntentInput {
+export interface CustomerPortalUpgradeIntentRequest extends CustomerPortalUpgradeIntentInput {
   access_token: string;
 }
 

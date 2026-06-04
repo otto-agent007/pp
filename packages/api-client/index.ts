@@ -122,6 +122,13 @@ export {
   listTechnicianProfileRecords,
 } from "./technicians";
 export {
+  archiveTechnicianLicenseRecord,
+  createTechnicianLicenseRecord,
+  isTechnicianLicenseSchemaUnavailableError,
+  listTechnicianLicenseRecords,
+  updateTechnicianLicenseRecord,
+} from "./technicianLicenses";
+export {
   getDemoSeedStatusRecord,
   isDemoLoginRefreshUnavailableError,
   prepareLocalDemoLoginRecord,

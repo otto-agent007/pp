@@ -19,6 +19,7 @@ import type {
   ComplianceDocument,
   ComplianceSource,
   Job,
+  TechnicianLicense,
 } from "@pest-patrol/types";
 import { useCallback, useMemo } from "react";
 
@@ -31,6 +32,7 @@ import {
 } from "./useCompliance";
 import { useChemicalLogs } from "./useInventory";
 import { useJobs } from "./useJobs";
+import { useTechnicianLicenses } from "./useTechnicians";
 
 const emptyAudits: ComplianceAdvisoryAudit[] = [];
 const emptyChemicalLogs: ChemicalLog[] = [];
@@ -38,6 +40,7 @@ const emptyChunks: ComplianceChunk[] = [];
 const emptyDocuments: ComplianceDocument[] = [];
 const emptyJobs: Job[] = [];
 const emptySources: ComplianceSource[] = [];
+const emptyTechnicianLicenses: TechnicianLicense[] = [];
 const emptySummary: ComplianceNeedsReviewSummary = {
   advisoryItems: 0,
   chemicalItems: 0,
@@ -86,6 +89,7 @@ export function useComplianceReviewItems(
   const documentsQuery = useComplianceDocuments();
   const chunksQuery = useComplianceChunks();
   const auditsQuery = useComplianceAdvisoryAudits();
+  const technicianLicensesQuery = useTechnicianLicenses();
   const usesProvidedJobs = input.jobs !== undefined;
   const complianceErrors = [
     sourcesQuery.error,
@@ -106,8 +110,12 @@ export function useComplianceReviewItems(
     ? getComplianceSchemaUnavailableReadiness()
     : null;
   const setupWarning =
-    schemaUnavailable || hasReviewDataError ? complianceReviewSetupWarning : null;
-  const jobs = usesProvidedJobs ? (input.jobs ?? emptyJobs) : (jobsQuery.data ?? emptyJobs);
+    schemaUnavailable || hasReviewDataError
+      ? complianceReviewSetupWarning
+      : technicianLicensesQuery.setupWarning;
+  const jobs = usesProvidedJobs
+    ? (input.jobs ?? emptyJobs)
+    : (jobsQuery.data ?? emptyJobs);
   const shouldBuildItems = !schemaUnavailable && !hasReviewDataError;
   const items = useMemo(
     () =>
@@ -119,6 +127,8 @@ export function useComplianceReviewItems(
             documents: documentsQuery.data ?? emptyDocuments,
             jobs,
             sources: sourcesQuery.data ?? emptySources,
+            technicianLicenses:
+              technicianLicensesQuery.data ?? emptyTechnicianLicenses,
           })
         : [],
     [
@@ -129,6 +139,7 @@ export function useComplianceReviewItems(
       jobs,
       shouldBuildItems,
       sourcesQuery.data,
+      technicianLicensesQuery.data,
     ],
   );
   const summary = useMemo(
@@ -169,6 +180,7 @@ export function useComplianceReviewItems(
       chunksQuery.isLoading ||
       auditsQuery.isLoading ||
       chemicalLogsQuery.isLoading ||
+      technicianLicensesQuery.isLoading ||
       (!usesProvidedJobs && jobsQuery.isLoading),
     items,
     schemaUnavailable,

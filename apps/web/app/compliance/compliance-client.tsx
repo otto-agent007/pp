@@ -9,10 +9,13 @@ import {
   filterChemicalProductBinderItems,
   filterComplianceReviewItems,
   getChemicalProductBinderSummary,
+  getChemicalLogCredentialReview,
   getComplianceKnowledgeBaseReadiness,
   getComplianceMultiUnitAuditSummary,
   getComplianceNeedsReviewSummary,
   getComplianceSchemaUnavailableReadiness,
+  getTechnicianCredentialStatus,
+  getWdoCredentialReview,
 } from "@pest-patrol/domain";
 import type {
   ChemicalProductBinderFilter,
@@ -33,6 +36,7 @@ import type {
   ComplianceSource,
   ComplianceWorkflow,
   Job,
+  TechnicianLicense,
 } from "@pest-patrol/types";
 import {
   Button,
@@ -45,7 +49,10 @@ import {
 import { FormEvent, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
-import { useChemicalInventory, useChemicalLogs } from "../../hooks/useInventory";
+import {
+  useChemicalInventory,
+  useChemicalLogs,
+} from "../../hooks/useInventory";
 import {
   type ComplianceAdvisoryResponse,
   useComplianceAdvisoryAudits,
@@ -55,6 +62,7 @@ import {
   useCreateComplianceAdvisory,
   isComplianceSchemaUnavailableError,
 } from "../../hooks/useCompliance";
+import { useTechnicianLicenses } from "../../hooks/useTechnicians";
 import { adminWorkspaceClassName } from "../admin-workspace";
 
 const workflowOptions: Array<{ label: string; value: ComplianceWorkflow }> = [
@@ -94,6 +102,7 @@ const emptyAudits: ComplianceAdvisoryAudit[] = [];
 const emptyJobs: Job[] = [];
 const emptyLogs: ChemicalLog[] = [];
 const emptyInventory: ChemicalInventoryItem[] = [];
+const emptyTechnicianLicenses: TechnicianLicense[] = [];
 
 type ComplianceRuntime = ComplianceAdvisoryResponse["runtime"];
 
@@ -214,6 +223,47 @@ function advisoryErrorCopy(caught: unknown) {
   }
 
   return message;
+}
+
+function getCredentialAlertCounts(input: {
+  jobs: Job[];
+  logs: ChemicalLog[];
+  reviewQueue: ComplianceReviewItem[];
+  technicianLicenses: TechnicianLicense[];
+}) {
+  const now = new Date().toISOString();
+  const licenseStatuses = input.technicianLicenses.map((license) =>
+    getTechnicianCredentialStatus([license], now),
+  );
+  const missingChemicalLicenseEvidence = input.logs.filter(
+    (log) =>
+      getChemicalLogCredentialReview(log, input.technicianLicenses, now)
+        .status !== "ready",
+  ).length;
+  const missingBranch3Reviewer = input.reviewQueue.filter(
+    (item) =>
+      item.category === "wdo" &&
+      item.missingEvidence.includes("Missing Branch 3 reviewer"),
+  ).length;
+
+  return {
+    expired: licenseStatuses.filter(
+      (status) => status.status === "review_required",
+    ).length,
+    expiringSoon: licenseStatuses.filter(
+      (status) => status.status === "expiring_soon",
+    ).length,
+    missingBranch3Reviewer:
+      missingBranch3Reviewer ||
+      input.jobs.filter(
+        (job) =>
+          getWdoCredentialReview(job, input.technicianLicenses, now).status !==
+          "ready",
+      ).length,
+    missingChemicalLicenseEvidence,
+    structuredChemicalEvidenceReady:
+      input.logs.length > 0 && missingChemicalLicenseEvidence === 0,
+  };
 }
 
 function EmptyState({ children }: { children: string }) {
@@ -414,6 +464,7 @@ export function ComplianceClient() {
   const jobsQuery = useJobs();
   const inventoryQuery = useChemicalInventory();
   const logsQuery = useChemicalLogs();
+  const technicianLicensesQuery = useTechnicianLicenses();
   const createAdvisory = useCreateComplianceAdvisory();
   const [workflow, setWorkflow] = useState<ComplianceWorkflow>(
     "chemical_application",
@@ -451,6 +502,8 @@ export function ComplianceClient() {
   const jobs = jobsQuery.data ?? emptyJobs;
   const inventory = inventoryQuery.data ?? emptyInventory;
   const logs = logsQuery.data ?? emptyLogs;
+  const technicianLicenses =
+    technicianLicensesQuery.data ?? emptyTechnicianLicenses;
   const reviewedSources = sources.filter(
     (source) => source.review_status === "reviewed",
   );
@@ -463,8 +516,9 @@ export function ComplianceClient() {
         documents,
         jobs,
         sources,
+        technicianLicenses,
       }),
-    [audits, chunks, documents, jobs, logs, sources],
+    [audits, chunks, documents, jobs, logs, sources, technicianLicenses],
   );
   const reviewSummary = useMemo(
     () => getComplianceNeedsReviewSummary(reviewQueue),
@@ -491,8 +545,9 @@ export function ComplianceClient() {
         documents,
         inventory,
         sources,
+        technicianLicenses,
       }),
-    [chunks, documents, inventory, logs, sources],
+    [chunks, documents, inventory, logs, sources, technicianLicenses],
   );
   const chemicalProductBinderSummary = useMemo(
     () => getChemicalProductBinderSummary(chemicalProductBinder),
@@ -529,6 +584,16 @@ export function ComplianceClient() {
   const advisoryEvaluation = useMemo(
     () => (advisory ? evaluateComplianceAdvisory(advisory) : null),
     [advisory],
+  );
+  const credentialAlerts = useMemo(
+    () =>
+      getCredentialAlertCounts({
+        jobs,
+        logs,
+        reviewQueue,
+        technicianLicenses,
+      }),
+    [jobs, logs, reviewQueue, technicianLicenses],
   );
 
   async function submitAdvisory(event: FormEvent<HTMLFormElement>) {
@@ -611,6 +676,81 @@ export function ComplianceClient() {
             value={reviewSummary.sourceItems}
           />
         </div>
+      </section>
+
+      <section className="rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-theme-text-primary">
+              Credential alerts
+            </h2>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              License evidence missing and expiration review cues for chemical
+              and Branch 3 workflows.
+            </p>
+          </div>
+          <StatusPill
+            dot={false}
+            tone={
+              credentialAlerts.missingChemicalLicenseEvidence > 0 ||
+              credentialAlerts.missingBranch3Reviewer > 0 ||
+              credentialAlerts.expired > 0 ||
+              credentialAlerts.expiringSoon > 0
+                ? "warning"
+                : "success"
+            }
+          >
+            credential review required
+          </StatusPill>
+        </div>
+        {technicianLicensesQuery.setupWarning ? (
+          <p
+            className={`mt-4 rounded-md border p-3 text-sm ${statusSurfaceClassName(
+              "warning",
+            )}`}
+          >
+            {technicianLicensesQuery.setupWarning}
+          </p>
+        ) : null}
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <StatTile
+            label="Expiring soon"
+            tone={credentialAlerts.expiringSoon > 0 ? "warning" : "success"}
+            value={credentialAlerts.expiringSoon}
+          />
+          <StatTile
+            label="Expired"
+            tone={credentialAlerts.expired > 0 ? "danger" : "success"}
+            value={credentialAlerts.expired}
+          />
+          <StatTile
+            label="Missing Branch 3 reviewer"
+            tone={
+              credentialAlerts.missingBranch3Reviewer > 0
+                ? "warning"
+                : "success"
+            }
+            value={credentialAlerts.missingBranch3Reviewer}
+          />
+          <StatTile
+            label="Missing chemical license evidence"
+            tone={
+              credentialAlerts.missingChemicalLicenseEvidence > 0
+                ? "warning"
+                : "success"
+            }
+            value={credentialAlerts.missingChemicalLicenseEvidence}
+          />
+        </div>
+        {credentialAlerts.structuredChemicalEvidenceReady ? (
+          <p
+            className={`mt-4 rounded-md border p-3 text-sm ${statusSurfaceClassName(
+              "success",
+            )}`}
+          >
+            Structured credential evidence is available for chemical records.
+          </p>
+        ) : null}
       </section>
 
       <section className="flex flex-col gap-3">
@@ -880,8 +1020,8 @@ export function ComplianceClient() {
               Needs review
             </h2>
             <p className="mt-1 max-w-3xl text-sm text-theme-text-secondary">
-              Operator review required for records with missing evidence,
-              source readiness gaps, or recent advisory audit follow-up.
+              Operator review required for records with missing evidence, source
+              readiness gaps, or recent advisory audit follow-up.
             </p>
           </div>
           <StatusPill
@@ -1027,7 +1167,9 @@ export function ComplianceClient() {
               </p>
               {advisoryEvaluation ? (
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3 text-sm">
-                  <h3 className="font-semibold text-theme-text-primary">Evaluation</h3>
+                  <h3 className="font-semibold text-theme-text-primary">
+                    Evaluation
+                  </h3>
                   <p
                     className={`mt-2 w-fit rounded-md border px-2 py-1 text-xs font-semibold ${evaluationTone(
                       advisoryEvaluation.status,

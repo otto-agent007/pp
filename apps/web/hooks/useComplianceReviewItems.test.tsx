@@ -11,6 +11,7 @@ import {
 } from "./useCompliance";
 import { useChemicalLogs } from "./useInventory";
 import { useJobs } from "./useJobs";
+import { useTechnicianLicenses } from "./useTechnicians";
 
 vi.mock("./useCompliance", () => ({
   isComplianceSchemaUnavailableError: vi.fn(
@@ -31,6 +32,10 @@ vi.mock("./useInventory", () => ({
 
 vi.mock("./useJobs", () => ({
   useJobs: vi.fn(),
+}));
+
+vi.mock("./useTechnicians", () => ({
+  useTechnicianLicenses: vi.fn(),
 }));
 
 const now = "2026-06-04T12:00:00.000Z";
@@ -90,6 +95,20 @@ const complianceChemicalLog = {
   },
   job: completedJob,
 } as const;
+const technicianLicense = {
+  id: "license-1",
+  technician_id: "tech-1",
+  license_type: "operator",
+  branch: "branch_2",
+  license_number: "OPR-123",
+  issuing_authority: "spcb",
+  status: "active",
+  expires_at: "2026-12-31",
+  notes: null,
+  archived_at: null,
+  created_at: now,
+  updated_at: now,
+} as const;
 
 function queryResult(data: unknown[] = [], error: unknown = null) {
   return {
@@ -107,6 +126,13 @@ describe("useComplianceReviewItems", () => {
     vi.mocked(useComplianceDocuments).mockReturnValue(queryResult([]));
     vi.mocked(useComplianceChunks).mockReturnValue(queryResult([]));
     vi.mocked(useComplianceAdvisoryAudits).mockReturnValue(queryResult([]));
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [],
+      error: null,
+      isLoading: false,
+      schemaUnavailable: false,
+      setupWarning: null,
+    } as never);
     vi.mocked(isComplianceSchemaUnavailableError).mockClear();
   });
 
@@ -170,7 +196,9 @@ describe("useComplianceReviewItems", () => {
     expect(result.current.setupWarning).toBe(
       "Compliance advisory review data is unavailable. Continue the workflow, then review compliance setup from the Compliance page.",
     );
-    expect(result.current.setupWarning).not.toMatch(/relation|compliance_sources/i);
+    expect(result.current.setupWarning).not.toMatch(
+      /relation|compliance_sources/i,
+    );
     expect(result.current.buildGuardrailForJob("job-1").status).toBe("clear");
     expect(result.current.guardrailSummaryForJobs(["job-1"])).toEqual({
       clearJobs: 1,
@@ -178,5 +206,40 @@ describe("useComplianceReviewItems", () => {
       totalJobs: 1,
       warningJobs: 0,
     });
+  });
+
+  it("reduces chemical credential review when assigned technician has valid structured evidence", () => {
+    vi.mocked(useChemicalLogs).mockReturnValue(
+      queryResult([
+        {
+          ...complianceChemicalLog,
+          job: {
+            ...completedJob,
+            assigned_tech_id: "tech-1",
+          },
+        },
+      ]),
+    );
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [technicianLicense],
+      error: null,
+      isLoading: false,
+      schemaUnavailable: false,
+      setupWarning: null,
+    } as never);
+
+    const { result } = renderHook(() =>
+      useComplianceReviewItems({
+        jobs: [{ ...completedJob, assigned_tech_id: "tech-1" }],
+      }),
+    );
+
+    expect(result.current.items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          missingEvidence: expect.arrayContaining(["License evidence missing"]),
+        }),
+      ]),
+    );
   });
 });

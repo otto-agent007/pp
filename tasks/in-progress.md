@@ -2,20 +2,24 @@
 
 Active implementation slice:
 
-- PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, is open as a
-  draft on branch `codex/shared-compliance-review-items-safe-hook-v1`.
-- The slice adds a shared safe compliance review-items hook for Payments and
-  Closeouts, keeps deterministic guardrail logic in `packages/domain`, and
-  preserves advisory-only schema-unavailable behavior without migrations,
-  provider setup, OpenAI calls, or customer-facing portal payload changes.
+- Technician License / Branch Credential Tracking V1 is active on branch
+  `codex/technician-license-branch-credentials-v1`.
+- The slice adds a proposed-only `technician_licenses` migration, shared
+  credential contracts, API-client CRUD wrappers, domain readiness helpers,
+  React Query hooks, `/technicians` credential tracking, and `/compliance`
+  credential alerts.
+- No local, preview, or production Supabase migration apply command is in
+  scope; the migration file is checked in for review only.
+- PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, merged on
+  June 4, 2026.
 - PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, merged on
   June 4, 2026.
 - PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
 - PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
   June 3, 2026.
-- Recommended next implementation candidates after PR #99 lands: inventory
-  deep-linking from Chemical Product Binder or technician license/Branch
-  credential tracking.
+- Recommended next implementation candidates after this slice lands: inventory
+  deep-linking from Chemical Product Binder or service/catalog follow-through
+  based on operator priority.
 
 Current blockers and guardrails:
 
@@ -24,7 +28,7 @@ Current blockers and guardrails:
   and an admin/dispatcher sign-in path are available.
 - Local Supabase target verification remains blocked until Docker Desktop's
   Linux engine and local Postgres on `127.0.0.1:54322` are reachable.
-- No Codex-run preview/production migration, provider/env mutation,
+- No Codex-run local/preview/production migration apply, provider/env mutation,
   seed/reset write, live compliance ingestion, or production data action has
   been performed.
 
