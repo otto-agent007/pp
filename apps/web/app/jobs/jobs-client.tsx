@@ -602,6 +602,7 @@ export function JobsClient() {
             className={`group rounded-md border ${statusSurfaceClassName(
               "warning",
             )}`}
+            open
           >
             <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
               Job setup notes

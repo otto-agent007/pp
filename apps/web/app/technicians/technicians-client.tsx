@@ -261,10 +261,6 @@ export function TechniciansClient() {
             <h2 className="text-xl font-semibold text-theme-text-primary">
               Invite technician
             </h2>
-            <p className="mt-1 text-sm text-theme-text-secondary">
-              Send a password setup link through the configured email delivery
-              path so the technician can choose their own password.
-            </p>
           </div>
 
           <div

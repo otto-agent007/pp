@@ -190,7 +190,7 @@ describe("JobsClient", () => {
     await user.click(screen.getByRole("button", { name: "New job" }));
 
     const helper = screen.getByText("Job setup notes").closest("details");
-    expect(helper).not.toHaveAttribute("open");
+    expect(helper).toHaveAttribute("open");
     expect(
       screen.getByText(
         "Select a customer first so the location list only shows that customer active service addresses.",

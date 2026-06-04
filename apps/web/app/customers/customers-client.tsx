@@ -942,7 +942,10 @@ export function CustomersClient({
           </Button>
         </div>
 
-        <details className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg">
+        <details
+          className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg"
+          open
+        >
           <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
             Customer setup notes
           </summary>
@@ -1306,6 +1309,11 @@ export function CustomersClient({
                   >
                     <p className="font-semibold text-status-alert-warning-fg">
                       Archive this customer?
+                    </p>
+                    <p className="mt-1 text-status-alert-warning-fg">
+                      Archiving removes the customer from active scheduling and
+                      portal-link handoff. Existing jobs, invoices, and service
+                      history stay available for review.
                     </p>
                     <div className="mt-3 flex flex-wrap justify-end gap-2">
                       <Button

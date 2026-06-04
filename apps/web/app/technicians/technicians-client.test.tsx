@@ -147,10 +147,10 @@ describe("TechniciansClient", () => {
 
     expect(screen.getByText("Technician access handoff")).toBeInTheDocument();
     expect(
-      screen.getByText(
+      screen.getAllByText(
         "Sends a password setup link through the configured email delivery path.",
       ),
-    ).toBeInTheDocument();
+    ).toHaveLength(1);
     expect(
       screen.getByText(
         "Confirm the email, send the invite, then open dispatch to assign the first route.",
