@@ -101,10 +101,10 @@ Current status as of June 4, 2026:
 
 - PR #89, Chemical Product Binder V1, merged on June 3, 2026.
 - PR #90, the fresh `codex/*` branch and draft-PR completion rule, merged on June 3, 2026.
-- GitHub currently shows no open PRs, so no open PRs are required unless new work appears.
+- Draft PR #98, Pest Patrol Service Billing Catalog V1, is open on branch `codex/service-billing-catalog-v1`.
 - `/compliance` remains advisory-only: RAG/source-backed advisories degrade cleanly when `OPENAI_API_KEY` is absent or `20260516175724_california_compliance_rag_v1.sql` has not been applied, and Chemical Product Binder status stays deterministic where possible from existing inventory, chemical logs, jobs, and reviewed source readiness.
 - Core admin workflows are provider-free and demo-ready locally: `/`, `/dispatch`, `/customers`, `/jobs`, `/technicians`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal` have fixture-smoke coverage from recent verified slices.
 - Demo seed/reset still carries the larger San Diego proof story with 16 technicians, 100 customers, 108 locations, 180 current-week jobs, 14 inventory items, proof media, invoices/payments, portal-ready closeouts, and guarded `demo@email.com` refresh behavior.
 - No Codex-run preview or production migration, provider dashboard mutation, environment mutation, seed/reset write, live compliance ingestion, or production data action has been performed.
 - Real local and protected-preview seed/reset or authenticated browser smoke remain blocked until the operator supplies approved Supabase env names, a reachable local Docker/Postgres target if local Supabase is used, protected-preview access, and an admin/dispatcher sign-in path.
-- Next candidates: Pest Patrol Service Billing Catalog V1, shared safe compliance review hook, inventory deep-linking from Chemical Product Binder, or technician license/Branch credential tracking.
+- Next candidates after PR #98 lands: shared safe compliance review hook, inventory deep-linking from Chemical Product Binder, or technician license/Branch credential tracking.

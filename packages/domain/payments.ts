@@ -13,6 +13,11 @@ import type {
   InvoiceStatus,
   Job,
 } from "@pest-patrol/types";
+import {
+  buildInvoiceLineItemsFromOffering,
+  getServiceBillingFamilyLabel,
+  inferServiceBillingOfferingFromJob,
+} from "./serviceBillingCatalog";
 
 export type InvoiceStatusFilter = InvoiceStatus | "all";
 export type CustomerPortalInvoiceStatusFilter = CustomerPortalInvoice["status"] | "all";
@@ -153,21 +158,26 @@ export function validateInvoiceInput(input: InvoiceInput) {
 export function buildInvoiceInputFromJob(
   job: Job,
   amountCents: number,
-  description = "Pest control service",
+  description?: string,
 ): InvoiceInput {
+  const offering = inferServiceBillingOfferingFromJob(job).offering;
+  const lineItems = description?.trim()
+    ? [
+        {
+          description,
+          quantity: 1,
+          unit_amount_cents: amountCents,
+        },
+      ]
+    : buildInvoiceLineItemsFromOffering(offering, amountCents);
+
   return validateInvoiceInput({
     job_id: job.id,
     customer_id: job.customer_id,
     currency: "usd",
     due_date: null,
     notes: job.service_notes,
-    line_items: [
-      {
-        description,
-        quantity: 1,
-        unit_amount_cents: amountCents,
-      },
-    ],
+    line_items: lineItems,
   });
 }
 
@@ -176,12 +186,30 @@ export function getInvoiceHandoffHref(jobId: string) {
 }
 
 function searchableInvoiceText(invoice: Invoice) {
+  const offering = invoice.job
+    ? inferServiceBillingOfferingFromJob(invoice.job).offering
+    : null;
+
   return [
+    invoice.id,
     invoice.customer?.name,
     invoice.job?.customer?.name,
+    invoice.job?.customer?.property_type,
+    invoice.job?.customer?.service_notes,
     invoice.job?.location?.address,
+    invoice.job?.location?.nickname,
+    invoice.job?.location?.service_notes,
+    invoice.job?.service_notes,
     invoice.notes,
     invoice.status,
+    ...(invoice.line_items ?? []).map((item) => item.description),
+    offering?.label,
+    offering?.shortLabel,
+    offering ? getServiceBillingFamilyLabel(offering.family) : null,
+    offering?.customerSafeDescription,
+    ...(offering?.pestTags ?? []),
+    ...(offering?.serviceTags ?? []),
+    ...(offering?.searchTerms ?? []),
   ]
     .filter(Boolean)
     .join(" ")

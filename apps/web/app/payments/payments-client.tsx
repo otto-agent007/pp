@@ -5,6 +5,7 @@ import {
   buildBillingQueue,
   buildComplianceGuardrailForJob,
   buildComplianceReviewItems,
+  buildInvoiceNotesFromOffering,
   buildInvoiceInputFromJob,
   filterInvoices,
   formatJobScheduleDateTime,
@@ -15,7 +16,14 @@ import {
   getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
+  getPromotionSuggestionsForOffering,
   getProviderReadinessCopy,
+  getServiceBillingFamilyLabel,
+  getServiceBillingFamilyOptions,
+  getServiceBillingGuidanceForJob,
+  getServiceBillingOffering,
+  inferServiceBillingOfferingFromJob,
+  listServiceBillingOfferings,
   type ComplianceGuardrail,
   type InvoiceReconciliationStatus,
   type InvoiceStatusFilter,
@@ -28,6 +36,9 @@ import type {
   ComplianceSource,
   Invoice,
   Job,
+  ServiceBillingFamily,
+  ServiceBillingOffering,
+  ServiceBillingOfferingId,
 } from "@pest-patrol/types";
 import {
   Button,
@@ -45,7 +56,7 @@ import {
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
 import {
@@ -75,9 +86,10 @@ interface InvoiceFormState {
   notes: string;
 }
 
+const genericInvoiceDescription = "Pest control service";
 const emptyForm: InvoiceFormState = {
   amount: "",
-  description: "Pest control service",
+  description: genericInvoiceDescription,
   due_date: "",
   job_id: "",
   notes: "",
@@ -89,7 +101,12 @@ const emptyDocuments: ComplianceDocument[] = [];
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
 const emptySources: ComplianceSource[] = [];
+const serviceBillingOfferings = listServiceBillingOfferings();
+const serviceBillingFamilyOptions = getServiceBillingFamilyOptions().filter(
+  (option) => option.family !== "other",
+);
 type ReconciliationFilter = InvoiceReconciliationStatus | "all";
+type ServicePresetSource = "inferred" | "manual";
 type InvoiceActionConfirmation = {
   action: "mark_paid" | "void";
   invoiceId: string;
@@ -137,6 +154,22 @@ function invoiceTitle(invoice: Invoice) {
   return (
     invoice.customer?.name ?? invoice.job?.customer?.name ?? "Unknown customer"
   );
+}
+
+function servicePresetLabel(offering: ServiceBillingOffering) {
+  return `${offering.label} - ${getServiceBillingFamilyLabel(offering.family)}`;
+}
+
+function servicePresetKeywords(offering: ServiceBillingOffering) {
+  return [
+    offering.shortLabel,
+    offering.customerSafeDescription,
+    offering.portalSafeSummary,
+    getServiceBillingFamilyLabel(offering.family),
+    ...offering.pestTags,
+    ...offering.serviceTags,
+    ...offering.searchTerms,
+  ];
 }
 
 async function copyText(value: string) {
@@ -379,6 +412,15 @@ export function PaymentsClient() {
   const [paymentLinkConfirmationId, setPaymentLinkConfirmationId] = useState<
     string | null
   >(null);
+  const [servicePresetId, setServicePresetId] = useState<
+    ServiceBillingOfferingId | ""
+  >("");
+  const [servicePresetSource, setServicePresetSource] =
+    useState<ServicePresetSource>("inferred");
+  const [serviceFamilyFilter, setServiceFamilyFilter] = useState<
+    ServiceBillingFamily | "all"
+  >("all");
+  const [serviceCopyDirty, setServiceCopyDirty] = useState(false);
   const highlightedInvoiceId = searchParams.get("invoice_id") ?? "";
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
@@ -438,6 +480,31 @@ export function PaymentsClient() {
     ],
     [completedJobs],
   );
+  const servicePresetOptions = useMemo(() => {
+    const filteredOfferings =
+      serviceFamilyFilter === "all"
+        ? serviceBillingOfferings
+        : serviceBillingOfferings.filter(
+            (offering) => offering.family === serviceFamilyFilter,
+          );
+    const selectedOffering = servicePresetId
+      ? getServiceBillingOffering(servicePresetId)
+      : null;
+    const options = selectedOffering
+      ? [
+          selectedOffering,
+          ...filteredOfferings.filter(
+            (offering) => offering.id !== selectedOffering.id,
+          ),
+        ]
+      : filteredOfferings;
+
+    return options.map((offering) => ({
+      keywords: servicePresetKeywords(offering),
+      label: servicePresetLabel(offering),
+      value: offering.id,
+    }));
+  }, [serviceFamilyFilter, servicePresetId]);
   const visibleInvoices = useMemo(() => {
     const filtered = filterInvoices(invoices, search, status).filter(
       (invoice) =>
@@ -483,6 +550,41 @@ export function PaymentsClient() {
     completedJobs.find((job) => job.id === form.job_id) ??
     completedJobs[0] ??
     null;
+  const selectedJobInference = useMemo(
+    () => (selectedJob ? inferServiceBillingOfferingFromJob(selectedJob) : null),
+    [selectedJob],
+  );
+  const selectedOffering = useMemo(
+    () =>
+      servicePresetId
+        ? getServiceBillingOffering(servicePresetId)
+        : selectedJobInference?.offering ?? null,
+    [selectedJobInference, servicePresetId],
+  );
+  const selectedServiceGuidance = useMemo(() => {
+    if (!selectedJob) {
+      return null;
+    }
+
+    if (!selectedOffering || selectedOffering.id === selectedJobInference?.offering.id) {
+      return getServiceBillingGuidanceForJob(selectedJob);
+    }
+
+    return {
+      family: selectedOffering.family,
+      items: selectedOffering.closeoutGuidance,
+      label: `${getServiceBillingFamilyLabel(
+        selectedOffering.family,
+      )} billing guidance`,
+      offeringId: selectedOffering.id,
+      summary: selectedOffering.internalBillingGuidance,
+    };
+  }, [selectedJob, selectedJobInference, selectedOffering]);
+  const selectedPromotionSuggestions = useMemo(
+    () =>
+      selectedOffering ? getPromotionSuggestionsForOffering(selectedOffering) : [],
+    [selectedOffering],
+  );
   const selectedJobGuardrail = useMemo(
     () =>
       selectedJob
@@ -498,6 +600,47 @@ export function PaymentsClient() {
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
       : null;
   const paymentProviderCopy = getProviderReadinessCopy("payment");
+
+  useEffect(() => {
+    if (!selectedJob || servicePresetSource === "manual" || serviceCopyDirty) {
+      return;
+    }
+
+    const inferredOffering = inferServiceBillingOfferingFromJob(selectedJob).offering;
+    setServicePresetId(inferredOffering.id);
+    setServicePresetSource("inferred");
+    setForm((current) => {
+      const nextDescription =
+        inferredOffering.suggestedLineItems[0]?.description ??
+        inferredOffering.customerSafeDescription;
+      const nextNotes = buildInvoiceNotesFromOffering(selectedJob, inferredOffering);
+
+      if (current.description === nextDescription && current.notes === nextNotes) {
+        return current;
+      }
+
+      return {
+        ...current,
+        description: nextDescription,
+        notes: nextNotes,
+      };
+    });
+  }, [selectedJob, serviceCopyDirty, servicePresetSource]);
+
+  function applyServicePreset() {
+    if (!selectedJob || !selectedOffering) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      description:
+        selectedOffering.suggestedLineItems[0]?.description ??
+        selectedOffering.customerSafeDescription,
+      notes: buildInvoiceNotesFromOffering(selectedJob, selectedOffering),
+    }));
+    setServiceCopyDirty(false);
+  }
 
   async function submitInvoice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -521,6 +664,10 @@ export function PaymentsClient() {
         notes: form.notes || selectedJob.service_notes,
       });
       setForm(emptyForm);
+      setServicePresetId("");
+      setServicePresetSource("inferred");
+      setServiceFamilyFilter("all");
+      setServiceCopyDirty(false);
       setCloseoutHandoffJobId("");
     } catch (error) {
       setFormError(
@@ -743,6 +890,9 @@ export function PaymentsClient() {
                     jobId: invoiceJob.id,
                   })
                 : null;
+              const invoiceServiceInference = invoiceJob
+                ? inferServiceBillingOfferingFromJob(invoiceJob)
+                : null;
               const confirmingAction =
                 actionConfirmation?.invoiceId === invoice.id
                   ? actionConfirmation.action
@@ -776,7 +926,20 @@ export function PaymentsClient() {
                           >
                             {reconciliation.label}
                           </StatusPill>
+                          {invoiceServiceInference ? (
+                            <StatusPill tone="info">
+                              {invoiceServiceInference.offering.shortLabel}
+                            </StatusPill>
+                          ) : null}
                         </div>
+                        {invoiceServiceInference ? (
+                          <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
+                            Service: {invoiceServiceInference.offering.label} ·{" "}
+                            {getServiceBillingFamilyLabel(
+                              invoiceServiceInference.offering.family,
+                            )}
+                          </p>
+                        ) : null}
                         <p className="mt-2 text-sm text-theme-text-secondary">
                           {invoice.job?.location?.address ?? "No location"}
                         </p>
@@ -1050,11 +1213,124 @@ export function PaymentsClient() {
             label="Completed job"
             onChange={(jobId) => {
               setCloseoutHandoffJobId("");
+              setServicePresetSource("inferred");
+              setServiceCopyDirty(false);
               setForm((current) => ({ ...current, job_id: jobId }));
             }}
             options={completedJobOptions}
             value={form.job_id || selectedJob?.id || ""}
           />
+          <div className="grid gap-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-theme-text-primary">
+                  Service preset
+                </p>
+                <p className="mt-1 text-xs text-theme-text-secondary">
+                  Pick the customer-safe service copy before invoice release.
+                </p>
+              </div>
+              {selectedOffering ? (
+                <StatusPill
+                  tone={servicePresetSource === "manual" ? "info" : "success"}
+                >
+                  {servicePresetSource === "manual"
+                    ? "Manual preset"
+                    : selectedJobInference?.confidence === "fallback"
+                      ? "Default preset"
+                      : "Inferred preset"}
+                </StatusPill>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                aria-pressed={serviceFamilyFilter === "all"}
+                onClick={() => setServiceFamilyFilter("all")}
+                size="sm"
+                variant={serviceFamilyFilter === "all" ? "primary" : "ghost"}
+              >
+                All
+              </Button>
+              {serviceBillingFamilyOptions.map((option) => (
+                <Button
+                  aria-pressed={serviceFamilyFilter === option.family}
+                  key={option.family}
+                  onClick={() => setServiceFamilyFilter(option.family)}
+                  size="sm"
+                  variant={
+                    serviceFamilyFilter === option.family ? "primary" : "ghost"
+                  }
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+            <SearchableSelect
+              ariaLabel="Service preset"
+              emptyMessage="No service presets found"
+              label="Service preset"
+              onChange={(offeringId) => {
+                setServicePresetId(offeringId as ServiceBillingOfferingId);
+                setServicePresetSource("manual");
+              }}
+              options={servicePresetOptions}
+              value={servicePresetId || selectedOffering?.id || ""}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                disabled={!selectedJob || !selectedOffering}
+                onClick={applyServicePreset}
+                size="sm"
+                variant="ghost"
+              >
+                Apply service preset
+              </Button>
+              {selectedJobInference?.matchedTerms.length ? (
+                <span className="text-xs font-semibold text-theme-text-muted">
+                  Matched {selectedJobInference.matchedTerms.slice(0, 3).join(", ")}
+                </span>
+              ) : null}
+            </div>
+            {selectedServiceGuidance ? (
+              <div
+                className={`rounded-md border p-3 ${statusSurfaceClassName(
+                  "info",
+                )}`}
+              >
+                <p className="text-sm font-semibold text-theme-text-primary">
+                  {selectedServiceGuidance.label}
+                </p>
+                <p className="mt-1 text-xs text-theme-text-secondary">
+                  {selectedServiceGuidance.summary}
+                </p>
+                <ul className="mt-2 grid gap-1 text-xs text-theme-text-secondary">
+                  {selectedServiceGuidance.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {selectedPromotionSuggestions.length > 0 ? (
+              <div>
+                <p className="text-xs font-semibold uppercase text-theme-text-muted">
+                  Promotion suggestions
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedPromotionSuggestions.map((suggestion) => (
+                    <span
+                      className="rounded-full border border-theme-border-default bg-theme-background-surface px-3 py-1 text-xs font-bold text-theme-text-secondary"
+                      key={suggestion.id}
+                    >
+                      Review promo: {suggestion.label}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs font-semibold text-theme-text-muted">
+                  Review-only suggestions; invoice totals stay unchanged.
+                </p>
+              </div>
+            ) : null}
+          </div>
           {selectedJobGuardrail ? (
             <ComplianceGuardrailCard guardrail={selectedJobGuardrail} />
           ) : null}
@@ -1084,12 +1360,13 @@ export function PaymentsClient() {
             <input
               aria-label="Line item description"
               className={formControlClassName}
-              onChange={(event) =>
+              onChange={(event) => {
                 setForm((current) => ({
                   ...current,
                   description: event.target.value,
-                }))
-              }
+                }));
+                setServiceCopyDirty(true);
+              }}
               value={form.description}
             />
           </label>
@@ -1113,12 +1390,13 @@ export function PaymentsClient() {
             <textarea
               aria-label="Invoice notes"
               className={formTextareaClassName}
-              onChange={(event) =>
+              onChange={(event) => {
                 setForm((current) => ({
                   ...current,
                   notes: event.target.value,
-                }))
-              }
+                }));
+                setServiceCopyDirty(true);
+              }}
               value={form.notes}
             />
           </label>

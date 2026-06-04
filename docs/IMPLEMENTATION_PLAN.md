@@ -1,10 +1,11 @@
 # Implementation Plan
 
-## Current Priority: Next Slice Selection
+## Current Priority: Pest Patrol Service Billing Catalog V1
 
-As of June 4, 2026, GitHub shows no open PRs. PR #89, `[codex] Chemical
-Product Binder V1`, and PR #90, `[codex] Require fresh branch and draft PR per
-slice`, both merged on June 3, 2026.
+As of June 4, 2026, draft PR #98, `[codex] Pest Patrol Service Billing Catalog
+V1`, is open on branch `codex/service-billing-catalog-v1`. PR #89, `[codex]
+Chemical Product Binder V1`, and PR #90, `[codex] Require fresh branch and
+draft PR per slice`, both merged on June 3, 2026.
 
 Current product baseline:
 
@@ -24,13 +25,18 @@ Current product baseline:
    availability when local Supabase is the target, protected-preview access,
    and an admin/dispatcher sign-in path.
 
-Next decision points:
+Current slice status:
 
-1. Choose whether the next implementation slice is Pest Patrol Service Billing
-   Catalog V1, shared safe compliance review hook, inventory deep-linking from
-   Chemical Product Binder, or technician license/Branch credential tracking.
-2. Keep compliance advisory-only and deterministic where possible.
-3. Keep every new slice on a fresh correctly named `codex/*` branch with a
+1. PR #98 adds a static checked-in service billing catalog, service-aware
+   invoice defaults/search, Payments service presets, service billing guidance,
+   and review-only promotion suggestions.
+2. The slice keeps migrations, schema changes, runtime website scraping,
+   provider setup, automatic pricing, automatic discounts, and customer-facing
+   internal compliance copy out of scope.
+3. Next candidates after PR #98 lands: shared safe compliance review hook,
+   inventory deep-linking from Chemical Product Binder, or technician
+   license/Branch credential tracking.
+4. Keep every new slice on a fresh correctly named `codex/*` branch with a
    draft PR before calling it complete.
 
 ## Previous Priority: Pest Patrol Customer Portal V1

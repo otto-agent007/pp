@@ -109,6 +109,26 @@ const secondCompletedJob = {
     address: "20 Oak Avenue",
   },
 } as const;
+const rodentJob = {
+  ...completedJob,
+  id: "job-rodent",
+  service_notes: "Rodent attic sanitation and access point sealing",
+  location: {
+    ...location,
+    id: "location-rodent",
+    address: "30 Cedar Lane",
+  },
+} as const;
+const escrowJob = {
+  ...completedJob,
+  id: "job-escrow",
+  service_notes: "WDO escrow Branch 3 inspection for real estate clearance",
+  location: {
+    ...location,
+    id: "location-escrow",
+    address: "40 Market Street",
+  },
+} as const;
 const invoice = {
   id: "invoice-1",
   job_id: "job-1",
@@ -344,6 +364,74 @@ describe("PaymentsClient", () => {
     expect(
       screen.queryByRole("option", { name: /2:38 AM/ }),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders service preset selector, quick filters, and inferred preset state", async () => {
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(
+      screen.getByRole("combobox", { name: "Service preset" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "General Pest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Recurring" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Termite/WDO" })).toBeInTheDocument();
+    expect(await screen.findByText("Inferred preset")).toBeInTheDocument();
+    expect(
+      (screen.getByRole("combobox", {
+        name: "Service preset",
+      }) as HTMLInputElement).value,
+    ).toContain("Quarterly General Pest");
+  });
+
+  it("applies service preset copy without changing amount", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [rodentJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    await user.type(screen.getByLabelText("Invoice amount"), "125");
+    await user.click(screen.getByRole("button", { name: "Apply service preset" }));
+
+    expect(screen.getByLabelText("Invoice amount")).toHaveValue(125);
+    expect(screen.getByLabelText("Line item description")).toHaveValue(
+      "Rodent exclusion and attic sanitation",
+    );
+    expect(
+      (screen.getByLabelText("Invoice notes") as HTMLTextAreaElement).value,
+    ).toContain("Rodent exclusion and attic sanitation completed");
+  });
+
+  it("shows review-only promotion suggestions for eligible presets", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [escrowJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(
+      screen.getByText("Review promo: Real estate agent first-service offer"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Review-only suggestions; invoice totals stay unchanged."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Invoice amount")).toHaveValue(null);
   });
 
   it("uses shared count tiles for payment filters without changing invoice data", async () => {
@@ -628,7 +716,7 @@ describe("PaymentsClient", () => {
         customer_id: "customer-1",
         line_items: [
           expect.objectContaining({
-            description: "Pest control service",
+            description: "Quarterly general pest service",
             unit_amount_cents: 12500,
           }),
         ],
@@ -678,7 +766,7 @@ describe("PaymentsClient", () => {
     expect(createInvoice).toHaveBeenCalledWith(
       expect.objectContaining({
         job_id: "job-1",
-        notes: "Quarterly service",
+        notes: expect.stringContaining("Quarterly general pest service completed"),
       }),
     );
   });

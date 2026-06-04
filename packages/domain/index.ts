@@ -496,6 +496,27 @@ export {
   validateJobPhotoUploadQueuePayload,
 } from "./media";
 export {
+  buildInvoiceLineItemsFromOffering,
+  buildInvoiceNotesFromOffering,
+  getPromotionSuggestionsForOffering,
+  getServiceBillingFamilyLabel,
+  getServiceBillingFamilyOptions,
+  getServiceBillingGuidanceForJob,
+  getServiceBillingOffering,
+  inferServiceBillingOfferingFromJob,
+  listServiceBillingOfferings,
+  searchServiceBillingOfferings,
+} from "./serviceBillingCatalog";
+export type {
+  ServiceBillingFamily,
+  ServiceBillingGuidance,
+  ServiceBillingInferenceResult,
+  ServiceBillingLineItemTemplate,
+  ServiceBillingOffering,
+  ServiceBillingOfferingId,
+  ServiceBillingPromotionSuggestion,
+} from "@pest-patrol/types";
+export {
   buildInvoiceInputFromJob,
   buildCustomerPortalInvoices,
   createInvoice,
