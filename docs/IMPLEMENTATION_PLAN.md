@@ -1,9 +1,11 @@
 # Implementation Plan
 
-## Current Priority: Pest Patrol Service Billing Catalog V1
+## Current Priority: Shared Compliance Review Items Safe Hook V1
 
-As of June 4, 2026, draft PR #98, `[codex] Pest Patrol Service Billing Catalog
-V1`, is open on branch `codex/service-billing-catalog-v1`. PR #89, `[codex]
+As of June 4, 2026, draft PR #99, `[codex] Shared Compliance Review Items Safe
+Hook V1`, is open on branch
+`codex/shared-compliance-review-items-safe-hook-v1`. PR #98, `[codex] Pest
+Patrol Service Billing Catalog V1`, merged on June 4, 2026. PR #89, `[codex]
 Chemical Product Binder V1`, and PR #90, `[codex] Require fresh branch and
 draft PR per slice`, both merged on June 3, 2026.
 
@@ -27,15 +29,14 @@ Current product baseline:
 
 Current slice status:
 
-1. PR #98 adds a static checked-in service billing catalog, service-aware
-   invoice defaults/search, Payments service presets, service billing guidance,
-   and review-only promotion suggestions.
-2. The slice keeps migrations, schema changes, runtime website scraping,
-   provider setup, automatic pricing, automatic discounts, and customer-facing
-   internal compliance copy out of scope.
-3. Next candidates after PR #98 lands: shared safe compliance review hook,
-   inventory deep-linking from Chemical Product Binder, or technician
-   license/Branch credential tracking.
+1. PR #99 adds a shared safe compliance review-items hook for Payments and
+   Closeouts, centralizing compliance source/document/chunk/audit, chemical
+   log, and job review orchestration behind `apps/web/hooks`.
+2. The slice keeps deterministic review-item, summary, and guardrail behavior
+   in `packages/domain`, avoids migrations and OpenAI calls, preserves
+   advisory-only behavior, and keeps customer-facing portal payloads unchanged.
+3. Next candidates after PR #99 lands: inventory deep-linking from Chemical
+   Product Binder or technician license/Branch credential tracking.
 4. Keep every new slice on a fresh correctly named `codex/*` branch with a
    draft PR before calling it complete.
 

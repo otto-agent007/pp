@@ -2,18 +2,20 @@
 
 Active implementation slice:
 
-- PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, is open as a
-  draft on branch `codex/service-billing-catalog-v1`.
-- The slice adds a static checked-in service billing catalog, shared service
-  inference helpers, Payments service presets/guidance, review-only promotion
-  suggestions, and service-aware invoice search without migrations, provider
-  setup, runtime website scraping, or automatic discount/total changes.
+- PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, is open as a
+  draft on branch `codex/shared-compliance-review-items-safe-hook-v1`.
+- The slice adds a shared safe compliance review-items hook for Payments and
+  Closeouts, keeps deterministic guardrail logic in `packages/domain`, and
+  preserves advisory-only schema-unavailable behavior without migrations,
+  provider setup, OpenAI calls, or customer-facing portal payload changes.
+- PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, merged on
+  June 4, 2026.
 - PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
 - PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
   June 3, 2026.
-- Recommended next implementation candidates after PR #98 lands: shared safe
-  compliance review hook, inventory deep-linking from Chemical Product Binder,
-  or technician license/Branch credential tracking.
+- Recommended next implementation candidates after PR #99 lands: inventory
+  deep-linking from Chemical Product Binder or technician license/Branch
+  credential tracking.
 
 Current blockers and guardrails:
 
