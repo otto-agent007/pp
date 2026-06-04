@@ -6,6 +6,11 @@ import {
   listComplianceSourceRecords,
   searchComplianceChunkRecords,
 } from "@pest-patrol/api-client";
+import {
+  CHEMICAL_LOG_MISSING_TECHNICIAN_CREDENTIAL_COPY,
+  getChemicalLogCredentialReview,
+  getWdoCredentialReview,
+} from "./technicianLicenses";
 import type { AuthSupabaseClient } from "@pest-patrol/api-client";
 import type {
   ChemicalInventoryItem,
@@ -29,6 +34,7 @@ import type {
   Job,
   JobUnitAuditItem,
   LocationUnit,
+  TechnicianLicense,
 } from "@pest-patrol/types";
 
 export type { ComplianceSetupReadiness } from "@pest-patrol/types";
@@ -205,7 +211,9 @@ export interface ComplianceNeedsReviewQueueInput {
   chunks: ComplianceChunk[];
   documents: ComplianceDocument[];
   jobs: Job[];
+  now?: string;
   sources: ComplianceSource[];
+  technicianLicenses?: TechnicianLicense[];
 }
 
 export interface ComplianceNeedsReviewSummary {
@@ -292,7 +300,9 @@ export interface ChemicalProductBinderInput {
   chunks: ComplianceChunk[];
   documents: ComplianceDocument[];
   inventory: ChemicalInventoryItem[];
+  now?: string;
   sources: ComplianceSource[];
+  technicianLicenses?: TechnicianLicense[];
 }
 
 export type ComplianceAdvisoryEvaluationStatus =
@@ -755,7 +765,10 @@ function workflowFindings(
     }
   }
 
-  if (input.workflow === "chemical_application" && input.chemicalLog?.chemical?.epa_number) {
+  if (
+    input.workflow === "chemical_application" &&
+    input.chemicalLog?.chemical?.epa_number
+  ) {
     findings.push(
       finding(
         input.workflow,
@@ -778,7 +791,9 @@ export function getComplianceRuntimeStatus(
   return {
     available: hasKey,
     provider: "openai",
-    reason: hasKey ? null : "OPENAI_API_KEY is not configured for server-side RAG.",
+    reason: hasKey
+      ? null
+      : "OPENAI_API_KEY is not configured for server-side RAG.",
     requiredEnvName: "OPENAI_API_KEY",
   };
 }
@@ -853,9 +868,11 @@ export function buildComplianceAdvisory(
       findings: [],
       generated_at: generatedAt,
       required_fields: requiredFields,
-      review_task: "Configure OPENAI_API_KEY and ingest reviewed compliance sources.",
+      review_task:
+        "Configure OPENAI_API_KEY and ingest reviewed compliance sources.",
       status: "rag_disabled",
-      summary: "Compliance RAG is disabled because the server-side model key is not configured.",
+      summary:
+        "Compliance RAG is disabled because the server-side model key is not configured.",
       workflow: input.workflow,
     };
   }
@@ -866,7 +883,8 @@ export function buildComplianceAdvisory(
       findings: [],
       generated_at: generatedAt,
       required_fields: requiredFields,
-      review_task: "Ingest and review official EPA, DPR, or SPCB source chunks before relying on this advisory.",
+      review_task:
+        "Ingest and review official EPA, DPR, or SPCB source chunks before relying on this advisory.",
       status: "insufficient_sources",
       summary: `No reviewed source citations were retrieved for ${workflowLabels[input.workflow]}.`,
       workflow: input.workflow,
@@ -903,9 +921,7 @@ export function evaluateComplianceAdvisory(
     (finding) => finding.severity !== "info",
   ).length;
   const operatorReviewCount =
-    unknownEvidenceCount +
-    warningFindingCount +
-    (advisory.review_task ? 1 : 0);
+    unknownEvidenceCount + warningFindingCount + (advisory.review_task ? 1 : 0);
   const blocked =
     advisory.status === "rag_disabled" ||
     advisory.status === "insufficient_sources" ||
@@ -982,7 +998,10 @@ export function getComplianceMultiUnitAuditSummary(
 
   return {
     blocked,
-    complete: activeUnits.length > 0 && pending === 0 && blocked + followUp + skipped === 0,
+    complete:
+      activeUnits.length > 0 &&
+      pending === 0 &&
+      blocked + followUp + skipped === 0,
     followUp,
     pending,
     skipped,
@@ -1128,7 +1147,9 @@ export function getComplianceKnowledgeBaseReadiness(input: {
     const documents = input.documents.filter((document) =>
       sourceIds.has(document.source_id),
     );
-    const chunks = input.chunks.filter((chunk) => sourceIds.has(chunk.source_id));
+    const chunks = input.chunks.filter((chunk) =>
+      sourceIds.has(chunk.source_id),
+    );
     const reviewedSources = workflowSources.filter(
       (source) => source.review_status === "reviewed",
     ).length;
@@ -1160,16 +1181,18 @@ export function getComplianceKnowledgeBaseReadiness(input: {
   });
 
   return {
-    readyWorkflowCount: workflows.filter((workflow) => workflow.status === "ready")
-      .length,
+    readyWorkflowCount: workflows.filter(
+      (workflow) => workflow.status === "ready",
+    ).length,
     totals: {
       archivedSources: input.sources.filter(
         (source) => source.review_status === "archived",
       ).length,
       chunks: input.chunks.length,
       documents: input.documents.length,
-      draftSources: input.sources.filter((source) => source.review_status === "draft")
-        .length,
+      draftSources: input.sources.filter(
+        (source) => source.review_status === "draft",
+      ).length,
       reviewedSources: input.sources.filter(
         (source) => source.review_status === "reviewed",
       ).length,
@@ -1245,6 +1268,7 @@ function productNextStep(input: {
   hasCriticalReview: boolean;
   lowStock: boolean;
   sourceReady: boolean;
+  structuredCredentialReview: boolean;
   unknownLicenseReviewCount: number;
 }) {
   if (input.hasCriticalReview) {
@@ -1252,7 +1276,9 @@ function productNextStep(input: {
   }
 
   if (input.unknownLicenseReviewCount > 0) {
-    return "operator review required: capture license or supervision detail in chemical log notes before relying on this binder.";
+    return input.structuredCredentialReview
+      ? "operator credential review required: capture or confirm structured technician license evidence before relying on this binder."
+      : "operator review required: capture license or supervision detail in chemical log notes before relying on this binder.";
   }
 
   if (input.lowStock) {
@@ -1274,7 +1300,8 @@ function productStatusRank(status: ChemicalProductBinderStatus) {
 
 function sortChemicalProductBinderItems(items: ChemicalProductBinderItem[]) {
   return [...items].sort((left, right) => {
-    const statusDelta = productStatusRank(right.status) - productStatusRank(left.status);
+    const statusDelta =
+      productStatusRank(right.status) - productStatusRank(left.status);
 
     if (statusDelta !== 0) return statusDelta;
 
@@ -1319,13 +1346,15 @@ export function buildChemicalProductBinder(
 
   for (const chemicalLogs of logsByChemicalId.values()) {
     chemicalLogs.sort(
-      (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at),
+      (left, right) =>
+        Date.parse(right.created_at) - Date.parse(left.created_at),
     );
   }
 
   const items = Array.from(productsById.values()).map((product) => {
     const logs = logsByChemicalId.get(product.id) ?? [];
     const missingLabels = new Set<string>();
+    const structuredCredentialReview = input.technicianLicenses !== undefined;
     const missingEpa = !hasValidRegistrationNumber(product.epa_number);
     const lowStock =
       product.current_stock !== null &&
@@ -1338,9 +1367,18 @@ export function buildChemicalProductBinder(
     const logsMissingTargetSite = logs.filter(
       (log) => !hasText(chemicalLogTargetSite(log)),
     ).length;
-    const unknownLicenseReviewCount = logs.filter(
-      (log) => !hasLicenseOrSupervisionEvidence(log),
-    ).length;
+    const credentialReviews = structuredCredentialReview
+      ? logs.map((log) =>
+          getChemicalLogCredentialReview(
+            log,
+            input.technicianLicenses ?? [],
+            input.now,
+          ),
+        )
+      : [];
+    const unknownLicenseReviewCount = structuredCredentialReview
+      ? credentialReviews.filter((review) => review.status !== "ready").length
+      : logs.filter((log) => !hasLicenseOrSupervisionEvidence(log)).length;
 
     if (missingEpa) {
       missingLabels.add("EPA/California registration number");
@@ -1355,7 +1393,26 @@ export function buildChemicalProductBinder(
     }
 
     if (unknownLicenseReviewCount > 0) {
-      missingLabels.add("License or supervision detail");
+      const credentialGap = credentialReviews.find(
+        (review) => review.status !== "ready",
+      );
+
+      if (
+        structuredCredentialReview &&
+        credentialGap?.summary ===
+          CHEMICAL_LOG_MISSING_TECHNICIAN_CREDENTIAL_COPY
+      ) {
+        missingLabels.add(CHEMICAL_LOG_MISSING_TECHNICIAN_CREDENTIAL_COPY);
+      } else if (
+        structuredCredentialReview &&
+        credentialGap?.status === "expiring_soon"
+      ) {
+        missingLabels.add("Expiration review");
+      } else if (structuredCredentialReview) {
+        missingLabels.add("License evidence missing");
+      } else {
+        missingLabels.add("License or supervision detail");
+      }
     }
 
     if (lowStock) {
@@ -1394,6 +1451,7 @@ export function buildChemicalProductBinder(
         hasCriticalReview,
         lowStock,
         sourceReady: sourceReadiness.ready,
+        structuredCredentialReview,
         unknownLicenseReviewCount,
       }),
       productName: product.name,
@@ -1473,8 +1531,14 @@ export function filterChemicalProductBinderItems(
   return sortChemicalProductBinderItems(items.filter((item) => item.lowStock));
 }
 
-function buildChemicalReviewItems(logs: ChemicalLog[]) {
-  return logs.flatMap((log): ComplianceReviewItem[] => {
+function buildChemicalReviewItems(input: {
+  logs: ChemicalLog[];
+  now?: string;
+  technicianLicenses?: TechnicianLicense[];
+}) {
+  const structuredCredentialReview = input.technicianLicenses !== undefined;
+
+  return input.logs.flatMap((log): ComplianceReviewItem[] => {
     const job = itemJobContext(log);
     const missingEvidence: string[] = [];
     let hasCriticalMissingEvidence = false;
@@ -1504,7 +1568,21 @@ function buildChemicalReviewItems(logs: ChemicalLog[]) {
       addMissing("Target site or treated area");
     }
 
-    addMissing("License or supervision detail", false);
+    if (structuredCredentialReview) {
+      const credentialReview = getChemicalLogCredentialReview(
+        log,
+        input.technicianLicenses ?? [],
+        input.now,
+      );
+
+      if (credentialReview.status === "expiring_soon") {
+        addMissing("Expiration review", false);
+      } else if (credentialReview.status !== "ready") {
+        addMissing(credentialReview.summary, false);
+      }
+    } else {
+      addMissing("License or supervision detail", false);
+    }
 
     if (missingEvidence.length === 0) return [];
 
@@ -1546,11 +1624,30 @@ function jobWdoText(job: Job) {
     .join(" ");
 }
 
-function buildWdoReviewItems(jobs: Job[]) {
-  return jobs
+function buildWdoReviewItems(input: {
+  jobs: Job[];
+  now?: string;
+  technicianLicenses?: TechnicianLicense[];
+}) {
+  const structuredCredentialReview = input.technicianLicenses !== undefined;
+
+  return input.jobs
     .filter((job) => wdoSignalPattern.test(jobWdoText(job)))
-    .map(
-      (job): ComplianceReviewItem => ({
+    .map((job): ComplianceReviewItem => {
+      const credentialReview = structuredCredentialReview
+        ? getWdoCredentialReview(job, input.technicianLicenses ?? [], input.now)
+        : null;
+      const missingEvidence = [
+        "WDO report or inspection draft",
+        "Findings, damaged members, or inaccessible-area evidence",
+        "Corrective recommendations or follow-up disposition",
+      ];
+
+      if (credentialReview && credentialReview.status !== "ready") {
+        missingEvidence.push("Missing Branch 3 reviewer");
+      }
+
+      return {
         category: "wdo",
         customerName: itemCustomerName(job),
         description:
@@ -1558,19 +1655,15 @@ function buildWdoReviewItems(jobs: Job[]) {
         id: `wdo:${job.id}`,
         jobHref: itemJobHref(job),
         jobId: job.id,
-        missingEvidence: [
-          "WDO report or inspection draft",
-          "Findings, damaged members, or inaccessible-area evidence",
-          "Corrective recommendations or follow-up disposition",
-        ],
+        missingEvidence,
         nextAction:
           "Review the job closeout and attach WDO/Branch 3 evidence where applicable; advisory only; verify against cited source.",
         severity: "warning",
         status: "open",
         title: "WDO / Branch 3 operator review required",
         workflow: "wdo_branch3",
-      }),
-    );
+      };
+    });
 }
 
 function reviewedChunkCountForWorkflow(input: {
@@ -1648,14 +1741,14 @@ function advisoryAuditContext(input: {
   const chemicalLogId =
     typeof context.chemical_log_id === "string" &&
     hasText(context.chemical_log_id)
-    ? context.chemical_log_id
-    : undefined;
+      ? context.chemical_log_id
+      : undefined;
   const jobId =
     typeof context.job_id === "string" && hasText(context.job_id)
-    ? context.job_id
-    : chemicalLogId
-      ? input.chemicalLogJobIdById.get(chemicalLogId)
-      : undefined;
+      ? context.job_id
+      : chemicalLogId
+        ? input.chemicalLogJobIdById.get(chemicalLogId)
+        : undefined;
 
   return { chemicalLogId, jobId };
 }
@@ -1670,7 +1763,10 @@ function buildAdvisoryAuditReviewItems(input: {
   );
 
   return [...input.audits]
-    .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
+    .sort(
+      (left, right) =>
+        Date.parse(right.created_at) - Date.parse(left.created_at),
+    )
     .slice(0, input.limit)
     .flatMap((audit): ComplianceReviewItem[] => {
       const context = advisoryAuditContext({ audit, chemicalLogJobIdById });
@@ -1740,8 +1836,16 @@ export function buildComplianceNeedsReviewQueue(
   input: ComplianceNeedsReviewQueueInput,
 ) {
   return sortComplianceReviewItems([
-    ...buildChemicalReviewItems(input.chemicalLogs),
-    ...buildWdoReviewItems(input.jobs),
+    ...buildChemicalReviewItems({
+      logs: input.chemicalLogs,
+      now: input.now,
+      technicianLicenses: input.technicianLicenses,
+    }),
+    ...buildWdoReviewItems({
+      jobs: input.jobs,
+      now: input.now,
+      technicianLicenses: input.technicianLicenses,
+    }),
     ...buildSourceReadinessReviewItems(input),
     ...buildAdvisoryAuditReviewItems({
       audits: input.audits,
@@ -1792,7 +1896,8 @@ export function buildComplianceGuardrailForJob(input: {
       items,
       jobId: input.jobId,
       label: "Compliance clear",
-      nextStep: "Continue normal closeout or billing handoff after office review.",
+      nextStep:
+        "Continue normal closeout or billing handoff after office review.",
       status: "clear",
       summary: "No missing evidence review items are linked to this job.",
     };
@@ -1886,7 +1991,9 @@ export async function listComplianceChunks() {
   return listComplianceChunkRecords();
 }
 
-export async function searchComplianceChunks(input: ComplianceChunkSearchInput) {
+export async function searchComplianceChunks(
+  input: ComplianceChunkSearchInput,
+) {
   return searchComplianceChunkRecords(input);
 }
 

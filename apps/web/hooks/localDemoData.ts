@@ -13,6 +13,7 @@ import {
   buildCustomerPortalUpgradeGeneratedKey,
   validateInvoiceInput,
   validateJobInput,
+  validateTechnicianLicenseInput,
   validateTechnicianInviteInput,
 } from "@pest-patrol/domain";
 import type {
@@ -39,6 +40,8 @@ import type {
   JobInput,
   JobStatus,
   PaymentRecord,
+  TechnicianLicense,
+  TechnicianLicenseInput,
   TechnicianInviteInput,
   TechnicianInviteResult,
   TechnicianProfile,
@@ -53,6 +56,7 @@ function stableFixtureNow() {
 let localDemoFixtures = buildDemoWorkflowFixtures({ now: stableFixtureNow() });
 let localDemoIdCounter = 0;
 let localDemoFixtureSessionActive = false;
+let localDemoTechnicianLicenses: TechnicianLicense[] = [];
 let localDemoPortalUpgradeIntentKeys = new Set<string>();
 const localDemoFixtureSessionKey = "pest-patrol-demo-fixture-session";
 
@@ -234,6 +238,16 @@ function requireInventoryItem(fixtures: typeof localDemoFixtures, id: string) {
   return item;
 }
 
+function requireTechnician(fixtures: typeof localDemoFixtures, id: string) {
+  const technician = fixtures.technicians.find((item) => item.id === id);
+
+  if (!technician) {
+    throw new Error("Technician was not found in the local demo.");
+  }
+
+  return technician;
+}
+
 function requireInvoice(fixtures: typeof localDemoFixtures, id: string) {
   const invoice = fixtures.invoices.find((item) => item.id === id);
 
@@ -297,6 +311,7 @@ export function deactivateLocalDemoFixtureSession() {
 export function resetLocalDemoFixtures() {
   localDemoFixtures = buildDemoWorkflowFixtures({ now: stableFixtureNow() });
   localDemoIdCounter = 0;
+  localDemoTechnicianLicenses = [];
   localDemoPortalUpgradeIntentKeys = new Set<string>();
 
   return localDemoFixtures;
@@ -437,6 +452,110 @@ export function inviteLocalDemoTechnician(
   rebuildDerivedFixtureRelations();
 
   return { technician };
+}
+
+export function listLocalDemoTechnicianLicenses(
+  technicianId?: string,
+): TechnicianLicense[] {
+  return localDemoTechnicianLicenses
+    .filter((license) => !license.archived_at)
+    .filter((license) =>
+      technicianId ? license.technician_id === technicianId : true,
+    )
+    .sort((left, right) => {
+      const leftDate = left.expires_at ?? "9999-12-31";
+      const rightDate = right.expires_at ?? "9999-12-31";
+      const dateDelta = leftDate.localeCompare(rightDate);
+
+      if (dateDelta !== 0) return dateDelta;
+
+      return left.license_number.localeCompare(right.license_number);
+    })
+    .map((license) => ({ ...license }));
+}
+
+export function createLocalDemoTechnicianLicense(
+  input: TechnicianLicenseInput,
+): TechnicianLicense {
+  const fixtures = requireLocalDemoFixtures();
+  const normalized = validateTechnicianLicenseInput(input);
+  requireTechnician(fixtures, normalized.technician_id);
+
+  const createdAt = nowIso();
+  const license: TechnicianLicense = {
+    ...normalized,
+    archived_at: null,
+    created_at: createdAt,
+    id: nextLocalId("technician-license"),
+    updated_at: createdAt,
+  };
+
+  localDemoTechnicianLicenses = [...localDemoTechnicianLicenses, license];
+
+  return { ...license };
+}
+
+export function updateLocalDemoTechnicianLicense(
+  id: string,
+  input: TechnicianLicenseInput,
+): TechnicianLicense {
+  const fixtures = requireLocalDemoFixtures();
+  const normalized = validateTechnicianLicenseInput(input);
+  requireTechnician(fixtures, normalized.technician_id);
+
+  const updatedAt = nowIso();
+  let updated: TechnicianLicense | null = null;
+
+  localDemoTechnicianLicenses = localDemoTechnicianLicenses.map((license) => {
+    if (license.id !== id) {
+      return license;
+    }
+
+    const nextLicense: TechnicianLicense = {
+      ...license,
+      ...normalized,
+      updated_at: updatedAt,
+    };
+    updated = nextLicense;
+    return nextLicense;
+  });
+
+  const saved = updated;
+
+  if (!saved) {
+    throw new Error("Technician credential was not found in the local demo.");
+  }
+
+  return saved;
+}
+
+export function archiveLocalDemoTechnicianLicense(
+  id: string,
+): TechnicianLicense {
+  const updatedAt = nowIso();
+  let archived: TechnicianLicense | null = null;
+
+  localDemoTechnicianLicenses = localDemoTechnicianLicenses.map((license) => {
+    if (license.id !== id) {
+      return license;
+    }
+
+    const nextLicense: TechnicianLicense = {
+      ...license,
+      archived_at: updatedAt,
+      updated_at: updatedAt,
+    };
+    archived = nextLicense;
+    return nextLicense;
+  });
+
+  const saved = archived;
+
+  if (!saved) {
+    throw new Error("Technician credential was not found in the local demo.");
+  }
+
+  return saved;
 }
 
 export function createLocalDemoJob(input: JobInput): Job {
@@ -894,8 +1013,7 @@ export function requestLocalDemoPortalUpgradeIntent(
     customer.id,
     normalized.plan_id,
   );
-  const alreadyRequested =
-    localDemoPortalUpgradeIntentKeys.has(generatedKey);
+  const alreadyRequested = localDemoPortalUpgradeIntentKeys.has(generatedKey);
 
   if (!alreadyRequested) {
     localDemoPortalUpgradeIntentKeys.add(generatedKey);

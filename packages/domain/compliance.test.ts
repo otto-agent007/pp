@@ -154,8 +154,7 @@ function reviewItem(input: {
 }): ComplianceReviewItem {
   return {
     category: "chemical",
-    description:
-      "Missing evidence review recommended before billing handoff.",
+    description: "Missing evidence review recommended before billing handoff.",
     id: `review-${input.jobId}-${input.severity}`,
     jobId: input.jobId,
     missingEvidence: ["EPA/California registration number"],
@@ -197,10 +196,9 @@ describe("compliance domain", () => {
 
     expect(request.prompt).toBe("Review label");
     expect(buildComplianceQueryText(request)).toContain("Chemical application");
-    expect(getComplianceSourceFilters("chemical_application").authorities).toEqual([
-      "cdpr",
-      "epa",
-    ]);
+    expect(
+      getComplianceSourceFilters("chemical_application").authorities,
+    ).toEqual(["cdpr", "epa"]);
   });
 
   it("chunks local compliance fixtures without live web access", () => {
@@ -421,7 +419,8 @@ describe("compliance domain", () => {
       expect.objectContaining({
         category: "source",
         missingEvidence: ["Reviewed source lane"],
-        nextAction: "Ingest and review official source chunks for this workflow.",
+        nextAction:
+          "Ingest and review official source chunks for this workflow.",
         title: "Chemical application source readiness",
         workflow: "chemical_application",
       }),
@@ -610,6 +609,78 @@ describe("compliance domain", () => {
     expect(binder[0].missingLabels).toContain("License or supervision detail");
   });
 
+  it("uses structured technician credentials to clear product binder license review", () => {
+    const binder = buildChemicalProductBinder({
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          job: {
+            ...chemicalLog.job,
+            assigned_tech_id: "technician-1",
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      inventory: [chemicalLog.chemical],
+      sources: [source],
+      technicianLicenses: [
+        {
+          id: "license-1",
+          technician_id: "technician-1",
+          license_type: "operator",
+          branch: "branch_2",
+          license_number: "OPR-123",
+          issuing_authority: "spcb",
+          status: "active",
+          expires_at: "2026-12-31",
+          notes: null,
+          archived_at: null,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      now,
+    });
+
+    expect(binder[0]).toEqual(
+      expect.objectContaining({
+        missingLabels: [],
+        status: "clear",
+        unknownLicenseReviewCount: 0,
+      }),
+    );
+  });
+
+  it("uses explicit copy when chemical log technician identity is unavailable", () => {
+    const queue = buildComplianceNeedsReviewQueue({
+      audits: [],
+      chemicalLogs: [
+        {
+          ...chemicalLog,
+          job: {
+            ...chemicalLog.job,
+            assigned_tech_id: null,
+          },
+        },
+      ],
+      chunks: [chunk],
+      documents: [document],
+      jobs: [],
+      sources: [source],
+      technicianLicenses: [],
+      now,
+    });
+
+    expect(queue).toContainEqual(
+      expect.objectContaining({
+        missingEvidence: expect.arrayContaining([
+          "Technician credential cannot be verified because this chemical log does not include technician identity.",
+        ]),
+      }),
+    );
+  });
+
   it("returns clear product binder status for clean product and log evidence", () => {
     const binder = buildChemicalProductBinder({
       chemicalLogs: [
@@ -683,13 +754,15 @@ describe("compliance domain", () => {
       productsWithReviewItems: 3,
       totalProducts: 3,
     });
-    expect(filterChemicalProductBinderItems(binder, "missing_epa")).toHaveLength(
+    expect(
+      filterChemicalProductBinderItems(binder, "missing_epa"),
+    ).toHaveLength(1);
+    expect(
+      filterChemicalProductBinderItems(binder, "license_review"),
+    ).toHaveLength(1);
+    expect(filterChemicalProductBinderItems(binder, "low_stock")).toHaveLength(
       1,
     );
-    expect(filterChemicalProductBinderItems(binder, "license_review")).toHaveLength(
-      1,
-    );
-    expect(filterChemicalProductBinderItems(binder, "low_stock")).toHaveLength(1);
   });
 
   it("uses product binder review copy without violation language", () => {
@@ -747,7 +820,8 @@ describe("compliance domain", () => {
       items: [],
       jobId: "job-clear",
       label: "Compliance clear",
-      nextStep: "Continue normal closeout or billing handoff after office review.",
+      nextStep:
+        "Continue normal closeout or billing handoff after office review.",
       status: "clear",
       summary: "No missing evidence review items are linked to this job.",
     });
@@ -874,14 +948,15 @@ describe("compliance domain", () => {
       sources: [source],
     });
 
-    expect(filterComplianceReviewItemsForJob({ items: queue, jobId: "job-1" }))
-      .toContainEqual(
-        expect.objectContaining({
-          auditId: "audit-scoped",
-          chemicalLogId: "log-1",
-          jobId: "job-1",
-        }),
-      );
+    expect(
+      filterComplianceReviewItemsForJob({ items: queue, jobId: "job-1" }),
+    ).toContainEqual(
+      expect.objectContaining({
+        auditId: "audit-scoped",
+        chemicalLogId: "log-1",
+        jobId: "job-1",
+      }),
+    );
   });
 
   it("evaluates fixture-backed advisories for operator-facing copy without live providers", () => {

@@ -1,5 +1,24 @@
 # Done
 
+## Technician License / Branch Credential Tracking V1
+
+- Added a proposed `technician_licenses` migration for review with technician
+  profile references, archive timestamps, indexes, `updated_at` trigger, RLS,
+  authenticated grants, anon revoke, and no hard-delete policy
+- Added shared credential types, API-client CRUD wrappers, domain validation
+  and readiness helpers for technician, branch, job, chemical-log, and WDO
+  credential review
+- Added React Query credential hooks, fixture-mode credential CRUD, compact
+  `/technicians` credential panels/forms, and `/compliance` Credential alerts
+  with structured Chemical Product Binder credential evidence
+- Kept copy advisory-only with credential review required, license evidence
+  missing, and expiration review language; no customer portal payloads,
+  provider dashboards, env vars, seed/reset data, preview data, production
+  data, or Supabase apply commands were changed
+- Verified with focused domain/API-client/web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`
+
 ## AGENTS Fresh Branch + Draft PR Rule
 
 - Added the required operating rule to root `AGENTS.md` and durable

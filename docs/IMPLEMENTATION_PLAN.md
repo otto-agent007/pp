@@ -1,19 +1,20 @@
 # Implementation Plan
 
-## Current Priority: Shared Compliance Review Items Safe Hook V1
+## Current Priority: Technician License / Branch Credential Tracking V1
 
-As of June 4, 2026, draft PR #99, `[codex] Shared Compliance Review Items Safe
-Hook V1`, is open on branch
-`codex/shared-compliance-review-items-safe-hook-v1`. PR #98, `[codex] Pest
-Patrol Service Billing Catalog V1`, merged on June 4, 2026. PR #89, `[codex]
-Chemical Product Binder V1`, and PR #90, `[codex] Require fresh branch and
-draft PR per slice`, both merged on June 3, 2026.
+As of June 4, 2026, PR #99, `[codex] Shared Compliance Review Items Safe Hook
+V1`, merged on June 4, 2026, and the active implementation branch is
+`codex/technician-license-branch-credentials-v1`. PR #98, `[codex] Pest Patrol
+Service Billing Catalog V1`, merged on June 4, 2026. PR #89, `[codex] Chemical
+Product Binder V1`, and PR #90, `[codex] Require fresh branch and draft PR per
+slice`, both merged on June 3, 2026.
 
 Current product baseline:
 
 1. `/compliance` is advisory-only. Existing RAG/source advisory behavior
-   remains setup-aware, and Chemical Product Binder V1 is deterministic without
-   OpenAI, live EPA label fetches, or migrations.
+   remains setup-aware, Chemical Product Binder V1 is deterministic without
+   OpenAI or live EPA label fetches, and the current credential slice adds only
+   a proposed review migration plus deterministic credential readiness.
 2. Local fixture/demo coverage remains the dependable no-env gate for the
    current admin/customer surfaces; recent verified slices cover dashboard,
    dispatch, customers, jobs, technicians, inventory, payments, closeouts,
@@ -29,15 +30,21 @@ Current product baseline:
 
 Current slice status:
 
-1. PR #99 adds a shared safe compliance review-items hook for Payments and
-   Closeouts, centralizing compliance source/document/chunk/audit, chemical
-   log, and job review orchestration behind `apps/web/hooks`.
-2. The slice keeps deterministic review-item, summary, and guardrail behavior
-   in `packages/domain`, avoids migrations and OpenAI calls, preserves
-   advisory-only behavior, and keeps customer-facing portal payloads unchanged.
-3. Next candidates after PR #99 lands: inventory deep-linking from Chemical
-   Product Binder or technician license/Branch credential tracking.
-4. Keep every new slice on a fresh correctly named `codex/*` branch with a
+1. Technician License / Branch Credential Tracking V1 adds proposed
+   `technician_licenses` schema/RLS for review, shared credential types,
+   Supabase API-client wrappers, domain readiness helpers, React Query hooks,
+   `/technicians` credential panels/forms, and a compact `/compliance`
+   Credential alerts panel.
+2. The slice keeps credential status and WDO/chemical readiness decisions in
+   `packages/domain`, keeps Supabase access behind `packages/api-client`, and
+   avoids local, preview, or production migration apply commands.
+3. Credential copy remains advisory-only: credential review required, license
+   evidence missing, and expiration review; no customer-facing portal payloads
+   or provider dashboards are changed.
+4. Next candidates after this credential slice lands: inventory deep-linking
+   from Chemical Product Binder or service/catalog follow-through based on
+   operator priority.
+5. Keep every new slice on a fresh correctly named `codex/*` branch with a
    draft PR before calling it complete.
 
 ## Previous Priority: Pest Patrol Customer Portal V1
@@ -237,6 +244,7 @@ Next decision points:
    operator chooses to merge or rebase them.
 3. Operator loads approved local or preview Supabase env names before any real
    seed/reset, live ingestion, or authenticated preview browser smoke.
+
 ## Previous Priority: Dispatch Calendar Proof Polish
 
 That polish pass started from local `main` synced through merged PR #75 and
@@ -296,7 +304,7 @@ Completed in this batch:
 1. Confirmed PR #74 is merged and fast-forwarded local `main` to `58a9eb1`.
 2. Reran `corepack pnpm dlx vercel build --yes`; the command completed
    successfully, wrote `.vercel/output`, and reported `Build completed
-   successfully` for the preview target.
+successfully` for the preview target.
 3. Kept the remaining launch blockers explicit: approved Supabase env names,
    local Docker/Postgres availability for local migration inspection,
    protected-preview access, and admin/dispatcher sign-in are still required

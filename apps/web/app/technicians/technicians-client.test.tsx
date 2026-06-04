@@ -4,15 +4,23 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  useArchiveTechnicianLicense,
+  useCreateTechnicianLicense,
   useInviteTechnician,
   useTechnicianDirectory,
+  useTechnicianLicenses,
+  useUpdateTechnicianLicense,
 } from "../../hooks/useTechnicians";
 import { useJobs } from "../../hooks/useJobs";
 import { TechniciansClient } from "./technicians-client";
 
 vi.mock("../../hooks/useTechnicians", () => ({
+  useArchiveTechnicianLicense: vi.fn(),
+  useCreateTechnicianLicense: vi.fn(),
   useInviteTechnician: vi.fn(),
   useTechnicianDirectory: vi.fn(),
+  useTechnicianLicenses: vi.fn(),
+  useUpdateTechnicianLicense: vi.fn(),
 }));
 vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
@@ -25,6 +33,20 @@ const technician = {
   email: "testnician@example.com",
   display_name: "Testnician",
   status: "active",
+  created_at: now,
+  updated_at: now,
+} as const;
+const technicianLicense = {
+  id: "license-1",
+  technician_id: "technician-1",
+  license_type: "operator",
+  branch: "branch_3",
+  license_number: "OPR-123",
+  issuing_authority: "spcb",
+  status: "active",
+  expires_at: "2026-12-31",
+  notes: null,
+  archived_at: null,
   created_at: now,
   updated_at: now,
 } as const;
@@ -52,6 +74,9 @@ function localDateKey(date: Date) {
 
 describe("TechniciansClient", () => {
   const inviteMutateAsync = vi.fn();
+  const createLicenseMutateAsync = vi.fn();
+  const updateLicenseMutateAsync = vi.fn();
+  const archiveLicenseMutateAsync = vi.fn();
 
   beforeEach(() => {
     vi.mocked(useTechnicianDirectory).mockReturnValue({
@@ -60,6 +85,24 @@ describe("TechniciansClient", () => {
     } as never);
     vi.mocked(useInviteTechnician).mockReturnValue({
       mutateAsync: inviteMutateAsync,
+      isPending: false,
+    } as never);
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [technicianLicense],
+      isLoading: false,
+      schemaUnavailable: false,
+      setupWarning: null,
+    } as never);
+    vi.mocked(useCreateTechnicianLicense).mockReturnValue({
+      mutateAsync: createLicenseMutateAsync,
+      isPending: false,
+    } as never);
+    vi.mocked(useUpdateTechnicianLicense).mockReturnValue({
+      mutateAsync: updateLicenseMutateAsync,
+      isPending: false,
+    } as never);
+    vi.mocked(useArchiveTechnicianLicense).mockReturnValue({
+      mutateAsync: archiveLicenseMutateAsync,
       isPending: false,
     } as never);
     const today = new Date();
@@ -94,7 +137,13 @@ describe("TechniciansClient", () => {
       isLoading: false,
     } as never);
     inviteMutateAsync.mockReset();
+    createLicenseMutateAsync.mockReset();
+    updateLicenseMutateAsync.mockReset();
+    archiveLicenseMutateAsync.mockReset();
     inviteMutateAsync.mockResolvedValue({ technician });
+    createLicenseMutateAsync.mockResolvedValue(technicianLicense);
+    updateLicenseMutateAsync.mockResolvedValue(technicianLicense);
+    archiveLicenseMutateAsync.mockResolvedValue(technicianLicense);
   });
 
   it("renders technician profiles and filters them", async () => {
@@ -103,11 +152,15 @@ describe("TechniciansClient", () => {
 
     expect(screen.getByText("Technician roster")).toBeInTheDocument();
     expect(screen.getByText("Dispatch-ready crew")).toBeInTheDocument();
-    const activeTechsTile = screen.getByText("Active techs").closest(".rounded-lg");
+    const activeTechsTile = screen
+      .getByText("Active techs")
+      .closest(".rounded-lg");
     expect(activeTechsTile).toBeInTheDocument();
-    expect(within(activeTechsTile as HTMLElement).getByText("1")).toBeInTheDocument();
+    expect(
+      within(activeTechsTile as HTMLElement).getByText("1"),
+    ).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Testnician" })).toBeInTheDocument();
-    expect(screen.getByText("Testnician")).toBeInTheDocument();
+    expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
     expect(screen.getByText("testnician@example.com")).toBeInTheDocument();
     expect(screen.getByText("1 today")).toBeInTheDocument();
     expect(screen.getByText("1 today").closest(".rounded-md")).toHaveClass(
@@ -137,9 +190,13 @@ describe("TechniciansClient", () => {
 
     render(<TechniciansClient />);
 
-    const activeTechsTile = screen.getByText("Active techs").closest(".rounded-lg");
+    const activeTechsTile = screen
+      .getByText("Active techs")
+      .closest(".rounded-lg");
     expect(activeTechsTile).toBeInTheDocument();
-    expect(within(activeTechsTile as HTMLElement).getByText("16")).toBeInTheDocument();
+    expect(
+      within(activeTechsTile as HTMLElement).getByText("16"),
+    ).toBeInTheDocument();
   });
 
   it("shows technician access handoff guidance before inviting", () => {
@@ -160,6 +217,62 @@ describe("TechniciansClient", () => {
       screen.getByRole("link", { name: "Open dispatch after invite" }),
     ).toHaveAttribute("href", "/dispatch");
   });
+
+  it("renders technician credentials and creates an admin-editable license", async () => {
+    const user = userEvent.setup();
+    render(<TechniciansClient />);
+
+    expect(screen.getAllByText("Credential tracking").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getByText("OPR-123")).toBeInTheDocument();
+    expect(screen.getByText("Branch 3")).toBeInTheDocument();
+    expect(screen.getAllByText("Testnician").length).toBeGreaterThan(0);
+
+    await user.selectOptions(
+      screen.getByLabelText("Credential technician"),
+      "technician-1",
+    );
+    await user.selectOptions(screen.getByLabelText("License type"), "operator");
+    await user.selectOptions(
+      screen.getByLabelText("Credential branch"),
+      "branch_3",
+    );
+    await user.clear(screen.getByLabelText("License number"));
+    await user.type(screen.getByLabelText("License number"), "OPR-456");
+    await user.clear(screen.getByLabelText("Expiration date"));
+    await user.type(screen.getByLabelText("Expiration date"), "2027-01-15");
+    await user.click(screen.getByRole("button", { name: "Save credential" }));
+
+    expect(createLicenseMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branch: "branch_3",
+        license_number: "OPR-456",
+        technician_id: "technician-1",
+      }),
+    );
+  }, 10_000);
+
+  it("updates and archives existing technician credentials", async () => {
+    const user = userEvent.setup();
+    render(<TechniciansClient />);
+
+    await user.click(screen.getByRole("button", { name: "Edit OPR-123" }));
+    await user.clear(screen.getByLabelText("License number"));
+    await user.type(screen.getByLabelText("License number"), "OPR-789");
+    await user.click(screen.getByRole("button", { name: "Update credential" }));
+
+    expect(updateLicenseMutateAsync).toHaveBeenCalledWith({
+      id: "license-1",
+      input: expect.objectContaining({
+        license_number: "OPR-789",
+      }),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Archive OPR-123" }));
+
+    expect(archiveLicenseMutateAsync).toHaveBeenCalledWith("license-1");
+  }, 10_000);
 
   it("validates and invites technicians to set their own password", async () => {
     const user = userEvent.setup();

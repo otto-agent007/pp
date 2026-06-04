@@ -5,6 +5,12 @@ import {
   inviteTechnicianWithAdminClientRecord,
   listTechnicianProfileRecords,
 } from "./technicians";
+import {
+  archiveTechnicianLicenseRecord,
+  createTechnicianLicenseRecord,
+  listTechnicianLicenseRecords,
+  updateTechnicianLicenseRecord,
+} from "./technicianLicenses";
 import { supabase } from "./supabase";
 
 vi.mock("./supabase", () => ({
@@ -31,6 +37,11 @@ class MockQuery<T> {
     return this;
   }
 
+  is(...args: unknown[]) {
+    this.calls.push(["is", args]);
+    return this;
+  }
+
   order(...args: unknown[]) {
     this.calls.push(["order", args]);
     return this;
@@ -38,6 +49,16 @@ class MockQuery<T> {
 
   upsert(...args: unknown[]) {
     this.calls.push(["upsert", args]);
+    return this;
+  }
+
+  insert(...args: unknown[]) {
+    this.calls.push(["insert", args]);
+    return this;
+  }
+
+  update(...args: unknown[]) {
+    this.calls.push(["update", args]);
     return this;
   }
 
@@ -58,6 +79,20 @@ const technician = {
   email: "testnician@example.com",
   display_name: "Testnician",
   status: "active",
+  created_at: now,
+  updated_at: now,
+} as const;
+const technicianLicense = {
+  id: "license-1",
+  technician_id: "technician-1",
+  license_type: "operator",
+  branch: "branch_3",
+  license_number: "OPR-123",
+  issuing_authority: "spcb",
+  status: "active",
+  expires_at: "2026-12-31",
+  notes: null,
+  archived_at: null,
   created_at: now,
   updated_at: now,
 } as const;
@@ -164,5 +199,97 @@ describe("technician api client", () => {
         { onConflict: "id" },
       ],
     ]);
+  });
+
+  it("lists non-archived technician license records", async () => {
+    const licensesQuery = new MockQuery({
+      data: [technicianLicense],
+      error: null,
+    });
+    from.mockReturnValue(licensesQuery as never);
+
+    const records = await listTechnicianLicenseRecords("technician-1");
+
+    expect(records).toEqual([technicianLicense]);
+    expect(from).toHaveBeenCalledWith("technician_licenses");
+    expect(licensesQuery.calls).toContainEqual(["select", ["*"]]);
+    expect(licensesQuery.calls).toContainEqual(["is", ["archived_at", null]]);
+    expect(licensesQuery.calls).toContainEqual([
+      "eq",
+      ["technician_id", "technician-1"],
+    ]);
+    expect(licensesQuery.calls).toContainEqual([
+      "order",
+      ["expires_at", { ascending: true }],
+    ]);
+  });
+
+  it("creates and updates technician license records", async () => {
+    const createQuery = new MockQuery({ data: technicianLicense, error: null });
+    const updateQuery = new MockQuery({
+      data: { ...technicianLicense, license_number: "OPR-456" },
+      error: null,
+    });
+    from
+      .mockReturnValueOnce(createQuery as never)
+      .mockReturnValueOnce(updateQuery as never);
+
+    await createTechnicianLicenseRecord({
+      technician_id: "technician-1",
+      license_type: "operator",
+      branch: "branch_3",
+      license_number: "OPR-123",
+      issuing_authority: "spcb",
+      status: "active",
+      expires_at: "2026-12-31",
+      notes: null,
+    });
+    await updateTechnicianLicenseRecord("license-1", {
+      technician_id: "technician-1",
+      license_type: "operator",
+      branch: "branch_3",
+      license_number: "OPR-456",
+      issuing_authority: "spcb",
+      status: "active",
+      expires_at: "2026-12-31",
+      notes: null,
+    });
+
+    expect(createQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          branch: "branch_3",
+          technician_id: "technician-1",
+        }),
+      ],
+    ]);
+    expect(updateQuery.calls[0]).toEqual([
+      "update",
+      [
+        expect.objectContaining({
+          license_number: "OPR-456",
+        }),
+      ],
+    ]);
+    expect(updateQuery.calls).toContainEqual(["eq", ["id", "license-1"]]);
+  });
+
+  it("archives technician license records with archived_at instead of hard delete", async () => {
+    const archiveQuery = new MockQuery({
+      data: { ...technicianLicense, archived_at: now },
+      error: null,
+    });
+    from.mockReturnValue(archiveQuery as never);
+
+    const archived = await archiveTechnicianLicenseRecord("license-1");
+
+    expect(archived.archived_at).toBeTruthy();
+    expect(archiveQuery.calls[0][0]).toBe("update");
+    expect(archiveQuery.calls[0][1][0]).toEqual({
+      archived_at: expect.any(String),
+    });
+    expect(archiveQuery.calls).toContainEqual(["eq", ["id", "license-1"]]);
+    expect(JSON.stringify(archiveQuery.calls)).not.toContain("delete");
   });
 });
