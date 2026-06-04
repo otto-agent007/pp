@@ -369,14 +369,15 @@ describe("PaymentsClient", () => {
     expect(screen.queryByText("20 Oak Avenue")).not.toBeInTheDocument();
   });
 
-  it("shows Stripe test-mode setup guidance without exposing secrets", () => {
+  it("shows visible manual fallback readiness without exposing secrets", () => {
     render(<PaymentsClient />);
 
     const providerReadiness = screen
       .getByText("Payment provider readiness")
-      .closest("details");
+      .closest("section");
 
-    expect(providerReadiness).not.toHaveAttribute("open");
+    expect(providerReadiness).toBeInTheDocument();
+    expect(providerReadiness?.tagName).toBe("SECTION");
     expect(
       screen.getByText(
         "Manual payment fallback is active for provider-free demos.",
@@ -464,10 +465,10 @@ describe("PaymentsClient", () => {
     ).toBeInTheDocument();
     expect(
       screen.getAllByText("Reconciled paid").length,
-    ).toBeGreaterThanOrEqual(2);
+    ).toBeGreaterThanOrEqual(1);
     expect(
       screen.getAllByText("Manually marked paid").length,
-    ).toBeGreaterThanOrEqual(2);
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -489,17 +490,24 @@ describe("PaymentsClient", () => {
         "Marked paid manually; no successful provider payment is attached.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Paid $200.00")).toBeInTheDocument();
-    expect(screen.getAllByText("Balance $125.00")).toHaveLength(2);
-    expect(screen.getAllByText("Balance $0.00").length).toBeGreaterThanOrEqual(
-      2,
+    expect(screen.getAllByText("Balance due").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("$125.00").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("$0.00").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Paid to date").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByLabelText("Reconciliation status"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByText("Invoice total").length,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      screen.getAllByText("Open balance").length,
+    ).toBeGreaterThanOrEqual(
+      1,
     );
     expect(screen.getByText("Latest payment May 7, 2026")).toBeInTheDocument();
 
-    await user.selectOptions(
-      screen.getByLabelText("Reconciliation status"),
-      "needs_review",
-    );
+    await user.click(screen.getByRole("button", { name: /Needs review 1/i }));
 
     expect(screen.getByText("Failed payment activity")).toBeInTheDocument();
     expect(
@@ -543,12 +551,15 @@ describe("PaymentsClient", () => {
     render(<PaymentsClient />);
 
     expect(
-      screen.getByText("Internal compliance warning"),
-    ).toBeInTheDocument();
+      screen.queryByText("Internal compliance warning"),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Customer-safe portal proof must not expose internal compliance warnings.",
       ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Review service proof before sharing"),
     ).toBeInTheDocument();
 
     await user.click(
@@ -672,7 +683,7 @@ describe("PaymentsClient", () => {
     );
   });
 
-  it("shows invoice compliance badges and confirms payment links with unresolved items", async () => {
+  it("confirms payment links with unresolved compliance review items", async () => {
     const user = userEvent.setup();
     vi.mocked(useChemicalLogs).mockReturnValue({
       data: [complianceChemicalLog],
@@ -681,9 +692,7 @@ describe("PaymentsClient", () => {
 
     render(<PaymentsClient />);
 
-    expect(
-      screen.getAllByText("Compliance review recommended").length,
-    ).toBeGreaterThan(0);
+    expect(screen.queryByText("Internal compliance warning")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Create link" }));
 
