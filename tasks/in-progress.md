@@ -2,24 +2,28 @@
 
 Active implementation slice:
 
-- Technician License / Branch Credential Tracking V1 is active on branch
-  `codex/technician-license-branch-credentials-v1`.
-- The slice adds a proposed-only `technician_licenses` migration, shared
-  credential contracts, API-client CRUD wrappers, domain readiness helpers,
-  React Query hooks, `/technicians` credential tracking, and `/compliance`
-  credential alerts.
-- No local, preview, or production Supabase migration apply command is in
-  scope; the migration file is checked in for review only.
-- PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, merged on
-  June 4, 2026.
-- PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, merged on
-  June 4, 2026.
+- WDO / Escrow Clearance Readiness V1 is active on branch
+  `codex/wdo-escrow-clearance-readiness-v1` with draft PR #102 open.
+- The slice adds a derived WDO/escrow readiness domain module, upgrades
+  `/escrow-re` into a staff queue/detail workspace, and links Closeouts and
+  Payments into WDO readiness for WDO-like jobs.
+- Final clearance release is not automated; final release requires authorized
+  human review, internal guardrails stay staff-side, and customer portal output
+  remains unchanged.
+- No migration, provider/env mutation, Supabase write, preview mutation, or
+  production mutation is in scope.
+- PR #101, `[codex] Technician License / Branch Credential Tracking V1`, merged
+  on June 4, 2026.
+- PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, merged on June
+  4, 2026.
+- PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, merged on June 4,
+  2026.
 - PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
 - PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
   June 3, 2026.
 - Recommended next implementation candidates after this slice lands: inventory
-  deep-linking from Chemical Product Binder or service/catalog follow-through
-  based on operator priority.
+  deep-linking from Chemical Product Binder, service/catalog follow-through, or
+  document handoff generation based on operator priority.
 
 Current blockers and guardrails:
 
@@ -34,6 +38,15 @@ Current blockers and guardrails:
 
 Recent closure:
 
+- Technician License / Branch Credential Tracking V1 added proposed-only
+  `technician_licenses` schema/RLS review artifacts, shared credential
+  contracts, API-client CRUD wrappers, domain readiness helpers, React Query
+  hooks, `/technicians` credential tracking, and `/compliance` credential
+  alerts.
+- Credential copy remains advisory-only, keeps credential/WDO/chemical
+  readiness decisions in `packages/domain`, keeps Supabase access behind
+  `packages/api-client`, and did not run local, preview, or production
+  migration apply commands.
 - Pest Patrol Customer Portal V1 added a portal-first QR/text workflow for
   tokened `/portal/<customerId>` links, open invoice pay actions, service and
   billing history, proof cards, and a General Pest recurring-service request

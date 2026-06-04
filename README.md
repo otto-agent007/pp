@@ -51,9 +51,10 @@ The current fixture-ready admin polish also surfaces dashboard BI cards,
 technician performance, denser dispatch proof cards, inventory usage recency,
 closeout proof-state cues, compliance live-state clarity, shared job schedule
 wall-clock labels across admin/customer proof and billing surfaces, a shared
-mobile sync badge, and a white app canvas from existing hook/runtime data and
-design tokens, without new migrations, providers, seed/reset writes, preview
-mutations, or production mutations.
+mobile sync badge, WDO / Escrow Clearance readiness queues, and a white app
+canvas from existing hook/runtime data and design tokens, without new
+migrations, providers, seed/reset writes, preview mutations, or production
+mutations.
 
 ## Environment
 
