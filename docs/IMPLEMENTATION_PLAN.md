@@ -1,20 +1,21 @@
 # Implementation Plan
 
-## Current Priority: Technician License / Branch Credential Tracking V1
+## Current Priority: WDO / Escrow Clearance Readiness V1
 
-As of June 4, 2026, PR #99, `[codex] Shared Compliance Review Items Safe Hook
-V1`, merged on June 4, 2026, and the active implementation branch is
-`codex/technician-license-branch-credentials-v1`. PR #98, `[codex] Pest Patrol
-Service Billing Catalog V1`, merged on June 4, 2026. PR #89, `[codex] Chemical
-Product Binder V1`, and PR #90, `[codex] Require fresh branch and draft PR per
-slice`, both merged on June 3, 2026.
+As of June 4, 2026, draft PR #102, `[codex] WDO Escrow Clearance Readiness V1`,
+is open from branch `codex/wdo-escrow-clearance-readiness-v1`. PR #101,
+`[codex] Technician License / Branch Credential Tracking V1`, PR #99,
+`[codex] Shared Compliance Review Items Safe Hook V1`, and PR #98,
+`[codex] Pest Patrol Service Billing Catalog V1`, all merged on June 4, 2026.
+PR #89, `[codex] Chemical Product Binder V1`, and PR #90, `[codex] Require
+fresh branch and draft PR per slice`, both merged on June 3, 2026.
 
 Current product baseline:
 
 1. `/compliance` is advisory-only. Existing RAG/source advisory behavior
    remains setup-aware, Chemical Product Binder V1 is deterministic without
-   OpenAI or live EPA label fetches, and the current credential slice adds only
-   a proposed review migration plus deterministic credential readiness.
+   OpenAI or live EPA label fetches, and credential readiness is available for
+   internal Branch 3 review.
 2. Local fixture/demo coverage remains the dependable no-env gate for the
    current admin/customer surfaces; recent verified slices cover dashboard,
    dispatch, customers, jobs, technicians, inventory, payments, closeouts,
@@ -30,21 +31,22 @@ Current product baseline:
 
 Current slice status:
 
-1. Technician License / Branch Credential Tracking V1 adds proposed
-   `technician_licenses` schema/RLS for review, shared credential types,
-   Supabase API-client wrappers, domain readiness helpers, React Query hooks,
-   `/technicians` credential panels/forms, and a compact `/compliance`
-   Credential alerts panel.
-2. The slice keeps credential status and WDO/chemical readiness decisions in
-   `packages/domain`, keeps Supabase access behind `packages/api-client`, and
-   avoids local, preview, or production migration apply commands.
-3. Credential copy remains advisory-only: credential review required, license
-   evidence missing, and expiration review; no customer-facing portal payloads
-   or provider dashboards are changed.
-4. Next candidates after this credential slice lands: inventory deep-linking
-   from Chemical Product Binder or service/catalog follow-through based on
-   operator priority.
-5. Keep every new slice on a fresh correctly named `codex/*` branch with a
+1. WDO / Escrow Clearance Readiness V1 adds
+   `packages/domain/wdoEscrowClearance.ts` plus `/escrow-re` queue/detail
+   workspace surfaces for readiness, needs evidence, operator review required,
+   billing review, draft clearance handoff, and final release approval.
+2. Closeouts and Payments now link staff into WDO/escrow readiness for
+   WDO-like work without duplicating the full workspace or blocking invoice
+   creation.
+3. Final clearance release is not automated; final release requires authorized
+   human review, and the customer portal remains unchanged.
+4. The slice is no-migration and derived from existing jobs, closeout
+   summaries/reviews, invoices/payments, compliance guardrails, service catalog
+   inference, and technician licenses.
+5. Local verification passed with focused WDO/escrow domain and web tests,
+   `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
+   `corepack pnpm build`, and `git diff --check`.
+6. Keep every new slice on a fresh correctly named `codex/*` branch with a
    draft PR before calling it complete.
 
 ## Previous Priority: Pest Patrol Customer Portal V1

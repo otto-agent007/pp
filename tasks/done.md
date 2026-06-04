@@ -1,5 +1,27 @@
 # Done
 
+## WDO / Escrow Clearance Readiness V1
+
+- Added a no-migration WDO/escrow readiness domain module for deterministic
+  WDO-like job detection, evidence readiness, operator review required states,
+  billing review states, draft clearance next actions, and final release
+  approval copy.
+- Replaced the `/escrow-re` placeholder with a staff workspace for WDO jobs
+  found, ready for draft, needs evidence, needs operator review, needs billing
+  review, filters, queue cards, checklist detail, proof/photos/forms,
+  compliance guardrail, invoice/payment state, and document handoff notes.
+- Added compact staff-side WDO readiness handoffs in Closeouts and Payments
+  without blocking invoice creation, issuing final clearances, exposing
+  internal guardrails to customer portal output, or changing customer-facing
+  portal payloads.
+- Kept the slice derived from existing jobs, closeout summaries/reviews,
+  invoices/payments, compliance guardrails, service catalog inference, and
+  technician licenses; no migration, provider/env mutation, Supabase write,
+  preview mutation, or production mutation was performed.
+- Verified with focused WDO/escrow domain and web tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
+
 ## Technician License / Branch Credential Tracking V1
 
 - Added a proposed `technician_licenses` migration for review with technician
