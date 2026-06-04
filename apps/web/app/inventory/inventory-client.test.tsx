@@ -14,8 +14,16 @@ import {
 } from "../../hooks/useInventory";
 import { InventoryClient } from "./inventory-client";
 
+const searchParams = vi.hoisted(() => ({
+  value: new URLSearchParams(),
+}));
+
 vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => searchParams.value,
 }));
 
 vi.mock("../../hooks/useInventory", () => ({
@@ -168,6 +176,7 @@ describe("InventoryClient", () => {
   const createLogMutateAsync = vi.fn();
 
   beforeEach(() => {
+    searchParams.value = new URLSearchParams();
     vi.mocked(useChemicalInventory).mockReturnValue({
       data: [activeChemical, archivedChemical],
       isLoading: false,
@@ -423,5 +432,39 @@ describe("InventoryClient", () => {
 
     expect(screen.getByText("Dust selected")).toBeInTheDocument();
     expect(screen.getByText("Stocked for field use")).toBeInTheDocument();
+  });
+
+  it("selects the inventory product from the chemical_id query parameter", () => {
+    searchParams.value = new URLSearchParams("chemical_id=chemical-3");
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [activeChemical, noLogChemical],
+      isLoading: false,
+    } as never);
+    vi.mocked(useChemicalLogs).mockReturnValue({
+      data: chemicalLogs,
+      isLoading: false,
+    } as never);
+
+    render(<InventoryClient />);
+
+    expect(screen.getByText("Dust selected")).toBeInTheDocument();
+    expect(screen.getByText("Stocked for field use")).toBeInTheDocument();
+  });
+
+  it("keeps the inventory cockpit safe when the linked chemical_id is unknown", () => {
+    searchParams.value = new URLSearchParams("chemical_id=missing-product");
+    vi.mocked(useChemicalInventory).mockReturnValue({
+      data: [activeChemical, noLogChemical],
+      isLoading: false,
+    } as never);
+
+    render(<InventoryClient />);
+
+    expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Linked inventory product was not found. Showing available products.",
+      ),
+    ).toBeInTheDocument();
   });
 });

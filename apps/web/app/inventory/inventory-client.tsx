@@ -31,7 +31,8 @@ import type {
   InventoryUnit,
   Job,
 } from "@pest-patrol/types";
-import { FormEvent, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
 import {
@@ -111,6 +112,8 @@ function groupLogsByChemical(logs: ChemicalLog[]) {
 }
 
 export function InventoryClient() {
+  const searchParams = useSearchParams();
+  const linkedChemicalId = searchParams.get("chemical_id") ?? "";
   const inventoryQuery = useChemicalInventory();
   const logsQuery = useChemicalLogs();
   const jobsQuery = useJobs();
@@ -132,7 +135,7 @@ export function InventoryClient() {
     null,
   );
   const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(
-    null,
+    () => linkedChemicalId || null,
   );
   const [workspaceMode, setWorkspaceMode] =
     useState<InventoryWorkspaceMode>("product");
@@ -159,10 +162,19 @@ export function InventoryClient() {
       null
     );
   }, [cockpitRows, cockpitRowsById, selectedInventoryId]);
+  const linkedChemicalIsMissing =
+    Boolean(linkedChemicalId) &&
+    !inventoryQuery.isLoading &&
+    inventoryItems.length > 0 &&
+    !cockpitRowsById.has(linkedChemicalId);
   const logsByChemical = useMemo(
     () => groupLogsByChemical(logsQuery.data ?? []),
     [logsQuery.data],
   );
+
+  useEffect(() => {
+    setSelectedInventoryId(linkedChemicalId || null);
+  }, [linkedChemicalId]);
   const activeInventory = useMemo(
     () => inventoryItems.filter((item) => item.status === "active"),
     [inventoryItems],
@@ -606,6 +618,12 @@ export function InventoryClient() {
                 </StatusPill>
               ) : null}
             </div>
+            {linkedChemicalIsMissing ? (
+              <p className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle px-3 py-2 text-sm text-theme-text-secondary">
+                Linked inventory product was not found. Showing available
+                products.
+              </p>
+            ) : null}
             {selectedCockpitRow ? (
               <div className="mt-4 grid gap-3 text-sm text-theme-text-secondary">
                 <div className="rounded-md border border-theme-border-subtle bg-theme-background-surface/80 p-3">

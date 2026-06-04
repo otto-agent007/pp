@@ -300,9 +300,9 @@ function ChemicalProductBinderCard({
         </div>
         <a
           className="inline-flex min-h-9 items-center text-sm font-semibold text-theme-action-primary hover:underline"
-          href="/inventory"
+          href={`/inventory?chemical_id=${encodeURIComponent(item.chemicalId)}`}
         >
-          Open inventory
+          Open product
         </a>
       </div>
 

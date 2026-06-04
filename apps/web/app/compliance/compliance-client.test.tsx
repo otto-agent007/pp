@@ -376,8 +376,20 @@ describe("ComplianceClient", () => {
     expect(screen.getByText("operator review required")).toBeInTheDocument();
     expect(
       screen
-        .getAllByRole("link", { name: "Open inventory" })
-        .every((link) => link.getAttribute("href") === "/inventory"),
+        .getAllByRole("link", { name: "Open product" })
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(
+      expect.arrayContaining([
+        "/inventory?chemical_id=chemical-1",
+        "/inventory?chemical_id=chemical-clear",
+      ]),
+    );
+    expect(
+      screen
+        .getAllByRole("link", { name: "Open product" })
+        .every((link) =>
+          link.getAttribute("href")?.startsWith("/inventory?chemical_id="),
+        ),
     ).toBe(true);
 
     await user.click(screen.getByRole("button", { name: "License review" }));
