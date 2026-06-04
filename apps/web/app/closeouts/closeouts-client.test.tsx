@@ -330,18 +330,31 @@ describe("CloseoutsClient", () => {
     render(<CloseoutsClient />);
 
     expect(
-      screen.getByRole("heading", { name: "Billing work queue" }),
+      screen.getByRole("heading", { name: "Closeouts" }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Completed jobs grouped by billing readiness. Open one to review captures or create an invoice.",
+        "Completed jobs grouped by closeout readiness. Open one to review captures or create an invoice.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Next action")).toBeInTheDocument();
+    expect(screen.getByText("Proof handoff")).toBeInTheDocument();
+    expect(screen.getByText("Compliance review")).toBeInTheDocument();
+    expect(screen.getByText("Job details")).toBeInTheDocument();
     expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Invoiced").length).toBeGreaterThan(0);
+    expect(screen.getByText("Invoiced (1)")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Queue section Ready to bill"),
+    ).toHaveAttribute("open");
+    expect(
+      screen.getByLabelText("Queue section Needs captures"),
+    ).not.toHaveAttribute("open");
+    expect(
+      screen.getByLabelText("Queue section Invoiced"),
+    ).not.toHaveAttribute("open");
     expect(screen.getByText("Total completed")).toBeInTheDocument();
-    expect(screen.getByText("Compliance guardrails")).toBeInTheDocument();
+    expect(screen.getByText("Compliance advisory")).toBeInTheDocument();
     expect(
       screen.getByText("3 clear, 0 review recommended, 0 critical review."),
     ).toBeInTheDocument();
@@ -420,6 +433,7 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("Bait Gel chemical review")).toBeInTheDocument();
     expect(screen.getByText("License or supervision detail")).toBeInTheDocument();
 
+    await user.click(screen.getByText("Needs captures (1)"));
     await user.click(screen.getByText("20 Oak Avenue"));
 
     expect(
@@ -436,6 +450,7 @@ describe("CloseoutsClient", () => {
     const user = userEvent.setup();
     render(<CloseoutsClient />);
 
+    await user.click(screen.getByText("Invoiced (1)"));
     await user.click(screen.getByText("30 Cedar Road"));
 
     expect(screen.getByRole("link", { name: "Share portal" })).toHaveAttribute(
@@ -606,7 +621,9 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("button", { name: /Missing captures 1/i }),
     ).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(1);
+    expect(
+      screen.getByLabelText("Queue section Needs captures"),
+    ).toHaveAttribute("open");
     expect(screen.getByText("Missing: photo · signature")).toBeInTheDocument();
     expect(
       screen.getByText("Billing handoff is blocked until captures sync."),
