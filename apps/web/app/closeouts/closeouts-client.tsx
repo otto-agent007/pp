@@ -13,12 +13,15 @@ import {
   getCloseoutReviewReadiness,
   getCloseoutReviewQueueFilters,
   getInvoiceBalanceCents,
+  buildWdoEscrowReadinessForJob,
+  isWdoEscrowLikeJob,
   type ComplianceGuardrail,
   type BillingQueueGroup,
   type BillingQueueItem,
   type CloseoutReviewQueueFilterId,
   type CloseoutStatusFilter,
   type CloseoutProofHandoffSummary,
+  type WdoEscrowClearanceQueueItem,
 } from "@pest-patrol/domain";
 import {
   Card,
@@ -37,6 +40,7 @@ import type {
   Job,
   JobFormSubmission,
   JobMedia,
+  TechnicianLicense,
 } from "@pest-patrol/types";
 import { useMemo, useState } from "react";
 
@@ -48,6 +52,7 @@ import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
+import { useTechnicianLicenses } from "../../hooks/useTechnicians";
 import { adminWorkspaceClassName } from "../admin-workspace";
 
 type QueueFilter =
@@ -58,6 +63,7 @@ type QueueFilter =
   | CloseoutReviewQueueFilterId;
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
+const emptyTechnicianLicenses: TechnicianLicense[] = [];
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
@@ -817,6 +823,58 @@ function ProofHandoffCard({
   );
 }
 
+function WdoEscrowReadinessCard({
+  readiness,
+}: {
+  readiness: WdoEscrowClearanceQueueItem;
+}) {
+  const tone: StatusPillTone =
+    readiness.status === "ready_for_draft"
+      ? "success"
+      : readiness.status === "needs_operator_review"
+        ? "danger"
+        : readiness.status === "needs_billing_review"
+          ? "info"
+          : "warning";
+
+  return (
+    <Card className="shadow-none" padding="md" statusTone={tone}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Eyebrow>WDO / Escrow readiness</Eyebrow>
+          <p className="mt-1 text-sm font-semibold text-theme-text-primary">
+            {readiness.statusLabel}
+          </p>
+          <p className="mt-2 text-sm text-theme-text-secondary">
+            {readiness.nextAction}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-theme-text-secondary">
+            Final release requires authorized human review.
+          </p>
+        </div>
+        <StatusPill dot={false} tone={tone}>
+          {readiness.statusLabel}
+        </StatusPill>
+      </div>
+      {readiness.missingEvidenceLabels.length > 0 ? (
+        <p className="mt-3 text-xs font-semibold text-status-alert-warning-fg">
+          Needs evidence: {readiness.missingEvidenceLabels.slice(0, 3).join(", ")}
+        </p>
+      ) : null}
+      <a
+        className={buttonClassName({
+          className: "mt-4",
+          size: "sm",
+          variant: "ghost",
+        })}
+        href={`/escrow-re?job_id=${encodeURIComponent(readiness.job.id)}`}
+      >
+        Open WDO / Escrow readiness
+      </a>
+    </Card>
+  );
+}
+
 export function CloseoutsClient() {
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
@@ -844,6 +902,9 @@ export function CloseoutsClient() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const jobs = jobsQuery.data ?? emptyJobs;
   const invoices = invoicesQuery.data ?? emptyInvoices;
+  const technicianLicensesQuery = useTechnicianLicenses();
+  const technicianLicenses =
+    technicianLicensesQuery.data ?? emptyTechnicianLicenses;
   const complianceReview = useComplianceReviewItems({ jobs });
   const completedJobIds = useMemo(
     () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
@@ -921,6 +982,17 @@ export function CloseoutsClient() {
   const selectedGuardrail = selectedJob
     ? (guardrailByJobId.get(selectedJob.id) ??
       complianceReview.buildGuardrailForJob(selectedJob.id))
+    : null;
+  const selectedWdoEscrowReadiness =
+    selectedJob && isWdoEscrowLikeJob(selectedJob)
+    ? buildWdoEscrowReadinessForJob({
+        closeoutReview: closeout.review ?? null,
+        closeoutSummary: selectedQueueItem?.summary ?? null,
+        complianceGuardrail: selectedGuardrail,
+        invoice: selectedQueueItem?.invoice ?? null,
+        job: selectedJob,
+        technicianLicenses,
+      })
     : null;
   const complianceSummaryTone: StatusPillTone =
     complianceGuardrailSummary.criticalJobs > 0
@@ -1122,6 +1194,11 @@ export function CloseoutsClient() {
                     handoff={proofHandoff}
                     invoice={selectedQueueItem?.invoice ?? null}
                     review={adminProofReview}
+                  />
+                ) : null}
+                {selectedWdoEscrowReadiness ? (
+                  <WdoEscrowReadinessCard
+                    readiness={selectedWdoEscrowReadiness}
                   />
                 ) : null}
                 {selectedGuardrail ? (

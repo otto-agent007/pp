@@ -21,6 +21,7 @@ import {
   getServiceBillingGuidanceForJob,
   getServiceBillingOffering,
   inferServiceBillingOfferingFromJob,
+  isWdoEscrowLikeJob,
   listServiceBillingOfferings,
   type ComplianceGuardrail,
   type InvoiceReconciliationStatus,
@@ -229,6 +230,31 @@ function EmptyState({ children }: { children: string }) {
     <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
+  );
+}
+
+function WdoEscrowPaymentGuidance({ jobId }: { jobId: string }) {
+  return (
+    <div
+      className={`mt-3 rounded-md border p-3 ${statusSurfaceClassName("warning")}`}
+    >
+      <p className="text-sm font-semibold text-theme-text-primary">
+        Confirm WDO/escrow readiness before final document release.
+      </p>
+      <p className="mt-1 text-xs text-theme-text-secondary">
+        Final release requires authorized human review.
+      </p>
+      <a
+        className={buttonClassName({
+          className: "mt-3",
+          size: "sm",
+          variant: "ghost",
+        })}
+        href={`/escrow-re?job_id=${encodeURIComponent(jobId)}`}
+      >
+        Open WDO / Escrow readiness
+      </a>
+    </div>
   );
 }
 
@@ -547,6 +573,9 @@ export function PaymentsClient() {
   const selectedJobGuardrail = selectedJob
     ? complianceReview.buildGuardrailForJob(selectedJob.id)
     : null;
+  const selectedIsWdoEscrowJob = selectedJob
+    ? isWdoEscrowLikeJob(selectedJob)
+    : false;
   const closeoutHandoffJob =
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
@@ -842,6 +871,9 @@ export function PaymentsClient() {
               const invoiceServiceInference = invoiceJob
                 ? inferServiceBillingOfferingFromJob(invoiceJob)
                 : null;
+              const invoiceIsWdoEscrowJob = invoiceJob
+                ? isWdoEscrowLikeJob(invoiceJob)
+                : false;
               const confirmingAction =
                 actionConfirmation?.invoiceId === invoice.id
                   ? actionConfirmation.action
@@ -915,6 +947,9 @@ export function PaymentsClient() {
                           <p className="mt-2 text-sm text-theme-text-secondary">
                             {invoice.notes}
                           </p>
+                        ) : null}
+                        {invoiceIsWdoEscrowJob && invoiceJob ? (
+                          <WdoEscrowPaymentGuidance jobId={invoiceJob.id} />
                         ) : null}
                         {invoice.payment_url ? (
                           <a
@@ -1282,6 +1317,9 @@ export function PaymentsClient() {
           </div>
           {selectedJobGuardrail ? (
             <ComplianceGuardrailCard guardrail={selectedJobGuardrail} />
+          ) : null}
+          {selectedIsWdoEscrowJob && selectedJob ? (
+            <WdoEscrowPaymentGuidance jobId={selectedJob.id} />
           ) : null}
           <p className="-mt-2 text-xs font-semibold text-theme-text-secondary">
             Only completed jobs appear here so invoices start from

@@ -18,6 +18,7 @@ import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
+import { useTechnicianLicenses } from "../../hooks/useTechnicians";
 import { CloseoutsClient } from "./closeouts-client";
 
 vi.mock("../../hooks/useCloseouts", () => ({
@@ -39,6 +40,10 @@ vi.mock("../../hooks/useGeofencing", () => ({
 
 vi.mock("../../hooks/usePayments", () => ({
   useInvoices: vi.fn(),
+}));
+
+vi.mock("../../hooks/useTechnicians", () => ({
+  useTechnicianLicenses: vi.fn(),
 }));
 
 const now = "2026-05-05T00:00:00Z";
@@ -77,6 +82,17 @@ const completedJob = {
   updated_at: now,
   customer,
   location,
+} as const;
+const wdoJob = {
+  ...completedJob,
+  id: "job-wdo",
+  service_notes:
+    "WDO escrow Branch 3 termite inspection with findings, damaged member evidence, inaccessible areas, recommendations, and follow-up disposition",
+  location: {
+    ...location,
+    id: "location-wdo",
+    address: "40 Market Street",
+  },
 } as const;
 const scheduledJob = {
   ...completedJob,
@@ -341,6 +357,12 @@ describe("CloseoutsClient", () => {
       data: [arrivalEvent, departureEvent],
       isLoading: false,
     } as never);
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [],
+      error: null,
+      isLoading: false,
+      schemaUnavailable: false,
+    } as never);
   });
 
   it("renders closeout captures for the selected completed job", () => {
@@ -360,6 +382,9 @@ describe("CloseoutsClient", () => {
     expect(screen.getByText("Job details")).toBeInTheDocument();
     expect(screen.getAllByText("Ready to bill").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Needs captures").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByText("WDO / Escrow readiness"),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Invoiced (1)")).toBeInTheDocument();
     expect(
       screen.getByLabelText("Queue section Ready to bill"),
@@ -430,6 +455,39 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("link", { name: "Open customer ledger" }),
     ).toHaveAttribute("href", "/customers?customer_id=customer-1");
+  });
+
+  it("links WDO-like selected jobs to the escrow readiness workspace", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [wdoJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-wdo")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: wdoJob },
+    } as never);
+    mockComplianceReview([], [wdoJob] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getByText("WDO / Escrow readiness")).toBeInTheDocument();
+    expect(
+      screen.getByText("Final release requires authorized human review."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Open WDO / Escrow readiness" }),
+    ).toHaveAttribute("href", "/escrow-re?job_id=job-wdo");
   });
 
   it("surfaces warning and critical compliance guardrails for closeouts", async () => {

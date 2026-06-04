@@ -449,6 +449,58 @@ describe("PaymentsClient", () => {
       screen.getByText("Review-only suggestions; invoice totals stay unchanged."),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Invoice amount")).toHaveValue(null);
+    expect(
+      screen.getByText(
+        "Confirm WDO/escrow readiness before final document release.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show WDO document-release guidance for normal pest work", () => {
+    render(<PaymentsClient />);
+
+    expect(
+      screen.queryByText(
+        "Confirm WDO/escrow readiness before final document release.",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows WDO document-release guidance for WDO invoice cards", () => {
+    const escrowInvoice = {
+      ...invoice,
+      id: "invoice-escrow",
+      job_id: "job-escrow",
+      job: escrowJob,
+      notes: "WDO escrow billing",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [escrowJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [escrowInvoice],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-escrow")],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(
+      screen.getAllByText(
+        "Confirm WDO/escrow readiness before final document release.",
+      ).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Final release requires authorized human review.")
+        .length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("link", { name: "Open WDO / Escrow readiness" })[0],
+    ).toHaveAttribute("href", "/escrow-re?job_id=job-escrow");
   });
 
   it("uses shared count tiles for payment filters without changing invoice data", async () => {
