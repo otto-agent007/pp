@@ -1,22 +1,10 @@
 # Implementation Plan
 
-## Current Priority: Current Status and Draft PR Stewardship
+## Current Priority: Next Slice Selection
 
-As of June 3, 2026, the active work is docs/status stewardship plus review of
-two open draft PRs:
-
-1. Draft PR #89, `[codex] Chemical Product Binder V1`, adds a deterministic
-   Chemical Product Binder to `/compliance` from existing inventory, chemical
-   log, job, and compliance source data. It has green GitHub `verify` and
-   Vercel checks, with Supabase Preview skipped.
-2. Draft PR #90, `[codex] Require fresh branch and draft PR per slice`, updates
-   AGENTS instructions so every new slice starts on a fresh correctly named
-   `codex/*` branch and is not complete until the verified branch has a draft
-   PR unless the user explicitly stops early. It has green GitHub `verify` and
-   Vercel checks, with Supabase Preview skipped.
-3. This status-docs refresh should remain docs-only, ship from its own fresh
-   `codex/docs-current-status-refresh` branch, and open a draft PR after
-   `git diff --check` passes.
+As of June 4, 2026, GitHub shows no open PRs. PR #89, `[codex] Chemical
+Product Binder V1`, and PR #90, `[codex] Require fresh branch and draft PR per
+slice`, both merged on June 3, 2026.
 
 Current product baseline:
 
@@ -38,11 +26,10 @@ Current product baseline:
 
 Next decision points:
 
-1. Review, merge, or request changes on PR #89 and PR #90.
-2. Choose whether the next implementation slice is operator-assisted preview
-   smoke, approved migration-target verification, live compliance ingestion
-   after migration approval, provider delivery receipts, production launch
-   checklist work, or later map-provider planning.
+1. Choose whether the next implementation slice is Pest Patrol Service Billing
+   Catalog V1, shared safe compliance review hook, inventory deep-linking from
+   Chemical Product Binder, or technician license/Branch credential tracking.
+2. Keep compliance advisory-only and deterministic where possible.
 3. Keep every new slice on a fresh correctly named `codex/*` branch with a
    draft PR before calling it complete.
 
