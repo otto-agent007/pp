@@ -128,7 +128,12 @@ describe("payments domain", () => {
       job_id: "job-1",
       customer_id: "customer-1",
       notes: "Quarterly service",
-      line_items: [{ unit_amount_cents: 12500 }],
+      line_items: [
+        {
+          description: "Quarterly general pest service",
+          unit_amount_cents: 12500,
+        },
+      ],
     });
   });
 
@@ -146,6 +151,7 @@ describe("payments domain", () => {
       job: {
         ...job,
         id: "job-2",
+        service_notes: "Follow-up service",
         location: { ...job.location, address: "20 Oak Avenue" },
       },
       status: "paid",
@@ -155,6 +161,12 @@ describe("payments domain", () => {
     expect(filterInvoices([invoice, paidInvoice], "pine", "all")).toEqual([
       invoice,
     ]);
+    expect(filterInvoices([invoice, paidInvoice], "quarterly", "all")).toEqual([
+      invoice,
+    ]);
+    expect(filterInvoices([invoice, paidInvoice], "quarterly general", "all")).toEqual(
+      [invoice],
+    );
     expect(getInvoiceJobIds([invoice, paidInvoice]).has("job-1")).toBe(true);
     expect(getInvoiceSummary([invoice, paidInvoice])).toEqual({
       draftCount: 0,
