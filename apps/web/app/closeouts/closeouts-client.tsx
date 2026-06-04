@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  buildComplianceGuardrailForJob,
-  buildComplianceReviewItems,
   buildDispatchLocationEvidenceByJob,
   buildBillingPortalNextActions,
   buildBillingQueue,
@@ -14,7 +12,6 @@ import {
   getCloseoutCounts,
   getCloseoutReviewReadiness,
   getCloseoutReviewQueueFilters,
-  getComplianceGuardrailSummary,
   getInvoiceBalanceCents,
   type ComplianceGuardrail,
   type BillingQueueGroup,
@@ -35,11 +32,6 @@ import {
   type StatusPillTone,
 } from "@pest-patrol/ui";
 import type {
-  ChemicalLog,
-  ComplianceAdvisoryAudit,
-  ComplianceChunk,
-  ComplianceDocument,
-  ComplianceSource,
   FormValue,
   Invoice,
   Job,
@@ -52,14 +44,8 @@ import {
   useCloseoutCaptureSummaries,
   useJobCloseoutReview,
 } from "../../hooks/useCloseouts";
-import {
-  useComplianceAdvisoryAudits,
-  useComplianceChunks,
-  useComplianceDocuments,
-  useComplianceSources,
-} from "../../hooks/useCompliance";
+import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
-import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 import { adminWorkspaceClassName } from "../admin-workspace";
@@ -72,11 +58,6 @@ type QueueFilter =
   | CloseoutReviewQueueFilterId;
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
-const emptyAudits: ComplianceAdvisoryAudit[] = [];
-const emptyChemicalLogs: ChemicalLog[] = [];
-const emptyChunks: ComplianceChunk[] = [];
-const emptyDocuments: ComplianceDocument[] = [];
-const emptySources: ComplianceSource[] = [];
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
@@ -840,11 +821,6 @@ export function CloseoutsClient() {
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
   const geofenceEventsQuery = useJobGeofenceEvents();
-  const chemicalLogsQuery = useChemicalLogs();
-  const complianceSourcesQuery = useComplianceSources();
-  const complianceDocumentsQuery = useComplianceDocuments();
-  const complianceChunksQuery = useComplianceChunks();
-  const complianceAuditsQuery = useComplianceAdvisoryAudits();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CloseoutStatusFilter>("completed");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>(() => {
@@ -868,50 +844,14 @@ export function CloseoutsClient() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const jobs = jobsQuery.data ?? emptyJobs;
   const invoices = invoicesQuery.data ?? emptyInvoices;
+  const complianceReview = useComplianceReviewItems({ jobs });
   const completedJobIds = useMemo(
     () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
     [jobs],
   );
-  const complianceReviewItems = useMemo(
-    () =>
-      buildComplianceReviewItems({
-        audits: complianceAuditsQuery.data ?? emptyAudits,
-        chemicalLogs: chemicalLogsQuery.data ?? emptyChemicalLogs,
-        chunks: complianceChunksQuery.data ?? emptyChunks,
-        documents: complianceDocumentsQuery.data ?? emptyDocuments,
-        jobs,
-        sources: complianceSourcesQuery.data ?? emptySources,
-      }),
-    [
-      chemicalLogsQuery.data,
-      complianceAuditsQuery.data,
-      complianceChunksQuery.data,
-      complianceDocumentsQuery.data,
-      complianceSourcesQuery.data,
-      jobs,
-    ],
-  );
-  const guardrailByJobId = useMemo(
-    () =>
-      new Map(
-        completedJobIds.map((jobId) => [
-          jobId,
-          buildComplianceGuardrailForJob({
-            items: complianceReviewItems,
-            jobId,
-          }),
-        ]),
-      ),
-    [completedJobIds, complianceReviewItems],
-  );
-  const complianceGuardrailSummary = useMemo(
-    () =>
-      getComplianceGuardrailSummary({
-        items: complianceReviewItems,
-        jobIds: completedJobIds,
-      }),
-    [completedJobIds, complianceReviewItems],
-  );
+  const guardrailByJobId = complianceReview.guardrailByJobId(completedJobIds);
+  const complianceGuardrailSummary =
+    complianceReview.guardrailSummaryForJobs(completedJobIds);
   const summariesQuery = useCloseoutCaptureSummaries(completedJobIds);
   const locationEvidenceByJob = useMemo(
     () =>
@@ -980,10 +920,7 @@ export function CloseoutsClient() {
     : null;
   const selectedGuardrail = selectedJob
     ? (guardrailByJobId.get(selectedJob.id) ??
-      buildComplianceGuardrailForJob({
-        items: complianceReviewItems,
-        jobId: selectedJob.id,
-      }))
+      complianceReview.buildGuardrailForJob(selectedJob.id))
     : null;
   const complianceSummaryTone: StatusPillTone =
     complianceGuardrailSummary.criticalJobs > 0

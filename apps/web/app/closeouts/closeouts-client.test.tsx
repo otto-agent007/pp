@@ -2,19 +2,20 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  buildComplianceGuardrailForJob,
+  buildComplianceReviewItems,
+  getComplianceGuardrailSummary,
+  getComplianceNeedsReviewSummary,
+} from "@pest-patrol/domain";
+import type { ChemicalLog, Job } from "@pest-patrol/types";
 
 import {
   useCloseoutCaptureSummaries,
   useJobCloseoutReview,
 } from "../../hooks/useCloseouts";
-import {
-  useComplianceAdvisoryAudits,
-  useComplianceChunks,
-  useComplianceDocuments,
-  useComplianceSources,
-} from "../../hooks/useCompliance";
+import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
-import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
 import { CloseoutsClient } from "./closeouts-client";
@@ -28,19 +29,12 @@ vi.mock("../../hooks/useJobs", () => ({
   useJobs: vi.fn(),
 }));
 
-vi.mock("../../hooks/useCompliance", () => ({
-  useComplianceAdvisoryAudits: vi.fn(),
-  useComplianceChunks: vi.fn(),
-  useComplianceDocuments: vi.fn(),
-  useComplianceSources: vi.fn(),
+vi.mock("../../hooks/useComplianceReviewItems", () => ({
+  useComplianceReviewItems: vi.fn(),
 }));
 
 vi.mock("../../hooks/useGeofencing", () => ({
   useJobGeofenceEvents: vi.fn(),
-}));
-
-vi.mock("../../hooks/useInventory", () => ({
-  useChemicalLogs: vi.fn(),
 }));
 
 vi.mock("../../hooks/usePayments", () => ({
@@ -274,6 +268,48 @@ const criticalChemicalLog = {
   job: needsCapturesJob,
 } as const;
 
+function mockComplianceReview(
+  chemicalLogs: ChemicalLog[] = [],
+  jobs: Job[] = [
+    completedJob,
+    needsCapturesJob,
+    invoicedJob,
+    scheduledJob,
+  ] as Job[],
+  overrides: Partial<ReturnType<typeof useComplianceReviewItems>> = {},
+) {
+  const items = buildComplianceReviewItems({
+    audits: [],
+    chemicalLogs,
+    chunks: [],
+    documents: [],
+    jobs,
+    sources: [],
+  });
+
+  vi.mocked(useComplianceReviewItems).mockReturnValue({
+    buildGuardrailForJob: (jobId: string) =>
+      buildComplianceGuardrailForJob({ items, jobId }),
+    guardrailByJobId: (jobIds: string[]) =>
+      new Map(
+        Array.from(new Set(jobIds)).map((jobId) => [
+          jobId,
+          buildComplianceGuardrailForJob({ items, jobId }),
+        ]),
+      ),
+    guardrailSummaryForJobs: (jobIds: string[]) =>
+      getComplianceGuardrailSummary({ items, jobIds }),
+    isError: false,
+    isLoading: false,
+    items,
+    schemaUnavailable: false,
+    setupReadiness: null,
+    setupWarning: null,
+    summary: getComplianceNeedsReviewSummary(items),
+    ...overrides,
+  });
+}
+
 describe("CloseoutsClient", () => {
   beforeEach(() => {
     window.history.pushState(null, "", "/closeouts");
@@ -295,26 +331,7 @@ describe("CloseoutsClient", () => {
       isLoading: false,
       refetch: vi.fn(),
     } as never);
-    vi.mocked(useChemicalLogs).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceSources).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceDocuments).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceChunks).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
-    vi.mocked(useComplianceAdvisoryAudits).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never);
+    mockComplianceReview();
     vi.mocked(useJobCloseoutReview).mockReturnValue({
       error: null,
       isLoading: false,
@@ -417,10 +434,10 @@ describe("CloseoutsClient", () => {
 
   it("surfaces warning and critical compliance guardrails for closeouts", async () => {
     const user = userEvent.setup();
-    vi.mocked(useChemicalLogs).mockReturnValue({
-      data: [warningChemicalLog, criticalChemicalLog],
-      isLoading: false,
-    } as never);
+    mockComplianceReview([
+      warningChemicalLog as ChemicalLog,
+      criticalChemicalLog as unknown as ChemicalLog,
+    ]);
 
     render(<CloseoutsClient />);
 
@@ -444,6 +461,36 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getAllByRole("link", { name: "Open compliance" }).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("keeps closeouts usable when compliance review setup is unavailable", () => {
+    mockComplianceReview([], undefined, {
+      isError: false,
+      items: [],
+      schemaUnavailable: true,
+      setupWarning:
+        "Compliance advisory review data is unavailable. Continue the workflow, then review compliance setup from the Compliance page.",
+      summary: {
+        advisoryItems: 0,
+        chemicalItems: 0,
+        criticalItems: 0,
+        openItems: 0,
+        sourceItems: 0,
+        warningItems: 0,
+        wdoItems: 0,
+      },
+    });
+
+    render(<CloseoutsClient />);
+
+    expect(
+      screen.getByRole("heading", { name: "Closeouts" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("3 clear, 0 review recommended, 0 critical review."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/relation/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/compliance_sources/i)).not.toBeInTheDocument();
   });
 
   it("points invoiced closeouts toward portal sharing", async () => {

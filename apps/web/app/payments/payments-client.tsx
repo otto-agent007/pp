@@ -3,8 +3,6 @@
 import {
   buildBillingPortalNextActions,
   buildBillingQueue,
-  buildComplianceGuardrailForJob,
-  buildComplianceReviewItems,
   buildInvoiceNotesFromOffering,
   buildInvoiceInputFromJob,
   filterInvoices,
@@ -29,11 +27,6 @@ import {
   type InvoiceStatusFilter,
 } from "@pest-patrol/domain";
 import type {
-  ChemicalLog,
-  ComplianceAdvisoryAudit,
-  ComplianceChunk,
-  ComplianceDocument,
-  ComplianceSource,
   Invoice,
   Job,
   ServiceBillingFamily,
@@ -59,14 +52,8 @@ import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useCloseoutCaptureSummaries } from "../../hooks/useCloseouts";
-import {
-  useComplianceAdvisoryAudits,
-  useComplianceChunks,
-  useComplianceDocuments,
-  useComplianceSources,
-} from "../../hooks/useCompliance";
+import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useCreateCustomerPortalAccessToken } from "../../hooks/useCustomerPortalAccess";
-import { useChemicalLogs } from "../../hooks/useInventory";
 import { useJobs } from "../../hooks/useJobs";
 import {
   useCreateInvoice,
@@ -94,13 +81,8 @@ const emptyForm: InvoiceFormState = {
   job_id: "",
   notes: "",
 };
-const emptyAudits: ComplianceAdvisoryAudit[] = [];
-const emptyChemicalLogs: ChemicalLog[] = [];
-const emptyChunks: ComplianceChunk[] = [];
-const emptyDocuments: ComplianceDocument[] = [];
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
-const emptySources: ComplianceSource[] = [];
 const serviceBillingOfferings = listServiceBillingOfferings();
 const serviceBillingFamilyOptions = getServiceBillingFamilyOptions().filter(
   (option) => option.family !== "other",
@@ -386,11 +368,6 @@ export function PaymentsClient() {
   const searchParams = useSearchParams();
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
-  const chemicalLogsQuery = useChemicalLogs();
-  const complianceSourcesQuery = useComplianceSources();
-  const complianceDocumentsQuery = useComplianceDocuments();
-  const complianceChunksQuery = useComplianceChunks();
-  const complianceAuditsQuery = useComplianceAdvisoryAudits();
   const createInvoice = useCreateInvoice();
   const createPaymentLink = useCreateInvoicePaymentLink();
   const markPaid = useMarkInvoicePaid();
@@ -424,25 +401,7 @@ export function PaymentsClient() {
   const highlightedInvoiceId = searchParams.get("invoice_id") ?? "";
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
-  const complianceReviewItems = useMemo(
-    () =>
-      buildComplianceReviewItems({
-        audits: complianceAuditsQuery.data ?? emptyAudits,
-        chemicalLogs: chemicalLogsQuery.data ?? emptyChemicalLogs,
-        chunks: complianceChunksQuery.data ?? emptyChunks,
-        documents: complianceDocumentsQuery.data ?? emptyDocuments,
-        jobs,
-        sources: complianceSourcesQuery.data ?? emptySources,
-      }),
-    [
-      chemicalLogsQuery.data,
-      complianceAuditsQuery.data,
-      complianceChunksQuery.data,
-      complianceDocumentsQuery.data,
-      complianceSourcesQuery.data,
-      jobs,
-    ],
-  );
+  const complianceReview = useComplianceReviewItems({ jobs });
   const completedJobIds = useMemo(
     () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
     [jobs],
@@ -585,16 +544,9 @@ export function PaymentsClient() {
       selectedOffering ? getPromotionSuggestionsForOffering(selectedOffering) : [],
     [selectedOffering],
   );
-  const selectedJobGuardrail = useMemo(
-    () =>
-      selectedJob
-        ? buildComplianceGuardrailForJob({
-            items: complianceReviewItems,
-            jobId: selectedJob.id,
-          })
-        : null,
-    [complianceReviewItems, selectedJob],
-  );
+  const selectedJobGuardrail = selectedJob
+    ? complianceReview.buildGuardrailForJob(selectedJob.id)
+    : null;
   const closeoutHandoffJob =
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
@@ -885,10 +837,7 @@ export function PaymentsClient() {
                 jobs.find((job) => job.id === invoice.job_id) ??
                 null;
               const invoiceGuardrail = invoiceJob
-                ? buildComplianceGuardrailForJob({
-                    items: complianceReviewItems,
-                    jobId: invoiceJob.id,
-                  })
+                ? complianceReview.buildGuardrailForJob(invoiceJob.id)
                 : null;
               const invoiceServiceInference = invoiceJob
                 ? inferServiceBillingOfferingFromJob(invoiceJob)
