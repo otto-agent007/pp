@@ -1,23 +1,15 @@
 # In Progress
 
-Active docs/status slice:
+Active implementation slice:
 
-- `codex/docs-current-status-refresh` refreshes README, implementation plan,
-  task ledgers, and readiness docs to the live June 3, 2026 repo state.
-- Scope is docs-only: no app behavior, migrations, provider setup, environment
-  changes, seed/reset writes, preview mutations, production mutations, or live
-  compliance ingestion.
-- Done when `git diff --check` passes, the branch is committed and pushed, and
-  a draft PR exists.
-
-Open draft PRs:
-
-- PR #89, `[codex] Chemical Product Binder V1`, is open against `main` from
-  `codex/chemical-product-binder-v1`; GitHub `verify` and Vercel are green,
-  and Supabase Preview is skipped.
-- PR #90, `[codex] Require fresh branch and draft PR per slice`, is open
-  against `main` from `codex/agents-branch-draft-pr-rule`; GitHub `verify` and
-  Vercel are green, and Supabase Preview is skipped.
+- No active implementation slice is currently open in GitHub. Local status
+  should still be checked before starting work because untracked artifacts or
+  branch-specific residue may exist.
+- PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
+- PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
+  June 3, 2026.
+- Recommended next implementation candidate: Pest Patrol Service Billing
+  Catalog V1.
 
 Current blockers and guardrails:
 
