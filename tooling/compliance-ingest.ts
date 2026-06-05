@@ -46,6 +46,12 @@ export interface ComplianceIngestionSummary {
   sourcesSkipped: number;
 }
 
+const LIVE_RUN_ENV_NAMES = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "OPENAI_API_KEY",
+] as const;
+
 interface ComplianceIngestionDependencies {
   assertSchemaReady?: (client: ComplianceClient) => Promise<void>;
   createEmbedding?: (input: string) => Promise<number[] | null>;
@@ -168,12 +174,152 @@ function getEnv(name: string, env: Record<string, string | undefined>) {
   return env[name]?.trim() || undefined;
 }
 
+function getRequiredEnvNames(options: ComplianceIngestionRunOptions) {
+  if (options.dryRun) {
+    return [] as const;
+  }
+
+  if (options.noEmbed) {
+    return ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+  }
+
+  return LIVE_RUN_ENV_NAMES;
+}
+
+function getMissingEnvNames(
+  names: readonly string[],
+  env: Record<string, string | undefined>,
+) {
+  return names.filter((name) => !getEnv(name, env));
+}
+
+function describeComplianceIngestionTarget(
+  options: ComplianceIngestionRunOptions,
+  env: Record<string, string | undefined>,
+) {
+  if (options.dryRun) {
+    return "dry run (no Supabase target required)";
+  }
+
+  const supabaseUrl = getEnv("NEXT_PUBLIC_SUPABASE_URL", env);
+
+  if (!supabaseUrl) {
+    return "unconfigured Supabase target";
+  }
+
+  try {
+    const hostname = new URL(supabaseUrl).hostname;
+
+    if (["localhost", "127.0.0.1", "::1"].includes(hostname)) {
+      return "approved local Supabase target";
+    }
+
+    if (hostname.endsWith("vercel.app") || hostname.includes("preview")) {
+      return "approved preview Supabase target";
+    }
+
+    return "configured remote Supabase target";
+  } catch {
+    return "configured Supabase target";
+  }
+}
+
+function describeEmbeddingMode(
+  options: ComplianceIngestionRunOptions,
+  env: Record<string, string | undefined>,
+) {
+  if (options.noEmbed) {
+    return "disabled";
+  }
+
+  return getEnv("OPENAI_API_KEY", env) ? "enabled" : "disabled";
+}
+
+function describeWriteMode(options: ComplianceIngestionRunOptions) {
+  return options.dryRun ? "disabled" : "enabled";
+}
+
+export function formatComplianceIngestionPreflight(
+  options: ComplianceIngestionRunOptions,
+  env: Record<string, string | undefined> = process.env,
+) {
+  const requiredEnvNames = getRequiredEnvNames(options);
+  const missingRequiredEnvNames = getMissingEnvNames(requiredEnvNames, env);
+  const missingLiveRunEnvNames = getMissingEnvNames(LIVE_RUN_ENV_NAMES, env);
+
+  return [
+    "Compliance ingest preflight",
+    `Target: ${describeComplianceIngestionTarget(options, env)}`,
+    `Mode: ${options.dryRun ? "dry run" : "live write"}`,
+    `Supabase writes: ${describeWriteMode(options)}`,
+    `Embeddings: ${describeEmbeddingMode(options, env)}`,
+    `Required envs for this mode: ${
+      requiredEnvNames.length > 0 ? requiredEnvNames.join(", ") : "none"
+    }`,
+    `Missing required envs: ${
+      missingRequiredEnvNames.length > 0
+        ? missingRequiredEnvNames.join(", ")
+        : "none"
+    }`,
+    `Live-run envs currently unset: ${
+      missingLiveRunEnvNames.length > 0
+        ? missingLiveRunEnvNames.join(", ")
+        : "none"
+    }`,
+    `Manifest: ${options.manifestPath ?? DEFAULT_MANIFEST_PATH}`,
+  ].join("\n");
+}
+
+export function formatComplianceIngestionResult(
+  summary: ComplianceIngestionSummary,
+  options: ComplianceIngestionRunOptions,
+  env: Record<string, string | undefined> = process.env,
+) {
+  return [
+    "Compliance ingest result",
+    `Sources: ${summary.sourcesProcessed} processed, ${summary.sourcesSkipped} skipped`,
+    `Documents: ${summary.documentsProcessed} processed`,
+    `Chunks: ${summary.chunksPlanned} planned, ${summary.chunksUpserted} upserted`,
+    `Embeddings: ${summary.embeddingsCreated} created, ${summary.embeddingsSkipped} skipped`,
+    `Dry run: ${summary.dryRun ? "yes" : "no"}`,
+    `Supabase writes: ${describeWriteMode(options)}`,
+    `Embedding mode: ${describeEmbeddingMode(options, env)}`,
+  ].join("\n");
+}
+
 async function defaultReadTextFile(filePath: string) {
   return readFile(filePath, "utf8");
 }
 
 async function loadManifest(filePath: string) {
   return JSON.parse(await readFile(filePath, "utf8")) as unknown[];
+}
+
+function isMissingSourceTextError(error: unknown) {
+  return (
+    error instanceof Error &&
+    /ENOENT|no such file|cannot find/i.test(error.message)
+  );
+}
+
+async function readComplianceSourceText(
+  manifestBaseDir: string,
+  entry: ComplianceSourceManifestEntry,
+  readTextFile: (filePath: string) => Promise<string>,
+) {
+  const sourceTextPath = path.resolve(manifestBaseDir, entry.text_path);
+
+  try {
+    return await readTextFile(sourceTextPath);
+  } catch (error) {
+    if (isMissingSourceTextError(error)) {
+      throw new Error(
+        `Compliance source text file is missing for ${entry.id}: ${entry.text_path}`,
+      );
+    }
+
+    throw error;
+  }
 }
 
 async function createOpenAIEmbedding(input: string, env = process.env) {
@@ -282,7 +428,11 @@ export async function runComplianceIngestion(
   }
 
   for (const entry of selectedEntries) {
-    const sourceText = await readTextFile(path.resolve(manifestBaseDir, entry.text_path));
+    const sourceText = await readComplianceSourceText(
+      manifestBaseDir,
+      entry,
+      readTextFile,
+    );
     const previewPlan = buildComplianceIngestionPlan({
       documentId: `${entry.id}-document`,
       entry,
@@ -335,19 +485,12 @@ export async function runComplianceIngestion(
   return summary;
 }
 
-function printSummary(summary: ComplianceIngestionSummary) {
-  console.log(
-    `Compliance ingest ${summary.dryRun ? "dry run" : "complete"}: ${summary.sourcesProcessed} sources, ${summary.documentsProcessed} documents, ${summary.chunksPlanned} chunks planned, ${summary.chunksUpserted} chunks upserted.`,
-  );
-  console.log(
-    `Embeddings: ${summary.embeddingsCreated} created, ${summary.embeddingsSkipped} skipped. Sources skipped by filters: ${summary.sourcesSkipped}.`,
-  );
-}
-
 async function main() {
   const options = parseComplianceIngestArgs(process.argv.slice(2));
+  console.log(formatComplianceIngestionPreflight(options, process.env));
   const summary = await runComplianceIngestion(options);
-  printSummary(summary);
+  console.log();
+  console.log(formatComplianceIngestionResult(summary, options, process.env));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -90,9 +90,12 @@ database writes:
 corepack pnpm compliance:ingest -- --dry-run --no-embed
 ```
 
-After the compliance migration is applied to an approved local or preview
-Supabase environment, the same command can be run without `--dry-run`.
-If `OPENAI_API_KEY` is unset, ingestion stores text chunks without embeddings.
+The preflight report shows the target, mode, source counts, chunk counts, and
+which env names are still unset without printing secret values. Use `--dry-run`
+for a read-only evidence pass, `--no-embed` to avoid OpenAI calls, and only run
+without `--dry-run` after an operator approves the local or preview Supabase
+target and loads the required env names. If `OPENAI_API_KEY` is unset, the live
+run stores text chunks without embeddings.
 
 See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current operator-assisted preview punch list, and [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel settings, Supabase admin bootstrap, smoke tests, and security boundaries.
 

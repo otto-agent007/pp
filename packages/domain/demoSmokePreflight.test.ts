@@ -167,7 +167,7 @@ describe("demo smoke preflight", () => {
     ]);
     expect(
       routes.map((route) => route.progressionCtaLabels.length),
-    ).toEqual([4, 4, 5, 4, 4, 4, 4, 4, 4, 0]);
+    ).toEqual([4, 4, 5, 4, 4, 4, 4, 4, 5, 0]);
     expect(routes.map((route) => route.expectedText.length)).toEqual([
       1,
       1,
@@ -181,7 +181,7 @@ describe("demo smoke preflight", () => {
       3,
     ]);
     expect(routes.find((route) => route.id === "portal")).toMatchObject({
-      label: "tokened /portal",
+      label: "10. tokened /portal",
       redactedPath: "/portal/<fixture-customer-id>?access_token=<redacted>",
       requiresAdminSession: false,
     });
