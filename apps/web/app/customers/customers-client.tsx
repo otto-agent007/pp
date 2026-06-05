@@ -943,24 +943,24 @@ export function CustomersClient({
         </div>
 
         <details
-          className="group rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg"
+          className="group rounded-md border border-theme-border-subtle bg-theme-background-subtle"
           open
         >
-          <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-status-alert-warning-fg outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-theme-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
             Customer setup notes
           </summary>
-          <div className="hidden border-t border-status-alert-warning-border p-3 group-open:block">
-            <p className="text-sm text-status-alert-warning-fg">
+          <div className="hidden border-t border-theme-border-subtle p-3 group-open:block">
+            <p className="text-sm text-theme-text-secondary">
               Save the customer with one active service location, then schedule
               the first job.
             </p>
-            <p className="mt-1 text-sm text-status-alert-warning-fg">
+            <p className="mt-1 text-sm text-theme-text-secondary">
               Use portal links after closeout and billing are ready.
             </p>
             <Link
               className={buttonClassName({
                 className:
-                  "mt-3 border-status-alert-warning-border text-status-alert-warning-fgStrong hover:bg-status-alert-warning-bg",
+                  "mt-3 border-theme-border-subtle text-theme-text-secondary hover:bg-theme-background-subtle",
                 size: "sm",
                 variant: "ghost",
               })}

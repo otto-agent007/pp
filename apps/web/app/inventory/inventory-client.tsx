@@ -667,25 +667,35 @@ export function InventoryClient() {
             )}
           </Card>
 
-          <div className="flex rounded-md border border-theme-border-subtle bg-theme-background-surface p-1 shadow-sm">
+          <div
+            aria-label="Inventory workspace mode"
+            className="flex rounded-md border border-theme-border-subtle bg-theme-background-surface p-1 shadow-sm"
+            role="tablist"
+          >
             <button
-              aria-pressed={workspaceMode === "product"}
+              aria-controls="inventory-product-workspace"
+              aria-selected={workspaceMode === "product"}
               className={buttonClassName({
                 className: "flex-1 justify-center",
                 variant: workspaceMode === "product" ? "primary" : "ghost",
               })}
+              id="inventory-product-workspace-tab"
               onClick={() => setWorkspaceMode("product")}
+              role="tab"
               type="button"
             >
               Add product
             </button>
             <button
-              aria-pressed={workspaceMode === "usage"}
+              aria-controls="inventory-usage-workspace"
+              aria-selected={workspaceMode === "usage"}
               className={buttonClassName({
                 className: "flex-1 justify-center",
                 variant: workspaceMode === "usage" ? "primary" : "ghost",
               })}
+              id="inventory-usage-workspace-tab"
               onClick={() => setWorkspaceMode("usage")}
+              role="tab"
               type="button"
             >
               Log use
@@ -696,11 +706,19 @@ export function InventoryClient() {
             <form
               className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
               onSubmit={submitInventory}
+              aria-labelledby="inventory-product-workspace-tab"
+              id="inventory-product-workspace"
+              role="tabpanel"
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-xl font-semibold text-theme-text-primary">
                   {editingItem ? "Edit product" : "Add product"}
                 </h2>
+                {editingItem ? (
+                  <p className="text-sm font-semibold text-theme-text-secondary">
+                    Editing {editingItem.name}
+                  </p>
+                ) : null}
                 {editingItem ? (
                   <Button onClick={resetInventoryForm} variant="ghost">
                     New
@@ -811,6 +829,9 @@ export function InventoryClient() {
           ) : (
             <form
               className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
+              aria-labelledby="inventory-usage-workspace-tab"
+              id="inventory-usage-workspace"
+              role="tabpanel"
               onSubmit={submitLog}
             >
               <h2 className="text-xl font-semibold text-theme-text-primary">

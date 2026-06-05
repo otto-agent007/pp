@@ -394,10 +394,18 @@ describe("PaymentsClient", () => {
     expect(
       screen.getByRole("combobox", { name: "Service preset" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "General Pest" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Recurring" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Termite/WDO" })).toBeInTheDocument();
-    expect(await screen.findByText("Inferred preset")).toBeInTheDocument();
+    const serviceFamilyFilter = screen.getByLabelText("Service family");
+    expect(serviceFamilyFilter).toBeInTheDocument();
+    expect(
+      within(serviceFamilyFilter).getByRole("option", { name: "General Pest" }),
+    ).toBeInTheDocument();
+    expect(
+      within(serviceFamilyFilter).getByRole("option", { name: "Recurring" }),
+    ).toBeInTheDocument();
+    expect(
+      within(serviceFamilyFilter).getByRole("option", { name: "Termite/WDO" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Auto-selected")).toBeInTheDocument();
     expect(
       (screen.getByRole("combobox", {
         name: "Service preset",
@@ -428,6 +436,43 @@ describe("PaymentsClient", () => {
     expect(
       (screen.getByLabelText("Invoice notes") as HTMLTextAreaElement).value,
     ).toContain("Rodent exclusion and attic sanitation completed");
+  });
+
+  it("preserves operator-entered invoice copy when selecting another job", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [completedJob, secondCompletedJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    await user.click(screen.getByRole("combobox", { name: "Completed job" }));
+    await user.click(
+      (await screen.findByRole("option", {
+        name: /10 Pine Street/,
+      })) as HTMLOptionElement,
+    );
+    await user.type(screen.getByLabelText("Line item description"), "custom");
+    await user.type(screen.getByLabelText("Invoice notes"), "custom notes");
+
+    await user.click(screen.getByRole("combobox", { name: "Completed job" }));
+    await user.click(
+      (await screen.findByRole("option", {
+        name: /20 Oak Avenue/,
+      })) as HTMLOptionElement,
+    );
+
+    expect(
+      (screen.getByLabelText("Line item description") as HTMLInputElement).value,
+    ).toContain("custom");
+    expect(
+      (screen.getByLabelText("Invoice notes") as HTMLTextAreaElement).value,
+    ).toContain("custom notes");
   });
 
   it("shows review-only promotion suggestions for eligible presets", () => {

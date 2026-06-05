@@ -570,8 +570,10 @@ export function JobsClient() {
                     setVisibleJobCount((count) => count + INITIAL_VISIBLE_JOBS)
                   }
                   variant="ghost"
+                  disabled={hiddenJobCount <= 0}
                 >
-                  Show 24 more
+                  Show {Math.min(hiddenJobCount, INITIAL_VISIBLE_JOBS)} more ·{" "}
+                  {hiddenJobCount} remaining
                 </Button>
               ) : null}
             </>
@@ -580,10 +582,10 @@ export function JobsClient() {
 
         {isJobPanelOpen ? (
           <form
-          className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
-          id="job-form"
-          onSubmit={submitJob}
-        >
+            className="flex flex-col gap-4 rounded-lg border border-theme-border-subtle bg-theme-background-surface p-5 shadow-sm"
+            id="job-form"
+            onSubmit={submitJob}
+          >
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-theme-text-primary">
               {editingJob ? "Edit job" : "Create job"}
@@ -592,9 +594,14 @@ export function JobsClient() {
               Close
             </Button>
             {editingJob ? (
-              <Button onClick={openCreateJob} variant="ghost">
-                New job
-              </Button>
+              <>
+                <p className="text-sm text-theme-text-secondary">
+                  New job clears current edits and starts a fresh draft.
+                </p>
+                <Button onClick={openCreateJob} variant="ghost">
+                  New job
+                </Button>
+              </>
             ) : null}
           </div>
 

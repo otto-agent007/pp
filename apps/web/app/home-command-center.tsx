@@ -914,19 +914,22 @@ export function HomeCommandCenter() {
                   : state.nextAction.summary}
               </p>
             </div>
-            {/* Portal mode indicator — links to customers so operators know what it means */}
-            <Link
-              className="inline-flex items-center gap-1.5 rounded-full text-sm font-semibold transition hover:opacity-80"
-              href="/customers"
-              title="Customer portal sharing mode — click to manage"
-            >
+          </div>
+          <div className="mt-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase text-theme-text-muted">
-                Portal mode:
+                Portal mode
               </span>
-              <StatusPill tone={loading ? "neutral" : "info"}>
-                {loading ? "Refreshing" : state.portalProviderLabel}
-              </StatusPill>
-            </Link>
+              <Link
+                className="inline-flex items-center gap-1.5 transition hover:opacity-80"
+                href="/customers"
+                title="Customer portal sharing mode — click to manage"
+              >
+                <StatusPill tone={loading ? "neutral" : "info"}>
+                  {loading ? "Refreshing" : state.portalProviderLabel}
+                </StatusPill>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

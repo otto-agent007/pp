@@ -590,6 +590,7 @@ export function PaymentsClient() {
     const inferredOffering = inferServiceBillingOfferingFromJob(selectedJob).offering;
     setServicePresetId(inferredOffering.id);
     setServicePresetSource("inferred");
+    setServiceCopyDirty(false);
     setForm((current) => {
       const nextDescription =
         inferredOffering.suggestedLineItems[0]?.description ??
@@ -871,6 +872,12 @@ export function PaymentsClient() {
               const invoiceServiceInference = invoiceJob
                 ? inferServiceBillingOfferingFromJob(invoiceJob)
                 : null;
+              const shouldShowServiceInference =
+                invoiceServiceInference?.confidence === "fallback" ||
+                invoiceServiceInference?.confidence === "medium";
+              const invoiceServiceInferenceToShow = shouldShowServiceInference
+                ? invoiceServiceInference
+                : null;
               const invoiceIsWdoEscrowJob = invoiceJob
                 ? isWdoEscrowLikeJob(invoiceJob)
                 : false;
@@ -907,20 +914,20 @@ export function PaymentsClient() {
                           >
                             {reconciliation.label}
                           </StatusPill>
-                          {invoiceServiceInference ? (
-                            <StatusPill tone="info">
-                              {invoiceServiceInference.offering.shortLabel}
-                            </StatusPill>
+                           {invoiceServiceInferenceToShow ? (
+                             <StatusPill tone="info">
+                               {invoiceServiceInferenceToShow.offering.shortLabel}
+                             </StatusPill>
+                           ) : null}
+                          </div>
+                          {invoiceServiceInferenceToShow ? (
+                            <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
+                           Service: {invoiceServiceInferenceToShow.offering.label} ·{" "}
+                             {getServiceBillingFamilyLabel(
+                               invoiceServiceInferenceToShow.offering.family,
+                             )}
+                           </p>
                           ) : null}
-                        </div>
-                        {invoiceServiceInference ? (
-                          <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
-                            Service: {invoiceServiceInference.offering.label} ·{" "}
-                            {getServiceBillingFamilyLabel(
-                              invoiceServiceInference.offering.family,
-                            )}
-                          </p>
-                        ) : null}
                         <p className="mt-2 text-sm text-theme-text-secondary">
                           {invoice.job?.location?.address ?? "No location"}
                         </p>
@@ -1198,7 +1205,6 @@ export function PaymentsClient() {
             onChange={(jobId) => {
               setCloseoutHandoffJobId("");
               setServicePresetSource("inferred");
-              setServiceCopyDirty(false);
               setForm((current) => ({ ...current, job_id: jobId }));
             }}
             options={completedJobOptions}
@@ -1221,34 +1227,33 @@ export function PaymentsClient() {
                   {servicePresetSource === "manual"
                     ? "Manual preset"
                     : selectedJobInference?.confidence === "fallback"
-                      ? "Default preset"
-                      : "Inferred preset"}
+                      ? "Generic preset"
+                      : "Auto-selected"}
                 </StatusPill>
               ) : null}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                aria-pressed={serviceFamilyFilter === "all"}
-                onClick={() => setServiceFamilyFilter("all")}
-                size="sm"
-                variant={serviceFamilyFilter === "all" ? "primary" : "ghost"}
+            <label className="flex flex-col gap-1 text-sm font-medium text-theme-text-primary">
+              Service family
+              <select
+                aria-label="Service family"
+                className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm outline-none focus:border-theme-action-primary"
+                onChange={(event) => {
+                  const value = event.target.value as
+                    | ServiceBillingFamily
+                    | "all";
+
+                  setServiceFamilyFilter(value);
+                }}
+                value={serviceFamilyFilter}
               >
-                All
-              </Button>
-              {serviceBillingFamilyOptions.map((option) => (
-                <Button
-                  aria-pressed={serviceFamilyFilter === option.family}
-                  key={option.family}
-                  onClick={() => setServiceFamilyFilter(option.family)}
-                  size="sm"
-                  variant={
-                    serviceFamilyFilter === option.family ? "primary" : "ghost"
-                  }
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+                <option value="all">All</option>
+                {serviceBillingFamilyOptions.map((option) => (
+                  <option key={option.family} value={option.family}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <SearchableSelect
               ariaLabel="Service preset"
               emptyMessage="No service presets found"

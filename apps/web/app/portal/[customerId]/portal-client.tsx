@@ -101,6 +101,9 @@ function GeneralPestUpgradeCard({
   const upgradeSummary = getCustomerPortalUpgradeSummary();
   const upgradeIntent = useCustomerPortalUpgradeIntent(customerId, accessToken);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const upgradeCardSummary =
+    "Ask us to review recurring service needs for this property. We will confirm service type, pricing, and start date before any routine service is scheduled or billed.";
+  const upgradeCardTitle = "Ask Pest Patrol about routine service";
 
   async function requestUpgrade() {
     const result = await upgradeIntent
@@ -120,15 +123,15 @@ function GeneralPestUpgradeCard({
 
   return (
     <section className="rounded-lg border border-status-alert-info-border bg-status-alert-info-bg p-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <Eyebrow>Upgrade</Eyebrow>
-          <h2 className="mt-1 text-xl font-bold text-theme-text-primary">
-            {upgradeSummary.title}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
-            {upgradeSummary.summary}
-          </p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Eyebrow>Upgrade</Eyebrow>
+            <h2 className="mt-1 text-xl font-bold text-theme-text-primary">
+              {upgradeCardTitle}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
+              {upgradeCardSummary}
+            </p>
           {confirmation ? (
             <p className="mt-2 text-sm font-semibold text-status-alert-success-fg">
               {confirmation}
@@ -687,6 +690,9 @@ export function CustomerPortalClient({
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <Eyebrow>Customer portal</Eyebrow>
+          <p className="text-sm font-semibold text-theme-text-secondary">
+            Customer-facing records provided by Pest Patrol
+          </p>
           <h1 className="text-3xl font-bold text-theme-text-primary">
             {documentTitle}
           </h1>
