@@ -49,22 +49,26 @@ export interface DemoSmokePreflightResult {
   target: DemoSeedTarget;
 }
 
+export type DemoSmokeStepId =
+  | "closeouts"
+  | "compliance"
+  | "customers"
+  | "dispatch"
+  | "escrow-re"
+  | "home"
+  | "inventory"
+  | "payments"
+  | "portal"
+  | "technicians";
+
 export interface LocalFixtureSmokeRoute {
+  criticalHeadings: string[];
   expectedText: string[];
-  id:
-    | "automation"
-    | "closeouts"
-    | "compliance"
-    | "customers"
-    | "dispatch"
-    | "home"
-    | "inventory"
-    | "jobs"
-    | "payments"
-    | "portal"
-    | "technicians";
+  id: DemoSmokeStepId;
+  keyBusinessStateText: string[];
   label: string;
   path: string;
+  progressionCtaLabels: string[];
   redactedPath: string;
   requiresAdminSession: boolean;
 }
@@ -87,6 +91,15 @@ export const localFixtureSmokeSensitivePatterns = [
   "sk_live_",
   "sk_test_",
   "whsec_",
+  "demo-token",
+  "todo",
+  "fixme",
+  "not implemented",
+  "placeholder",
+  "lorem ipsum",
+  "internal error",
+  "stack trace",
+  "stub",
 ] as const;
 
 const requiredEnvNames: DemoSmokeEnvName[] = [
@@ -106,7 +119,7 @@ function productionEnv(input: DemoSmokePreflightInput) {
 function isLocalSupabaseUrl(supabaseUrl?: string) {
   return Boolean(
     supabaseUrl?.startsWith("http://localhost") ||
-    supabaseUrl?.startsWith("http://127.0.0.1"),
+      supabaseUrl?.startsWith("http://127.0.0.1"),
   );
 }
 
@@ -121,11 +134,7 @@ function defaultBaseUrl(target: DemoSeedTarget) {
 }
 
 function seedCommand(target: DemoSeedTarget, techPasswordEnv?: string) {
-  const techPasswordArg = techPasswordEnv
-    ? ` --tech-password-env ${techPasswordEnv}`
-    : "";
-
-  return `corepack pnpm demo:seed -- --target ${target} --confirm ${DEMO_SEED_CONFIRMATION}${techPasswordArg}`;
+  return `corepack pnpm demo:seed -- --target ${target} --confirm ${DEMO_SEED_CONFIRMATION}${techPasswordEnv ? ` --tech-password-env ${techPasswordEnv}` : ""}`;
 }
 
 function resetCommand(target: DemoSeedTarget) {
@@ -137,11 +146,7 @@ function commandsFor(input: {
   target: DemoSeedTarget;
   techPasswordEnv?: string;
 }): DemoSmokePreflightCommand[] {
-  const preflightCommand = `corepack pnpm demo:smoke -- --target ${input.target}${
-    input.baseUrl !== defaultBaseUrl(input.target)
-      ? ` --base-url ${input.baseUrl}`
-      : ""
-  }${input.techPasswordEnv ? ` --tech-password-env ${input.techPasswordEnv}` : ""}`;
+  const preflightCommand = `corepack pnpm demo:smoke -- --target ${input.target}${input.baseUrl !== defaultBaseUrl(input.target) ? ` --base-url ${input.baseUrl}` : ""}${input.techPasswordEnv ? ` --tech-password-env ${input.techPasswordEnv}` : ""}`;
 
   const commands: DemoSmokePreflightCommand[] = [
     {
@@ -209,102 +214,166 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
       (customer) =>
         customersWithPaymentLinks.has(customer.id) &&
         customersWithCompletedHistory.has(customer.id),
-    ) ??
-    fixtures.customers[1] ??
-    fixtures.customers[0];
+    ) ?? fixtures.customers[1] ?? fixtures.customers[0];
   const portalPath = `/portal/${portalCustomer.id}?access_token=portal-token`;
 
   return [
     {
+      criticalHeadings: ["Dashboard overview"],
       expectedText: ["Dashboard overview"],
       id: "home",
-      label: "/",
+      keyBusinessStateText: ["Customer ops", "Dispatch", "Billing"],
+      label: "1. /",
       path: "/",
+      progressionCtaLabels: ["Dispatch", "Customers", "Closeouts", "Payments"],
       redactedPath: "/",
       requiresAdminSession: true,
     },
     {
+      criticalHeadings: ["Dispatch Calendar"],
       expectedText: ["Dispatch Calendar"],
       id: "dispatch",
-      label: "/dispatch",
+      keyBusinessStateText: ["Route intelligence", "Today's Dispatch", "Missing"],
+      label: "2. /dispatch",
       path: "/dispatch",
+      progressionCtaLabels: ["Customers", "Closeouts", "Technicians", "Inventory"],
       redactedPath: "/dispatch",
       requiresAdminSession: true,
     },
     {
-      expectedText: ["Demo - Rivera Cafe"],
+      criticalHeadings: ["Customers"],
+      expectedText: ["Customers"],
       id: "customers",
-      label: "/customers",
+      keyBusinessStateText: ["Portal access", "open balance", "service history"],
+      label: "3. /customers",
       path: "/customers",
+      progressionCtaLabels: [
+        "Closeouts",
+        "Payments",
+        "Portal",
+        "Generate",
+        "Share",
+      ],
       redactedPath: "/customers",
       requiresAdminSession: true,
     },
     {
-      expectedText: ["Jobs"],
-      id: "jobs",
-      label: "/jobs",
-      path: "/jobs",
-      redactedPath: "/jobs",
-      requiresAdminSession: true,
-    },
-    {
-      expectedText: ["Technicians", "Dispatch-ready crew"],
-      id: "technicians",
-      label: "/technicians",
-      path: "/technicians",
-      redactedPath: "/technicians",
-      requiresAdminSession: true,
-    },
-    {
-      expectedText: ["Inventory"],
-      id: "inventory",
-      label: "/inventory",
-      path: "/inventory",
-      redactedPath: "/inventory",
-      requiresAdminSession: true,
-    },
-    {
-      expectedText: ["Payments"],
-      id: "payments",
-      label: "/payments",
-      path: "/payments",
-      redactedPath: "/payments",
-      requiresAdminSession: true,
-    },
-    {
+      criticalHeadings: ["Closeouts"],
       expectedText: ["Closeouts"],
       id: "closeouts",
-      label: "/closeouts",
+      keyBusinessStateText: ["Needs proof", "Invoice", "Billing ready"],
+      label: "4. /closeouts",
       path: "/closeouts",
+      progressionCtaLabels: [
+        "Payments",
+        "Invoice",
+        "WDO / Escrow",
+        "Review",
+      ],
       redactedPath: "/closeouts",
       requiresAdminSession: true,
     },
     {
+      criticalHeadings: ["Payments"],
+      expectedText: ["Payments"],
+      id: "payments",
+      keyBusinessStateText: [
+        "WDO / Escrow readiness",
+        "Create invoice",
+        "Mark paid",
+      ],
+      label: "5. /payments",
+      path: "/payments",
+      progressionCtaLabels: [
+        "Create",
+        "Payment",
+        "WDO / Escrow",
+        "Open WDO / Escrow readiness",
+      ],
+      redactedPath: "/payments",
+      requiresAdminSession: true,
+    },
+    {
+      criticalHeadings: ["Compliance Command Center"],
       expectedText: ["Compliance Command Center"],
       id: "compliance",
-      label: "/compliance",
+      keyBusinessStateText: ["Chemical Product Binder", "WDO / Branch 3", "Advisory"],
+      label: "6. /compliance",
       path: "/compliance",
+      progressionCtaLabels: [
+        "Inventory",
+        "Closeouts",
+        "Escrow",
+        "Technicians",
+      ],
       redactedPath: "/compliance",
       requiresAdminSession: true,
     },
     {
-      expectedText: ["Provider: Manual fallback", "Manual fallback accepted"],
-      id: "automation",
-      label: "/automation",
-      path: "/automation",
-      redactedPath: "/automation",
+      criticalHeadings: ["Inventory", "Chemical Product Binder"],
+      expectedText: ["Inventory"],
+      id: "inventory",
+      keyBusinessStateText: ["Chemical usage", "Source readiness", "Low stock"],
+      label: "7. /inventory",
+      path: "/inventory",
+      progressionCtaLabels: [
+        "Technicians",
+        "Compliance",
+        "Closeouts",
+        "Dispatch",
+      ],
+      redactedPath: "/inventory",
       requiresAdminSession: true,
     },
     {
+      criticalHeadings: ["Technicians"],
+      expectedText: ["Technicians"],
+      id: "technicians",
+      keyBusinessStateText: ["Active", "Credentials", "License"],
+      label: "8. /technicians",
+      path: "/technicians",
+      progressionCtaLabels: [
+        "Dispatch",
+        "Customers",
+        "Closeouts",
+        "Payments",
+      ],
+      redactedPath: "/technicians",
+      requiresAdminSession: true,
+    },
+    {
+      criticalHeadings: ["WDO / Escrow Clearance"],
+      expectedText: ["WDO / Escrow Clearance"],
+      id: "escrow-re",
+      keyBusinessStateText: [
+        "Operator review required",
+        "Needs evidence",
+        "Draft release",
+      ],
+      label: "9. /escrow-re",
+      path: "/escrow-re",
+      progressionCtaLabels: [
+        "Payments",
+        "Closeouts",
+        "Invoice",
+        "Customer",
+        "Home",
+      ],
+      redactedPath: "/escrow-re",
+      requiresAdminSession: true,
+    },
+    {
+      criticalHeadings: ["Customer portal", "Pay invoice"],
       expectedText: [
         portalCustomer.name,
+        "Customer portal",
         "Pay invoice",
-        "Service and billing history",
-        "Recurring service review",
       ],
       id: "portal",
-      label: "tokened /portal",
+      keyBusinessStateText: ["Invoice", "Service history", "Review", "Recurring"],
+      label: "10. tokened /portal",
       path: portalPath,
+      progressionCtaLabels: [],
       redactedPath: "/portal/<fixture-customer-id>?access_token=<redacted>",
       requiresAdminSession: false,
     },
@@ -381,7 +450,7 @@ export function buildDemoSmokePreflight(
       target,
       techPasswordEnv: input.techPasswordEnv,
     }),
-    evidencePrompts: evidenceFor(target),
+    evidenceFor: evidenceFor(target),
     missingEnvNames,
     ready,
     shellSeedReady,

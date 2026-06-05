@@ -145,14 +145,40 @@ describe("demo smoke preflight", () => {
       "home",
       "dispatch",
       "customers",
-      "jobs",
-      "technicians",
-      "inventory",
-      "payments",
       "closeouts",
+      "payments",
       "compliance",
-      "automation",
+      "inventory",
+      "technicians",
+      "escrow-re",
       "portal",
+    ]);
+    expect(routes.map((route) => route.label)).toEqual([
+      "1. /",
+      "2. /dispatch",
+      "3. /customers",
+      "4. /closeouts",
+      "5. /payments",
+      "6. /compliance",
+      "7. /inventory",
+      "8. /technicians",
+      "9. /escrow-re",
+      "10. tokened /portal",
+    ]);
+    expect(
+      routes.map((route) => route.progressionCtaLabels.length),
+    ).toEqual([4, 4, 5, 4, 4, 4, 4, 4, 4, 0]);
+    expect(routes.map((route) => route.expectedText.length)).toEqual([
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      3,
     ]);
     expect(routes.find((route) => route.id === "portal")).toMatchObject({
       label: "tokened /portal",
@@ -162,26 +188,56 @@ describe("demo smoke preflight", () => {
     expect(routes.find((route) => route.id === "portal")?.path).toContain(
       "access_token=portal-token",
     );
-    expect(routes.find((route) => route.id === "portal")?.expectedText).toEqual(
-      [
-        "Demo - Seabreeze Apartments",
-        "Pay invoice",
-        "Service and billing history",
-        "Recurring service review",
-      ],
+    expect(routes.find((route) => route.id === "escrow-re")?.path).toBe(
+      "/escrow-re",
     );
+    expect(routes.find((route) => route.id === "portal")?.expectedText).toEqual([
+      expect.stringContaining("Demo - "),
+      "Customer portal",
+      "Pay invoice",
+    ]);
     expect(
       routes.find((route) => route.id === "portal")?.redactedPath,
     ).not.toContain("portal-token");
     expect(
       routes.find((route) => route.id === "technicians")?.expectedText,
-    ).toEqual(["Technicians", "Dispatch-ready crew"]);
+    ).toEqual(["Technicians"]);
     expect(
       routes.find((route) => route.id === "payments")?.expectedText,
     ).toEqual(["Payments"]);
     expect(
       routes.find((route) => route.id === "compliance")?.expectedText,
     ).toEqual(["Compliance Command Center"]);
+    expect(routes.find((route) => route.id === "escrow-re")?.expectedText).toEqual(
+      ["WDO / Escrow Clearance"],
+    );
+    expect(routes.find((route) => route.id === "dispatch")?.expectedText).toEqual([
+      "Dispatch Calendar",
+    ]);
+    expect(routes.find((route) => route.id === "customers")?.expectedText).toEqual([
+      "Customers",
+    ]);
+    expect(
+      routes.find((route) => route.id === "home")?.expectedText,
+    ).toEqual(["Dashboard overview"]);
+    expect(
+      routes.find((route) => route.id === "closeouts")?.expectedText,
+    ).toEqual(["Closeouts"]);
+    expect(
+      routes.find((route) => route.id === "inventory")?.expectedText,
+    ).toEqual(["Inventory"]);
+    expect(routes.find((route) => route.id === "compliance")?.keyBusinessStateText).toEqual(
+      ["Chemical Product Binder", "WDO / Branch 3", "Advisory"],
+    );
+    expect(
+      routes.find((route) => route.id === "compliance")?.criticalHeadings,
+    ).toEqual(["Compliance Command Center"]);
+    expect(routes.find((route) => route.id === "escrow-re")?.requiresAdminSession).toBe(
+      true,
+    );
+    expect(
+      routes.find((route) => route.id === "portal")?.criticalHeadings,
+    ).toEqual(["Customer portal", "Pay invoice"]);
   });
 
   it("shares fixture auth storage keys and sensitive-pattern guardrails", () => {

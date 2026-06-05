@@ -98,16 +98,21 @@ See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current
 
 ## Current Focus
 
-Current status as of June 4, 2026:
+Current status as of June 5, 2026:
 
-- PR #89, Chemical Product Binder V1, merged on June 3, 2026.
-- PR #90, the fresh `codex/*` branch and draft-PR completion rule, merged on June 3, 2026.
-- PR #98, Pest Patrol Service Billing Catalog V1, merged on June 4, 2026.
-- PR #99, Shared Compliance Review Items Safe Hook V1, merged on June 4, 2026.
-- Active branch: `codex/technician-license-branch-credentials-v1` implements Technician License / Branch Credential Tracking V1 with proposed-only `technician_licenses` schema, shared credential readiness helpers, React Query hooks, `/technicians` credential panels/forms, and `/compliance` credential alerts.
-- `/compliance` remains advisory-only: RAG/source-backed advisories degrade cleanly when `OPENAI_API_KEY` is absent or `20260516175724_california_compliance_rag_v1.sql` has not been applied, Chemical Product Binder status stays deterministic where possible from existing inventory, chemical logs, jobs, reviewed source readiness, and technician credential evidence, and missing/expiring credential copy stays advisory.
-- Core admin workflows are provider-free and demo-ready locally: `/`, `/dispatch`, `/customers`, `/jobs`, `/technicians`, `/inventory`, `/payments`, `/closeouts`, `/compliance`, `/automation`, and tokened `/portal` have fixture-smoke coverage from recent verified slices.
-- Demo seed/reset still carries the larger San Diego proof story with 16 technicians, 100 customers, 108 locations, 180 current-week jobs, 14 inventory items, proof media, invoices/payments, portal-ready closeouts, and guarded `demo@email.com` refresh behavior.
-- No Codex-run local, preview, or production migration apply, provider dashboard mutation, environment mutation, seed/reset write, live compliance ingestion, or production data action has been performed; the technician credential migration is checked in for review only.
-- Real local and protected-preview seed/reset or authenticated browser smoke remain blocked until the operator supplies approved Supabase env names, a reachable local Docker/Postgres target if local Supabase is used, protected-preview access, and an admin/dispatcher sign-in path.
-- Next candidates after this credential slice lands: inventory deep-linking from Chemical Product Binder or service/catalog follow-through based on operator priority.
+- Active branch: `codex/demo-readiness-buyer-walkthrough` completed the
+  Buyer Walkthrough Showcase slice validation pass for the narrative: Dashboard →
+  Dispatch → Customer account → Job closeout → Payments/catalog →
+  Compliance → Chemical Product Binder → Technician credentials → WDO / Escrow →
+  Customer portal.
+- Local no-env fixture smoke checks now target a fixed 10-step buyer journey, including
+  `/escrow-re` and the tokened `/portal/:customerId` handoff route.
+- The required smoke verification passed via `corepack pnpm demo:fixture-smoke`; this
+  branch is now ready for draft PR evidence handoff.
+- No code-affecting migration, provider, environment-variable, seed/reset write,
+  live-ingest, or production-data mutation has been performed during this pass.
+- `/compliance` remains advisory-only from existing setup-aware domain state; the
+  Chemical Product Binder and WDO/Escrow workspace updates are still customer-safe and
+  do not expose internal/compliance warnings.
+- Remaining production/preview smoke gates still need approved env names and protected
+  access paths for authenticated local seed/reset and preview browser smoke.

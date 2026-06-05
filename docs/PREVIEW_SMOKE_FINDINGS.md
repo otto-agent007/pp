@@ -2,6 +2,43 @@
 
 This file records operator-assisted preview smoke preflight and run findings. Do not include secrets, recovery links, raw portal URLs, service-role keys, webhook payloads, provider dashboard data, or real customer data.
 
+## 2026-06-05 Buyer Walkthrough Showcase Readiness Run (Codex)
+
+Status: run completed on 2026-06-05 with a passing local fixture smoke command on this branch.
+
+Planned scope:
+
+- Validate the full 10-step buyer path:
+  - `/`
+  - `/dispatch`
+  - `/customers`
+  - `/closeouts`
+  - `/payments`
+  - `/compliance`
+  - `/inventory`
+  - `/technicians`
+  - `/escrow-re`
+  - `/portal/:customerId` (tokened)
+- Assertions to prove:
+  - zero console/page errors,
+  - zero route load/500s,
+  - zero broken internal links from visible journey UI anchors,
+  - no dead-end primary CTAs,
+  - no overflow and no forbidden internal/dev text.
+
+Run evidence:
+
+- Command: `corepack pnpm demo:fixture-smoke`
+- Result: pass; local fixture smoke validated the full 10-step journey from `/` through
+  `/escrow-re` and tokened `/portal` at both `1440x1000` and `390x900`.
+- Evidence checks completed: route signals, console/page runtime errors, horizontal
+  overflow, sensitive-pattern scan, broken internal links, and actionable primary CTA
+  presence.
+- Route-runner artifacts captured during the pass include:
+  - `artifacts/portal-screenshots/portal-desktop.png`
+  - `artifacts/portal-screenshots/portal-mobile.png`
+  - `artifacts/portal-screenshots/portal-diagnostic.png`
+
 ## 2026-06-03 Draft PR Readiness Status
 
 Status: this docs refresh is based on live GitHub PR state. No Supabase,

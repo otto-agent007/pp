@@ -100,21 +100,24 @@ Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
 For seeded story smoke, run the preflight first. If it is blocked, resolve only the named setup blockers; do not paste env values, bypass links, portal tokens, or credentials into docs or chat. After preflight is ready, seed through the existing dashboard controls or `corepack pnpm demo:seed -- --target local|preview --confirm seed-demo-data`.
 
-Latest status note: as of June 3, 2026, draft PR #89 (`Chemical Product
-Binder V1`) and draft PR #90 (`Require fresh branch and draft PR per slice`)
-are both open against `main`, have clean merge state, and have green GitHub
-`verify` plus Vercel checks; Supabase Preview is skipped on both. The binder
-slice does not add a migration, provider setup, live EPA fetch, or OpenAI
-dependency for product status. The AGENTS slice only updates repo operating
-instructions. The local shell still lacks approved Supabase env names, so
-local and preview `demo:smoke` preflights remain blocked before seed/reset or
-authenticated preview browser smoke. Local Supabase target inspection remains
-blocked until Docker Desktop's Linux engine pipe and local Postgres on
-`127.0.0.1:54322` are reachable for `supabase status -o env` and
-`supabase migration list --local`. No seed/reset, browser login, provider
-dashboard mutation, environment mutation, migration, live compliance
-ingestion, preview mutation, or production data action was attempted during
-these PRs.
+Latest status note: as of June 5, 2026, buyer walkthrough smoke validation was
+executed on `codex/demo-readiness-buyer-walkthrough` and included the full
+10-step route sequence with `/escrow-re` and tokened `/portal` in
+`packages/domain/demoSmokePreflight.ts`.
+
+- Fixture run scope is now: `/` → `/dispatch` → `/customers` → `/closeouts` →
+  `/payments` → `/compliance` → `/inventory` → `/technicians` → `/escrow-re` →
+  `/portal/<fixture-customer-id>?access_token=<redacted>`
+- `tooling/local-fixture-smoke.ts` now validates visible internal links, dead-end
+  progression CTAs, console/page runtime errors, overflow, and forbidden
+  internal/dev text on both desktop and narrow routes.
+- The local shell still lacks approved Supabase env names, so local and preview
+  `demo:smoke` preflights remain blocked before seed/reset or authenticated
+  preview browser smoke. Local Supabase target inspection still depends on Docker
+  Desktop Linux engine and local Postgres availability.
+- No seed/reset, browser login, provider dashboard mutation, environment
+  mutation, migration, live compliance ingestion, preview mutation, or production
+  data action was attempted during this pass.
 
 Run these in order after the preview deployment has the approved environment variables:
 

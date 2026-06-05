@@ -4,6 +4,20 @@ This checklist prepares Pest Patrol OS for a first real GitHub, Supabase, and Ve
 
 For the current preview-first launch pass, use `docs/PREVIEW_LAUNCH_READINESS.md` as the short punch list. This document remains the detailed setup and smoke-test reference.
 
+## Buyer Readiness Validation Snapshot
+
+As of June 5, 2026, local demonstration readiness now emphasizes a 10-step buyer
+journey route validation for fixture smoke:
+`/`, `/dispatch`, `/customers`, `/closeouts`, `/payments`, `/compliance`,
+`/inventory`, `/technicians`, `/escrow-re`, and tokened `/portal`.
+
+- The fixture run includes strict link integrity and progression-CTA checks in
+  `tooling/local-fixture-smoke.ts`.
+- No migration, provider/env mutation, seed/reset write, live compliance ingestion,
+  or production data action is in scope for this run.
+- This release pass remains blocked from full authenticated preview smoke pending
+  approved env names, protected-preview access, and an admin/dispatcher sign-in.
+
 ## Required Environment Variables
 
 Web app:
