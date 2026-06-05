@@ -100,9 +100,12 @@ export {
 export {
   createInvoicePaymentLinkRecord,
   createInvoiceRecord,
+  findInvoiceRecord,
+  getInvoiceRecord,
   listCustomerPortalInvoiceRecords,
   listInvoiceRecords,
   saveInvoicePaymentLinkRecord,
+  upsertPaymentRecordRecord,
   updateInvoiceStatusRecord,
 } from "./payments";
 export {
