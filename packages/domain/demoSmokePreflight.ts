@@ -450,7 +450,7 @@ export function buildDemoSmokePreflight(
       target,
       techPasswordEnv: input.techPasswordEnv,
     }),
-    evidenceFor: evidenceFor(target),
+    evidencePrompts: evidenceFor(target),
     missingEnvNames,
     ready,
     shellSeedReady,
