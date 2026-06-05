@@ -163,6 +163,9 @@ describe("CustomerPortalClient", () => {
         "Customer records for completed services, invoices, forms, photos, and signatures.",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Customer-facing records provided by Pest Patrol"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Quarterly service invoice")).toBeInTheDocument();
     expect(screen.getByText("Quarterly service")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Pay invoice" })).toHaveAttribute(
@@ -213,7 +216,9 @@ describe("CustomerPortalClient", () => {
       "customer-1",
       "portal-token",
     );
-    expect(screen.getByText("Recurring service review")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ask Pest Patrol about routine service"),
+    ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Request review" }),

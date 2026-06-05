@@ -1007,6 +1007,23 @@ export function CloseoutsClient() {
     jobsQuery.isLoading || invoicesQuery.isLoading || summariesQuery.isLoading;
   const hasError =
     jobsQuery.error || invoicesQuery.error || summariesQuery.error;
+  const showComplianceBanner =
+    complianceGuardrailSummary.warningJobs > 0 ||
+    complianceGuardrailSummary.criticalJobs > 0;
+  const readyQueueOpen =
+    filteredQueue.ready.length > 0 &&
+    (queueFilter === "all" ||
+      queueFilter === "ready" ||
+      queueFilter === "proof_ready" ||
+      queueFilter === "gps_review" ||
+      queueFilter === "needs_invoice" ||
+      queueFilter === "billing_ready");
+  const needsCapturesQueueOpen =
+    filteredQueue.needsCaptures.length > 0 &&
+    (queueFilter === "needsCaptures" || queueFilter === "missing_capture");
+  const invoicedQueueOpen =
+    filteredQueue.invoiced.length > 0 &&
+    (queueFilter === "invoiced" || queueFilter === "billing_ready");
 
   function setFilter(filter: QueueFilter) {
     setQueueFilter(filter);
@@ -1083,32 +1100,34 @@ export function CloseoutsClient() {
         />
       </section>
 
-      <section
-        className={`rounded-md border px-4 py-3 ${statusSurfaceClassName(
-          complianceSummaryTone,
-        )}`}
-      >
-        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-          <div>
-            <Eyebrow>Compliance advisory</Eyebrow>
-            <p className="mt-1 text-sm font-semibold text-theme-text-primary">
-              {formatGuardrailSummary(complianceGuardrailSummary)}
-            </p>
-            <p className="mt-1 text-sm text-theme-text-secondary">
-              Advisory review items stay internal for completed-job closeout
-              and billing handoff.
-            </p>
+      {showComplianceBanner ? (
+        <section
+          className={`rounded-md border px-4 py-3 ${statusSurfaceClassName(
+            complianceSummaryTone,
+          )}`}
+        >
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <Eyebrow>Compliance advisory</Eyebrow>
+              <p className="mt-1 text-sm font-semibold text-theme-text-primary">
+                {formatGuardrailSummary(complianceGuardrailSummary)}
+              </p>
+              <p className="mt-1 text-sm text-theme-text-secondary">
+                Advisory review items stay internal for completed-job closeout
+                and billing handoff.
+              </p>
+            </div>
+            <a
+              className={buttonClassName({
+                variant: "ghost",
+              })}
+              href="/compliance"
+            >
+              Open compliance
+            </a>
           </div>
-          <a
-            className={buttonClassName({
-              variant: "ghost",
-            })}
-            href="/compliance"
-          >
-            Open compliance
-          </a>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <aside className="flex flex-col gap-4">
@@ -1125,7 +1144,7 @@ export function CloseoutsClient() {
           ) : (
             <>
               <QueueSection
-                defaultOpen
+                defaultOpen={readyQueueOpen}
                 emptyCopy="Nothing ready to bill — check Needs captures."
                 guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.ready}
@@ -1135,10 +1154,7 @@ export function CloseoutsClient() {
               />
               <QueueSection
                 emptyCopy="No completed jobs are missing captures."
-                defaultOpen={
-                  queueFilter === "needsCaptures" ||
-                  queueFilter === "missing_capture"
-                }
+                defaultOpen={needsCapturesQueueOpen}
                 guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.needsCaptures}
                 onSelect={setSelectedJobId}
@@ -1147,9 +1163,7 @@ export function CloseoutsClient() {
               />
               <QueueSection
                 emptyCopy="No completed jobs have invoices yet."
-                defaultOpen={
-                  queueFilter === "invoiced" || queueFilter === "billing_ready"
-                }
+                defaultOpen={invoicedQueueOpen}
                 guardrailByJobId={guardrailByJobId}
                 items={filteredQueue.invoiced}
                 onSelect={setSelectedJobId}

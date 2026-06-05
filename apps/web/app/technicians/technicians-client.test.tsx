@@ -257,7 +257,7 @@ describe("TechniciansClient", () => {
     const user = userEvent.setup();
     render(<TechniciansClient />);
 
-    await user.click(screen.getByRole("button", { name: "Edit OPR-123" }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.clear(screen.getByLabelText("License number"));
     await user.type(screen.getByLabelText("License number"), "OPR-789");
     await user.click(screen.getByRole("button", { name: "Update credential" }));
@@ -269,10 +269,42 @@ describe("TechniciansClient", () => {
       }),
     });
 
-    await user.click(screen.getByRole("button", { name: "Archive OPR-123" }));
+    await user.click(screen.getByRole("button", { name: "Archive" }));
+    expect(archiveLicenseMutateAsync).not.toHaveBeenCalled();
+    await user.click(
+      screen.getByRole("button", { name: "Confirm archive" }),
+    );
 
     expect(archiveLicenseMutateAsync).toHaveBeenCalledWith("license-1");
   }, 10_000);
+
+  it("keeps the selected credential technician stable through search changes", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useTechnicianDirectory).mockReturnValue({
+      data: demoTechnicians,
+      isLoading: false,
+    } as never);
+    vi.mocked(useTechnicianLicenses).mockReturnValue({
+      data: [],
+      isLoading: false,
+      schemaUnavailable: false,
+      setupWarning: null,
+    } as never);
+    render(<TechniciansClient />);
+
+    const technicianSelect = screen.getByLabelText(
+      "Credential technician",
+    ) as HTMLSelectElement;
+
+    await user.selectOptions(technicianSelect, "technician-2");
+    expect(technicianSelect).toHaveValue("technician-2");
+
+    await user.type(screen.getByLabelText("Search technicians"), "Demo Tech 1");
+    expect(technicianSelect).toHaveValue("technician-2");
+
+    await user.clear(screen.getByLabelText("Search technicians"));
+    expect(technicianSelect).toHaveValue("technician-2");
+  });
 
   it("validates and invites technicians to set their own password", async () => {
     const user = userEvent.setup();

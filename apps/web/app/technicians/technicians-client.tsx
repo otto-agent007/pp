@@ -26,7 +26,7 @@ import {
   statusSurfaceClassName,
   type StatusPillTone,
 } from "@pest-patrol/ui";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useJobs } from "../../hooks/useJobs";
 import {
@@ -131,6 +131,8 @@ export function TechniciansClient() {
   const [editingCredentialId, setEditingCredentialId] = useState<string | null>(
     null,
   );
+  const [credentialArchiveConfirmationId, setCredentialArchiveConfirmationId] =
+    useState<string | null>(null);
   const [credentialError, setCredentialError] = useState<string | null>(null);
   const [credentialMessage, setCredentialMessage] = useState<string | null>(
     null,
@@ -156,6 +158,13 @@ export function TechniciansClient() {
         .includes(query);
     });
   }, [search, techniciansQuery.data]);
+  const selectedCredentialTechnician = useMemo(
+    () =>
+      (techniciansQuery.data ?? []).find(
+        (technician) => technician.id === credentialForm.technician_id,
+      ) ?? null,
+    [credentialForm.technician_id, techniciansQuery.data],
+  );
   const routeLoadSummaries = useMemo(
     () =>
       buildTechnicianRouteLoadSummaries(
@@ -169,6 +178,16 @@ export function TechniciansClient() {
       routeLoadSummaries.map((summary) => [summary.technician_id, summary]),
     );
   }, [routeLoadSummaries]);
+  useEffect(() => {
+    if (credentialForm.technician_id || visibleTechnicians.length === 0) {
+      return;
+    }
+
+    setCredentialForm((current) => ({
+      ...current,
+      technician_id: visibleTechnicians[0]?.id || "",
+    }));
+  }, [credentialForm.technician_id, visibleTechnicians]);
   const activeTechnicianCount = useMemo(
     () =>
       (techniciansQuery.data ?? []).filter(
@@ -236,11 +255,13 @@ export function TechniciansClient() {
       technician_id: visibleTechnicians[0]?.id ?? "",
     });
     setEditingCredentialId(null);
+    setCredentialArchiveConfirmationId(null);
   }
 
   function editCredential(license: TechnicianLicense) {
     setCredentialError(null);
     setCredentialMessage(null);
+    setCredentialArchiveConfirmationId(null);
     setEditingCredentialId(license.id);
     setCredentialForm({
       branch: license.branch,
@@ -305,12 +326,16 @@ export function TechniciansClient() {
     }
   }
 
-  async function archiveCredential(license: TechnicianLicense) {
+  function requestArchiveCredential(licenseId: string) {
+    setCredentialArchiveConfirmationId(licenseId);
+  }
+
+  async function confirmArchiveCredential(licenseId: string) {
     setCredentialError(null);
     setCredentialMessage(null);
 
     try {
-      await archiveTechnicianLicense.mutateAsync(license.id);
+      await archiveTechnicianLicense.mutateAsync(licenseId);
       setCredentialMessage("Credential archived for review.");
     } catch (error) {
       setCredentialError(
@@ -339,7 +364,7 @@ export function TechniciansClient() {
         />
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile
           detail="Available in demo roster"
           label="Active techs"
@@ -466,67 +491,128 @@ export function TechniciansClient() {
                             </div>
                             {technicianLicenses.length === 0 ? (
                               <p className="mt-3 text-sm text-theme-text-secondary">
-                                license evidence missing
+                                No license evidence on record
                               </p>
                             ) : (
-                              <div className="mt-3 grid gap-2">
-                                {technicianLicenses.map((license) => (
-                                  <div
-                                    className="rounded-md border border-theme-border-default bg-theme-background-surface p-3 text-sm"
-                                    key={license.id}
-                                  >
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                      <div>
-                                        <p className="font-semibold text-theme-text-primary">
-                                          {license.license_number}
-                                        </p>
-                                        <p className="mt-1 text-theme-text-secondary">
-                                          {licenseBranchLabel(license.branch)} |{" "}
-                                          {licenseTypeLabel(
-                                            license.license_type,
-                                          )}
-                                        </p>
-                                        <p className="mt-1 text-xs text-theme-text-muted">
-                                          Expires{" "}
-                                          {compactDate(license.expires_at)}
-                                        </p>
-                                      </div>
-                                      <div className="flex flex-wrap gap-2">
-                                        <StatusPill
-                                          dot={false}
-                                          tone={credentialTone(license.status)}
-                                        >
-                                          {license.status.replace(/_/g, " ")}
-                                        </StatusPill>
-                                        <button
-                                          className={buttonClassName({
-                                            size: "sm",
-                                            variant: "ghost",
-                                          })}
-                                          onClick={() =>
-                                            editCredential(license)
-                                          }
-                                          type="button"
-                                        >
-                                          Edit {license.license_number}
-                                        </button>
-                                        <button
-                                          className={buttonClassName({
-                                            size: "sm",
-                                            variant: "ghost",
-                                          })}
-                                          onClick={() =>
-                                            archiveCredential(license)
-                                          }
-                                          type="button"
-                                        >
-                                          Archive {license.license_number}
-                                        </button>
+                              <details
+                                className="group mt-3 rounded-md border border-theme-border-subtle"
+                              >
+                                <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-theme-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-theme-action-primary focus-visible:ring-offset-2">
+                                  Credential details
+                                </summary>
+                                <div className="grid gap-2 border-t border-theme-border-subtle bg-theme-background-surface p-2">
+                                  {technicianLicenses.map((license) => (
+                                    <div
+                                      className="rounded-md border border-theme-border-default bg-theme-background-surface p-3 text-sm"
+                                      key={license.id}
+                                    >
+                                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                          <p className="font-semibold text-theme-text-primary">
+                                            {license.license_number}
+                                          </p>
+                                          <p className="mt-1 text-theme-text-secondary">
+                                            {licenseBranchLabel(license.branch)} |{" "}
+                                            {licenseTypeLabel(
+                                              license.license_type,
+                                            )}
+                                          </p>
+                                          <p className="mt-1 text-xs text-theme-text-muted">
+                                            Expires{" "}
+                                            {compactDate(license.expires_at)}
+                                          </p>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                          <div className="flex flex-wrap gap-2">
+                                            <StatusPill
+                                              dot={false}
+                                              tone={credentialTone(
+                                                license.status,
+                                              )}
+                                            >
+                                              {license.status.replace(/_/g, " ")}
+                                            </StatusPill>
+                                            <button
+                                              aria-label={`Edit credential ${license.license_number}`}
+                                              className={buttonClassName({
+                                                size: "sm",
+                                                variant: "ghost",
+                                              })}
+                                              onClick={() =>
+                                                editCredential(license)
+                                              }
+                                              type="button"
+                                            >
+                                              Edit
+                                            </button>
+                                            <button
+                                              aria-label={`Archive credential ${license.license_number}`}
+                                              className={buttonClassName({
+                                                size: "sm",
+                                                variant: "ghost",
+                                              })}
+                                              onClick={() =>
+                                                requestArchiveCredential(
+                                                  license.id,
+                                                )
+                                              }
+                                              type="button"
+                                            >
+                                              Archive
+                                            </button>
+                                          </div>
+                                          {credentialArchiveConfirmationId ===
+                                          license.id ? (
+                                            <div
+                                              aria-label={`Confirm archive for ${license.license_number}`}
+                                              className="rounded-md border border-status-alert-warning-border bg-status-alert-warning-bg p-3 text-sm"
+                                            >
+                                              <p className="font-semibold text-status-alert-warning-fg">
+                                                Archive this credential?
+                                              </p>
+                                              <p className="mt-1 text-status-alert-warning-fg">
+                                                Archiving removes this license from
+                                                active review and prevents it from
+                                                being used in scheduling checks.
+                                              </p>
+                                              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                                <Button
+                                                  disabled={
+                                                    archiveTechnicianLicense.isPending
+                                                  }
+                                                  onClick={() =>
+                                                    setCredentialArchiveConfirmationId(
+                                                      null,
+                                                    )
+                                                  }
+                                                  size="sm"
+                                                  variant="ghost"
+                                                >
+                                                  Cancel archive
+                                                </Button>
+                                                <Button
+                                                  disabled={
+                                                    archiveTechnicianLicense.isPending
+                                                  }
+                                                  onClick={() =>
+                                                    void confirmArchiveCredential(
+                                                      license.id,
+                                                    )
+                                                  }
+                                                  size="sm"
+                                                  variant="danger"
+                                                >
+                                                  Confirm archive
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          ) : null}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                ))}
-                              </div>
+                                  ))}
+                                </div>
+                              </details>
                             )}
                           </div>
                         </div>
@@ -695,6 +781,18 @@ export function TechniciansClient() {
                   ""
                 }
               >
+                {selectedCredentialTechnician &&
+                !visibleTechnicians.some(
+                  (technician) =>
+                    technician.id === selectedCredentialTechnician.id,
+                ) ? (
+                  <option
+                    hidden
+                    value={selectedCredentialTechnician.id}
+                  >
+                    {getTechnicianLabel(selectedCredentialTechnician)}
+                  </option>
+                ) : null}
                 {visibleTechnicians.map((technician) => (
                   <option key={technician.id} value={technician.id}>
                     {getTechnicianLabel(technician)}

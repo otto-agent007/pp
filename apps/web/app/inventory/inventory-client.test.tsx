@@ -234,11 +234,11 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Product detail")).toBeInTheDocument();
     expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add product" })).toHaveAttribute(
-      "aria-pressed",
+      "aria-selected",
       "true",
     );
     expect(screen.getByRole("button", { name: "Log use" })).toHaveAttribute(
-      "aria-pressed",
+      "aria-selected",
       "false",
     );
     expect(screen.getByRole("heading", { name: "Add product" })).toBeInTheDocument();
@@ -321,6 +321,15 @@ describe("InventoryClient", () => {
         }),
       ),
     );
+  });
+
+  it("indicates active product edit mode in the workspace panel", async () => {
+    const user = userEvent.setup();
+    render(<InventoryClient />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(screen.getByText("Editing Bait Gel")).toBeInTheDocument();
   });
 
   it("archives active inventory", async () => {

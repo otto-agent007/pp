@@ -319,6 +319,9 @@ describe("JobsClient", () => {
 
     await user.click(screen.getAllByRole("button", { name: "Edit" })[0]);
     expect(screen.getByRole("heading", { name: "Edit job" })).toBeInTheDocument();
+    expect(
+      screen.getByText("New job clears current edits and starts a fresh draft."),
+    ).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Status"), "en_route");
     await user.click(screen.getByRole("button", { name: "Save job" }));
 
@@ -355,10 +358,16 @@ describe("JobsClient", () => {
     expect(screen.getByText("Visit 24")).toBeInTheDocument();
     expect(screen.queryByText("Visit 25")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Show 24 more" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /Show \d+ more · \d+ remaining/i,
+      }),
+    );
 
     expect(screen.getByText("Visit 25")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show 24 more" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Show \d+ more · \d+ remaining/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("cancels a scheduled job", async () => {
