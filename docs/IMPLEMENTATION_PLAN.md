@@ -1,53 +1,44 @@
 # Implementation Plan
 
-## Current Priority: WDO / Escrow Clearance Readiness V1
+## Current Priority: Buyer Readiness / Showcase Demo Walkthrough Pass V1
 
-As of June 4, 2026, draft PR #102, `[codex] WDO Escrow Clearance Readiness V1`,
-is open from branch `codex/wdo-escrow-clearance-readiness-v1`. PR #101,
-`[codex] Technician License / Branch Credential Tracking V1`, PR #99,
-`[codex] Shared Compliance Review Items Safe Hook V1`, and PR #98,
-`[codex] Pest Patrol Service Billing Catalog V1`, all merged on June 4, 2026.
-PR #89, `[codex] Chemical Product Binder V1`, and PR #90, `[codex] Require
-fresh branch and draft PR per slice`, both merged on June 3, 2026.
+As of June 5, 2026, active work is on branch
+`codex/demo-readiness-buyer-walkthrough`.
 
-Current product baseline:
+Current slice objective:
 
-1. `/compliance` is advisory-only. Existing RAG/source advisory behavior
-   remains setup-aware, Chemical Product Binder V1 is deterministic without
-   OpenAI or live EPA label fetches, and credential readiness is available for
-   internal Branch 3 review.
-2. Local fixture/demo coverage remains the dependable no-env gate for the
-   current admin/customer surfaces; recent verified slices cover dashboard,
-   dispatch, customers, jobs, technicians, inventory, payments, closeouts,
-   compliance, automation, and tokened portal workflows.
-3. Preview/production mutation remains operator-gated. Codex has not applied
-   preview or production migrations, changed provider dashboards/env vars,
-   run real seed/reset writes, run live compliance ingestion, or mutated
-   production data.
-4. Real local and protected-preview seed/reset or authenticated browser smoke
-   remain blocked on approved Supabase env names, local Docker/Postgres
-   availability when local Supabase is the target, protected-preview access,
-   and an admin/dispatcher sign-in path.
+1. Validate a deterministic 10-step buyer path:
+   `"/"` → `"/dispatch"` → `"/customers"` → `"/closeouts"` →
+   `"/payments"` → `"/compliance"` → `"/inventory"` → `"/technicians"` →
+   `"/escrow-re"` → tokened `"/portal/:customerId"`.
+2. Extend local fixture smoke for structured journey checks:
+   - route-by-route content markers and heading/key-state markers,
+   - visible internal link validation,
+   - dead-end CTA detection,
+   - stronger forbidden-pattern scan for internal/dev strings.
+3. Keep all logic in existing architecture (`@pest-patrol/domain` +
+   `tooling` only), with no migrations, providers, provider dashboards,
+   environment mutations, seed/reset writes, live compliance ingestion, or
+   production edits in this pass.
 
 Current slice status:
 
-1. WDO / Escrow Clearance Readiness V1 adds
-   `packages/domain/wdoEscrowClearance.ts` plus `/escrow-re` queue/detail
-   workspace surfaces for readiness, needs evidence, operator review required,
-   billing review, draft clearance handoff, and final release approval.
-2. Closeouts and Payments now link staff into WDO/escrow readiness for
-   WDO-like work without duplicating the full workspace or blocking invoice
-   creation.
-3. Final clearance release is not automated; final release requires authorized
-   human review, and the customer portal remains unchanged.
-4. The slice is no-migration and derived from existing jobs, closeout
-   summaries/reviews, invoices/payments, compliance guardrails, service catalog
-   inference, and technician licenses.
-5. Local verification passed with focused WDO/escrow domain and web tests,
-   `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
-   `corepack pnpm build`, and `git diff --check`.
+1. `packages/domain/demoSmokePreflight.ts` now defines a 10-step ordered buyer
+   journey with `/escrow-re` and a tokened portal route marker.
+2. `tooling/local-fixture-smoke.ts` now validates visible internal links and
+   step progression CTAs while continuing console/page error, overflow, and
+   sensitive-text checks.
+3. `packages/domain/demoSmokePreflight.test.ts` now enforces exact route order,
+   expected labels, and `/escrow-re` presence for the route plan.
+4. Evidence block for this demo readiness pass is due to be recorded as
+   `Buyer Walkthrough Validation V1` in `docs/PREVIEW_SMOKE_FINDINGS.md`; the
+   full local no-env command run has now passed.
+5. No-production mutation state remains: local/preview seed/reset and
+   authenticated browser smoke remain blocked until approved setup and
+   protected-preview access are available. Local fixture smoke verification on
+   this branch is complete.
 6. Keep every new slice on a fresh correctly named `codex/*` branch with a
-   draft PR before calling it complete.
+   draft PR and evidence bundle before considering it complete.
 
 ## Previous Priority: Pest Patrol Customer Portal V1
 

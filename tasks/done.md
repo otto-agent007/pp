@@ -1,5 +1,26 @@
 # Done
 
+## Buyer Walkthrough Showcase Validation V1
+
+- Wired the 10-step buyer journey plan in `packages/domain/demoSmokePreflight.ts`
+  to cover: `/`, `/dispatch`, `/customers`, `/closeouts`, `/payments`,
+  `/compliance`, `/inventory`, `/technicians`, `/escrow-re`, and tokened
+  `/portal/:customerId`.
+- Extended `tooling/local-fixture-smoke.ts` to validate:
+  - required route text markers,
+  - visible internal anchor link health,
+  - per-step progression-CTA presence and actionability,
+  - horizontal overflow and sensitive-text checks.
+- Updated demo fixture-plan assertions in
+  `packages/domain/demoSmokePreflight.test.ts` for the full ordered route set,
+  labels, and `/escrow-re` inclusion.
+- No production/migration/provider/env mutation, seed/reset write, or live
+  compliance ingestion was performed in this readiness slice.
+- Completed: local `corepack pnpm demo:fixture-smoke` passed the full 10-step
+  journey on this branch (desktop and narrow viewports), including route signals,
+  link checks, CTA checks, overflow/sensitive-text scans, and console/page error
+  checks; this slice is now ready for draft PR evidence handoff.
+
 ## WDO / Escrow Clearance Readiness V1
 
 - Added a no-migration WDO/escrow readiness domain module for deterministic

@@ -2,16 +2,20 @@
 
 Active implementation slice:
 
-- WDO / Escrow Clearance Readiness V1 is active on branch
-  `codex/wdo-escrow-clearance-readiness-v1` with draft PR #102 open.
-- The slice adds a derived WDO/escrow readiness domain module, upgrades
-  `/escrow-re` into a staff queue/detail workspace, and links Closeouts and
-  Payments into WDO readiness for WDO-like jobs.
-- Final clearance release is not automated; final release requires authorized
-  human review, internal guardrails stay staff-side, and customer portal output
-  remains unchanged.
-- No migration, provider/env mutation, Supabase write, preview mutation, or
-  production mutation is in scope.
+- Buyer Walkthrough / Showcase Validation V1 is no longer in active implementation on
+  this branch; local fixture smoke verification completed and the slice is ready for
+  draft PR handoff.
+- This pass validates a deterministic 10-step customer journey:
+  `"/"` → `"/dispatch"` → `"/customers"` → `"/closeouts"` → `"/payments"` →
+  `"/compliance"` → `"/inventory"` → `"/technicians"` → `"/escrow-re"` →
+  tokened `"/portal/:customerId"`.
+- `packages/domain/demoSmokePreflight.ts` and `tooling/local-fixture-smoke.ts`
+  now drive the structured journey and strict step-level checks.
+- `demo:fixture-smoke` is now responsible for verifying route text markers,
+  internal links, dead-end CTAs, console/page errors, horizontal overflow, and
+  forbidden internal/dev copy.
+- No migration, provider/env mutation, seed/reset write, live compliance
+  ingestion, or production mutation is in scope.
 - PR #101, `[codex] Technician License / Branch Credential Tracking V1`, merged
   on June 4, 2026.
 - PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, merged on June
@@ -22,16 +26,14 @@ Active implementation slice:
 - PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
   June 3, 2026.
 - Recommended next implementation candidates after this slice lands: inventory
-  deep-linking from Chemical Product Binder, service/catalog follow-through, or
-  document handoff generation based on operator priority.
+  deep-linking from Chemical Product Binder, direct WDO/customer handoff polish,
+  or service/catalog follow-through based on operator priority.
 
 Current blockers and guardrails:
 
-- Real local and protected-preview seed/reset or authenticated browser smoke
-  remain blocked until approved Supabase env names, protected-preview access,
-  and an admin/dispatcher sign-in path are available.
-- Local Supabase target verification remains blocked until Docker Desktop's
-  Linux engine and local Postgres on `127.0.0.1:54322` are reachable.
+- Protected-preview local/preview seed/reset and authenticated browser smoke remain
+  blocked until approved Supabase env names, protected-preview access, and an
+  admin/dispatcher sign-in path are available.
 - No Codex-run local/preview/production migration apply, provider/env mutation,
   seed/reset write, live compliance ingestion, or production data action has
   been performed.

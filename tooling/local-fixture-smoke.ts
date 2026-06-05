@@ -11,6 +11,7 @@ import {
   chromium,
   type Browser,
   type BrowserContext,
+  type APIResponse,
   type Page,
 } from "@playwright/test";
 
@@ -21,8 +22,25 @@ interface CliOptions {
   preserveNextCache: boolean;
 }
 
+interface DomLink {
+  disabled: boolean;
+  formAction: string | null;
+  href: string | null;
+  tagName: string;
+  text: string;
+  type: string;
+}
+
+interface RouteFailure {
+  routeId: string;
+  stepLabel: string;
+  viewport: string;
+  errors: string[];
+}
+
 interface RouteResult {
   errors: string[];
+  id: string;
   label: string;
   viewport: string;
 }
@@ -214,7 +232,7 @@ async function ensureDemoSession(page: Page, baseUrl: string) {
 
   try {
     await page.waitForSelector("text=Dashboard overview", { timeout: 20_000 });
-  } catch (error) {
+  } catch {
     const bodyText = await page
       .locator("body")
       .innerText({ timeout: 2_000 })
@@ -270,11 +288,247 @@ async function checkNoHorizontalOverflow(page: Page) {
 
 async function checkNoSensitiveText(page: Page) {
   const text = await page.locator("body").innerText();
+  const lowerText = text.toLowerCase();
   const matches = localFixtureSmokeSensitivePatterns.filter((pattern) =>
-    text.includes(pattern),
+    lowerText.includes(pattern.toLowerCase()),
   );
 
   return matches;
+}
+
+async function waitForRouteText(page: Page, expectedText: string[]) {
+  for (const expected of expectedText) {
+    const target = expected.toLowerCase();
+    const deadline = Date.now() + 20_000;
+
+    while (Date.now() < deadline) {
+      const body = (await page.locator("body").innerText()).toLowerCase();
+      if (body.includes(target)) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+}
+
+async function collectVisibleDomLinks(page: Page): Promise<DomLink[]> {
+  const selector =
+    "a[href], button, [role='button'], input[type='button'], input[type='submit'], input[type='reset']";
+  const elements = page.locator(selector);
+  const visibleLinks: DomLink[] = [];
+  const count = await elements.count();
+
+  for (let index = 0; index < count; index += 1) {
+    const element = elements.nth(index);
+
+    if (!(await element.isVisible())) {
+      continue;
+    }
+
+    const tagName = (await element.evaluate((node) => node.tagName.toUpperCase())) || "";
+    const href = await element.getAttribute("href");
+    const ariaLabel = await element.getAttribute("aria-label");
+    const value = await element.inputValue().catch(() => null);
+    const textContent = (await element.textContent()) || "";
+    const textSource = ariaLabel || value || textContent;
+    const text = textSource.replace(/\s+/g, " ").trim();
+
+    if (!text) {
+      continue;
+    }
+
+    const hasDisabledAttr =
+      (await element.getAttribute("disabled")) !== null ||
+      (await element.getAttribute("aria-disabled")) === "true";
+    const isDisabled = hasDisabledAttr || (await element.isDisabled());
+    const formAction = await element.getAttribute("formaction");
+    const type =
+      (await element.getAttribute("type")) ||
+      (tagName === "A" ? "link" : "button");
+
+    visibleLinks.push({
+      disabled: Boolean(isDisabled),
+      formAction,
+      href,
+      tagName,
+      text,
+      type,
+    });
+  }
+
+  return visibleLinks;
+}
+
+function shouldIgnoreExternalProtocol(href: string) {
+  return /^(mailto|tel|javascript):/i.test(href);
+}
+
+function isHashOnlyLink(href: string) {
+  return href === "#" || href.startsWith("#");
+}
+
+function isInternalRouteLink(baseUrl: string, href: string) {
+  const base = new URL(baseUrl);
+  const resolved = new URL(href, base);
+
+  if (resolved.origin !== base.origin) return false;
+  if (shouldIgnoreExternalProtocol(href)) return false;
+  if (isHashOnlyLink(href)) return false;
+
+  const hasProtocol = /^[a-z][a-z\d+\-.]*:/i.test(href);
+  if (!hasProtocol && href.startsWith("/")) return true;
+  if (!hasProtocol) return false;
+
+  return true;
+}
+
+function isTrackedInternalRoute(pathname: string) {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  const segments = normalized.split("/").filter(Boolean);
+
+  if (segments.length === 0) {
+    return true;
+  }
+
+  if (segments[0] === "portal") {
+    return segments.length <= 2;
+  }
+
+  return segments.length === 1;
+}
+
+async function checkInternalLinks({
+  baseUrl,
+  candidate,
+  page,
+}: {
+  baseUrl: string;
+  candidate: DomLink[];
+  page: Page;
+}) {
+  const errors: string[] = [];
+  const base = new URL(baseUrl);
+  const visited = new Set<string>();
+
+  for (const link of candidate) {
+    if (!link.href) continue;
+    const href = link.href.trim();
+
+    if (!isInternalRouteLink(baseUrl, href)) {
+      continue;
+    }
+
+    const resolved = new URL(href, base);
+    if (!isTrackedInternalRoute(resolved.pathname)) {
+      continue;
+    }
+
+    const destination = resolved.pathname + resolved.search;
+    if (visited.has(destination)) continue;
+    visited.add(destination);
+
+    let response: APIResponse | null = null;
+    try {
+      const cookies = await page.context().cookies(resolved.origin);
+      const cookieHeader = cookies
+        .map((cookie) => `${cookie.name}=${cookie.value}`)
+        .join("; ");
+
+      response = await page.request.get(resolved.href, {
+        headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      });
+    } catch (error) {
+      errors.push(`broken link ${link.href}: ${String(error)}`);
+      continue;
+    }
+
+    if (response === null) {
+      errors.push(`broken link ${link.href}: no response`);
+      continue;
+    }
+
+    if (response.status() >= 400) {
+      errors.push(`broken link ${link.href} -> HTTP ${response.status()}`);
+      continue;
+    }
+
+    const body = await response.text().catch(() => "");
+    if (body.trim().length === 0) {
+      errors.push(`broken link ${link.href}: empty response`);
+    }
+  }
+
+  return errors;
+}
+
+function progressionMatch(text: string, labels: string[]) {
+  const normalizedText = text.toLowerCase();
+
+  return labels.some(
+    (label) =>
+      normalizedText.includes(label.toLowerCase()) ||
+      label.toLowerCase().includes(normalizedText),
+  );
+}
+
+function checkDeadEndCtas({
+  candidateLinks,
+  baseUrl,
+  ctaLabels,
+}: {
+  baseUrl: string;
+  candidateLinks: DomLink[];
+  ctaLabels: string[];
+}) {
+  if (ctaLabels.length === 0) {
+    return null;
+  }
+
+  const base = new URL(baseUrl);
+  const progressionCandidates = candidateLinks.filter((link) =>
+    progressionMatch(link.text, ctaLabels),
+  );
+
+  if (progressionCandidates.length === 0) {
+    return "missing primary CTA context for next-step progression";
+  }
+
+  const hasActionableCta = progressionCandidates.some((link) => {
+    if (link.disabled) return false;
+
+    if (link.tagName === "A" && link.href) {
+      const href = link.href.trim();
+      if (isHashOnlyLink(href) || shouldIgnoreExternalProtocol(href)) {
+        return false;
+      }
+
+      if (/^(https?:)?\/\//i.test(href)) {
+        try {
+          const resolved = new URL(href, base);
+          return resolved.origin === base.origin;
+        } catch {
+          return false;
+        }
+      }
+
+      return href.startsWith("/") || href.startsWith("?") || href.startsWith(".");
+    }
+
+    const hasFormContext =
+      typeof link.formAction === "string" && link.formAction.trim() !== "";
+    if ((link.type || "").toLowerCase() === "submit" && !hasFormContext) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (!hasActionableCta) {
+    return "primary progression CTAs are disabled or non-interactive";
+  }
+
+  return null;
 }
 
 async function smokeRoute({
@@ -289,25 +543,20 @@ async function smokeRoute({
   viewport: string;
 }): Promise<RouteResult> {
   const errors: string[] = [];
-  const response = await page.goto(`${baseUrl}${route.path}`, {
+  const routeUrl = `${baseUrl}${route.path}`;
+
+  const response = await page.goto(routeUrl, {
     waitUntil: "domcontentloaded",
   });
-
   if (response && !response.ok()) {
     errors.push(`route returned HTTP ${response.status()}`);
   }
 
-  await page
-    .waitForFunction(
-      (expectedText) =>
-        expectedText.every((text) => document.body.innerText.includes(text)),
-      route.expectedText,
-      { timeout: 20_000 },
-    )
-    .catch(() => undefined);
+  await waitForRouteText(page, route.expectedText);
 
   for (const expected of route.expectedText) {
-    if (!(await page.locator("body").innerText()).includes(expected)) {
+    const body = await page.locator("body").innerText();
+    if (!body.toLowerCase().includes(expected.toLowerCase())) {
       errors.push(`missing expected text: ${expected}`);
     }
   }
@@ -321,8 +570,27 @@ async function smokeRoute({
     errors.push(`sensitive text rendered: ${sensitiveMatches.join(", ")}`);
   }
 
+  const domLinks = await collectVisibleDomLinks(page);
+
+  const internalLinkErrors = await checkInternalLinks({
+    baseUrl,
+    candidate: domLinks,
+    page,
+  });
+  errors.push(...internalLinkErrors);
+
+  const deadEndReason = checkDeadEndCtas({
+    baseUrl,
+    candidateLinks: domLinks,
+    ctaLabels: route.progressionCtaLabels,
+  });
+  if (deadEndReason) {
+    errors.push(`${deadEndReason}: ${route.progressionCtaLabels.join(", ")}`);
+  }
+
   return {
     errors,
+    id: route.id,
     label: route.label,
     viewport,
   };
@@ -373,7 +641,14 @@ async function runViewport({
 
     const results: RouteResult[] = [];
     for (const route of buildLocalFixtureSmokePlan()) {
-      results.push(await smokeRoute({ baseUrl, page, route, viewport: label }));
+      results.push(
+        await smokeRoute({
+          baseUrl,
+          page,
+          route,
+          viewport: label,
+        }),
+      );
     }
 
     return {
@@ -389,15 +664,35 @@ async function runViewport({
 }
 
 function printResults(results: RouteResult[]) {
+  const routeSummary = new Map<string, RouteFailure[]>();
+
   for (const result of results) {
-    if (result.errors.length === 0) {
-      console.log(`[pass] ${result.viewport} ${result.label}`);
+    const group = routeSummary.get(result.label) ?? [];
+    group.push({
+      routeId: result.id,
+      stepLabel: result.label,
+      viewport: result.viewport,
+      errors: result.errors,
+    });
+    routeSummary.set(result.label, group);
+  }
+
+  for (const [stepLabel, entries] of routeSummary) {
+    const failedEntries = entries.filter((entry) => entry.errors.length > 0);
+
+    if (failedEntries.length === 0) {
+      console.log(`[pass] ${stepLabel}`);
+      for (const entry of entries) {
+        console.log(`  - ${entry.viewport}: OK`);
+      }
       continue;
     }
 
-    console.log(`[fail] ${result.viewport} ${result.label}`);
-    for (const error of result.errors) {
-      console.log(`  - ${error}`);
+    console.log(`[fail] ${stepLabel}`);
+    for (const entry of failedEntries) {
+      for (const error of entry.errors) {
+        console.log(`  - ${entry.viewport}: ${error}`);
+      }
     }
   }
 }
@@ -459,20 +754,22 @@ async function main() {
     const routeResults = [...desktop.results, ...narrow.results];
     printResults(routeResults);
 
-    const errors = [
-      ...routeResults.flatMap((result) =>
-        result.errors.map(
-          (error) => `${result.viewport} ${result.label}: ${error}`,
-        ),
-      ),
+    const routeFailures = routeResults
+      .filter((result) => result.errors.length > 0)
+      .map(
+        (result) => `${result.label} [${result.viewport}]: ${result.errors.join(", ")}`,
+      );
+    const consoleErrors = [
       ...desktop.errors.map((error) => `1440x1000: ${error}`),
       ...narrow.errors.map((error) => `390x900: ${error}`),
     ];
 
-    if (errors.length > 0) {
+    const groupedErrors = [...routeFailures, ...consoleErrors];
+
+    if (groupedErrors.length > 0) {
       console.error("");
       console.error("Local fixture smoke failed.");
-      for (const error of errors) {
+      for (const error of groupedErrors) {
         console.error(`- ${error}`);
       }
       process.exitCode = 1;
@@ -481,7 +778,7 @@ async function main() {
 
     console.log("");
     console.log(
-      "Local fixture smoke passed: route signals rendered, no page/console errors, no horizontal overflow, no sensitive patterns found.",
+      "Local fixture smoke passed: route signals rendered, no route/console/page errors, no horizontal overflow, no sensitive patterns, no broken internal links, and at least one actionable progression CTA per configured step.",
     );
   } finally {
     if (browser) {
