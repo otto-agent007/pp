@@ -873,10 +873,11 @@ export function PaymentsClient() {
                 ? inferServiceBillingOfferingFromJob(invoiceJob)
                 : null;
               const shouldShowServiceInference =
-                invoiceServiceInference
-                  ? invoiceServiceInference.confidence === "fallback" ||
-                    invoiceServiceInference.confidence === "uncertain"
-                  : false;
+                invoiceServiceInference?.confidence === "fallback" ||
+                invoiceServiceInference?.confidence === "medium";
+              const invoiceServiceInferenceToShow = shouldShowServiceInference
+                ? invoiceServiceInference
+                : null;
               const invoiceIsWdoEscrowJob = invoiceJob
                 ? isWdoEscrowLikeJob(invoiceJob)
                 : false;
@@ -913,20 +914,20 @@ export function PaymentsClient() {
                           >
                             {reconciliation.label}
                           </StatusPill>
-                          {shouldShowServiceInference ? (
-                            <StatusPill tone="info">
-                              {invoiceServiceInference.offering.shortLabel}
-                            </StatusPill>
+                           {invoiceServiceInferenceToShow ? (
+                             <StatusPill tone="info">
+                               {invoiceServiceInferenceToShow.offering.shortLabel}
+                             </StatusPill>
+                           ) : null}
+                          </div>
+                          {invoiceServiceInferenceToShow ? (
+                            <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
+                           Service: {invoiceServiceInferenceToShow.offering.label} ·{" "}
+                             {getServiceBillingFamilyLabel(
+                               invoiceServiceInferenceToShow.offering.family,
+                             )}
+                           </p>
                           ) : null}
-                        </div>
-                        {shouldShowServiceInference ? (
-                          <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
-                            Service: {invoiceServiceInference.offering.label} ·{" "}
-                            {getServiceBillingFamilyLabel(
-                              invoiceServiceInference.offering.family,
-                            )}
-                          </p>
-                        ) : null}
                         <p className="mt-2 text-sm text-theme-text-secondary">
                           {invoice.job?.location?.address ?? "No location"}
                         </p>
@@ -1237,7 +1238,11 @@ export function PaymentsClient() {
                 aria-label="Service family"
                 className="min-h-11 rounded-md border border-theme-border-default bg-theme-background-surface px-3 text-sm outline-none focus:border-theme-action-primary"
                 onChange={(event) => {
-                  setServiceFamilyFilter(event.target.value);
+                  const value = event.target.value as
+                    | ServiceBillingFamily
+                    | "all";
+
+                  setServiceFamilyFilter(value);
                 }}
                 value={serviceFamilyFilter}
               >

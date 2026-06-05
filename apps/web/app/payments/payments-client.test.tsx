@@ -394,9 +394,17 @@ describe("PaymentsClient", () => {
     expect(
       screen.getByRole("combobox", { name: "Service preset" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "General Pest" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Recurring" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Termite/WDO" })).toBeInTheDocument();
+    const serviceFamilyFilter = screen.getByLabelText("Service family");
+    expect(serviceFamilyFilter).toBeInTheDocument();
+    expect(
+      within(serviceFamilyFilter).getByRole("option", { name: "General Pest" }),
+    ).toBeInTheDocument();
+    expect(
+      within(serviceFamilyFilter).getByRole("option", { name: "Recurring" }),
+    ).toBeInTheDocument();
+    expect(
+      within(serviceFamilyFilter).getByRole("option", { name: "Termite/WDO" }),
+    ).toBeInTheDocument();
     expect(await screen.findByText("Auto-selected")).toBeInTheDocument();
     expect(
       (screen.getByRole("combobox", {
