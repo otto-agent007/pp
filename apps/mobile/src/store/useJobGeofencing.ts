@@ -1,5 +1,7 @@
 import { createJobGeofenceEventQueuePayload } from "@pest-patrol/domain";
 import type {
+  ArrivalNotificationDecision,
+  ArrivalNotificationQueuePayload,
   JobGeofenceEventQueuePayload,
   JobGeofenceEventType,
 } from "@pest-patrol/types";
@@ -20,7 +22,21 @@ interface QueueGeofenceEventInput {
   serviceLongitude?: number | null;
 }
 
+interface QueueArrivalNotificationInput {
+  capturedAt: string;
+  clientEventId: string;
+  decision: ArrivalNotificationDecision;
+  jobId: string;
+}
+
+interface ArrivalNotificationDraft {
+  clientEventId: string;
+  decision: ArrivalNotificationDecision;
+  queuedAt: string;
+}
+
 interface JobGeofenceDraft {
+  arrivalNotice: ArrivalNotificationDraft | null;
   lastEvent: JobGeofenceEventQueuePayload | null;
   queuedAt: string | null;
 }
@@ -32,12 +48,27 @@ interface JobGeofencingState {
   queueGeofenceEvent: (
     input: QueueGeofenceEventInput,
   ) => JobGeofenceEventQueuePayload;
+  queueArrivalNotification: (
+    input: QueueArrivalNotificationInput,
+  ) => ArrivalNotificationQueuePayload;
 }
 
 function emptyDraft(): JobGeofenceDraft {
   return {
+    arrivalNotice: null,
     lastEvent: null,
     queuedAt: null,
+  };
+}
+
+function arrivalNotificationPayload(
+  input: QueueArrivalNotificationInput,
+): ArrivalNotificationQueuePayload {
+  return {
+    captured_at: input.capturedAt,
+    client_event_id: input.clientEventId,
+    decision: input.decision,
+    job_id: input.jobId,
   };
 }
 
@@ -45,9 +76,19 @@ export const useJobGeofencing = create<JobGeofencingState>((set, get) => ({
   drafts: {},
   getDraft: (jobId) => get().drafts[jobId] ?? emptyDraft(),
   hydrate: async () => {
-    const drafts = await readMobileJson<Record<string, JobGeofenceDraft>>(
+    const storedDrafts = await readMobileJson<Record<string, JobGeofenceDraft>>(
       JOB_GEOFENCE_DRAFTS_STORAGE_KEY,
       {},
+    );
+    const drafts = Object.fromEntries(
+      Object.entries(storedDrafts).map(([jobId, draft]) => [
+        jobId,
+        {
+          arrivalNotice: draft.arrivalNotice ?? null,
+          lastEvent: draft.lastEvent ?? null,
+          queuedAt: draft.queuedAt ?? null,
+        },
+      ]),
     );
 
     set({ drafts });
@@ -83,6 +124,7 @@ export const useJobGeofencing = create<JobGeofencingState>((set, get) => ({
       const drafts = {
         ...state.drafts,
         [input.jobId]: {
+          arrivalNotice: null,
           lastEvent: payload,
           queuedAt: new Date().toISOString(),
         },
@@ -91,6 +133,53 @@ export const useJobGeofencing = create<JobGeofencingState>((set, get) => ({
 
       return { drafts };
     });
+
+    return payload;
+  },
+  queueArrivalNotification: (input) => {
+    const draft = get().drafts[input.jobId] ?? emptyDraft();
+
+    if (
+      !draft.lastEvent ||
+      draft.lastEvent.event_type !== "arrival" ||
+      draft.lastEvent.client_event_id !== input.clientEventId
+    ) {
+      throw new Error("Arrival event is required");
+    }
+
+    const queuedAt = new Date().toISOString();
+    const existingArrivalNotice =
+      draft.arrivalNotice?.clientEventId === input.clientEventId
+        ? draft.arrivalNotice
+        : null;
+    const payload = arrivalNotificationPayload({
+      ...input,
+      decision: existingArrivalNotice?.decision ?? input.decision,
+    });
+
+    if (!existingArrivalNotice) {
+      useOfflineQueue.getState().enqueue({
+        action: "arrival_notification_create",
+        payload,
+      });
+
+      set((state) => {
+        const nextDrafts = {
+          ...state.drafts,
+          [input.jobId]: {
+            ...draft,
+            arrivalNotice: {
+              clientEventId: input.clientEventId,
+              decision: input.decision,
+              queuedAt,
+            },
+          },
+        };
+        writeMobileJson(JOB_GEOFENCE_DRAFTS_STORAGE_KEY, nextDrafts);
+
+        return { drafts: nextDrafts };
+      });
+    }
 
     return payload;
   },

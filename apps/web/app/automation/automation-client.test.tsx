@@ -139,6 +139,15 @@ const notification = {
   job,
   rule,
 } as const;
+const arrivalNotification = {
+  ...notification,
+  id: "notification-arrival",
+  generated_key: "arrival-notice:job-1:00000000-0000-4000-8000-000000000201",
+  rule_id: null,
+  title: "Arrived on site",
+  type: "arrival_notification",
+  rule: null,
+} as const;
 const template = {
   id: "template-1",
   name: "Follow-up call",
@@ -399,6 +408,20 @@ describe("AutomationClient", () => {
     });
 
     expect(screen.getByText("No notifications found")).toBeInTheDocument();
+  });
+
+  it("labels arrival notifications in the notification list", () => {
+    vi.mocked(useNotificationEvents).mockReturnValue({
+      data: [notification, generatedNotification, arrivalNotification],
+      isLoading: false,
+    } as never);
+
+    render(<AutomationClient />);
+
+    expect(
+      screen.getByRole("heading", { name: "Arrived on site" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Arrival notice").length).toBeGreaterThan(0);
   });
 
   it("shows manual fallback setup guidance without exposing provider secrets", () => {
@@ -678,7 +701,6 @@ describe("AutomationClient", () => {
   });
 
   it("previews template variables and saves interpolated reminder copy", async () => {
-    const user = userEvent.setup();
     render(<AutomationClient />);
     const section = within(templatesSection());
 
@@ -714,7 +736,7 @@ describe("AutomationClient", () => {
       "Ask about 10 Pine Street on May 6, 2026",
     );
 
-    await user.click(screen.getByRole("button", { name: "Save reminder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save reminder" }));
 
     expect(createNotification).toHaveBeenCalledWith(
       expect.objectContaining({

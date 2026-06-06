@@ -211,7 +211,26 @@ function geofenceEventLabel(payload: unknown) {
   return payload.event_type === "departure" ? "Departure geofence" : "Arrival geofence";
 }
 
-const queueActionLabels: Record<Exclude<OfflineQueueAction, "geofence_event_create">, string> = {
+function arrivalNotificationLabel(payload: unknown) {
+  if (!isRecord(payload) || typeof payload.decision !== "string") {
+    return "Arrival notice";
+  }
+
+  if (payload.decision === "skip") {
+    return "Arrival notice skipped";
+  }
+
+  if (payload.decision === "delay_5_min") {
+    return "Arrival notice delayed 5 min";
+  }
+
+  return "Arrival notice";
+}
+
+const queueActionLabels: Record<
+  Exclude<OfflineQueueAction, "geofence_event_create" | "arrival_notification_create">,
+  string
+> = {
   chemical_log_create: "Chemical log",
   form_submission_create: "Treatment form",
   job_status_update: "Status update",
@@ -225,6 +244,8 @@ export function getOfflineQueueItemLabel<TPayload>(
   const actionLabel =
     item.action === "geofence_event_create"
       ? geofenceEventLabel(item.payload)
+      : item.action === "arrival_notification_create"
+        ? arrivalNotificationLabel(item.payload)
       : queueActionLabels[item.action];
 
   return `${actionLabel} for ${payloadJobLabel(item.payload)}`;

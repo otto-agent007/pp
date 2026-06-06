@@ -42,6 +42,20 @@ export const translations = {
           missingCoordinates: "Service coordinates are not saved yet",
           arrival: "Arrival",
           departure: "Departure",
+          arrivalNotice: {
+            title: "Arrival notice",
+            description:
+              "You've arrived. Choose whether to notify the customer now, delay the notice for 5 minutes, or skip it.",
+            sendNow: "Send now",
+            delayFiveMinutes: "Delay 5 min",
+            skip: "Skip",
+            status: {
+              delayFiveMinutes:
+                "Arrival notice queued with a 5 minute delay",
+              sendNow: "Arrival notice queued for immediate send",
+              skip: "Arrival notice skipped and recorded",
+            },
+          },
           permissionError: "Location permission is required",
           fallbackError: "Unable to capture location",
           withoutCoordinates: "{event} queued without service coordinates",
@@ -162,6 +176,20 @@ export const translations = {
           missingCoordinates: "Las coordenadas del servicio aún no están guardadas",
           arrival: "Llegada",
           departure: "Salida",
+          arrivalNotice: {
+            title: "Aviso de llegada",
+            description:
+              "Ya llegaste. Elige si avisar al cliente ahora, retrasar el aviso 5 minutos o omitirlo.",
+            sendNow: "Enviar ahora",
+            delayFiveMinutes: "Retrasar 5 min",
+            skip: "Omitir",
+            status: {
+              delayFiveMinutes:
+                "Aviso de llegada guardado con retraso de 5 minutos",
+              sendNow: "Aviso de llegada guardado para enviar de inmediato",
+              skip: "Aviso de llegada omitido y registrado",
+            },
+          },
           permissionError: "Se requiere permiso de ubicación",
           fallbackError: "No se pudo capturar la ubicación",
           withoutCoordinates: "{event} guardada sin coordenadas del servicio",

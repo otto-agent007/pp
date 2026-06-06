@@ -281,7 +281,6 @@ describe("TechniciansClient", () => {
   }, 10_000);
 
   it("keeps the selected credential technician stable through search changes", async () => {
-    const user = userEvent.setup();
     vi.mocked(useTechnicianDirectory).mockReturnValue({
       data: demoTechnicians,
       isLoading: false,
@@ -298,7 +297,7 @@ describe("TechniciansClient", () => {
       "Credential technician",
     ) as HTMLSelectElement;
 
-    await user.selectOptions(technicianSelect, "technician-2");
+    fireEvent.change(technicianSelect, { target: { value: "technician-2" } });
     expect(technicianSelect).toHaveValue("technician-2");
 
     fireEvent.change(screen.getByLabelText("Search technicians"), {
@@ -322,8 +321,12 @@ describe("TechniciansClient", () => {
       screen.getByText("Technician email is required"),
     ).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Display name"), "Testnician");
-    await user.type(screen.getByLabelText("Email"), "TESTNICIAN@EXAMPLE.COM");
+    fireEvent.change(screen.getByLabelText("Display name"), {
+      target: { value: "Testnician" },
+    });
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "TESTNICIAN@EXAMPLE.COM" },
+    });
     await user.click(screen.getByRole("button", { name: "Send invite" }));
 
     expect(inviteMutateAsync).toHaveBeenCalledWith({

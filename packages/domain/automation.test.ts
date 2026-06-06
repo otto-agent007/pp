@@ -78,6 +78,18 @@ const notification: NotificationEvent = {
     updated_at: now,
   },
 };
+const arrivalNotification: NotificationEvent = {
+  ...notification,
+  id: "notification-arrival",
+  customer_id: null,
+  rule_id: null,
+  type: "arrival_notification",
+  generated_key: "arrival-notice:job-1:00000000-0000-4000-8000-000000000201",
+  status: "dismissed",
+  handled_at: now,
+  title: "Arrived on site",
+  rule: null,
+};
 const template: NotificationTemplate = {
   id: "template-1",
   name: "Follow-up call",
@@ -141,6 +153,20 @@ describe("automation domain", () => {
     ).toMatchObject({
       customer_id: "customer-1",
       title: "Call",
+    });
+    expect(
+      normalizeNotificationEventInput({
+        type: "arrival_notification",
+        job_id: "job-1",
+        title: " Arrival notice ",
+        due_at: now,
+        status: "dismissed",
+      }),
+    ).toMatchObject({
+      job_id: "job-1",
+      status: "dismissed",
+      title: "Arrival notice",
+      type: "arrival_notification",
     });
 
     expect(() =>
@@ -637,6 +663,23 @@ describe("automation domain", () => {
         id: "location-1",
         address: "10 Pine Street",
         nickname: "Main office",
+      },
+    });
+    expect(
+      buildNotificationDeliveryProviderPayload({
+        ...arrivalNotification,
+        customer: undefined,
+        job: undefined,
+      }),
+    ).toMatchObject({
+      event: {
+        id: "notification-arrival",
+        type: "arrival_notification",
+        status: "dismissed",
+      },
+      target: {
+        customer_id: null,
+        job_id: "job-1",
       },
     });
   });

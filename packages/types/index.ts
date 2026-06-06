@@ -23,7 +23,8 @@ export type OfflineQueueAction =
   | "chemical_log_create"
   | "photo_upload"
   | "signature_capture"
-  | "geofence_event_create";
+  | "geofence_event_create"
+  | "arrival_notification_create";
 
 export type OfflineQueueStatus = "queued" | "retrying" | "failed" | "synced";
 
@@ -114,6 +115,8 @@ export type CustomerPortalUpgradeIntentStatus =
 export type AutomationRuleType =
   | "follow_up_reminder"
   | "recurring_service_prompt";
+
+export type NotificationEventType = AutomationRuleType | "arrival_notification";
 
 export type AutomationRuleStatus = "active" | "paused" | "archived";
 
@@ -358,6 +361,18 @@ export interface JobGeofenceEventQueuePayload extends Record<string, unknown> {
   captured_at: string;
 }
 
+export type ArrivalNotificationDecision =
+  | "delay_5_min"
+  | "send_now"
+  | "skip";
+
+export interface ArrivalNotificationQueuePayload extends Record<string, unknown> {
+  captured_at: string;
+  client_event_id: string;
+  decision: ArrivalNotificationDecision;
+  job_id: string;
+}
+
 export interface InvoiceLineItem {
   id: string;
   invoice_id: string;
@@ -551,7 +566,7 @@ export interface AutomationRuleInput {
 export interface NotificationEvent {
   id: string;
   rule_id: string | null;
-  type: AutomationRuleType;
+  type: NotificationEventType;
   generated_key: string | null;
   customer_id: string | null;
   job_id: string | null;
@@ -576,13 +591,15 @@ export interface NotificationEvent {
 
 export interface NotificationEventInput {
   rule_id?: string | null;
-  type: AutomationRuleType;
+  type: NotificationEventType;
   generated_key?: string | null;
   customer_id?: string | null;
   job_id?: string | null;
+  status?: NotificationEventStatus;
   title: string;
   message?: string | null;
   due_at: string;
+  handled_at?: string | null;
 }
 
 export interface NotificationTemplate {
@@ -612,7 +629,7 @@ export interface NotificationDeliveryResult {
 export interface NotificationDeliveryProviderPayload {
   event: {
     id: string;
-    type: AutomationRuleType;
+    type: NotificationEventType;
     title: string;
     message: string | null;
     due_at: string;

@@ -1,5 +1,6 @@
 import {
   createChemicalLogRecord,
+  createGeneratedNotificationEventRecord,
   createJobGeofenceEventRecord,
   createJobFormSubmissionRecord,
   uploadJobPhotoRecord,
@@ -10,6 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createOfflineQueueItem } from "./offlineQueue";
 import {
+  hasReadyArrivalNotificationQueueItems,
   hasReadyFormSubmissionQueueItems,
   hasReadyGeofenceEventQueueItems,
   hasReadyChemicalLogQueueItems,
@@ -17,12 +19,14 @@ import {
   hasReadyOfflineQueueItems,
   hasReadyPhotoUploadQueueItems,
   hasReadySignatureCaptureQueueItems,
+  normalizeArrivalNotificationQueuePayload,
   normalizeChemicalLogQueuePayload,
   normalizeFormSubmissionQueuePayload,
   normalizeJobGeofenceEventQueuePayload,
   normalizeJobPhotoUploadQueuePayload,
   normalizeJobSignatureCaptureQueuePayload,
   normalizeJobStatusUpdateQueuePayload,
+  processArrivalNotificationQueueItem,
   processChemicalLogQueueItem,
   processFormSubmissionQueueItem,
   processFormSubmissionQueueItems,
@@ -34,6 +38,7 @@ import {
 
 vi.mock("@pest-patrol/api-client", () => ({
   createChemicalLogRecord: vi.fn(),
+  createGeneratedNotificationEventRecord: vi.fn(),
   createJobGeofenceEventRecord: vi.fn(),
   createJobFormSubmissionRecord: vi.fn(),
   uploadJobPhotoRecord: vi.fn(),
@@ -158,6 +163,27 @@ function geofenceQueueItem(attempts = 0) {
         },
       },
       { id: "queue-geofence-1", now },
+    ),
+    attempts,
+  };
+}
+
+function arrivalQueueItem(
+  decision: "delay_5_min" | "send_now" | "skip" = "send_now",
+  attempts = 0,
+) {
+  return {
+    ...createOfflineQueueItem(
+      {
+        action: "arrival_notification_create",
+        payload: {
+          job_id: "job-1",
+          client_event_id: "00000000-0000-4000-8000-000000000202",
+          decision,
+          captured_at: now,
+        },
+      },
+      { id: "queue-arrival-1", now },
     ),
     attempts,
   };
@@ -328,6 +354,31 @@ describe("offline sync domain", () => {
         captured_at: now,
       }),
     ).toThrow("Latitude is invalid");
+  });
+
+  it("normalizes arrival notification queue payloads", () => {
+    expect(
+      normalizeArrivalNotificationQueuePayload({
+        job_id: " job-1 ",
+        client_event_id: " event-1 ",
+        decision: "send_now",
+        captured_at: now,
+      }),
+    ).toEqual({
+      job_id: "job-1",
+      client_event_id: "event-1",
+      decision: "send_now",
+      captured_at: now,
+    });
+
+    expect(() =>
+      normalizeArrivalNotificationQueuePayload({
+        job_id: "job-1",
+        client_event_id: "event-1",
+        decision: "not-real",
+        captured_at: now,
+      }),
+    ).toThrow("Arrival notification decision is invalid");
   });
 
   it("marks successful form submissions as synced", async () => {
@@ -575,6 +626,53 @@ describe("offline sync domain", () => {
     expect(item.status).toBe("synced");
   });
 
+  it.each([
+    [
+      "send now",
+      "send_now",
+      "2026-05-05T20:00:00.000Z",
+      "pending",
+      null,
+    ],
+    [
+      "delay 5 min",
+      "delay_5_min",
+      "2026-05-05T20:05:00.000Z",
+      "pending",
+      null,
+    ],
+    ["skip", "skip", "2026-05-05T20:00:00.000Z", "dismissed", now],
+  ] as const)(
+    "syncs arrival notification events for %s",
+    async (_label, decision, dueAt, status, handledAt) => {
+      vi.mocked(createGeneratedNotificationEventRecord).mockResolvedValueOnce(
+        {} as never,
+      );
+
+      const item = await processArrivalNotificationQueueItem(
+        arrivalQueueItem(decision),
+        {
+          client,
+          now,
+        },
+      );
+
+      expect(createGeneratedNotificationEventRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customer_id: null,
+          due_at: dueAt,
+          handled_at: handledAt,
+          job_id: "job-1",
+          status,
+          title: "Arrival notice",
+          type: "arrival_notification",
+        }),
+        client,
+      );
+      expect(item.status).toBe("synced");
+    },
+  );
+
   it("retries temporary geofence event sync failures", async () => {
     vi.mocked(createJobGeofenceEventRecord).mockRejectedValueOnce(
       new Error("Location event failed"),
@@ -616,6 +714,9 @@ describe("offline sync domain", () => {
     );
     expect(hasReadyGeofenceEventQueueItems([geofenceQueueItem()], now)).toBe(true);
     expect(
+      hasReadyArrivalNotificationQueueItems([arrivalQueueItem()], now),
+    ).toBe(true);
+    expect(
       hasReadyOfflineQueueItems([
         syncedSignature,
         retrying,
@@ -624,6 +725,7 @@ describe("offline sync domain", () => {
         photoQueueItem(),
         signatureQueueItem(),
         geofenceQueueItem(),
+        arrivalQueueItem(),
       ], now),
     ).toBe(true);
 

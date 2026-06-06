@@ -137,7 +137,11 @@ const emptyNotifications: NotificationEvent[] = [];
 const emptyTemplates: NotificationTemplate[] = [];
 const emptySchedulerRuns: AutomationSchedulerRun[] = [];
 
-function formatType(type: AutomationRuleType) {
+function formatType(type: NotificationEvent["type"]) {
+  if (type === "arrival_notification") {
+    return "Arrival notice";
+  }
+
   return type === "follow_up_reminder"
     ? "Follow-up reminder"
     : "Recurring service prompt";

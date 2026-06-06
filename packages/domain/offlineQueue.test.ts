@@ -139,6 +139,23 @@ describe("offline queue domain", () => {
         ),
       ),
     ).toBe("Arrival geofence for job job-2");
+
+    expect(
+      getOfflineQueueItemLabel(
+        createOfflineQueueItem(
+          {
+            action: "arrival_notification_create",
+            payload: {
+              job_id: "job-3",
+              client_event_id: "event-1",
+              decision: "delay_5_min",
+              captured_at: now,
+            },
+          },
+          { id: "queue-3", now },
+        ),
+      ),
+    ).toBe("Arrival notice delayed 5 min for job job-3");
   });
 
   it("summarizes queued work by job for route stop triage", () => {

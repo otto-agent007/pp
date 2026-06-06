@@ -397,6 +397,9 @@ describe("CloseoutsClient", () => {
     ).not.toHaveAttribute("open");
     expect(screen.getByText("Total completed")).toBeInTheDocument();
     expect(screen.queryByText("Compliance advisory")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Open compliance" }),
+    ).toHaveAttribute("href", "/compliance");
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
     expect(
       screen.getByText("Ready for office proof review"),

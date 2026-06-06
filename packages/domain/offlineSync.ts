@@ -1,4 +1,5 @@
 import {
+  createGeneratedNotificationEventRecord,
   createJobGeofenceEventRecord,
   createChemicalLogRecord,
   createJobFormSubmissionRecord,
@@ -9,6 +10,8 @@ import {
 import type { AuthSupabaseClient } from "@pest-patrol/api-client";
 import type {
   ChemicalLogQueuePayload,
+  ArrivalNotificationDecision,
+  ArrivalNotificationQueuePayload,
   FormSubmissionQueuePayload,
   JobFormData,
   JobGeofenceEventQueuePayload,
@@ -18,6 +21,7 @@ import type {
   JobStatus,
   JobStatusUpdateQueuePayload,
   OfflineQueueItem,
+  NotificationEventInput,
 } from "@pest-patrol/types";
 
 import { validateJobGeofenceEventInput } from "./geofencing";
@@ -79,6 +83,11 @@ const jobStatuses: JobStatus[] = [
   "completed",
   "canceled",
 ];
+const arrivalNotificationDecisions: ArrivalNotificationDecision[] = [
+  "delay_5_min",
+  "send_now",
+  "skip",
+];
 
 function normalizeJobStatus(value: unknown) {
   if (typeof value !== "string" || !jobStatuses.includes(value as JobStatus)) {
@@ -86,6 +95,17 @@ function normalizeJobStatus(value: unknown) {
   }
 
   return value as JobStatus;
+}
+
+function normalizeArrivalNotificationDecision(value: unknown) {
+  if (
+    typeof value !== "string" ||
+    !arrivalNotificationDecisions.includes(value as ArrivalNotificationDecision)
+  ) {
+    throw new Error("Arrival notification decision is invalid");
+  }
+
+  return value as ArrivalNotificationDecision;
 }
 
 export function normalizeFormSubmissionQueuePayload(
@@ -236,6 +256,21 @@ export function normalizeJobGeofenceEventQueuePayload(
   };
 }
 
+export function normalizeArrivalNotificationQueuePayload(
+  payload: unknown,
+): ArrivalNotificationQueuePayload {
+  if (!isRecord(payload)) {
+    throw new Error("Arrival notification payload is required");
+  }
+
+  return {
+    job_id: requireString(payload.job_id, "Job"),
+    client_event_id: requireString(payload.client_event_id, "Client event id"),
+    decision: normalizeArrivalNotificationDecision(payload.decision),
+    captured_at: requireString(payload.captured_at, "Captured at"),
+  };
+}
+
 export function isReadyFormSubmissionQueueItem(
   item: OfflineQueueItem,
   now = timestamp(),
@@ -368,6 +403,28 @@ export function hasReadyGeofenceEventQueueItems(
   return items.some((item) => isReadyGeofenceEventQueueItem(item, now));
 }
 
+export function isReadyArrivalNotificationQueueItem(
+  item: OfflineQueueItem,
+  now = timestamp(),
+) {
+  if (item.action !== "arrival_notification_create") {
+    return false;
+  }
+
+  if (item.status !== "queued" && item.status !== "retrying") {
+    return false;
+  }
+
+  return !item.next_retry_at || item.next_retry_at <= now;
+}
+
+export function hasReadyArrivalNotificationQueueItems(
+  items: OfflineQueueItem[],
+  now = timestamp(),
+) {
+  return items.some((item) => isReadyArrivalNotificationQueueItem(item, now));
+}
+
 export function hasReadyOfflineQueueItems(
   items: OfflineQueueItem[],
   now = timestamp(),
@@ -379,7 +436,8 @@ export function hasReadyOfflineQueueItems(
       isReadyChemicalLogQueueItem(item, now) ||
       isReadyPhotoUploadQueueItem(item, now) ||
       isReadySignatureCaptureQueueItem(item, now) ||
-      isReadyGeofenceEventQueueItem(item, now),
+      isReadyGeofenceEventQueueItem(item, now) ||
+      isReadyArrivalNotificationQueueItem(item, now),
   );
 }
 
@@ -645,6 +703,83 @@ export async function processGeofenceEventQueueItem(
   }
 }
 
+function buildArrivalNotificationInput(
+  payload: ArrivalNotificationQueuePayload,
+): NotificationEventInput {
+  const capturedAt = new Date(payload.captured_at);
+
+  if (Number.isNaN(capturedAt.getTime())) {
+    throw new Error("Captured at must be valid");
+  }
+
+  const dueAt = new Date(capturedAt);
+
+  if (payload.decision === "delay_5_min") {
+    dueAt.setUTCMinutes(dueAt.getUTCMinutes() + 5);
+  }
+
+  const isSkipped = payload.decision === "skip";
+
+  return {
+    customer_id: null,
+    due_at: dueAt.toISOString(),
+    generated_key: `arrival-notice:${payload.job_id}:${payload.client_event_id}`,
+    handled_at: isSkipped ? payload.captured_at : null,
+    job_id: payload.job_id,
+    message: "Your technician has arrived and is ready to begin service.",
+    rule_id: null,
+    status: isSkipped ? "dismissed" : "pending",
+    title: "Arrival notice",
+    type: "arrival_notification",
+  };
+}
+
+export async function processArrivalNotificationQueueItem(
+  item: OfflineQueueItem,
+  options: QueueProcessOptions,
+): Promise<OfflineQueueItem> {
+  const now = timestamp(options.now);
+  const maxAttempts = options.maxAttempts ?? 3;
+
+  if (!isReadyArrivalNotificationQueueItem(item, now)) {
+    return item;
+  }
+
+  let payload: ArrivalNotificationQueuePayload;
+
+  try {
+    payload = normalizeArrivalNotificationQueuePayload(item.payload);
+  } catch (error) {
+    return markQueueItemFailed(item, errorMessage(error), { now });
+  }
+
+  try {
+    await createGeneratedNotificationEventRecord(
+      buildArrivalNotificationInput(payload),
+      options.client,
+    );
+    return markQueueItemSynced(item, { now });
+  } catch (error) {
+    const attempts = item.attempts + 1;
+
+    if (attempts >= maxAttempts) {
+      return markQueueItemFailed(
+        {
+          ...item,
+          attempts,
+        },
+        errorMessage(error),
+        { now },
+      );
+    }
+
+    return markQueueItemRetrying(item, errorMessage(error), {
+      now,
+      retryDelayMs: options.retryDelayMs,
+    });
+  }
+}
+
 export async function processOfflineQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
@@ -671,6 +806,10 @@ export async function processOfflineQueueItem(
 
   if (item.action === "geofence_event_create") {
     return processGeofenceEventQueueItem(item, options);
+  }
+
+  if (item.action === "arrival_notification_create") {
+    return processArrivalNotificationQueueItem(item, options);
   }
 
   return item;

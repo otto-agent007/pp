@@ -52,8 +52,64 @@ describe("useJobGeofencing", () => {
       status: "queued",
     });
     expect(useJobGeofencing.getState().getDraft("job-1")).toMatchObject({
+      arrivalNotice: null,
       lastEvent: payload,
       queuedAt: now,
+    });
+  });
+
+  it("queues an arrival notification once per arrival event", () => {
+    const geofenceEvent = useJobGeofencing.getState().queueGeofenceEvent({
+      jobId: "job-1",
+      eventType: "arrival",
+      latitude: 33.8121,
+      longitude: -117.919,
+      accuracyM: 12,
+      serviceLatitude: 33.8123,
+      serviceLongitude: -117.9187,
+    });
+
+    const payload = useJobGeofencing.getState().queueArrivalNotification({
+      capturedAt: geofenceEvent.captured_at,
+      clientEventId: geofenceEvent.client_event_id,
+      decision: "send_now",
+      jobId: "job-1",
+    });
+
+    expect(payload).toEqual({
+      captured_at: geofenceEvent.captured_at,
+      client_event_id: geofenceEvent.client_event_id,
+      decision: "send_now",
+      job_id: "job-1",
+    });
+    expect(useOfflineQueue.getState().items).toHaveLength(2);
+    expect(useOfflineQueue.getState().items[1]).toMatchObject({
+      action: "arrival_notification_create",
+      payload,
+      status: "queued",
+    });
+    expect(useJobGeofencing.getState().getDraft("job-1")).toMatchObject({
+      arrivalNotice: {
+        clientEventId: geofenceEvent.client_event_id,
+        decision: "send_now",
+        queuedAt: now,
+      },
+    });
+
+    useJobGeofencing.getState().queueArrivalNotification({
+      capturedAt: geofenceEvent.captured_at,
+      clientEventId: geofenceEvent.client_event_id,
+      decision: "skip",
+      jobId: "job-1",
+    });
+
+    expect(useOfflineQueue.getState().items).toHaveLength(2);
+    expect(useJobGeofencing.getState().getDraft("job-1")).toMatchObject({
+      arrivalNotice: {
+        clientEventId: geofenceEvent.client_event_id,
+        decision: "send_now",
+        queuedAt: now,
+      },
     });
   });
 
@@ -73,11 +129,17 @@ describe("useJobGeofencing", () => {
   });
 
   it("persists geofence drafts and hydrates them after restart", async () => {
-    useJobGeofencing.getState().queueGeofenceEvent({
+    const geofenceEvent = useJobGeofencing.getState().queueGeofenceEvent({
       jobId: "job-1",
       eventType: "arrival",
       latitude: 33.8121,
       longitude: -117.919,
+    });
+    useJobGeofencing.getState().queueArrivalNotification({
+      capturedAt: geofenceEvent.captured_at,
+      clientEventId: geofenceEvent.client_event_id,
+      decision: "delay_5_min",
+      jobId: "job-1",
     });
     const storedDrafts = useJobGeofencing.getState().drafts;
 
