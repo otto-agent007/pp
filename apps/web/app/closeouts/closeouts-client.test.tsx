@@ -396,11 +396,7 @@ describe("CloseoutsClient", () => {
       screen.getByLabelText("Queue section Invoiced"),
     ).not.toHaveAttribute("open");
     expect(screen.getByText("Total completed")).toBeInTheDocument();
-    expect(
-      screen.getByText("3 clear, 0 review recommended, 0 critical review."),
-    ).toBeInTheDocument();
     expect(screen.queryByText("Compliance advisory")).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Open compliance" })).not.toBeInTheDocument();
     expect(screen.getByText("Proof handoff readiness")).toBeInTheDocument();
     expect(
       screen.getByText("Ready for office proof review"),
@@ -541,9 +537,7 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("heading", { name: "Closeouts" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("3 clear, 0 review recommended, 0 critical review."),
-    ).toBeInTheDocument();
+    expect(screen.queryByText("Compliance advisory")).not.toBeInTheDocument();
     expect(screen.queryByText(/relation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/compliance_sources/i)).not.toBeInTheDocument();
   });

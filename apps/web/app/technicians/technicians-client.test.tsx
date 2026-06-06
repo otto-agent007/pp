@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -257,7 +257,9 @@ describe("TechniciansClient", () => {
     const user = userEvent.setup();
     render(<TechniciansClient />);
 
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(
+      screen.getByRole("button", { name: "Edit credential OPR-123" }),
+    );
     await user.clear(screen.getByLabelText("License number"));
     await user.type(screen.getByLabelText("License number"), "OPR-789");
     await user.click(screen.getByRole("button", { name: "Update credential" }));
@@ -269,11 +271,11 @@ describe("TechniciansClient", () => {
       }),
     });
 
-    await user.click(screen.getByRole("button", { name: "Archive" }));
-    expect(archiveLicenseMutateAsync).not.toHaveBeenCalled();
     await user.click(
-      screen.getByRole("button", { name: "Confirm archive" }),
+      screen.getByRole("button", { name: "Archive credential OPR-123" }),
     );
+    expect(archiveLicenseMutateAsync).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Confirm archive" }));
 
     expect(archiveLicenseMutateAsync).toHaveBeenCalledWith("license-1");
   }, 10_000);
@@ -299,10 +301,14 @@ describe("TechniciansClient", () => {
     await user.selectOptions(technicianSelect, "technician-2");
     expect(technicianSelect).toHaveValue("technician-2");
 
-    await user.type(screen.getByLabelText("Search technicians"), "Demo Tech 1");
+    fireEvent.change(screen.getByLabelText("Search technicians"), {
+      target: { value: "Demo Tech 1" },
+    });
     expect(technicianSelect).toHaveValue("technician-2");
 
-    await user.clear(screen.getByLabelText("Search technicians"));
+    fireEvent.change(screen.getByLabelText("Search technicians"), {
+      target: { value: "" },
+    });
     expect(technicianSelect).toHaveValue("technician-2");
   });
 

@@ -233,11 +233,11 @@ describe("InventoryClient", () => {
     expect(screen.getAllByText("Bait Gel").length).toBeGreaterThan(0);
     expect(screen.getByText("Product detail")).toBeInTheDocument();
     expect(screen.getByText("Bait Gel selected")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add product" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Add product" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    expect(screen.getByRole("button", { name: "Log use" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Log use" })).toHaveAttribute(
       "aria-selected",
       "false",
     );
@@ -345,7 +345,7 @@ describe("InventoryClient", () => {
     const user = userEvent.setup();
     render(<InventoryClient />);
 
-    await user.click(screen.getByRole("button", { name: "Log use" }));
+    await user.click(screen.getByRole("tab", { name: "Log use" }));
     expect(screen.getByRole("heading", { name: "Log use" })).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Add product" }),
@@ -374,7 +374,7 @@ describe("InventoryClient", () => {
 
     render(<InventoryClient />);
 
-    await user.click(screen.getByRole("button", { name: "Log use" }));
+    await user.click(screen.getByRole("tab", { name: "Log use" }));
     await user.click(screen.getByRole("combobox", { name: "Job" }));
 
     expect(
