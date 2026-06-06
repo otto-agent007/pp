@@ -258,7 +258,7 @@ describe("TechniciansClient", () => {
     render(<TechniciansClient />);
 
     await user.click(
-      screen.getByRole("button", { name: "Edit credential OPR-123" }),
+      screen.getByRole("button", { name: /Edit credential OPR-123/ }),
     );
     await user.clear(screen.getByLabelText("License number"));
     await user.type(screen.getByLabelText("License number"), "OPR-789");
@@ -272,10 +272,12 @@ describe("TechniciansClient", () => {
     });
 
     await user.click(
-      screen.getByRole("button", { name: "Archive credential OPR-123" }),
+      screen.getByRole("button", { name: /Archive credential/ }),
     );
     expect(archiveLicenseMutateAsync).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Confirm archive" }));
+    await user.click(
+      screen.getByRole("button", { name: /Confirm archive/ }),
+    );
 
     expect(archiveLicenseMutateAsync).toHaveBeenCalledWith("license-1");
   }, 10_000);

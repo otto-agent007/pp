@@ -23,6 +23,10 @@ export const translations = {
       fieldCopy: {
         common: {
           queuedForSync: "Queued locally for sync",
+          queuedToSync: "Queued to sync",
+          savedOffline: "Saved offline",
+          syncFailedRetry: "Sync failed - retry",
+          synced: "Synced",
         },
         chemical: {
           title: "Chemical log",
@@ -34,6 +38,40 @@ export const translations = {
           notesPlaceholder: "Notes",
           queueButton: "Queue chemical",
           fallbackError: "Unable to queue chemical log",
+          validation: {
+            amountRequired: "Enter an amount greater than zero",
+            offlineReconcileNote: "Inventory will reconcile after sync",
+            productRequired: "Choose a chemical before saving",
+            targetContextRequired:
+              "Add target pests and treated site details before saving",
+            unitRequired: "The selected chemical is missing a unit",
+          },
+        },
+        fieldFlow: {
+          reviewSummary:
+            "Some field captures still need attention before completion.",
+          stateLabels: {
+            done: "Done",
+            failed: "Failed",
+            needed: "Needed",
+            queued: "Queued",
+          },
+          stateSummaries: {
+            done: "Synced.",
+            failed: "Sync failed - retry available.",
+            needed: "Needed before completion.",
+            queued: "Queued to sync.",
+          },
+          steps: {
+            chemical: "Chemical use",
+            form: "Treatment notes",
+            geofence: "Arrive and depart",
+            photo: "Photos",
+            signature: "Signature",
+            status: "Start visit",
+          },
+          summary: "{done} done - {queued} queued - {failed} failed - {needed} needed",
+          title: "Field checklist",
         },
         location: {
           title: "Location",
@@ -130,6 +168,34 @@ export const translations = {
           requiredFieldError: "{field} is required",
           fallbackError: "Unable to queue treatment form",
         },
+        sync: {
+          clearSynced: "Clear synced",
+          failedDetail: "Some items failed. Review the list and retry.",
+          failedTitle: "Sync failed - retry",
+          noItemsWaiting: "Nothing waiting to sync.",
+          noLocalChanges: "No local changes",
+          offlineDetail:
+            "Work is saved on this device and will sync when the connection returns.",
+          pendingDetail:
+            "Queued work will sync as soon as the device is online.",
+          nextRetryAt: "Next retry",
+          queuedTitle: "Queued to sync",
+          retrySync: "Retry sync",
+          savedOffline: "Saved offline",
+          notSynced: "Not synced",
+          syncedDetail: "All queued work is synced.",
+          syncedAt: "Synced",
+          syncedTitle: "Synced",
+          syncingNow: "Syncing now",
+          syncWhenOnline: "Sync when online",
+          syncNow: "Sync now",
+          counts: {
+            failed: "{count} failed",
+            queued: "{count} queued",
+            retrying: "{count} retrying",
+            synced: "{count} synced",
+          },
+        },
       },
     },
   },
@@ -157,6 +223,10 @@ export const translations = {
       fieldCopy: {
         common: {
           queuedForSync: "Guardado localmente para sincronizar",
+          queuedToSync: "En cola para sincronizar",
+          savedOffline: "Guardado sin conexión",
+          syncFailedRetry: "La sincronización falló - reintentar",
+          synced: "Sincronizado",
         },
         chemical: {
           title: "Registro químico",
@@ -168,6 +238,40 @@ export const translations = {
           notesPlaceholder: "Notas",
           queueButton: "Guardar químico",
           fallbackError: "No se pudo guardar el registro químico",
+          validation: {
+            amountRequired: "Ingresa una cantidad mayor que cero",
+            offlineReconcileNote: "El inventario se reconciliará después de sincronizar",
+            productRequired: "Elige un químico antes de guardar",
+            targetContextRequired:
+              "Agrega las plagas objetivo y el sitio tratado antes de guardar",
+            unitRequired: "El químico seleccionado no tiene unidad",
+          },
+        },
+        fieldFlow: {
+          reviewSummary:
+            "Aún hay capturas de campo que revisar antes de completar.",
+          stateLabels: {
+            done: "Listo",
+            failed: "Fallido",
+            needed: "Necesario",
+            queued: "En cola",
+          },
+          stateSummaries: {
+            done: "Sincronizado.",
+            failed: "La sincronización falló - reintentar disponible.",
+            needed: "Necesario antes de completar.",
+            queued: "En cola para sincronizar.",
+          },
+          steps: {
+            chemical: "Uso de químicos",
+            form: "Notas de tratamiento",
+            geofence: "Llegada y salida",
+            photo: "Fotos",
+            signature: "Firma",
+            status: "Iniciar visita",
+          },
+          summary: "{done} listos - {queued} en cola - {failed} fallidos - {needed} necesarios",
+          title: "Lista de campo",
         },
         location: {
           title: "Ubicación",
@@ -264,6 +368,34 @@ export const translations = {
           queueButton: "Guardar formulario",
           requiredFieldError: "El campo {field} es obligatorio",
           fallbackError: "No se pudo guardar el formulario de tratamiento",
+        },
+        sync: {
+          clearSynced: "Borrar sincronizados",
+          failedDetail: "Algunos elementos fallaron. Revisa la lista y vuelve a intentar.",
+          failedTitle: "La sincronización falló - reintentar",
+          noItemsWaiting: "Nada pendiente para sincronizar.",
+          noLocalChanges: "Sin cambios locales",
+          offlineDetail:
+            "El trabajo se guarda en este dispositivo y se sincroniza cuando vuelve la conexión.",
+          pendingDetail:
+            "El trabajo en cola se sincroniza en cuanto el dispositivo vuelva a estar en linea.",
+          nextRetryAt: "Próximo reintento",
+          queuedTitle: "En cola para sincronizar",
+          retrySync: "Reintentar sincronizacion",
+          savedOffline: "Guardado sin conexión",
+          notSynced: "No sincronizado",
+          syncedDetail: "Todo lo que estaba en cola ya se sincronizo.",
+          syncedAt: "Sincronizado",
+          syncedTitle: "Sincronizado",
+          syncingNow: "Sincronizando ahora",
+          syncWhenOnline: "Sincronizar cuando haya conexion",
+          syncNow: "Sincronizar ahora",
+          counts: {
+            failed: "{count} fallidos",
+            queued: "{count} en cola",
+            retrying: "{count} reintentando",
+            synced: "{count} sincronizados",
+          },
         },
       },
     },

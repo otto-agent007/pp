@@ -7,6 +7,7 @@ import {
   mobileRouteShellPalette,
   mobileRouteShellStyles,
 } from "../styles/routeShellStyles";
+import { useLanguage } from "../store/useLanguage";
 
 export interface MobileJobFieldFlowProps {
   chemicalLog: ReactNode;
@@ -21,30 +22,39 @@ export interface MobileJobFieldFlowProps {
 const flowSteps: Array<{
   control: keyof Omit<MobileJobFieldFlowProps, "workPlan">;
   id: MobileJobWorkPlanItem["id"];
-  title: string;
 }> = [
-  { control: "jobStatusControls", id: "status", title: "Start visit" },
-  { control: "geofenceControls", id: "geofence", title: "Arrive and depart" },
-  { control: "treatmentForm", id: "form", title: "Treatment notes" },
-  { control: "chemicalLog", id: "chemical", title: "Chemical use" },
-  { control: "photoUpload", id: "photo", title: "Photos" },
-  { control: "signatureCapture", id: "signature", title: "Signature" },
+  { control: "jobStatusControls", id: "status" },
+  { control: "geofenceControls", id: "geofence" },
+  { control: "treatmentForm", id: "form" },
+  { control: "chemicalLog", id: "chemical" },
+  { control: "photoUpload", id: "photo" },
+  { control: "signatureCapture", id: "signature" },
 ];
 
-function stateLabel(state?: MobileJobWorkPlanItem["state"]) {
-  if (state === "done") {
-    return "Done";
-  }
+function interpolate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replace(`{${key}}`, value),
+    template,
+  );
+}
 
-  if (state === "pending") {
-    return "Queued";
-  }
+type LocalizedFieldFlowState = "done" | "failed" | "needed" | "queued";
 
-  if (state === "failed") {
-    return "Retry";
+function normalizeFieldFlowState(
+  state: MobileJobWorkPlanItem["state"],
+): LocalizedFieldFlowState {
+  switch (state) {
+    case "done":
+      return "done";
+    case "failed":
+      return "failed";
+    case "missing":
+      return "needed";
+    case "pending":
+      return "queued";
+    default:
+      return "needed";
   }
-
-  return "Needed";
 }
 
 export function MobileJobFieldFlow({
@@ -56,6 +66,7 @@ export function MobileJobFieldFlow({
   treatmentForm,
   workPlan,
 }: MobileJobFieldFlowProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
   const controls = {
     chemicalLog,
     geofenceControls,
@@ -68,34 +79,41 @@ export function MobileJobFieldFlow({
   const queuedCount = workPlan.filter((item) => item.state === "pending").length;
   const failedCount = workPlan.filter((item) => item.state === "failed").length;
   const neededCount = workPlan.filter((item) => item.state === "missing").length;
+  const summary = interpolate(copy.fieldFlow.summary, {
+    done: String(doneCount),
+    failed: String(failedCount),
+    needed: String(neededCount),
+    queued: String(queuedCount),
+  });
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Visit flow</Text>
-      <Text style={styles.summary}>
-        {doneCount} done - {queuedCount} queued - {failedCount} retry -{" "}
-        {neededCount} needed
-      </Text>
+      <Text style={styles.title}>{copy.fieldFlow.title}</Text>
+      <Text style={styles.summary}>{summary}</Text>
       {flowSteps.map((step, index) => {
         const planItem = workPlan.find((item) => item.id === step.id);
+        const stepState = planItem?.state ?? "missing";
+        const copyState = normalizeFieldFlowState(stepState);
 
         return (
           <View key={step.id} style={styles.step}>
             <View style={styles.stepHeader}>
               <Text style={styles.stepNumber}>{index + 1}</Text>
               <View style={styles.stepCopy}>
-                <Text style={styles.stepTitle}>{step.title}</Text>
+                <Text style={styles.stepTitle}>{copy.fieldFlow.steps[step.id]}</Text>
                 <Text style={styles.stepSummary}>
-                  {planItem?.summary ?? "Complete this step when ready."}
+                  {copy.fieldFlow.stateSummaries[copyState]}
                 </Text>
               </View>
               <View
                 style={[
                   styles.statePill,
-                  getVisitFlowTone(planItem?.state),
+                  getVisitFlowTone(stepState),
                 ]}
               >
-                <Text style={styles.stateText}>{stateLabel(planItem?.state)}</Text>
+                <Text style={styles.stateText}>
+                  {copy.fieldFlow.stateLabels[copyState]}
+                </Text>
               </View>
             </View>
             <View style={styles.stepControl}>{controls[step.control]}</View>
