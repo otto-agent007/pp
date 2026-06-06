@@ -34,6 +34,7 @@ import type {
   NotificationEvent,
   NotificationEventInput,
   NotificationEventStatus,
+  NotificationEventType,
   NotificationTemplate,
   NotificationTemplateInput,
   NotificationTemplateStatus,
@@ -213,6 +214,15 @@ const ruleTypes: AutomationRuleType[] = [
   "follow_up_reminder",
   "recurring_service_prompt",
 ];
+const notificationEventTypes: NotificationEventType[] = [
+  ...ruleTypes,
+  "arrival_notification",
+];
+const notificationEventStatuses: NotificationEventStatus[] = [
+  "pending",
+  "handled",
+  "dismissed",
+];
 const ruleStatuses: AutomationRuleStatus[] = ["active", "paused", "archived"];
 const notificationTemplateVariables: NotificationTemplateVariable[] = [
   "customer.name",
@@ -241,6 +251,44 @@ function normalizeRuleType(value: AutomationRuleType) {
   }
 
   return value;
+}
+
+function normalizeNotificationEventType(value: NotificationEventType) {
+  if (!notificationEventTypes.includes(value)) {
+    throw new Error("Notification event type is invalid");
+  }
+
+  return value;
+}
+
+function normalizeNotificationEventStatus(value?: NotificationEventStatus | null) {
+  if (value === null || value === undefined) {
+    return "pending";
+  }
+
+  if (!notificationEventStatuses.includes(value)) {
+    throw new Error("Notification event status is invalid");
+  }
+
+  return value;
+}
+
+function normalizeHandledAt(value?: string | null) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (Number.isNaN(Date.parse(normalized))) {
+    throw new Error("Handled at must be valid");
+  }
+
+  return normalized;
 }
 
 function normalizeOffsetDays(value?: number | null) {
@@ -293,13 +341,15 @@ export function normalizeNotificationEventInput(
 
   return {
     rule_id: normalizeOptional(input.rule_id),
-    type: normalizeRuleType(input.type),
+    type: normalizeNotificationEventType(input.type),
     generated_key: normalizeOptional(input.generated_key),
     customer_id: customerId,
     job_id: jobId,
+    status: normalizeNotificationEventStatus(input.status),
     title: requireNonEmpty(input.title, "Notification title"),
     message: normalizeOptional(input.message),
     due_at: normalizeDueAt(input.due_at),
+    handled_at: normalizeHandledAt(input.handled_at),
   };
 }
 

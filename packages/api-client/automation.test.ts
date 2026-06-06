@@ -108,6 +108,18 @@ const notification = {
   created_at: now,
   updated_at: now,
 };
+const arrivalNotification = {
+  ...notification,
+  id: "notification-arrival",
+  customer_id: null,
+  generated_key: "arrival-notice:job-1:00000000-0000-4000-8000-000000000201",
+  handled_at: now,
+  job_id: "job-1",
+  rule_id: null,
+  status: "dismissed",
+  title: "Arrived on site",
+  type: "arrival_notification",
+} as const;
 const template = {
   id: "template-1",
   name: "Follow-up call",
@@ -226,6 +238,32 @@ describe("automation api client", () => {
         expect.objectContaining({
           customer_id: "customer-1",
           status: "pending",
+        }),
+      ],
+    ]);
+  });
+
+  it("creates arrival notification events with custom status", async () => {
+    const createQuery = new MockQuery({ data: arrivalNotification, error: null });
+    from.mockReturnValueOnce(createQuery as never);
+
+    await createNotificationEventRecord({
+      job_id: "job-1",
+      status: "dismissed",
+      title: "Arrived on site",
+      due_at: now,
+      type: "arrival_notification",
+      handled_at: now,
+    });
+
+    expect(createQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          handled_at: now,
+          job_id: "job-1",
+          status: "dismissed",
+          type: "arrival_notification",
         }),
       ],
     ]);
