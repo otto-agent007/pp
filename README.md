@@ -101,21 +101,15 @@ See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current
 
 ## Current Focus
 
-Current status as of June 5, 2026:
+Current status as of June 6, 2026:
 
-- Active branch: `codex/demo-readiness-buyer-walkthrough` completed the
-  Buyer Walkthrough Showcase slice validation pass for the narrative: Dashboard →
-  Dispatch → Customer account → Job closeout → Payments/catalog →
-  Compliance → Chemical Product Binder → Technician credentials → WDO / Escrow →
-  Customer portal.
-- Local no-env fixture smoke checks now target a fixed 10-step buyer journey, including
-  `/escrow-re` and the tokened `/portal/:customerId` handoff route.
-- The required smoke verification passed via `corepack pnpm demo:fixture-smoke`; this
-  branch is now ready for draft PR evidence handoff.
-- No code-affecting migration, provider, environment-variable, seed/reset write,
-  live-ingest, or production-data mutation has been performed during this pass.
-- `/compliance` remains advisory-only from existing setup-aware domain state; the
-  Chemical Product Binder and WDO/Escrow workspace updates are still customer-safe and
-  do not expose internal/compliance warnings.
-- Remaining production/preview smoke gates still need approved env names and protected
-  access paths for authenticated local seed/reset and preview browser smoke.
+- PRs `#103` through `#108` are merged on `main`: Claude QA polish, buyer walkthrough
+  validation, Stripe payment links plus webhook reconciliation, compliance source
+  ingestion hardening, arrival notification approval, and mobile field execution
+  hardening.
+- The Buyer Walkthrough Showcase slice remains the completed 10-step fixture-smoke
+  baseline and is recorded in `tasks/done.md` and `docs/PREVIEW_SMOKE_FINDINGS.md`.
+- This refresh is docs-only; no new migration, provider, environment, seed/reset,
+  preview, or production mutation was performed.
+- Remaining authenticated smoke gates still need approved env names and protected
+  access paths when the next implementation slice starts.

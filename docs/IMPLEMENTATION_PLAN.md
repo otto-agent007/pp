@@ -1,44 +1,29 @@
 # Implementation Plan
 
-## Current Priority: Buyer Readiness / Showcase Demo Walkthrough Pass V1
+## Current Priority: Repo Status Refresh After PRs 103-108
 
-As of June 5, 2026, active work is on branch
-`codex/demo-readiness-buyer-walkthrough`.
+As of June 6, 2026, this branch is a docs-only refresh on
+`codex/docs-status-after-prs-103-108` after PRs `#103`-`#108` merged on
+`main`.
 
 Current slice objective:
 
-1. Validate a deterministic 10-step buyer path:
-   `"/"` → `"/dispatch"` → `"/customers"` → `"/closeouts"` →
-   `"/payments"` → `"/compliance"` → `"/inventory"` → `"/technicians"` →
-   `"/escrow-re"` → tokened `"/portal/:customerId"`.
-2. Extend local fixture smoke for structured journey checks:
-   - route-by-route content markers and heading/key-state markers,
-   - visible internal link validation,
-   - dead-end CTA detection,
-   - stronger forbidden-pattern scan for internal/dev strings.
-3. Keep all logic in existing architecture (`@pest-patrol/domain` +
-   `tooling` only), with no migrations, providers, provider dashboards,
-   environment mutations, seed/reset writes, live compliance ingestion, or
-   production edits in this pass.
+1. Refresh the living docs and task ledgers so they reflect the merged-state
+   baseline after PRs `#103`-`#108`.
+2. Keep the buyer walkthrough, payment-link/webhook, compliance-ingestion,
+   arrival-notification, and mobile-field execution slices recorded as
+   complete.
+3. Avoid code, provider, migration, seed/reset, preview, or production
+   mutations in this pass.
 
 Current slice status:
 
-1. `packages/domain/demoSmokePreflight.ts` now defines a 10-step ordered buyer
-   journey with `/escrow-re` and a tokened portal route marker.
-2. `tooling/local-fixture-smoke.ts` now validates visible internal links and
-   step progression CTAs while continuing console/page error, overflow, and
-   sensitive-text checks.
-3. `packages/domain/demoSmokePreflight.test.ts` now enforces exact route order,
-   expected labels, and `/escrow-re` presence for the route plan.
-4. Evidence block for this demo readiness pass is due to be recorded as
-   `Buyer Walkthrough Validation V1` in `docs/PREVIEW_SMOKE_FINDINGS.md`; the
-   full local no-env command run has now passed.
-5. No-production mutation state remains: local/preview seed/reset and
-   authenticated browser smoke remain blocked until approved setup and
-   protected-preview access are available. Local fixture smoke verification on
-   this branch is complete.
-6. Keep every new slice on a fresh correctly named `codex/*` branch with a
-   draft PR and evidence bundle before considering it complete.
+1. PRs `#103`-`#108` are merged on `main`.
+2. `tasks/done.md` and `docs/PREVIEW_SMOKE_FINDINGS.md` capture the completed
+   buyer walkthrough readiness evidence.
+3. No active implementation slice is open on this docs refresh branch.
+4. The next implementation slice should start from a fresh correctly named
+   `codex/*` branch when it begins.
 
 ## Previous Priority: Pest Patrol Customer Portal V1
 

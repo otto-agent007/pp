@@ -2,9 +2,10 @@
 
 Active implementation slice:
 
-- Buyer Walkthrough / Showcase Validation V1 is no longer in active implementation on
-  this branch; local fixture smoke verification completed and the slice is ready for
-  draft PR handoff.
+- No active implementation slice is open on this branch; PRs #103-#108 are merged on
+  `main`, and the buyer walkthrough readiness slice is complete.
+- This file now serves as the status and blocker ledger for the next slice instead of
+  an open implementation plan.
 - This pass validates a deterministic 10-step customer journey:
   `"/"` → `"/dispatch"` → `"/customers"` → `"/closeouts"` → `"/payments"` →
   `"/compliance"` → `"/inventory"` → `"/technicians"` → `"/escrow-re"` →
@@ -25,9 +26,8 @@ Active implementation slice:
 - PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
 - PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
   June 3, 2026.
-- Recommended next implementation candidates after this slice lands: inventory
-  deep-linking from Chemical Product Binder, direct WDO/customer handoff polish,
-  or service/catalog follow-through based on operator priority.
+- Recommended next implementation candidates should be chosen from live operator
+  priority now that the buyer walkthrough slice and PRs #103-#108 are complete.
 
 Current blockers and guardrails:
 
