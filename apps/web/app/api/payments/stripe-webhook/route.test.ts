@@ -1,5 +1,5 @@
 import { createHmac } from "crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "./route";
 
@@ -43,6 +43,11 @@ class MockQuery<T> {
 }
 
 const now = "2026-05-06T12:00:00.000Z";
+const fakeNow = new Date(now);
+const currentTimestamp = Math.floor(fakeNow.getTime() / 1000);
+const staleTimestamp = currentTimestamp - 301;
+const futureTimestamp = currentTimestamp + 301;
+
 const invoice = {
   id: "invoice-1",
   job_id: "job-1",
@@ -58,10 +63,17 @@ const invoice = {
   created_at: now,
   updated_at: now,
 };
+
 const paidInvoice = {
   ...invoice,
   status: "paid",
 };
+
+const voidInvoice = {
+  ...invoice,
+  status: "void",
+};
+
 const payment = {
   id: "payment-1",
   invoice_id: "invoice-1",
@@ -75,8 +87,11 @@ const payment = {
   updated_at: now,
 };
 
-function signPayload(payload: string, secret = "whsec_test") {
-  const timestamp = "1778097600";
+function signPayload(
+  payload: string,
+  timestamp = currentTimestamp,
+  secret = "whsec_test",
+) {
   const signature = createHmac("sha256", secret)
     .update(`${timestamp}.${payload}`)
     .digest("hex");
@@ -96,6 +111,20 @@ function request(event: unknown, signature = signPayload(JSON.stringify(event)))
   });
 }
 
+function requestWithoutTimestamp(event: unknown) {
+  const payload = JSON.stringify(event);
+  const signature = signPayload(payload).replace(/^t=\d+,/, "");
+
+  return request(event, signature);
+}
+
+function requestWithMalformedTimestamp(event: unknown) {
+  const payload = JSON.stringify(event);
+  const signature = signPayload(payload).replace(/^t=\d+/, "t=not-a-number");
+
+  return request(event, signature);
+}
+
 function checkoutCompletedEvent(overrides: Record<string, unknown> = {}) {
   return {
     id: "evt_123",
@@ -104,7 +133,7 @@ function checkoutCompletedEvent(overrides: Record<string, unknown> = {}) {
       object: {
         id: "cs_123",
         amount_total: 12500,
-        created: 1778097600,
+        created: currentTimestamp,
         currency: "usd",
         metadata: {
           customer_id: "customer-1",
@@ -127,7 +156,7 @@ function checkoutAsyncSucceededEvent(overrides: Record<string, unknown> = {}) {
       object: {
         id: "cs_123",
         amount_total: 12500,
-        created: 1778097600,
+        created: currentTimestamp,
         currency: "usd",
         metadata: {
           customer_id: "customer-1",
@@ -150,7 +179,7 @@ function checkoutAsyncFailedEvent(overrides: Record<string, unknown> = {}) {
       object: {
         id: "cs_123",
         amount_total: 12500,
-        created: 1778097600,
+        created: currentTimestamp,
         currency: "usd",
         metadata: {
           customer_id: "customer-1",
@@ -167,11 +196,19 @@ function checkoutAsyncFailedEvent(overrides: Record<string, unknown> = {}) {
 
 describe("stripe webhook route", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fakeNow);
     serviceClient = {
       from: vi.fn(),
     };
     vi.unstubAllEnvs();
     vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test");
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+    serviceClient.from.mockReset();
   });
 
   it("rejects invalid signatures before touching Supabase", async () => {
@@ -184,7 +221,51 @@ describe("stripe webhook route", () => {
     expect(serviceClient.from).not.toHaveBeenCalled();
   });
 
-  it("records a completed Stripe checkout payment and marks the invoice paid", async () => {
+  it("rejects missing Stripe signature timestamps before touching Supabase", async () => {
+    const event = checkoutCompletedEvent();
+    const response = await POST(requestWithoutTimestamp(event));
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid Stripe webhook signature");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed Stripe signature timestamps before touching Supabase", async () => {
+    const event = checkoutCompletedEvent();
+    const response = await POST(requestWithMalformedTimestamp(event));
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid Stripe webhook signature");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects stale Stripe webhook timestamps before touching Supabase", async () => {
+    const event = checkoutCompletedEvent();
+    const response = await POST(
+      request(event, signPayload(JSON.stringify(event), staleTimestamp)),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid Stripe webhook signature");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects future Stripe webhook timestamps outside the tolerance window", async () => {
+    const event = checkoutCompletedEvent();
+    const response = await POST(
+      request(event, signPayload(JSON.stringify(event), futureTimestamp)),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid Stripe webhook signature");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("accepts a current Stripe webhook timestamp and marks the invoice paid", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
@@ -225,6 +306,32 @@ describe("stripe webhook route", () => {
     expect(updateInvoiceQuery.calls[0]).toEqual(["update", [{ status: "paid" }]]);
   });
 
+  it("ignores unsupported Stripe event types safely", async () => {
+    const response = await POST(
+      request({
+        id: "evt_999",
+        type: "customer.subscription.created",
+        data: {
+          object: {
+            id: "sub_123",
+            metadata: {
+              invoice_id: "invoice-1",
+            },
+          },
+        },
+      }),
+    );
+    const body = (await response.json()) as {
+      message?: string;
+      status?: string;
+    };
+
+    expect(response.status).toBe(202);
+    expect(body.status).toBe("ignored");
+    expect(body.message).toContain("metadata is incomplete");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
   it("updates an existing payment for duplicate Stripe events instead of inserting again", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
     const existingPaymentQuery = new MockQuery({ data: payment, error: null });
@@ -249,6 +356,31 @@ describe("stripe webhook route", () => {
       ],
     ]);
     expect(updatePaymentQuery.calls).toContainEqual(["eq", ["id", "payment-1"]]);
+  });
+
+  it("does not transition a duplicate paid invoice again", async () => {
+    const invoiceQuery = new MockQuery({ data: paidInvoice, error: null });
+    const existingPaymentQuery = new MockQuery({ data: payment, error: null });
+    const updatePaymentQuery = new MockQuery({ data: payment, error: null });
+    serviceClient.from
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(updatePaymentQuery as never);
+
+    const response = await POST(request(checkoutCompletedEvent()));
+
+    expect(response.status).toBe(200);
+    expect(updatePaymentQuery.calls[0]).toEqual([
+      "update",
+      [
+        expect.objectContaining({
+          provider_payment_id: "cs_123",
+          status: "succeeded",
+        }),
+      ],
+    ]);
+    expect(updatePaymentQuery.calls).toContainEqual(["eq", ["id", "payment-1"]]);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
   });
 
   it("records pending checkout sessions without marking the invoice paid", async () => {
@@ -354,6 +486,58 @@ describe("stripe webhook route", () => {
     expect(serviceClient.from).toHaveBeenCalledTimes(3);
   });
 
+  it("does not mark the invoice paid when the currency does not match", async () => {
+    const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const existingPaymentQuery = new MockQuery({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const insertPaymentQuery = new MockQuery({
+      data: {
+        ...payment,
+        currency: "eur",
+      },
+      error: null,
+    });
+    serviceClient.from
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(insertPaymentQuery as never);
+
+    const response = await POST(
+      request(
+        checkoutCompletedEvent({
+          currency: "eur",
+          payment_status: "paid",
+        }),
+      ),
+    );
+    const body = (await response.json()) as {
+      invoice_id?: string;
+      payment_id?: string;
+      status?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      invoice_id: "invoice-1",
+      payment_id: "payment-1",
+      status: "processed",
+    });
+    expect(insertPaymentQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          amount_cents: 12500,
+          currency: "eur",
+          provider_payment_id: "cs_123",
+          status: "succeeded",
+        }),
+      ],
+    ]);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+  });
+
   it("records async payment failures without marking the invoice paid", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
     const existingPaymentQuery = new MockQuery({
@@ -392,6 +576,43 @@ describe("stripe webhook route", () => {
         expect.objectContaining({
           provider_payment_id: "cs_123",
           status: "failed",
+        }),
+      ],
+    ]);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not mark a void invoice paid from Stripe webhook events", async () => {
+    const invoiceQuery = new MockQuery({ data: voidInvoice, error: null });
+    const existingPaymentQuery = new MockQuery({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const insertPaymentQuery = new MockQuery({ data: payment, error: null });
+    serviceClient.from
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(insertPaymentQuery as never);
+
+    const response = await POST(request(checkoutAsyncSucceededEvent()));
+    const body = (await response.json()) as {
+      invoice_id?: string;
+      payment_id?: string;
+      status?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      invoice_id: "invoice-1",
+      payment_id: "payment-1",
+      status: "processed",
+    });
+    expect(insertPaymentQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          provider_payment_id: "cs_123",
+          status: "succeeded",
         }),
       ],
     ]);

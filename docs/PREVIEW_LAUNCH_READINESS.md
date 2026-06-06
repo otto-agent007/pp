@@ -41,6 +41,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - Configure Stripe test-mode webhook delivery to `/api/payments/stripe-webhook` if payment webhook smoke is in scope.
 - Optionally configure notification and portal delivery webhook endpoints. If omitted, notification delivery and portal sharing must be smoke-tested through manual fallback behavior.
+- Stripe payment-link creates should use deterministic `Idempotency-Key` headers, webhook verification requires the raw request body plus the endpoint secret, stale webhook signatures are rejected, and Stripe test mode or the Stripe CLI should be used before any production payment smoke.
 - Provide an interactive Vercel preview access path before browser smoke. If Deployment Protection is enabled, use an authenticated browser session, a temporary share link, or explicitly approve Codex to create a protected-preview access link if available.
 - For synthetic demo smoke, run `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>` first. It is read-only and reports shell seed readiness separately from the required protected-preview browser access and admin/dispatcher sign-in path.
 

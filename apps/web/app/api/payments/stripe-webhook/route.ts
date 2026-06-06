@@ -3,7 +3,7 @@ import {
   updateInvoiceStatusRecord,
   upsertPaymentRecordRecord,
 } from "@pest-patrol/api-client";
-import { getInvoiceReconciliation } from "@pest-patrol/domain";
+import { getInvoicePaymentCoverageDecision } from "@pest-patrol/domain";
 import type {
   Invoice,
   PaymentRecord,
@@ -15,6 +15,9 @@ import { NextResponse } from "next/server";
 import { createServiceRoleSupabaseClient } from "../../_lib/server-auth";
 
 export const runtime = "nodejs";
+const defaultStripeWebhookToleranceSeconds = 300;
+const minimumStripeWebhookToleranceSeconds = 60;
+const maximumStripeWebhookToleranceSeconds = 900;
 
 interface StripeEvent<TObject = StripeObject> {
   id: string;
@@ -54,7 +57,9 @@ function parseSignatureHeader(header: string) {
       const [key, value] = part.split("=");
 
       if (key === "t") {
-        result.timestamp = value;
+        const timestamp = Number(value);
+
+        result.timestamp = Number.isInteger(timestamp) ? timestamp : null;
       }
 
       if (key === "v1" && value) {
@@ -63,7 +68,7 @@ function parseSignatureHeader(header: string) {
 
       return result;
     },
-    { signatures: [] as string[], timestamp: "" },
+    { signatures: [] as string[], timestamp: null as number | null },
   );
 }
 
@@ -78,6 +83,7 @@ function verifyStripeSignature(
   payload: string,
   signatureHeader: string | null,
   webhookSecret: string,
+  toleranceSeconds = defaultStripeWebhookToleranceSeconds,
 ) {
   if (!signatureHeader) {
     return false;
@@ -85,7 +91,13 @@ function verifyStripeSignature(
 
   const { signatures, timestamp } = parseSignatureHeader(signatureHeader);
 
-  if (!timestamp || signatures.length === 0) {
+  if (timestamp === null || signatures.length === 0) {
+    return false;
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {
     return false;
   }
 
@@ -94,6 +106,25 @@ function verifyStripeSignature(
     .digest("hex");
 
   return signatures.some((signature) => secureCompareHex(signature, expected));
+}
+
+function getStripeWebhookToleranceSeconds() {
+  const rawTolerance = process.env.STRIPE_WEBHOOK_TOLERANCE_SECONDS;
+
+  if (!rawTolerance) {
+    return defaultStripeWebhookToleranceSeconds;
+  }
+
+  const parsedTolerance = Number(rawTolerance);
+
+  if (!Number.isFinite(parsedTolerance)) {
+    return defaultStripeWebhookToleranceSeconds;
+  }
+
+  return Math.min(
+    maximumStripeWebhookToleranceSeconds,
+    Math.max(minimumStripeWebhookToleranceSeconds, Math.floor(parsedTolerance)),
+  );
 }
 
 function getStripeObjectTimestamp(value?: number | null) {
@@ -202,14 +233,12 @@ async function reconcileStripeEvent(
 
   const payment = await upsertPaymentRecordRecord(payload, client);
   const updatedInvoice = mergePaymentIntoInvoice(invoice, payment);
-  const reconciliation = getInvoiceReconciliation(updatedInvoice);
+  const paymentDecision = getInvoicePaymentCoverageDecision(
+    updatedInvoice,
+    payment,
+  );
 
-  if (
-    payload.status === "succeeded" &&
-    reconciliation.balanceCents === 0 &&
-    invoice.status !== "paid" &&
-    invoice.status !== "void"
-  ) {
+  if (paymentDecision.shouldMarkPaid) {
     await updateInvoiceStatusRecord(invoice.id, "paid", client);
   }
 
@@ -238,6 +267,7 @@ export async function POST(request: Request) {
       payload,
       request.headers.get("stripe-signature"),
       webhookSecret,
+      getStripeWebhookToleranceSeconds(),
     )
   ) {
     return NextResponse.json(

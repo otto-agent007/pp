@@ -59,6 +59,10 @@ function buildStripePaymentLinkRequest(invoice: Invoice) {
   return params;
 }
 
+function buildStripeIdempotencyKey(invoiceId: string) {
+  return `stripe-payment-link:${invoiceId}`;
+}
+
 function providerUnavailableResponse() {
   return NextResponse.json(
     {
@@ -113,6 +117,15 @@ export async function POST(request: Request) {
     );
   }
 
+  if (invoice.payment_url && invoice.stripe_payment_link_id) {
+    return NextResponse.json({
+      provider: "stripe",
+      provider_payment_link_id: invoice.stripe_payment_link_id,
+      payment_url: invoice.payment_url,
+      reused: true,
+    });
+  }
+
   let params: URLSearchParams;
 
   try {
@@ -134,6 +147,7 @@ export async function POST(request: Request) {
     headers: {
       Authorization: `Bearer ${stripeSecretKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
+      "Idempotency-Key": buildStripeIdempotencyKey(invoice.id),
     },
     method: "POST",
   });
