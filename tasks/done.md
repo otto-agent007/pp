@@ -1,5 +1,15 @@
 # Done
 
+## June 2026 Merged PRs 103-108
+
+- PR #108, `Harden mobile field execution flow`, merged on June 6, 2026.
+- PR #107, `Arrival notification approval flow`, merged on June 6, 2026.
+- PR #106, `[codex] Compliance Source Ingestion V1`, merged on June 6, 2026.
+- PR #105, `Stripe payment links + webhook reconciliation`, merged on June 6, 2026.
+- PR #104, `[codex] Buyer Walkthrough Showcase Validation V1`, merged on June 5, 2026.
+- PR #103, `Claude QA Polish Pass V1`, merged on June 5, 2026.
+- The detailed slice entries below remain the canonical completion notes for the shipped work.
+
 ## Buyer Walkthrough Showcase Validation V1
 
 - Wired the 10-step buyer journey plan in `packages/domain/demoSmokePreflight.ts`
