@@ -193,23 +193,15 @@ describe("payments api client", () => {
     from.mockReturnValue(updateQuery as never);
 
     const updated = await createInvoicePaymentLinkRecord({
-      ...invoice,
-      line_items: [
-        {
-          id: "line-1",
-          invoice_id: "invoice-1",
-          description: "Service",
-          quantity: 1,
-          unit_amount_cents: 12500,
-          total_cents: 12500,
-          created_at: now,
-        },
-      ],
+      invoice_id: "invoice-1",
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/payments/payment-link",
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({
+        body: JSON.stringify({ invoice_id: "invoice-1" }),
+        method: "POST",
+      }),
     );
     expect(updated.payment_url).toBe("https://pay.stripe.com/test");
     expect(updateQuery.calls[0][1][0]).toMatchObject({

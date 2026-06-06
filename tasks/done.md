@@ -485,6 +485,14 @@
 - Verified `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
 - Reran `corepack pnpm dlx vercel build --yes` after clearing ignored generated output; local Vercel CLI still fails after `next build` with `Unable to find lambda for route: /auth/update-password`
 
+## Compliance Source Ingestion V1
+
+- Hardened the compliance ingestion CLI preflight/report so operators can see the selected target, dry-run vs write mode, source/document/chunk counts, embedding mode, Supabase write mode, and missing env names without leaking secrets
+- Added explicit missing source text file validation plus focused coverage for manifest validation, read-only dry-run/no-embed evidence, and sanitized no-write/no-OpenAI behavior
+- Refreshed the operator runbook in `README.md`, `docs/PREVIEW_LAUNCH_READINESS.md`, and `docs/PRODUCTION_READINESS.md` with the approved local vs preview flow and safe rerun guidance
+- Verified with `corepack pnpm compliance:ingest -- --dry-run --no-embed`, `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`
+- Kept Supabase migrations, live ingestion, preview/production mutation, provider dashboard changes, and OpenAI calls out of scope
+
 ## Compliance Source Ingestion + Review V1
 
 - Added `compliance:ingest` tooling with dry-run, no-embed, workflow, and authority filters for checked-in EPA/DPR/SPCB normalized source fixtures

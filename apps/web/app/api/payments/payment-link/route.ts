@@ -1,9 +1,13 @@
+import { findInvoiceRecord } from "@pest-patrol/api-client";
 import type { Invoice } from "@pest-patrol/types";
 import { NextResponse } from "next/server";
-import { getAdminAccess } from "../../_lib/server-auth";
+import {
+  createServiceRoleSupabaseClient,
+  getAdminAccess,
+} from "../../_lib/server-auth";
 
 interface PaymentLinkRequest {
-  invoice?: Invoice;
+  invoice_id?: string;
 }
 
 function appendLineItem(
@@ -28,38 +32,20 @@ function appendLineItem(
   params.append(`line_items[${index}][quantity]`, String(item.quantity));
 }
 
-export async function POST(request: Request) {
-  const { response: authError } = await getAdminAccess(request);
-
-  if (authError) {
-    return authError;
+function buildStripePaymentLinkRequest(invoice: Invoice) {
+  if (!invoice.line_items || invoice.line_items.length === 0) {
+    throw new Error("Invoice line items are required");
   }
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-  if (!stripeSecretKey) {
-    return NextResponse.json(
-      { error: "Stripe is not configured" },
-      { status: 500 },
-    );
-  }
-
-  const body = (await request.json()) as PaymentLinkRequest;
-  const invoice = body.invoice;
-
-  if (!invoice || !invoice.line_items || invoice.line_items.length === 0) {
-    return NextResponse.json(
-      { error: "Invoice line items are required" },
-      { status: 400 },
-    );
+  if (invoice.line_items.length > 20) {
+    throw new Error("Stripe payment links support at most 20 line items");
   }
 
   const params = new URLSearchParams();
-  invoice.line_items
-    .slice(0, 20)
-    .forEach((item, index) =>
-      appendLineItem(params, index, item, invoice.currency),
-    );
+
+  invoice.line_items.forEach((item, index) =>
+    appendLineItem(params, index, item, invoice.currency),
+  );
   params.append("metadata[invoice_id]", invoice.id);
   params.append("metadata[job_id]", invoice.job_id);
   params.append("metadata[customer_id]", invoice.customer_id);
@@ -70,6 +56,79 @@ export async function POST(request: Request) {
     invoice.customer_id,
   );
 
+  return params;
+}
+
+function providerUnavailableResponse() {
+  return NextResponse.json(
+    {
+      error: "Stripe payment links are unavailable",
+      manual_fallback: true,
+      provider: "stripe",
+    },
+    { status: 503 },
+  );
+}
+
+export async function POST(request: Request) {
+  const { response: authError } = await getAdminAccess(request);
+
+  if (authError) {
+    return authError;
+  }
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    return providerUnavailableResponse();
+  }
+
+  let body: PaymentLinkRequest;
+
+  try {
+    body = (await request.json()) as PaymentLinkRequest;
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid payment link request" },
+      { status: 400 },
+    );
+  }
+
+  const invoiceId = body.invoice_id?.trim();
+
+  if (!invoiceId) {
+    return NextResponse.json(
+      { error: "Invoice ID is required" },
+      { status: 400 },
+    );
+  }
+
+  const client = createServiceRoleSupabaseClient();
+  const invoice = await findInvoiceRecord(invoiceId, client);
+
+  if (!invoice) {
+    return NextResponse.json(
+      { error: "Invoice was not found" },
+      { status: 404 },
+    );
+  }
+
+  let params: URLSearchParams;
+
+  try {
+    params = buildStripePaymentLinkRequest(invoice);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to prepare payment link",
+      },
+      { status: 400 },
+    );
+  }
+
   const response = await fetch("https://api.stripe.com/v1/payment_links", {
     body: params,
     headers: {
@@ -79,15 +138,25 @@ export async function POST(request: Request) {
     method: "POST",
   });
 
-  const stripeBody = (await response.json()) as {
+  let stripeBody: {
     error?: { message?: string };
     id?: string;
     url?: string;
-  };
+  } | null = null;
 
-  if (!response.ok || !stripeBody.id || !stripeBody.url) {
+  try {
+    stripeBody = (await response.json()) as {
+      error?: { message?: string };
+      id?: string;
+      url?: string;
+    };
+  } catch {
+    stripeBody = null;
+  }
+
+  if (!response.ok || !stripeBody?.id || !stripeBody?.url) {
     return NextResponse.json(
-      { error: stripeBody.error?.message ?? "Unable to create payment link" },
+      { error: "Unable to create payment link" },
       { status: response.status || 502 },
     );
   }

@@ -2,8 +2,12 @@ import type {
   Invoice,
   InvoiceInput,
   InvoiceLineItemInput,
+  InvoicePaymentLinkInput,
   InvoicePaymentLinkResult,
   InvoiceStatus,
+  PaymentProvider,
+  PaymentRecord,
+  PaymentStatus,
 } from "@pest-patrol/types";
 import type { AuthSupabaseClient } from "./auth";
 
@@ -11,11 +15,21 @@ import { supabase } from "./supabase";
 
 type InvoiceRow = Invoice;
 type PaymentsClient = typeof supabase | AuthSupabaseClient;
+type PaymentRecordInput = {
+  amount_cents: number;
+  currency: string;
+  invoice_id: string;
+  paid_at: string | null;
+  provider: PaymentProvider;
+  provider_payment_id: string;
+  status: PaymentStatus;
+};
 
 const invoiceSelect =
   "*, job:jobs(*, customer:customers(*), location:locations(*)), customer:customers(*), line_items:invoice_line_items(*), payments(*)";
 const customerPortalInvoiceSelect =
   "*, job:jobs!inner(*, customer:customers(*), location:locations(*)), line_items:invoice_line_items(*), payments(*)";
+const paymentSelect = "*, invoice:invoices(*)";
 
 function lineItemTotal(item: InvoiceLineItemInput) {
   return Math.round(item.quantity * item.unit_amount_cents);
@@ -50,8 +64,11 @@ function toLineItemRows(invoiceId: string, lineItems: InvoiceLineItemInput[]) {
   }));
 }
 
-async function getInvoiceRecord(id: string) {
-  const { data, error } = await supabase
+export async function getInvoiceRecord(
+  id: string,
+  client: PaymentsClient = supabase,
+) {
+  const { data, error } = await client
     .from("invoices")
     .select(invoiceSelect)
     .eq("id", id)
@@ -62,6 +79,17 @@ async function getInvoiceRecord(id: string) {
   }
 
   return data as Invoice;
+}
+
+export async function findInvoiceRecord(
+  id: string,
+  client: PaymentsClient = supabase,
+) {
+  try {
+    return await getInvoiceRecord(id, client);
+  } catch {
+    return null;
+  }
 }
 
 export async function listInvoiceRecords() {
@@ -121,8 +149,9 @@ export async function createInvoiceRecord(input: InvoiceInput) {
 export async function updateInvoiceStatusRecord(
   id: string,
   status: InvoiceStatus,
+  client: PaymentsClient = supabase,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("invoices")
     .update({ status })
     .eq("id", id)
@@ -134,6 +163,72 @@ export async function updateInvoiceStatusRecord(
   }
 
   return data as Invoice;
+}
+
+async function getPaymentRecordByProviderPaymentIdRecord(
+  provider: PaymentProvider,
+  providerPaymentId: string,
+  client: PaymentsClient = supabase,
+) {
+  const { data, error } = await client
+    .from("payments")
+    .select(paymentSelect)
+    .eq("provider", provider)
+    .eq("provider_payment_id", providerPaymentId)
+    .single<PaymentRecord>();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+export async function upsertPaymentRecordRecord(
+  input: PaymentRecordInput,
+  client: PaymentsClient = supabase,
+) {
+  const existing = await getPaymentRecordByProviderPaymentIdRecord(
+    input.provider,
+    input.provider_payment_id,
+    client,
+  );
+  const row = {
+    amount_cents: input.amount_cents,
+    currency: input.currency,
+    invoice_id: input.invoice_id,
+    paid_at: input.paid_at,
+    provider: input.provider,
+    provider_payment_id: input.provider_payment_id,
+    status: input.status,
+  };
+
+  if (existing) {
+    const { data, error } = await client
+      .from("payments")
+      .update(row)
+      .eq("id", existing.id)
+      .select(paymentSelect)
+      .single<PaymentRecord>();
+
+    if (error) {
+      throw error;
+    }
+
+    return data as PaymentRecord;
+  }
+
+  const { data, error } = await client
+    .from("payments")
+    .insert(row)
+    .select(paymentSelect)
+    .single<PaymentRecord>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as PaymentRecord;
 }
 
 export async function saveInvoicePaymentLinkRecord(
@@ -158,7 +253,9 @@ export async function saveInvoicePaymentLinkRecord(
   return data as Invoice;
 }
 
-export async function createInvoicePaymentLinkRecord(invoice: Invoice) {
+export async function createInvoicePaymentLinkRecord(
+  input: InvoicePaymentLinkInput,
+) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -169,7 +266,7 @@ export async function createInvoicePaymentLinkRecord(invoice: Invoice) {
   }
 
   const response = await fetch("/api/payments/payment-link", {
-    body: JSON.stringify({ invoice }),
+    body: JSON.stringify(input),
     headers,
     method: "POST",
   });
@@ -180,5 +277,5 @@ export async function createInvoicePaymentLinkRecord(invoice: Invoice) {
 
   const link = (await response.json()) as InvoicePaymentLinkResult;
 
-  return saveInvoicePaymentLinkRecord(invoice.id, link);
+  return saveInvoicePaymentLinkRecord(input.invoice_id, link);
 }

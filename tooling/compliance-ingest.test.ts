@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  formatComplianceIngestionPreflight,
+  formatComplianceIngestionResult,
   parseComplianceIngestArgs,
   runComplianceIngestion,
 } from "./compliance-ingest";
@@ -43,6 +45,29 @@ describe("compliance ingestion CLI", () => {
     });
   });
 
+  it("formats a secret-safe preflight report for dry-run no-embed mode", () => {
+    const report = formatComplianceIngestionPreflight(
+      {
+        dryRun: true,
+        manifestPath: "packages/domain/fixtures/compliance/manifest.json",
+        noEmbed: true,
+      },
+      {},
+    );
+
+    expect(report).toContain("Compliance ingest preflight");
+    expect(report).toContain("Target: dry run (no Supabase target required)");
+    expect(report).toContain("Mode: dry run");
+    expect(report).toContain("Supabase writes: disabled");
+    expect(report).toContain("Embeddings: disabled");
+    expect(report).toContain("Required envs for this mode: none");
+    expect(report).toContain(
+      "Live-run envs currently unset: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY",
+    );
+    expect(report).not.toContain("sk-test-123");
+    expect(report).not.toContain("super-secret");
+  });
+
   it("dry-runs local fixture ingestion without Supabase or OpenAI", async () => {
     const upsertSource = vi.fn();
     const createEmbedding = vi.fn();
@@ -57,6 +82,7 @@ describe("compliance ingestion CLI", () => {
       {
         assertSchemaReady,
         createEmbedding,
+        env: {},
         readTextFile: async () =>
           "Application time product identity registration number amount and site guidance.",
         upsertChunks: vi.fn(),
@@ -78,6 +104,30 @@ describe("compliance ingestion CLI", () => {
     expect(assertSchemaReady).not.toHaveBeenCalled();
     expect(upsertSource).not.toHaveBeenCalled();
     expect(createEmbedding).not.toHaveBeenCalled();
+  });
+
+  it("reports live-run env gaps without exposing secret values", () => {
+    const report = formatComplianceIngestionPreflight(
+      {
+        dryRun: false,
+        noEmbed: true,
+      },
+      {
+        NEXT_PUBLIC_SUPABASE_URL: "https://preview.example.com",
+        OPENAI_API_KEY: "sk-test-123",
+        SUPABASE_SERVICE_ROLE_KEY: "super-secret",
+      },
+    );
+
+    expect(report).toContain("Target: approved preview Supabase target");
+    expect(report).toContain(
+      "Required envs for this mode: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
+    );
+    expect(report).toContain("Missing required envs: none");
+    expect(report).toContain("Live-run envs currently unset: none");
+    expect(report).not.toContain("sk-test-123");
+    expect(report).not.toContain("super-secret");
+    expect(report).not.toContain("https://preview.example.com");
   });
 
   it("checks schema readiness before live no-embed ingestion", async () => {
@@ -114,5 +164,58 @@ describe("compliance ingestion CLI", () => {
       upsertSource.mock.invocationCallOrder[0],
     );
     expect(createEmbedding).not.toHaveBeenCalled();
+  });
+
+  it("fails with a descriptive error when a source text file is missing", async () => {
+    const upsertSource = vi.fn();
+
+    await expect(
+      runComplianceIngestion(
+        {
+          dryRun: true,
+          manifest,
+          noEmbed: true,
+        },
+        {
+          readTextFile: async () => {
+            throw new Error(
+              "ENOENT: no such file or directory, open 'missing-source.txt'",
+            );
+          },
+          upsertSource,
+        },
+      ),
+    ).rejects.toThrow(
+      "Compliance source text file is missing for epa-label-guidance: epa-label.txt",
+    );
+    expect(upsertSource).not.toHaveBeenCalled();
+  });
+
+  it("formats the result summary with planned counts", () => {
+    const report = formatComplianceIngestionResult(
+      {
+        chunksPlanned: 6,
+        chunksUpserted: 0,
+        documentsProcessed: 6,
+        dryRun: true,
+        embeddingsCreated: 0,
+        embeddingsSkipped: 6,
+        sourcesProcessed: 6,
+        sourcesSkipped: 0,
+      },
+      {
+        dryRun: true,
+        noEmbed: true,
+      },
+    );
+
+    expect(report).toContain("Compliance ingest result");
+    expect(report).toContain("Sources: 6 processed, 0 skipped");
+    expect(report).toContain("Documents: 6 processed");
+    expect(report).toContain("Chunks: 6 planned, 0 upserted");
+    expect(report).toContain("Embeddings: 0 created, 6 skipped");
+    expect(report).toContain("Dry run: yes");
+    expect(report).toContain("Supabase writes: disabled");
+    expect(report).toContain("Embedding mode: disabled");
   });
 });

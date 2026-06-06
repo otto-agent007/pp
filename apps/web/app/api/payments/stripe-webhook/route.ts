@@ -1,3 +1,9 @@
+import {
+  findInvoiceRecord,
+  updateInvoiceStatusRecord,
+  upsertPaymentRecordRecord,
+} from "@pest-patrol/api-client";
+import { getInvoiceReconciliation } from "@pest-patrol/domain";
 import type {
   Invoice,
   PaymentRecord,
@@ -37,11 +43,10 @@ interface PaymentWebhookPayload {
   currency: string;
   invoice_id: string;
   paid_at: string | null;
+  provider: "stripe";
   provider_payment_id: string;
   status: PaymentStatus;
 }
-
-const paymentSelect = "*, invoice:invoices(*)";
 
 function parseSignatureHeader(header: string) {
   return header.split(",").reduce(
@@ -92,7 +97,33 @@ function verifyStripeSignature(
 }
 
 function getStripeObjectTimestamp(value?: number | null) {
-  return value ? new Date(value * 1000).toISOString() : new Date().toISOString();
+  return value ? new Date(value * 1000).toISOString() : null;
+}
+
+function getStripeEventPaymentStatus(
+  event: StripeEvent,
+  object: StripeObject,
+): PaymentStatus | null {
+  if (event.type === "checkout.session.async_payment_failed") {
+    return "failed";
+  }
+
+  if (event.type === "checkout.session.async_payment_succeeded") {
+    return "succeeded";
+  }
+
+  if (event.type === "checkout.session.completed") {
+    return object.payment_status === "paid" ||
+      object.payment_status === "no_payment_required"
+      ? "succeeded"
+      : "pending";
+  }
+
+  return null;
+}
+
+function getStripeEventAmount(object: StripeObject) {
+  return object.amount_total ?? object.amount_received ?? object.amount ?? 0;
 }
 
 function buildPaymentPayload(
@@ -100,156 +131,47 @@ function buildPaymentPayload(
 ): PaymentWebhookPayload | null {
   const object = event.data.object;
   const invoiceId = object.metadata?.invoice_id;
+  const providerPaymentId = object.id;
+  const status = getStripeEventPaymentStatus(event, object);
+  const amountCents = getStripeEventAmount(object);
 
-  if (!invoiceId) {
+  if (!invoiceId || !providerPaymentId || !status || amountCents <= 0) {
     return null;
   }
 
-  if (event.type === "checkout.session.completed") {
-    const providerPaymentId = object.payment_intent ?? object.id;
-    const amountCents = object.amount_total ?? 0;
-
-    if (!providerPaymentId || amountCents <= 0) {
-      return null;
-    }
-
-    return {
-      amount_cents: amountCents,
-      currency: object.currency ?? "usd",
-      invoice_id: invoiceId,
-      paid_at: getStripeObjectTimestamp(object.created),
-      provider_payment_id: providerPaymentId,
-      status: "succeeded",
-    };
-  }
-
-  if (event.type === "payment_intent.succeeded") {
-    const amountCents = object.amount_received ?? object.amount ?? 0;
-
-    if (!object.id || amountCents <= 0) {
-      return null;
-    }
-
-    return {
-      amount_cents: amountCents,
-      currency: object.currency ?? "usd",
-      invoice_id: invoiceId,
-      paid_at: getStripeObjectTimestamp(object.created),
-      provider_payment_id: object.id,
-      status: "succeeded",
-    };
-  }
-
-  if (event.type === "payment_intent.payment_failed") {
-    if (!object.id) {
-      return null;
-    }
-
-    return {
-      amount_cents: object.amount ?? 0,
-      currency: object.currency ?? "usd",
-      invoice_id: invoiceId,
-      paid_at: null,
-      provider_payment_id: object.id,
-      status: "failed",
-    };
-  }
-
-  return null;
-}
-
-async function getInvoice(client: ReturnType<typeof createServiceRoleSupabaseClient>, id: string) {
-  const { data, error } = await client
-    .from("invoices")
-    .select("*")
-    .eq("id", id)
-    .single<Invoice>();
-
-  if (error) {
-    return null;
-  }
-
-  return data;
-}
-
-async function getExistingPayment(
-  client: ReturnType<typeof createServiceRoleSupabaseClient>,
-  providerPaymentId: string,
-) {
-  const { data, error } = await client
-    .from("payments")
-    .select(paymentSelect)
-    .eq("provider", "stripe")
-    .eq("provider_payment_id", providerPaymentId)
-    .single<PaymentRecord>();
-
-  if (error) {
-    return null;
-  }
-
-  return data;
-}
-
-async function updateInvoiceForPayment(
-  client: ReturnType<typeof createServiceRoleSupabaseClient>,
-  invoice: Invoice,
-  status: PaymentStatus,
-) {
-  if (status !== "succeeded" || invoice.status === "paid" || invoice.status === "void") {
-    return;
-  }
-
-  const { error } = await client
-    .from("invoices")
-    .update({ status: "paid" })
-    .eq("id", invoice.id);
-
-  if (error) {
-    throw error;
-  }
-}
-
-async function upsertPayment(
-  client: ReturnType<typeof createServiceRoleSupabaseClient>,
-  payload: PaymentWebhookPayload,
-) {
-  const existing = await getExistingPayment(client, payload.provider_payment_id);
-  const row = {
-    amount_cents: payload.amount_cents,
-    currency: payload.currency,
-    invoice_id: payload.invoice_id,
-    paid_at: payload.paid_at,
+  return {
+    amount_cents: amountCents,
+    currency: object.currency ?? "usd",
+    invoice_id: invoiceId,
+    paid_at:
+      status === "succeeded" ? getStripeObjectTimestamp(object.created) : null,
     provider: "stripe",
-    provider_payment_id: payload.provider_payment_id,
-    status: payload.status,
+    provider_payment_id: providerPaymentId,
+    status,
   };
+}
 
-  if (existing) {
-    const { data, error } = await client
-      .from("payments")
-      .update(row)
-      .eq("id", existing.id)
-      .select(paymentSelect)
-      .single<PaymentRecord>();
+function mergePaymentIntoInvoice(
+  invoice: Invoice,
+  payment: PaymentRecord,
+): Invoice {
+  const payments = invoice.payments ?? [];
+  const mergedPayments = [
+    payment,
+    ...payments.filter(
+      (current) =>
+        current.id !== payment.id &&
+        !(
+          current.provider === payment.provider &&
+          current.provider_payment_id === payment.provider_payment_id
+        ),
+    ),
+  ];
 
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  }
-
-  const { data, error } = await client
-    .from("payments")
-    .insert(row)
-    .select(paymentSelect)
-    .single<PaymentRecord>();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
+  return {
+    ...invoice,
+    payments: mergedPayments,
+  };
 }
 
 async function reconcileStripeEvent(
@@ -267,7 +189,7 @@ async function reconcileStripeEvent(
   }
 
   const client = createServiceRoleSupabaseClient();
-  const invoice = await getInvoice(client, payload.invoice_id);
+  const invoice = await findInvoiceRecord(payload.invoice_id, client);
 
   if (!invoice) {
     return {
@@ -278,8 +200,18 @@ async function reconcileStripeEvent(
     };
   }
 
-  const payment = await upsertPayment(client, payload);
-  await updateInvoiceForPayment(client, invoice, payload.status);
+  const payment = await upsertPaymentRecordRecord(payload, client);
+  const updatedInvoice = mergePaymentIntoInvoice(invoice, payment);
+  const reconciliation = getInvoiceReconciliation(updatedInvoice);
+
+  if (
+    payload.status === "succeeded" &&
+    reconciliation.balanceCents === 0 &&
+    invoice.status !== "paid" &&
+    invoice.status !== "void"
+  ) {
+    await updateInvoiceStatusRecord(invoice.id, "paid", client);
+  }
 
   return {
     invoice_id: payload.invoice_id,
@@ -314,7 +246,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const event = JSON.parse(payload) as StripeEvent;
+  let event: StripeEvent;
+
+  try {
+    event = JSON.parse(payload) as StripeEvent;
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid Stripe webhook payload" },
+      { status: 400 },
+    );
+  }
+
   const result = await reconcileStripeEvent(event);
 
   return NextResponse.json(result, {

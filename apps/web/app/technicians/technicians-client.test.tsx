@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -303,10 +303,14 @@ describe("TechniciansClient", () => {
     await user.selectOptions(technicianSelect, "technician-2");
     expect(technicianSelect).toHaveValue("technician-2");
 
-    await user.type(screen.getByLabelText("Search technicians"), "Demo Tech 1");
+    fireEvent.change(screen.getByLabelText("Search technicians"), {
+      target: { value: "Demo Tech 1" },
+    });
     expect(technicianSelect).toHaveValue("technician-2");
 
-    await user.clear(screen.getByLabelText("Search technicians"));
+    fireEvent.change(screen.getByLabelText("Search technicians"), {
+      target: { value: "" },
+    });
     expect(technicianSelect).toHaveValue("technician-2");
   });
 

@@ -537,6 +537,7 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("heading", { name: "Closeouts" }),
     ).toBeInTheDocument();
+    expect(screen.queryByText("Compliance advisory")).not.toBeInTheDocument();
     expect(screen.queryByText(/relation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/compliance_sources/i)).not.toBeInTheDocument();
   });
