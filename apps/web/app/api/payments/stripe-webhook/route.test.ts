@@ -58,11 +58,15 @@ const invoice = {
   created_at: now,
   updated_at: now,
 };
+const paidInvoice = {
+  ...invoice,
+  status: "paid",
+};
 const payment = {
   id: "payment-1",
   invoice_id: "invoice-1",
   provider: "stripe",
-  provider_payment_id: "pi_123",
+  provider_payment_id: "cs_123",
   status: "succeeded",
   amount_cents: 12500,
   currency: "usd",
@@ -115,6 +119,52 @@ function checkoutCompletedEvent(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function checkoutAsyncSucceededEvent(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "evt_124",
+    type: "checkout.session.async_payment_succeeded",
+    data: {
+      object: {
+        id: "cs_123",
+        amount_total: 12500,
+        created: 1778097600,
+        currency: "usd",
+        metadata: {
+          customer_id: "customer-1",
+          invoice_id: "invoice-1",
+          job_id: "job-1",
+        },
+        payment_intent: "pi_123",
+        payment_status: "paid",
+        ...overrides,
+      },
+    },
+  };
+}
+
+function checkoutAsyncFailedEvent(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "evt_125",
+    type: "checkout.session.async_payment_failed",
+    data: {
+      object: {
+        id: "cs_123",
+        amount_total: 12500,
+        created: 1778097600,
+        currency: "usd",
+        metadata: {
+          customer_id: "customer-1",
+          invoice_id: "invoice-1",
+          job_id: "job-1",
+        },
+        payment_intent: "pi_123",
+        payment_status: "unpaid",
+        ...overrides,
+      },
+    },
+  };
+}
+
 describe("stripe webhook route", () => {
   beforeEach(() => {
     serviceClient = {
@@ -135,13 +185,18 @@ describe("stripe webhook route", () => {
   });
 
   it("records a completed Stripe checkout payment and marks the invoice paid", async () => {
+    const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const existingPaymentQuery = new MockQuery({
+      data: null,
+      error: { code: "PGRST116" },
+    });
     const insertPaymentQuery = new MockQuery({ data: payment, error: null });
-    const updateInvoiceQuery = new MockQuery({ data: invoice, error: null });
+    const updateInvoiceQuery = new MockQuery({ data: paidInvoice, error: null });
     serviceClient.from
-      .mockReturnValueOnce(new MockQuery({ data: invoice, error: null }))
-      .mockReturnValueOnce(new MockQuery({ data: null, error: { code: "PGRST116" } }))
-      .mockReturnValueOnce(insertPaymentQuery)
-      .mockReturnValueOnce(updateInvoiceQuery);
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(insertPaymentQuery as never)
+      .mockReturnValueOnce(updateInvoiceQuery as never);
 
     const response = await POST(request(checkoutCompletedEvent()));
     const body = (await response.json()) as {
@@ -162,7 +217,7 @@ describe("stripe webhook route", () => {
         expect.objectContaining({
           amount_cents: 12500,
           invoice_id: "invoice-1",
-          provider_payment_id: "pi_123",
+          provider_payment_id: "cs_123",
           status: "succeeded",
         }),
       ],
@@ -171,12 +226,15 @@ describe("stripe webhook route", () => {
   });
 
   it("updates an existing payment for duplicate Stripe events instead of inserting again", async () => {
+    const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const existingPaymentQuery = new MockQuery({ data: payment, error: null });
     const updatePaymentQuery = new MockQuery({ data: payment, error: null });
+    const updateInvoiceQuery = new MockQuery({ data: paidInvoice, error: null });
     serviceClient.from
-      .mockReturnValueOnce(new MockQuery({ data: invoice, error: null }))
-      .mockReturnValueOnce(new MockQuery({ data: payment, error: null }))
-      .mockReturnValueOnce(updatePaymentQuery)
-      .mockReturnValueOnce(new MockQuery({ data: invoice, error: null }));
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(updatePaymentQuery as never)
+      .mockReturnValueOnce(updateInvoiceQuery as never);
 
     const response = await POST(request(checkoutCompletedEvent()));
 
@@ -185,12 +243,159 @@ describe("stripe webhook route", () => {
       "update",
       [
         expect.objectContaining({
-          provider_payment_id: "pi_123",
+          provider_payment_id: "cs_123",
           status: "succeeded",
         }),
       ],
     ]);
     expect(updatePaymentQuery.calls).toContainEqual(["eq", ["id", "payment-1"]]);
+  });
+
+  it("records pending checkout sessions without marking the invoice paid", async () => {
+    const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const existingPaymentQuery = new MockQuery({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const insertPaymentQuery = new MockQuery({
+      data: {
+        ...payment,
+        status: "pending",
+        paid_at: null,
+      },
+      error: null,
+    });
+    serviceClient.from
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(insertPaymentQuery as never);
+
+    const response = await POST(
+      request(
+        checkoutCompletedEvent({
+          amount_total: 12500,
+          payment_status: "processing",
+        }),
+      ),
+    );
+    const body = (await response.json()) as {
+      invoice_id?: string;
+      payment_id?: string;
+      status?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      invoice_id: "invoice-1",
+      payment_id: "payment-1",
+      status: "processed",
+    });
+    expect(insertPaymentQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          amount_cents: 12500,
+          provider_payment_id: "cs_123",
+          status: "pending",
+        }),
+      ],
+    ]);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not mark the invoice paid for partial checkout payments", async () => {
+    const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const existingPaymentQuery = new MockQuery({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const insertPaymentQuery = new MockQuery({
+      data: {
+        ...payment,
+        amount_cents: 5000,
+      },
+      error: null,
+    });
+    serviceClient.from
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(insertPaymentQuery as never);
+
+    const response = await POST(
+      request(
+        checkoutCompletedEvent({
+          amount_total: 5000,
+          payment_status: "paid",
+        }),
+      ),
+    );
+    const body = (await response.json()) as {
+      invoice_id?: string;
+      payment_id?: string;
+      status?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      invoice_id: "invoice-1",
+      payment_id: "payment-1",
+      status: "processed",
+    });
+    expect(insertPaymentQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          amount_cents: 5000,
+          provider_payment_id: "cs_123",
+          status: "succeeded",
+        }),
+      ],
+    ]);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+  });
+
+  it("records async payment failures without marking the invoice paid", async () => {
+    const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const existingPaymentQuery = new MockQuery({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const insertPaymentQuery = new MockQuery({
+      data: {
+        ...payment,
+        status: "failed",
+        paid_at: null,
+      },
+      error: null,
+    });
+    serviceClient.from
+      .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(existingPaymentQuery as never)
+      .mockReturnValueOnce(insertPaymentQuery as never);
+
+    const response = await POST(request(checkoutAsyncFailedEvent()));
+    const body = (await response.json()) as {
+      invoice_id?: string;
+      payment_id?: string;
+      status?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      invoice_id: "invoice-1",
+      payment_id: "payment-1",
+      status: "processed",
+    });
+    expect(insertPaymentQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          provider_payment_id: "cs_123",
+          status: "failed",
+        }),
+      ],
+    ]);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
   });
 
   it("ignores events with missing invoice metadata", async () => {
@@ -207,10 +412,10 @@ describe("stripe webhook route", () => {
 
   it("ignores events that point at a missing invoice", async () => {
     serviceClient.from.mockReturnValueOnce(
-      new MockQuery({ data: null, error: { code: "PGRST116" } }),
+      new MockQuery({ data: null, error: { code: "PGRST116" } }) as never,
     );
 
-    const response = await POST(request(checkoutCompletedEvent()));
+    const response = await POST(request(checkoutAsyncSucceededEvent()));
     const body = (await response.json()) as {
       invoice_id?: string;
       message?: string;

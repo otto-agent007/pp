@@ -664,5 +664,7 @@ export async function createInvoicePaymentLink(invoice: Invoice) {
     throw new Error("Invoice line items are required");
   }
 
-  return createInvoicePaymentLinkRecord(invoice);
+  return createInvoicePaymentLinkRecord({
+    invoice_id: invoice.id,
+  });
 }
