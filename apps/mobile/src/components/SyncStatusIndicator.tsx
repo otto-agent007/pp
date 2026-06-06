@@ -12,33 +12,48 @@ import {
   mobileRouteShellPalette,
   mobileRouteShellStyles,
 } from "../styles/routeShellStyles";
+import { useLanguage } from "../store/useLanguage";
 import { useOfflineQueue } from "../store/useOfflineQueue";
 import { useQueueSync } from "../store/useQueueSync";
 import { useSyncStatus } from "../store/useSyncStatus";
 
-function formatLastSync(value: string | null) {
+function formatLastSync(
+  value: string | null,
+  copy: { notSynced: string; syncedAt: string },
+) {
   if (!value) {
-    return "Not synced";
+    return copy.notSynced;
   }
 
-  return `Synced ${new Intl.DateTimeFormat("en", {
+  return `${copy.syncedAt} ${new Intl.DateTimeFormat("en", {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value))}`;
 }
 
-function formatNextRetry(value: string | null) {
+function formatNextRetry(
+  value: string | null,
+  copy: { nextRetryAt: string },
+) {
   if (!value) {
     return null;
   }
 
-  return `Next retry ${new Intl.DateTimeFormat("en", {
+  return `${copy.nextRetryAt} ${new Intl.DateTimeFormat("en", {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value))}`;
 }
 
+function interpolate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replace(`{${key}}`, value),
+    template,
+  );
+}
+
 export function SyncStatusIndicator() {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
   const clearSynced = useOfflineQueue((state) => state.clearSynced);
   const items = useOfflineQueue((state) => state.items);
   const syncNow = useQueueSync((state) => state.syncNow);
@@ -61,7 +76,7 @@ export function SyncStatusIndicator() {
   const canSync =
     hasReadyItems && networkStatus === "online" && activity !== "syncing";
   const syncDisabled = !canSync;
-  const nextRetryLabel = formatNextRetry(summary.nextRetryAt);
+  const nextRetryLabel = formatNextRetry(summary.nextRetryAt, copy.sync);
   const tone = getMobileSyncTone({
     hasFailures,
     hasPendingItems,
@@ -77,36 +92,38 @@ export function SyncStatusIndicator() {
         : "neutral";
   const statusLabel =
     activity === "syncing"
-      ? "Syncing now"
+      ? copy.sync.syncingNow
       : isOffline
-        ? "Offline"
+        ? copy.sync.savedOffline
         : hasFailures
-          ? "Sync attention needed"
+          ? copy.sync.failedTitle
           : hasPendingItems
-            ? "Ready to sync"
+            ? copy.sync.queuedTitle
             : hasSyncHistory
-              ? "Synced"
-              : "No local changes";
+              ? copy.sync.syncedTitle
+              : copy.sync.noLocalChanges;
   const detailLabel =
     activity === "syncing"
-      ? "Sending saved work to the server. Stay in the app."
+      ? copy.sync.syncingNow
       : isOffline
-        ? "Work is saved here. Will sync when back online."
+        ? copy.sync.offlineDetail
         : hasFailures
-          ? "Some items failed. Review and try sync again."
+          ? copy.sync.failedDetail
           : hasPendingItems
-            ? "Saved work is ready to sync."
+            ? copy.sync.pendingDetail
             : hasSyncedItems
-              ? "All work synced. Tap Clear when done reviewing."
-              : "Nothing waiting to sync.";
+              ? copy.sync.syncedDetail
+              : copy.sync.noItemsWaiting;
   const manualSyncLabel =
     activity === "syncing"
-      ? "Sync in progress"
+      ? copy.sync.syncingNow
       : isOffline
-        ? "Sync when online"
-        : hasReadyItems
-          ? "Sync now"
-          : "Nothing ready";
+        ? copy.sync.syncWhenOnline
+        : hasFailures
+          ? copy.sync.retrySync
+          : hasReadyItems
+            ? copy.sync.syncNow
+            : copy.sync.noItemsWaiting;
 
   return (
     <View
@@ -139,9 +156,16 @@ export function SyncStatusIndicator() {
         </Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {summary.pending > 0 ? (
+        {summary.queued > 0 ? (
           <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
-            {summary.pending} pending
+            {interpolate(copy.sync.counts.queued, { count: String(summary.queued) })}
+          </Text>
+        ) : null}
+        {summary.retrying > 0 ? (
+          <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
+            {interpolate(copy.sync.counts.retrying, {
+              count: String(summary.retrying),
+            })}
           </Text>
         ) : null}
         {summary.failed > 0 ? (
@@ -153,16 +177,16 @@ export function SyncStatusIndicator() {
               fontSize: 13,
             }}
           >
-            {summary.failed} failed
+            {interpolate(copy.sync.counts.failed, { count: String(summary.failed) })}
           </Text>
         ) : null}
         {summary.synced > 0 ? (
           <Text style={{ color: mobileRouteShellPalette.secondaryText, fontSize: 13 }}>
-            {summary.synced} synced
+            {interpolate(copy.sync.counts.synced, { count: String(summary.synced) })}
           </Text>
         ) : null}
         <Text style={{ color: mobileRouteShellPalette.mutedText, fontSize: 13 }}>
-          {formatLastSync(lastSyncAt)}
+          {formatLastSync(lastSyncAt, copy.sync)}
         </Text>
         {nextRetryLabel ? (
           <Text style={{ color: mobileRouteShellPalette.mutedText, fontSize: 13 }}>
@@ -196,7 +220,7 @@ export function SyncStatusIndicator() {
           ))}
         </View>
       ) : null}
-      {hasPendingItems || activity === "syncing" ? (
+      {hasPendingItems || activity === "syncing" || hasFailures ? (
         <Pressable
           disabled={syncDisabled}
           onPress={() => void syncNow()}
@@ -237,7 +261,7 @@ export function SyncStatusIndicator() {
               fontWeight: "800",
             }}
           >
-            Clear synced
+            {copy.sync.clearSynced}
           </Text>
         </Pressable>
       ) : null}

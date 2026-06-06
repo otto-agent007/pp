@@ -158,7 +158,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
       ) : null}
       {draft.queuedAt ? (
         <Text style={mobileCaptureControlStyles.successText}>
-          {copy.common.queuedForSync}
+          {copy.common.savedOffline}
         </Text>
       ) : null}
 

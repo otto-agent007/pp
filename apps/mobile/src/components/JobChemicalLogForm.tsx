@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, TextInput, View } from "react-native";
+import { defaultTreatmentFormTemplate } from "@pest-patrol/domain";
 import type { ChemicalInventoryItem } from "@pest-patrol/types";
 import { CaptureButton, CaptureSection } from "@pest-patrol/ui-native";
 
 import { useChemicalInventory } from "../store/useChemicalInventory";
 import { useChemicalLogs } from "../store/useChemicalLogs";
+import { useFormDrafts } from "../store/useFormDrafts";
 import { useLanguage } from "../store/useLanguage";
+import { useSyncStatus } from "../store/useSyncStatus";
 import { mobileCaptureControlStyles } from "../styles/routeShellStyles";
 
 interface JobChemicalLogFormProps {
@@ -16,13 +19,53 @@ function chemicalLabel(item: ChemicalInventoryItem) {
   return `${item.name} (${item.unit})`;
 }
 
+function hasText(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function parseAmount(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const amount = Number(value);
+
+  return Number.isFinite(amount) ? amount : null;
+}
+
 export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
   const copy = useLanguage((state) => state.t.jobs.fieldCopy);
+  const networkStatus = useSyncStatus((state) => state.networkStatus);
+  const treatmentDraft = useFormDrafts((state) =>
+    state.getDraft(jobId, defaultTreatmentFormTemplate),
+  );
   const { error: inventoryError, items, load, status } = useChemicalInventory();
   const { getDraft, queueLog, setDraftField } = useChemicalLogs();
   const drafts = useChemicalLogs((state) => state.drafts);
   const [error, setError] = useState<string | null>(null);
   const draft = useMemo(() => getDraft(jobId), [drafts, getDraft, jobId]);
+  const selectedChemical = useMemo(
+    () => items.find((item) => item.id === draft.chemicalId) ?? null,
+    [draft.chemicalId, items],
+  );
+  const amount = parseAmount(draft.amount);
+  const hasAmount = amount !== null && amount > 0;
+  const hasContext =
+    hasText(treatmentDraft.values.target_pests) &&
+    hasText(treatmentDraft.values.areas_treated);
+  const validationError =
+    !selectedChemical
+      ? copy.chemical.validation.productRequired
+      : !hasText(selectedChemical.unit)
+        ? copy.chemical.validation.unitRequired
+        : !hasAmount
+          ? copy.chemical.validation.amountRequired
+          : !hasContext
+            ? copy.chemical.validation.targetContextRequired
+            : null;
+  const displayMessage = error ?? validationError;
+  const canQueue =
+    status !== "loading" && items.length > 0 && validationError === null;
 
   useEffect(() => {
     if (status === "idle") {
@@ -37,6 +80,11 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
   }, [draft.chemicalId, items, jobId, setDraftField]);
 
   function handleQueue() {
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
       queueLog(jobId);
       setError(null);
@@ -128,22 +176,34 @@ export function JobChemicalLogForm({ jobId }: JobChemicalLogFormProps) {
         value={draft.notes}
       />
 
-      {error ? (
-        <Text style={mobileCaptureControlStyles.errorText}>{error}</Text>
+      {networkStatus === "offline" ? (
+        <Text style={mobileCaptureControlStyles.warningBody}>
+          {copy.chemical.validation.offlineReconcileNote}
+        </Text>
+      ) : null}
+
+      {displayMessage ? (
+        <Text
+          style={
+            error || validationError
+              ? mobileCaptureControlStyles.errorText
+              : mobileCaptureControlStyles.warningBody
+          }
+        >
+          {displayMessage}
+        </Text>
       ) : null}
       {draft.queuedAt ? (
         <Text style={mobileCaptureControlStyles.successText}>
-          {copy.common.queuedForSync}
+          {copy.common.savedOffline}
         </Text>
       ) : null}
 
       <CaptureButton
-        disabled={items.length === 0}
+        disabled={!canQueue}
         onPress={handleQueue}
         style={
-          items.length === 0
-            ? mobileCaptureControlStyles.disabledButton
-            : undefined
+          !canQueue ? mobileCaptureControlStyles.disabledButton : undefined
         }
         variant="primary"
       >

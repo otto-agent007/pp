@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
-import { StatusPill, type StatusPillTone } from "@pest-patrol/ui-native";
+import { StatusPill } from "@pest-patrol/ui-native";
 
 import {
   mobileRouteShellPalette,
   mobileRouteShellStyles,
 } from "../styles/routeShellStyles";
+import { useLanguage } from "../store/useLanguage";
 
 export interface AssignedJobCardProps {
   address?: string | null;
@@ -15,7 +16,7 @@ export interface AssignedJobCardProps {
   notes?: string | null;
   scheduledStart: string;
   statusLabel: string;
-  statusTone?: StatusPillTone;
+  statusTone?: "danger" | "info" | "neutral" | "success" | "warning";
   workPlan?: MobileJobWorkPlanItem[];
 }
 
@@ -24,6 +25,25 @@ function formatAssignedJobTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+type LocalizedFieldFlowState = "done" | "failed" | "needed" | "queued";
+
+function normalizeFieldFlowState(
+  state: MobileJobWorkPlanItem["state"],
+): LocalizedFieldFlowState {
+  switch (state) {
+    case "done":
+      return "done";
+    case "failed":
+      return "failed";
+    case "missing":
+      return "needed";
+    case "pending":
+      return "queued";
+    default:
+      return "needed";
+  }
 }
 
 export function AssignedJobCard({
@@ -36,6 +56,27 @@ export function AssignedJobCard({
   statusTone = "info",
   workPlan = [],
 }: AssignedJobCardProps) {
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
+  const localizedWorkPlan = useMemo(
+    () =>
+      workPlan.map((item) => ({
+        ...item,
+        normalizedState: normalizeFieldFlowState(item.state),
+        label: copy.fieldFlow.steps[item.id],
+        stateLabel: copy.fieldFlow.stateLabels[
+          normalizeFieldFlowState(item.state)
+        ],
+        summary:
+          copy.fieldFlow.stateSummaries[normalizeFieldFlowState(item.state)],
+      })),
+    [
+      copy.fieldFlow.stateLabels,
+      copy.fieldFlow.stateSummaries,
+      copy.fieldFlow.steps,
+      workPlan,
+    ],
+  );
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -59,8 +100,8 @@ export function AssignedJobCard({
 
       {workPlan.length > 0 ? (
         <View style={styles.workPlan}>
-          <Text style={styles.workPlanTitle}>Field work plan</Text>
-          {workPlan.map((item) => (
+          <Text style={styles.workPlanTitle}>{copy.fieldFlow.title}</Text>
+          {localizedWorkPlan.map((item) => (
             <View key={item.id} style={styles.workPlanItem}>
               <View
                 style={[
@@ -75,6 +116,20 @@ export function AssignedJobCard({
               <View style={styles.workPlanCopy}>
                 <Text style={styles.workPlanLabel}>{item.label}</Text>
                 <Text style={styles.workPlanSummary}>{item.summary}</Text>
+              </View>
+              <View
+                style={[
+                  styles.workPlanState,
+                  item.state === "done"
+                    ? styles.workPlanDone
+                    : item.state === "pending"
+                      ? styles.workPlanPending
+                      : item.state === "failed"
+                        ? styles.workPlanFailed
+                        : styles.workPlanMissing,
+                ]}
+              >
+                <Text style={styles.workPlanStateText}>{item.stateLabel}</Text>
               </View>
             </View>
           ))}
@@ -161,6 +216,9 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  workPlanFailed: {
+    backgroundColor: mobileRouteShellPalette.signalDanger,
+  },
   workPlanDone: {
     backgroundColor: mobileRouteShellPalette.signalSynced,
   },
@@ -173,6 +231,7 @@ const styles = StyleSheet.create({
   workPlanItem: {
     flexDirection: "row",
     gap: 8,
+    alignItems: "flex-start",
   },
   workPlanLabel: {
     color: mobileRouteShellPalette.primaryText,
@@ -184,6 +243,16 @@ const styles = StyleSheet.create({
   },
   workPlanPending: {
     backgroundColor: mobileRouteShellPalette.signalQueued,
+  },
+  workPlanState: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  workPlanStateText: {
+    color: mobileRouteShellPalette.inverseText,
+    fontSize: 11,
+    fontWeight: "800",
   },
   workPlanSummary: {
     color: mobileRouteShellPalette.secondaryText,

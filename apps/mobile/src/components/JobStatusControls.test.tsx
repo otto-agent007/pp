@@ -257,7 +257,9 @@ describe("JobStatusControls", () => {
     const element = <JobStatusControls job={job} />;
 
     expect(collectText(element)).toContain("Review before completing");
-    expect(collectText(element).join(" ")).toContain("Missing capture arrival/departure");
+    expect(collectText(element).join(" ")).toContain(
+      "Some field captures still need attention before completion.",
+    );
     expect(collectText(element)).toContain("Complete anyway");
 
     const completeAnyway = collectPressables(element).at(-1);

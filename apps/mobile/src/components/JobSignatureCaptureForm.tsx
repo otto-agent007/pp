@@ -135,7 +135,7 @@ export function JobSignatureCaptureForm({
       ) : null}
       {draft.queuedAt ? (
         <Text style={mobileCaptureControlStyles.successText}>
-          {copy.signature.queuedForSync}
+          {copy.common.savedOffline}
         </Text>
       ) : null}
     </CaptureSection>

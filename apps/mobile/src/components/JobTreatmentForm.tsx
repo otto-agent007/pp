@@ -169,7 +169,7 @@ export function JobTreatmentForm({ jobId }: JobTreatmentFormProps) {
       ) : null}
       {draft.queued_at ? (
         <Text style={mobileCaptureControlStyles.successText}>
-          {copy.common.queuedForSync}
+          {copy.common.savedOffline}
         </Text>
       ) : null}
 

@@ -16,6 +16,15 @@ vi.mock("react", async () => {
   };
 });
 
+vi.mock("../store/useLanguage", async () => {
+  const { translations } = await import("@pest-patrol/i18n");
+
+  return {
+    useLanguage: (selector: (state: unknown) => unknown) =>
+      selector({ t: translations.en }),
+  };
+});
+
 const offlineQueueState = vi.hoisted(() => ({
   clearSynced: vi.fn(),
   items: [] as unknown[],
@@ -227,7 +236,7 @@ describe("SyncStatusIndicator", () => {
 
     const text = collectText(<SyncStatusIndicator />).join("");
 
-    expect(text).toContain("1 pending");
+    expect(text).toContain("1 queued");
     expect(text).not.toContain("0 failed");
     expect(text).not.toContain("0 synced");
 
@@ -272,7 +281,7 @@ describe("SyncStatusIndicator", () => {
       flattenStyles(item.props.style),
     );
 
-    expect(text).toContain("Offline");
+    expect(text).toContain("Saved offline");
     expect(syncBadgeCalls).toContainEqual(
       expect.objectContaining({
         count: 1,

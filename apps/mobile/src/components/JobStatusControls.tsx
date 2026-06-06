@@ -32,7 +32,9 @@ const mobileStatuses: JobStatus[] = [
 
 export function JobStatusControls({ job }: JobStatusControlsProps) {
   const queueStatusUpdate = useAssignedJobs((state) => state.queueStatusUpdate);
-  const copy = useLanguage((state) => state.t.jobs);
+  const copy = useLanguage((state) => state.t.jobs.fieldCopy);
+  const fieldStatus = useLanguage((state) => state.t.jobs.fieldStatus);
+  const statusLabels = useLanguage((state) => state.t.jobs.status);
   const queueItems = useOfflineQueue((state) => state.items);
   const completionGuard = getMobileCompletionReadinessGuard(
     buildMobileJobWorkPlan(job, queueItems),
@@ -80,8 +82,8 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
               }
             >
               {isGuardedCompletion
-                ? copy.fieldStatus.reviewCompletion
-                : copy.status[status]}
+                ? fieldStatus.reviewCompletion
+                : statusLabels[status]}
             </Text>
           </CaptureButton>
         );
@@ -96,10 +98,10 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
           tone="warning"
         >
           <Text style={mobileCaptureControlStyles.warningTitle}>
-            {copy.fieldStatus.reviewBeforeCompleting}
+            {fieldStatus.reviewBeforeCompleting}
           </Text>
           <Text style={mobileCaptureControlStyles.warningBody}>
-            {completionGuard.summary}
+            {copy.fieldFlow.reviewSummary}
           </Text>
           <CaptureButton
             onPress={() => queueStatusUpdate(job.id, "completed")}
@@ -107,7 +109,7 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
             style={mobileCaptureControlStyles.warningButton}
           >
             <Text style={mobileCaptureControlStyles.primaryButtonText}>
-              {copy.fieldStatus.completeAnyway}
+              {fieldStatus.completeAnyway}
             </Text>
           </CaptureButton>
         </CaptureCard>

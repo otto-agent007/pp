@@ -5,6 +5,38 @@ import { describe, expect, it, vi } from "vitest";
 import { mobileRouteShellPalette } from "../styles/routeShellStyles";
 import { AssignedJobCard } from "./AssignedJobCard";
 
+vi.mock("../store/useLanguage", async () => {
+  const { translations } = await import("@pest-patrol/i18n");
+
+  return {
+    useLanguage: (selector: (state: unknown) => unknown) =>
+      selector({ t: translations.en }),
+  };
+});
+
+vi.mock("react", async () => {
+  const actual = await vi.importActual<typeof import("react")>("react");
+
+  return {
+    ...actual,
+    useMemo: <T,>(factory: () => T) => factory(),
+  };
+});
+
+vi.mock("@pest-patrol/ui-native", async () => {
+  const ReactModule = await import("react");
+
+  return {
+    StatusPill: ({
+      children,
+      tone,
+    }: {
+      children?: ReactNode;
+      tone?: string;
+    }) => ReactModule.createElement("StatusPill", { tone }, children),
+  };
+});
+
 vi.mock("react-native", async () => {
   const ReactModule = await import("react");
 
@@ -101,7 +133,7 @@ describe("AssignedJobCard", () => {
     );
     expect(viewStyles).toContainEqual(
       expect.objectContaining({
-        backgroundColor: mobileRouteShellPalette.routeSoft,
+        backgroundColor: mobileRouteShellPalette.surfaceSubtle,
       }),
     );
     expect(textStyles).toContainEqual(

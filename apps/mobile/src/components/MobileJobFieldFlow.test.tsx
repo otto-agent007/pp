@@ -5,6 +5,15 @@ import { describe, expect, it, vi } from "vitest";
 import { mobileRouteShellTone } from "../styles/routeShellStyles";
 import { MobileJobFieldFlow } from "./MobileJobFieldFlow";
 
+vi.mock("../store/useLanguage", async () => {
+  const { translations } = await import("@pest-patrol/i18n");
+
+  return {
+    useLanguage: (selector: (state: unknown) => unknown) =>
+      selector({ t: translations.en }),
+  };
+});
+
 vi.mock("react-native", async () => {
   const ReactModule = await import("react");
 
@@ -145,8 +154,8 @@ describe("MobileJobFieldFlow", () => {
     const text = collectText(element);
     const renderedText = text.join("");
 
-    expect(text).toContain("Visit flow");
-    expect(renderedText).toContain("1 done - 1 queued - 1 retry - 1 needed");
+    expect(text).toContain("Field checklist");
+    expect(renderedText).toContain("1 done - 1 queued - 1 failed - 1 needed");
     expect(text).toContain("Start visit");
     expect(text).toContain("Done");
     expect(text).toContain("Status control");
@@ -159,7 +168,8 @@ describe("MobileJobFieldFlow", () => {
     expect(text).toContain("Chemical use");
     expect(text).toContain("Chemical log control");
     expect(text).toContain("Photos");
-    expect(text).toContain("Retry");
+    expect(text).toContain("Failed");
+    expect(text).toContain("Sync failed - retry available.");
     expect(text).toContain("Photo control");
     expect(text).toContain("Signature");
     expect(text).toContain("Signature control");
