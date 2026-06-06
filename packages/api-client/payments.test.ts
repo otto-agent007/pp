@@ -4,8 +4,10 @@ import type { Invoice } from "@pest-patrol/types";
 import {
   createInvoicePaymentLinkRecord,
   createInvoiceRecord,
+  findInvoiceRecord,
   listCustomerPortalInvoiceRecords,
   listInvoiceRecords,
+  upsertPaymentRecordRecord,
   updateInvoiceStatusRecord,
 } from "./payments";
 import { supabase } from "./supabase";
@@ -169,6 +171,79 @@ describe("payments api client", () => {
 
     expect(updated.status).toBe("paid");
     expect(updateQuery.calls[0]).toEqual(["update", [{ status: "paid" }]]);
+  });
+
+  it("finds an invoice by id through the canonical record helper", async () => {
+    const readQuery = new MockQuery({ data: invoice, error: null });
+    from.mockReturnValue(readQuery as never);
+
+    const found = await findInvoiceRecord("invoice-1");
+
+    expect(found).toEqual(invoice);
+    expect(from).toHaveBeenCalledWith("invoices");
+    expect(readQuery.calls).toContainEqual(["eq", ["id", "invoice-1"]]);
+  });
+
+  it("upserts payments by provider payment id without duplicating records", async () => {
+    const existingQuery = new MockQuery({
+      data: {
+        id: "payment-1",
+        invoice_id: "invoice-1",
+        provider: "stripe",
+        provider_payment_id: "pi_123",
+        status: "succeeded",
+        amount_cents: 12500,
+        currency: "usd",
+        paid_at: now,
+        created_at: now,
+        updated_at: now,
+        invoice,
+      },
+      error: null,
+    });
+    const updateQuery = new MockQuery({
+      data: {
+        id: "payment-1",
+        invoice_id: "invoice-1",
+        provider: "stripe",
+        provider_payment_id: "pi_123",
+        status: "succeeded",
+        amount_cents: 15000,
+        currency: "usd",
+        paid_at: now,
+        created_at: now,
+        updated_at: now,
+        invoice,
+      },
+      error: null,
+    });
+    from
+      .mockReturnValueOnce(existingQuery as never)
+      .mockReturnValueOnce(updateQuery as never);
+
+    const updated = await upsertPaymentRecordRecord({
+      amount_cents: 15000,
+      currency: "usd",
+      invoice_id: "invoice-1",
+      paid_at: now,
+      provider: "stripe",
+      provider_payment_id: "pi_123",
+      status: "succeeded",
+    });
+
+    expect(updated.amount_cents).toBe(15000);
+    expect(existingQuery.calls[0]).toEqual(["select", ["*, invoice:invoices(*)"]]);
+    expect(existingQuery.calls).toContainEqual(["eq", ["provider", "stripe"]]);
+    expect(existingQuery.calls).toContainEqual(["eq", ["provider_payment_id", "pi_123"]]);
+    expect(updateQuery.calls[0]).toEqual([
+      "update",
+      [
+        expect.objectContaining({
+          amount_cents: 15000,
+          provider_payment_id: "pi_123",
+        }),
+      ],
+    ]);
   });
 
   it("creates payment links through the server route and saves metadata", async () => {

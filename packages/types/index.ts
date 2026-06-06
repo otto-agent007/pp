@@ -519,6 +519,7 @@ export interface InvoicePaymentLinkResult {
   provider: PaymentProvider;
   provider_payment_link_id: string;
   payment_url: string;
+  reused?: boolean;
 }
 
 export interface PaymentRecord {

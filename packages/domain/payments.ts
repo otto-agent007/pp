@@ -12,6 +12,7 @@ import type {
   InvoiceLineItemInput,
   InvoiceStatus,
   Job,
+  PaymentRecord,
 } from "@pest-patrol/types";
 import {
   buildInvoiceLineItemsFromOffering,
@@ -268,6 +269,74 @@ export function getInvoiceBalanceCents(invoice: Invoice) {
       .reduce((total, payment) => total + payment.amount_cents, 0) ?? 0;
 
   return Math.max(invoice.total_cents - paidCents, 0);
+}
+
+export type InvoicePaymentCoverageDecisionReason =
+  | "already_paid"
+  | "currency_mismatch"
+  | "failed"
+  | "paid"
+  | "pending"
+  | "partial"
+  | "void";
+
+export interface InvoicePaymentCoverageDecision {
+  reason: InvoicePaymentCoverageDecisionReason;
+  shouldMarkPaid: boolean;
+}
+
+export function getInvoicePaymentCoverageDecision(
+  invoice: Invoice,
+  payment: PaymentRecord,
+): InvoicePaymentCoverageDecision {
+  if (invoice.status === "void") {
+    return {
+      reason: "void",
+      shouldMarkPaid: false,
+    };
+  }
+
+  if (invoice.status === "paid") {
+    return {
+      reason: "already_paid",
+      shouldMarkPaid: false,
+    };
+  }
+
+  if (payment.status === "failed") {
+    return {
+      reason: "failed",
+      shouldMarkPaid: false,
+    };
+  }
+
+  if (payment.status === "pending") {
+    return {
+      reason: "pending",
+      shouldMarkPaid: false,
+    };
+  }
+
+  if (payment.currency.toLowerCase() !== invoice.currency.toLowerCase()) {
+    return {
+      reason: "currency_mismatch",
+      shouldMarkPaid: false,
+    };
+  }
+
+  const balanceCents = getInvoiceBalanceCents(invoice);
+
+  if (balanceCents > 0) {
+    return {
+      reason: "partial",
+      shouldMarkPaid: false,
+    };
+  }
+
+  return {
+    reason: "paid",
+    shouldMarkPaid: true,
+  };
 }
 
 export function getInvoicePaidCents(invoice: Invoice) {

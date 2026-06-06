@@ -188,6 +188,39 @@ describe("payment link route auth", () => {
     expect(serialized).not.toContain("sk_live");
   });
 
+  it("reuses an existing Stripe payment link without calling Stripe again", async () => {
+    const fetch = vi.fn();
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_123");
+    vi.stubGlobal("fetch", fetch);
+    serviceClient.from.mockReturnValue(
+      new MockQuery({
+        data: {
+          ...invoice,
+          payment_url: "https://pay.stripe.com/reused",
+          stripe_payment_link_id: "plink_reused",
+        },
+        error: null,
+      }) as never,
+    );
+
+    const response = await POST(request({ invoice_id: "invoice-1" }));
+    const body = (await response.json()) as {
+      payment_url?: string;
+      provider?: string;
+      provider_payment_link_id?: string;
+      reused?: boolean;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      provider: "stripe",
+      provider_payment_link_id: "plink_reused",
+      payment_url: "https://pay.stripe.com/reused",
+      reused: true,
+    });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("builds a payment link from canonical invoice data", async () => {
     const fetch = vi.fn().mockResolvedValue({
       json: vi.fn().mockResolvedValue({
@@ -245,14 +278,57 @@ describe("payment link route auth", () => {
     expect(
       requestBody.get("payment_intent_data[metadata][customer_id]"),
     ).toBe("customer-1");
+    expect(requestBody.get("metadata[customer_name]")).toBeNull();
+    expect(requestBody.get("metadata[customer_email]")).toBeNull();
+    expect(requestBody.get("metadata[customer_phone]")).toBeNull();
+    expect(requestBody.get("metadata[address]")).toBeNull();
+    expect(
+      requestBody.get("payment_intent_data[metadata][customer_name]"),
+    ).toBeNull();
+    expect(
+      requestBody.get("payment_intent_data[metadata][customer_email]"),
+    ).toBeNull();
+    expect(
+      requestBody.get("payment_intent_data[metadata][customer_phone]"),
+    ).toBeNull();
+    expect(
+      requestBody.get("payment_intent_data[metadata][address]"),
+    ).toBeNull();
     expect(fetch).toHaveBeenCalledWith(
       "https://api.stripe.com/v1/payment_links",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
           Authorization: "Bearer sk_test_123",
+          "Idempotency-Key": "stripe-payment-link:invoice-1",
         }),
       }),
     );
+  });
+
+  it("returns a sanitized error when Stripe rejects payment link creation", async () => {
+    const fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        error: {
+          message: "Stripe secret sk_test_123 should never surface",
+        },
+      }),
+      ok: false,
+      status: 402,
+    });
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_123");
+    vi.stubGlobal("fetch", fetch);
+    serviceClient.from.mockReturnValue(
+      new MockQuery({ data: invoice, error: null }) as never,
+    );
+
+    const response = await POST(request({ invoice_id: "invoice-1" }));
+    const body = (await response.json()) as { error?: string };
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(402);
+    expect(body.error).toBe("Unable to create payment link");
+    expect(serialized).not.toContain("sk_test_123");
+    expect(serialized).not.toContain("Stripe secret");
   });
 });

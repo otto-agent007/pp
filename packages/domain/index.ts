@@ -548,6 +548,7 @@ export {
   getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
+  getInvoicePaymentCoverageDecision,
   getInvoicePaidCents,
   getInvoiceReconciliation,
   getInvoiceReconciliationGuidance,
@@ -563,6 +564,8 @@ export {
 export type {
   BillingCloseoutHandoffSummary,
   CustomerPortalInvoiceStatusFilter,
+  InvoicePaymentCoverageDecision,
+  InvoicePaymentCoverageDecisionReason,
   InvoiceReconciliation,
   InvoiceReconciliationGuidance,
   InvoiceReconciliationStatus,

@@ -12,6 +12,7 @@ import {
   getInvoiceHandoffHref,
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
+  getInvoicePaymentCoverageDecision,
   getInvoiceReconciliation,
   getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
@@ -196,6 +197,115 @@ describe("payments domain", () => {
         ],
       }),
     ).toBe(7500);
+  });
+
+  it("decides when a Stripe payment can mark an invoice paid", () => {
+    const succeededPayment = {
+      id: "payment-1",
+      invoice_id: "invoice-1",
+      provider: "stripe",
+      provider_payment_id: "pi_123",
+      status: "succeeded",
+      amount_cents: 12500,
+      currency: "usd",
+      paid_at: now,
+      created_at: now,
+      updated_at: now,
+    } as const;
+    const failedPayment = {
+      ...succeededPayment,
+      id: "payment-failed",
+      provider_payment_id: "pi_failed",
+      status: "failed",
+      paid_at: null,
+    } as const;
+
+    expect(
+      getInvoicePaymentCoverageDecision(
+        {
+          ...invoice,
+          payments: [
+            {
+              ...succeededPayment,
+              amount_cents: 5000,
+            },
+          ],
+        },
+        succeededPayment,
+      ),
+    ).toEqual({
+      reason: "partial",
+      shouldMarkPaid: false,
+    });
+    expect(
+      getInvoicePaymentCoverageDecision(
+        {
+          ...invoice,
+          payments: [succeededPayment],
+        },
+        succeededPayment,
+      ),
+    ).toEqual({
+      reason: "paid",
+      shouldMarkPaid: true,
+    });
+    expect(
+      getInvoicePaymentCoverageDecision(
+        {
+          ...invoice,
+          payments: [
+            {
+              ...succeededPayment,
+              amount_cents: 15000,
+            },
+          ],
+        },
+        succeededPayment,
+      ),
+    ).toEqual({
+      reason: "paid",
+      shouldMarkPaid: true,
+    });
+    expect(
+      getInvoicePaymentCoverageDecision(
+        {
+          ...invoice,
+          payments: [succeededPayment],
+        },
+        {
+          ...succeededPayment,
+          currency: "eur",
+        },
+      ),
+    ).toEqual({
+      reason: "currency_mismatch",
+      shouldMarkPaid: false,
+    });
+    expect(
+      getInvoicePaymentCoverageDecision(
+        {
+          ...invoice,
+          payments: [failedPayment],
+        },
+        failedPayment,
+      ),
+    ).toEqual({
+      reason: "failed",
+      shouldMarkPaid: false,
+    });
+    expect(
+      getInvoicePaymentCoverageDecision(
+        {
+          ...invoice,
+          status: "void",
+          payments: [succeededPayment],
+        },
+        succeededPayment,
+      ),
+    ).toEqual({
+      reason: "void",
+      shouldMarkPaid: false,
+    });
   });
 
   it("classifies invoice reconciliation state from payment records", () => {
