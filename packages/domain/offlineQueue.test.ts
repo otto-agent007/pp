@@ -87,6 +87,84 @@ describe("offline queue domain", () => {
     expect(clearSyncedQueueItems([queued, synced])).toEqual([queued]);
   });
 
+  it("scrubs synced photo and signature proof payloads while retaining safe metadata", () => {
+    const photo = markQueueItemSynced(
+      createOfflineQueueItem(
+        {
+          action: "photo_upload",
+          payload: {
+            job_id: "job-1",
+            local_uri: "file:///photo.jpg",
+            uri: "file:///photo.jpg",
+            base64_data: "raw-photo",
+            file_name: "photo.jpg",
+            content_type: "image/jpeg",
+            storage_bucket: "job-media",
+            storage_path: "job-1/photo.jpg",
+            description: "Kitchen",
+            captured_at: now,
+          },
+        },
+        { id: "queue-photo-1", now },
+      ),
+      { now },
+    );
+    const signature = markQueueItemSynced(
+      createOfflineQueueItem(
+        {
+          action: "signature_capture",
+          payload: {
+            job_id: "job-1",
+            local_uri: "data:image/png;base64,signature",
+            data_url: "data:image/png;base64,signature",
+            signature_data: "raw-signature",
+            file_name: "signature.png",
+            content_type: "image/png",
+            storage_bucket: "job-media",
+            storage_path: "job-1/signature.png",
+            signer_name: "Jamie Customer",
+            captured_at: now,
+          },
+        },
+        { id: "queue-signature-1", now },
+      ),
+      { now },
+    );
+
+    expect(photo.payload).toEqual({
+      job_id: "job-1",
+      file_name: "photo.jpg",
+      content_type: "image/jpeg",
+      storage_bucket: "job-media",
+      storage_path: "job-1/photo.jpg",
+      description: "Kitchen",
+      captured_at: now,
+    });
+    expect(signature.payload).toEqual({
+      job_id: "job-1",
+      file_name: "signature.png",
+      content_type: "image/png",
+      storage_bucket: "job-media",
+      storage_path: "job-1/signature.png",
+      signer_name: "Jamie Customer",
+      captured_at: now,
+    });
+    expect(getOfflineQueueItemLabel(photo)).toBe("Photo capture for job job-1");
+    expect(getOfflineQueueItemLabel(signature)).toBe("Signature for job job-1");
+  });
+
+  it("leaves non-proof synced payloads intact", () => {
+    const queued = createOfflineQueueItem(
+      {
+        action: "chemical_log_create",
+        payload: { job_id: "job-1", local_uri: "not-proof", notes: "Baseboards" },
+      },
+      { id: "queue-chemical-1", now },
+    );
+
+    expect(markQueueItemSynced(queued, { now }).payload).toEqual(queued.payload);
+  });
+
   it("summarizes pending, failed, synced, and next retry counts", () => {
     const queued = createOfflineQueueItem(
       { action: "job_status_update", payload: { job_id: "job-1" } },
