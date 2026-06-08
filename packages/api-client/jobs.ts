@@ -117,11 +117,18 @@ export async function updateAssignedTechnicianJobStatusRecord(
   client: AuthSupabaseClient,
   id: string,
   status: JobStatus,
+  previousStatus?: JobStatus,
 ) {
+  if (!previousStatus) {
+    throw new Error("Previous job status is required");
+  }
+
   const { data, error } = await client
-    .from("jobs")
-    .update({ status })
-    .eq("id", id)
+    .rpc("update_assigned_job_status", {
+      p_expected_previous_status: previousStatus,
+      p_job_id: id,
+      p_next_status: status,
+    })
     .select(jobSelect)
     .single<JobRow>();
 

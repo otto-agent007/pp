@@ -15,6 +15,7 @@ import { supabase } from "./supabase";
 vi.mock("./supabase", () => ({
   supabase: {
     from: vi.fn(),
+    rpc: vi.fn(),
   },
 }));
 
@@ -183,19 +184,41 @@ describe("job api client", () => {
       data: { ...job, assigned_tech_id: "technician-1", status: "in_progress" },
       error: null,
     });
-    const clientFrom = vi.fn().mockReturnValue(jobQuery);
-    const client = { from: clientFrom } as never;
+    const clientRpc = vi.fn().mockReturnValue(jobQuery);
+    const client = { rpc: clientRpc } as never;
 
     const updated = await updateAssignedTechnicianJobStatusRecord(
       client,
       "job-1",
       "in_progress",
+      "en_route",
     );
 
     expect(updated.status).toBe("in_progress");
-    expect(clientFrom).toHaveBeenCalledWith("jobs");
-    expect(jobQuery.calls[0]).toEqual(["update", [{ status: "in_progress" }]]);
-    expect(jobQuery.calls).toContainEqual(["eq", ["id", "job-1"]]);
+    expect(clientRpc).toHaveBeenCalledWith("update_assigned_job_status", {
+      p_expected_previous_status: "en_route",
+      p_job_id: "job-1",
+      p_next_status: "in_progress",
+    });
+    expect(jobQuery.calls).toContainEqual([
+      "select",
+      ["*, customer:customers(*), location:locations(*), assigned_technician:profiles(*)"],
+    ]);
+  });
+
+  it("requires previous status before updating an assigned technician job", async () => {
+    const clientRpc = vi.fn();
+    const client = { rpc: clientRpc } as never;
+
+    await expect(
+      updateAssignedTechnicianJobStatusRecord(
+        client,
+        "job-1",
+        "in_progress",
+      ),
+    ).rejects.toThrow("Previous job status is required");
+
+    expect(clientRpc).not.toHaveBeenCalled();
   });
 
   it("cancels a job", async () => {

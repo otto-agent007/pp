@@ -52,17 +52,11 @@ describe("geofencing api client", () => {
     vi.restoreAllMocks();
   });
 
-  it("upserts geofence events with the authenticated user", async () => {
+  it("records geofence events through the assigned-technician RPC", async () => {
     const query = new MockQuery({ data: event, error: null });
-    const clientFrom = vi.fn().mockReturnValue(query);
+    const clientRpc = vi.fn().mockReturnValue(query);
     const client = {
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "technician-1" } },
-          error: null,
-        }),
-      },
-      from: clientFrom,
+      rpc: clientRpc,
     } as never;
 
     await createJobGeofenceEventRecord(
@@ -80,18 +74,18 @@ describe("geofencing api client", () => {
       client,
     );
 
-    expect(clientFrom).toHaveBeenCalledWith("job_location_events");
-    expect(query.calls[0]).toEqual([
-      "upsert",
-      [
-        expect.objectContaining({
-          job_id: "job-1",
-          event_type: "arrival",
-          recorded_by: "technician-1",
-          client_event_id: "00000000-0000-4000-8000-000000000201",
-        }),
-        { onConflict: "client_event_id" },
-      ],
+    expect(clientRpc).toHaveBeenCalledWith("record_assigned_job_geofence_event", {
+      p_accuracy_m: 12,
+      p_captured_at: now,
+      p_client_event_id: "00000000-0000-4000-8000-000000000201",
+      p_event_type: "arrival",
+      p_job_id: "job-1",
+      p_latitude: 33.8121,
+      p_longitude: -117.919,
+    });
+    expect(query.calls).toContainEqual([
+      "select",
+      ["*, job:jobs(*, customer:customers(*), location:locations(*))"],
     ]);
   });
 
