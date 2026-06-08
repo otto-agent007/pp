@@ -37,18 +37,15 @@ describe("portal api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const closeouts = await listCustomerPortalCloseoutRecords(
-      "customer-1",
-      "portal-token",
-    );
+    const closeouts = await listCustomerPortalCloseoutRecords("customer-1");
 
     expect(closeouts).toEqual([]);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/portal/customer-1/closeouts?access_token=portal-token",
+      "/api/portal/customer-1/closeouts",
     );
   });
 
-  it("surfaces invalid portal access", async () => {
+  it("surfaces invalid portal session access", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -58,8 +55,22 @@ describe("portal api client", () => {
     );
 
     await expect(
-      listCustomerPortalCloseoutRecords("customer-1", "bad-token"),
+      listCustomerPortalCloseoutRecords("customer-1"),
     ).rejects.toThrow("Portal access is invalid or expired");
+  });
+
+  it("surfaces missing portal sessions", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+      }),
+    );
+
+    await expect(
+      listCustomerPortalBillingRecords("customer-1"),
+    ).rejects.toThrow("Portal session is required");
   });
 
   it("loads customer portal billing through the server access boundary", async () => {
@@ -69,18 +80,15 @@ describe("portal api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const invoices = await listCustomerPortalBillingRecords(
-      "customer-1",
-      "portal-token",
-    );
+    const invoices = await listCustomerPortalBillingRecords("customer-1");
 
     expect(invoices).toEqual([]);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/portal/customer-1/billing?access_token=portal-token",
+      "/api/portal/customer-1/billing",
     );
   });
 
-  it("requests portal upgrade intents through the tokened server boundary", async () => {
+  it("requests portal upgrade intents through the cookie-backed server boundary", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({
@@ -93,7 +101,6 @@ describe("portal api client", () => {
 
     const result = await requestCustomerPortalUpgradeIntentRecord(
       "customer-1",
-      "portal-token",
       { plan_id: "general_pest_recurring" },
     );
 
@@ -106,7 +113,6 @@ describe("portal api client", () => {
       "/api/portal/customer-1/upgrade-intents",
       expect.objectContaining({
         body: JSON.stringify({
-          access_token: "portal-token",
           plan_id: "general_pest_recurring",
         }),
         headers: expect.objectContaining({
@@ -130,7 +136,7 @@ describe("portal api client", () => {
         expires_at: null,
         token_id: "token-1",
         portal_url:
-          "http://localhost:3000/portal/customer-1?access_token=portal-token",
+          "http://localhost:3000/portal/customer-1?grant=portal-token",
       }),
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -169,8 +175,7 @@ describe("portal api client", () => {
     const result = await sendCustomerPortalAccessTokenRecord({
       customer_id: "customer-1",
       token_id: "token-1",
-      portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=portal-token",
+      portal_url: "http://localhost:3000/portal/customer-1?grant=portal-token",
     });
 
     expect(result.status).toBe("requested");
@@ -181,7 +186,7 @@ describe("portal api client", () => {
           customer_id: "customer-1",
           token_id: "token-1",
           portal_url:
-            "http://localhost:3000/portal/customer-1?access_token=portal-token",
+            "http://localhost:3000/portal/customer-1?grant=portal-token",
         }),
         headers: expect.objectContaining({
           Authorization: "Bearer admin-token",

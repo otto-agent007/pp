@@ -6,7 +6,6 @@ import {
   listCustomerPortalBilling,
   listCustomerPortalCloseouts,
   requestCustomerPortalUpgradeIntent,
-  validateCustomerPortalAccessToken,
   validateCustomerPortalCustomerId,
 } from "@pest-patrol/domain";
 import type { CustomerPortalUpgradeIntentInput } from "@pest-patrol/types";
@@ -16,24 +15,14 @@ import {
   requestLocalDemoPortalUpgradeIntent,
 } from "./localDemoData";
 
-export const customerPortalCloseoutsQueryKey = (
-  customerId: string,
-  accessToken: string,
-) => ["customer-portal-closeouts", customerId, accessToken] as const;
+export const customerPortalCloseoutsQueryKey = (customerId: string) =>
+  ["customer-portal-closeouts", customerId] as const;
 
-export const customerPortalBillingQueryKey = (
-  customerId: string,
-  accessToken: string,
-) => ["customer-portal-billing", customerId, accessToken] as const;
+export const customerPortalBillingQueryKey = (customerId: string) =>
+  ["customer-portal-billing", customerId] as const;
 
-export function useCustomerPortalCloseouts(
-  customerId: string,
-  accessToken: string,
-) {
+export function useCustomerPortalCloseouts(customerId: string) {
   const validCustomerId = validateCustomerPortalCustomerId(customerId);
-  const validAccessToken = accessToken.trim()
-    ? validateCustomerPortalAccessToken(accessToken)
-    : "";
   const fixtures = getLocalDemoFixtures();
   const completedPortalJobs =
     fixtures?.jobs
@@ -66,7 +55,7 @@ export function useCustomerPortalCloseouts(
     completedPortalJobs.map((job) => job.id),
   );
   const fixtureCloseouts =
-    fixtures && validAccessToken
+    fixtures
       ? buildCustomerPortalCloseouts({
           formSubmissions: fixtures.formSubmissions.filter((submission) =>
             completedPortalJobIds.has(submission.job_id),
@@ -78,31 +67,23 @@ export function useCustomerPortalCloseouts(
         })
       : null;
   const closeoutsQuery = useQuery({
-    enabled: Boolean(validAccessToken) && !fixtures,
-    queryKey: customerPortalCloseoutsQueryKey(validCustomerId, validAccessToken),
-    queryFn: () => listCustomerPortalCloseouts(validCustomerId, validAccessToken),
+    enabled: !fixtures,
+    queryKey: customerPortalCloseoutsQueryKey(validCustomerId),
+    queryFn: () => listCustomerPortalCloseouts(validCustomerId),
   });
 
   return {
     closeouts: fixtureCloseouts ?? closeoutsQuery.data ?? [],
-    error:
-      closeoutsQuery.error ??
-      (validAccessToken ? null : new Error("Portal access token is required")),
+    error: closeoutsQuery.error,
     isLoading: fixtures ? false : closeoutsQuery.isLoading,
   };
 }
 
-export function useCustomerPortalBilling(
-  customerId: string,
-  accessToken: string,
-) {
+export function useCustomerPortalBilling(customerId: string) {
   const validCustomerId = validateCustomerPortalCustomerId(customerId);
-  const validAccessToken = accessToken.trim()
-    ? validateCustomerPortalAccessToken(accessToken)
-    : "";
   const fixtures = getLocalDemoFixtures();
   const fixtureInvoices =
-    fixtures && validAccessToken
+    fixtures
       ? buildCustomerPortalInvoices(
           fixtures.invoices.filter(
             (invoice) => invoice.customer_id === validCustomerId,
@@ -110,28 +91,20 @@ export function useCustomerPortalBilling(
         )
       : null;
   const billingQuery = useQuery({
-    enabled: Boolean(validAccessToken) && !fixtures,
-    queryKey: customerPortalBillingQueryKey(validCustomerId, validAccessToken),
-    queryFn: () => listCustomerPortalBilling(validCustomerId, validAccessToken),
+    enabled: !fixtures,
+    queryKey: customerPortalBillingQueryKey(validCustomerId),
+    queryFn: () => listCustomerPortalBilling(validCustomerId),
   });
 
   return {
-    error:
-      billingQuery.error ??
-      (validAccessToken ? null : new Error("Portal access token is required")),
+    error: billingQuery.error,
     invoices: fixtureInvoices ?? billingQuery.data ?? [],
     isLoading: fixtures ? false : billingQuery.isLoading,
   };
 }
 
-export function useCustomerPortalUpgradeIntent(
-  customerId: string,
-  accessToken: string,
-) {
+export function useCustomerPortalUpgradeIntent(customerId: string) {
   const validCustomerId = validateCustomerPortalCustomerId(customerId);
-  const validAccessToken = accessToken.trim()
-    ? validateCustomerPortalAccessToken(accessToken)
-    : "";
 
   return useMutation({
     mutationFn: (input: CustomerPortalUpgradeIntentInput) => {
@@ -143,11 +116,7 @@ export function useCustomerPortalUpgradeIntent(
         );
       }
 
-      return requestCustomerPortalUpgradeIntent(
-        validCustomerId,
-        validAccessToken,
-        input,
-      );
+      return requestCustomerPortalUpgradeIntent(validCustomerId, input);
     },
   });
 }

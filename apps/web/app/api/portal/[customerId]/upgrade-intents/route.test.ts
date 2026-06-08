@@ -45,12 +45,18 @@ class MockQuery<T> {
   }
 }
 
-function request(body: Record<string, unknown>) {
+function request(body: Record<string, unknown>, sessionToken?: string) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  if (sessionToken) {
+    headers.Cookie = `pp_customer_portal_session=${sessionToken}`;
+  }
+
   return new Request(
     "http://localhost/api/portal/customer-1/upgrade-intents",
     {
       body: JSON.stringify(body),
-      headers: { "Content-Type": "application/json" },
+      headers,
       method: "POST",
     },
   );
@@ -70,7 +76,28 @@ describe("customer portal upgrade intent route", () => {
     vi.useRealTimers();
   });
 
-  it("requires a portal access token", async () => {
+  it("rejects query-token access without a portal session cookie", async () => {
+    const response = await POST(
+      new Request(
+        "http://localhost/api/portal/customer-1/upgrade-intents?access_token=legacy-token",
+        {
+          body: JSON.stringify({ plan_id: "general_pest_recurring" }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        },
+      ),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(401);
+    expect(body.error).toBe("Portal session is required");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("requires a portal session cookie", async () => {
     const response = await POST(
       request({ plan_id: "general_pest_recurring" }),
       {
@@ -80,19 +107,16 @@ describe("customer portal upgrade intent route", () => {
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(401);
-    expect(body.error).toBe("Portal access token is required");
+    expect(body.error).toBe("Portal session is required");
   });
 
-  it("rejects invalid portal tokens", async () => {
+  it("rejects invalid portal sessions", async () => {
     serviceClient.from.mockReturnValue(
       new MockQuery({ data: null, error: null }),
     );
 
     const response = await POST(
-      request({
-        access_token: "bad-token",
-        plan_id: "general_pest_recurring",
-      }),
+      request({ plan_id: "general_pest_recurring" }, "bad-session"),
       {
         params: Promise.resolve({ customerId: "customer-1" }),
       },
@@ -101,24 +125,22 @@ describe("customer portal upgrade intent route", () => {
     expect(response.status).toBe(403);
   });
 
-  it("rejects expired portal tokens", async () => {
+  it("rejects expired portal sessions", async () => {
     serviceClient.from.mockReturnValue(
       new MockQuery({
         data: {
           customer_id: "customer-1",
           expires_at: "2026-06-01T18:12:00.000Z",
-          id: "token-1",
-          status: "active",
+          id: "session-1",
+          revoked_at: null,
+          token_id: "token-1",
         },
         error: null,
       }),
     );
 
     const response = await POST(
-      request({
-        access_token: "expired-token",
-        plan_id: "general_pest_recurring",
-      }),
+      request({ plan_id: "general_pest_recurring" }, "expired-session"),
       {
         params: Promise.resolve({ customerId: "customer-1" }),
       },
@@ -127,29 +149,28 @@ describe("customer portal upgrade intent route", () => {
     expect(response.status).toBe(403);
   });
 
-  it("creates one sanitized pending notification for valid portal tokens", async () => {
+  it("creates one sanitized pending notification for valid portal sessions", async () => {
     serviceClient.from
       .mockReturnValueOnce(
         new MockQuery({
           data: {
             customer_id: "customer-1",
-            expires_at: null,
-            id: "token-1",
-            status: "active",
+            expires_at: "2099-06-01T18:12:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
           },
           error: null,
         }),
       )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }));
     vi.mocked(createGeneratedNotificationEventRecord).mockResolvedValue({
       id: "notification-1",
     } as never);
 
     const response = await POST(
-      request({
-        access_token: "valid-token",
-        plan_id: "general_pest_recurring",
-      }),
+      request({ plan_id: "general_pest_recurring" }, "valid-session"),
       {
         params: Promise.resolve({ customerId: "customer-1" }),
       },
@@ -185,21 +206,20 @@ describe("customer portal upgrade intent route", () => {
         new MockQuery({
           data: {
             customer_id: "customer-1",
-            expires_at: null,
-            id: "token-1",
-            status: "active",
+            expires_at: "2099-06-01T18:12:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
           },
           error: null,
         }),
       )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }));
     vi.mocked(createGeneratedNotificationEventRecord).mockResolvedValue(null);
 
     const response = await POST(
-      request({
-        access_token: "valid-token",
-        plan_id: "general_pest_recurring",
-      }),
+      request({ plan_id: "general_pest_recurring" }, "valid-session"),
       {
         params: Promise.resolve({ customerId: "customer-1" }),
       },

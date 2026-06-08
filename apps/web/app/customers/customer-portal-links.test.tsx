@@ -111,7 +111,7 @@ describe("CustomerPortalLinks", () => {
       expires_at: null,
       token_id: "token-1",
       portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+        "http://localhost:3000/portal/customer-1?grant=raw-token",
     });
     sendMutateAsync.mockResolvedValue({
       provider: "webhook",
@@ -411,7 +411,7 @@ describe("CustomerPortalLinks", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByDisplayValue(
-        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+        "http://localhost:3000/portal/customer-1?grant=raw-token",
       ),
     ).toBeInTheDocument();
     expect(
@@ -449,7 +449,7 @@ describe("CustomerPortalLinks", () => {
       customer_id: "customer-1",
       token_id: "token-1",
       portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+        "http://localhost:3000/portal/customer-1?grant=raw-token",
     });
     expect(screen.getByText("✓ Send requested.")).toBeInTheDocument();
     await waitFor(() =>
@@ -554,7 +554,7 @@ describe("CustomerPortalLinks", () => {
       expires_at: null,
       token_id: "token-fresh",
       portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
+        "http://localhost:3000/portal/customer-1?grant=fresh-raw-token",
     });
 
     render(
@@ -578,7 +578,7 @@ describe("CustomerPortalLinks", () => {
       customer_id: "customer-1",
       token_id: "token-fresh",
       portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
+        "http://localhost:3000/portal/customer-1?grant=fresh-raw-token",
     });
     expect(
       screen.getByText(
@@ -608,7 +608,7 @@ describe("CustomerPortalLinks", () => {
       expires_at: null,
       token_id: "token-fresh",
       portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=fresh-raw-token",
+        "http://localhost:3000/portal/customer-1?grant=fresh-raw-token",
     });
     sendMutateAsync.mockRejectedValue(new Error("Provider failed"));
 
@@ -631,7 +631,7 @@ describe("CustomerPortalLinks", () => {
         "Couldn't request send. Copy the newly generated link manually or try again.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByDisplayValue(/access_token=fresh-raw-token/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/grant=fresh-raw-token/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Copy fresh link" }),
     ).toBeInTheDocument();
@@ -691,7 +691,7 @@ describe("CustomerPortalLinks", () => {
     await user.click(screen.getByRole("button", { name: "Generate link" }));
 
     expect(screen.getByText("Link ready — copy it manually:")).toBeInTheDocument();
-    expect(screen.getByDisplayValue(/access_token=raw-token/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/grant=raw-token/)).toBeInTheDocument();
     expect(
       screen.getByText("Paste this into an email or text to share with the customer."),
     ).toBeInTheDocument();

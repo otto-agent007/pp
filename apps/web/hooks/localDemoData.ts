@@ -882,7 +882,7 @@ export function createLocalDemoPortalAccessToken(
   const accessToken = `local-demo-token-${tokenId}`;
   const portalUrl = `/portal/${encodeURIComponent(
     normalized.customer_id,
-  )}?access_token=${encodeURIComponent(accessToken)}`;
+  )}?grant=${encodeURIComponent(accessToken)}`;
   const tokenSummary: CustomerPortalAccessTokenSummary = {
     id: tokenId,
     customer_id: normalized.customer_id,

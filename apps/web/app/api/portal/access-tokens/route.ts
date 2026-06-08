@@ -1,4 +1,3 @@
-import { randomBytes, createHash } from "node:crypto";
 import {
   validateCustomerPortalAccessInput,
   validateCustomerPortalCustomerId,
@@ -10,16 +9,9 @@ import {
   getAdminAccess,
 } from "../../_lib/server-auth";
 import { recordCustomerPortalAccessTokenEvent } from "../_lib/access-token-events";
+import { hashPortalSecret, newPortalSecret } from "../_lib/portal-session";
 
 export const runtime = "nodejs";
-
-function newPortalToken() {
-  return randomBytes(32).toString("base64url");
-}
-
-function hashToken(accessToken: string) {
-  return createHash("sha256").update(accessToken).digest("hex");
-}
 
 function tokenSummary(token: {
   created_at: string;
@@ -91,7 +83,7 @@ export async function POST(request: Request) {
 
   try {
     const input = validateCustomerPortalAccessInput(await request.json());
-    const accessToken = newPortalToken();
+    const accessToken = newPortalSecret();
     const client = createServiceRoleSupabaseClient();
     const { data, error } = await client
       .from("customer_portal_access_tokens")
@@ -99,7 +91,7 @@ export async function POST(request: Request) {
         created_by: access.userId,
         customer_id: input.customer_id,
         expires_at: input.expires_at,
-        token_hash: hashToken(accessToken),
+        token_hash: hashPortalSecret(accessToken),
       })
       .select(
         "id, customer_id, status, expires_at, last_used_at, created_at, updated_at",
@@ -121,7 +113,7 @@ export async function POST(request: Request) {
     });
 
     const portalUrl = new URL(`/portal/${input.customer_id}`, request.url);
-    portalUrl.searchParams.set("access_token", accessToken);
+    portalUrl.searchParams.set("grant", accessToken);
 
     return NextResponse.json({
       customer_id: input.customer_id,

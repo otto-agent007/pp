@@ -51,10 +51,14 @@ class MockQuery<T> {
   }
 }
 
-function requestWithToken(token?: string) {
-  const suffix = token ? `?access_token=${token}` : "";
+function requestWithSession(sessionToken?: string) {
+  const headers = sessionToken
+    ? { Cookie: `pp_customer_portal_session=${sessionToken}` }
+    : undefined;
 
-  return new Request(`http://localhost/api/portal/customer-1/closeouts${suffix}`);
+  return new Request("http://localhost/api/portal/customer-1/closeouts", {
+    headers,
+  });
 }
 
 describe("customer portal closeouts route", () => {
@@ -65,23 +69,39 @@ describe("customer portal closeouts route", () => {
     };
   });
 
-  it("requires a portal access token", async () => {
-    const response = await GET(requestWithToken(), {
+  it("rejects query-token access without a portal session cookie", async () => {
+    const response = await GET(
+      new Request(
+        "http://localhost/api/portal/customer-1/closeouts?access_token=legacy-token",
+      ),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(401);
+    expect(body.error).toBe("Portal session is required");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("requires a portal session cookie", async () => {
+    const response = await GET(requestWithSession(), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(401);
-    expect(body.error).toBe("Portal access token is required");
+    expect(body.error).toBe("Portal session is required");
     expect(serviceClient.from).not.toHaveBeenCalled();
   });
 
-  it("rejects wrong-customer or unknown portal tokens", async () => {
+  it("rejects wrong-customer or unknown portal sessions", async () => {
     serviceClient.from.mockReturnValue(
       new MockQuery({ data: null, error: null }),
     );
 
-    const response = await GET(requestWithToken("wrong-customer-token"), {
+    const response = await GET(requestWithSession("wrong-customer-session"), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = (await response.json()) as { error?: string };
@@ -90,20 +110,21 @@ describe("customer portal closeouts route", () => {
     expect(body.error).toBe("Portal access is invalid or expired");
   });
 
-  it("rejects expired portal tokens", async () => {
+  it("rejects expired portal sessions", async () => {
     serviceClient.from.mockReturnValue(
       new MockQuery({
         data: {
-          id: "token-1",
           customer_id: "customer-1",
+          id: "session-1",
           expires_at: "2026-05-01T00:00:00.000Z",
-          status: "active",
+          revoked_at: null,
+          token_id: "token-1",
         },
         error: null,
       }),
     );
 
-    const response = await GET(requestWithToken("expired-token"), {
+    const response = await GET(requestWithSession("expired-session"), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = (await response.json()) as { error?: string };
@@ -112,26 +133,28 @@ describe("customer portal closeouts route", () => {
     expect(body.error).toBe("Portal access is invalid or expired");
   });
 
-  it("returns customer-safe closeouts for valid portal tokens", async () => {
+  it("returns customer-safe closeouts for valid portal sessions", async () => {
     serviceClient.from
       .mockReturnValueOnce(
         new MockQuery({
           data: {
-            id: "token-1",
             customer_id: "customer-1",
-            expires_at: null,
-            status: "active",
+            expires_at: "2099-05-01T00:00:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
           },
           error: null,
         }),
       )
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }))
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }))
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }));
 
-    const response = await GET(requestWithToken("valid-token"), {
+    const response = await GET(requestWithSession("valid-session"), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = (await response.json()) as { closeouts?: unknown[] };
@@ -139,7 +162,7 @@ describe("customer portal closeouts route", () => {
     expect(response.status).toBe(200);
     expect(body.closeouts).toEqual([]);
     expect(serviceClient.from).toHaveBeenCalledWith(
-      "customer_portal_access_tokens",
+      "customer_portal_sessions",
     );
   });
 
@@ -148,14 +171,16 @@ describe("customer portal closeouts route", () => {
       .mockReturnValueOnce(
         new MockQuery({
           data: {
-            id: "token-1",
             customer_id: "customer-1",
-            expires_at: null,
-            status: "active",
+            expires_at: "2099-05-01T00:00:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
           },
           error: null,
         }),
       )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(
@@ -182,7 +207,7 @@ describe("customer portal closeouts route", () => {
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }))
       .mockReturnValueOnce(new MockQuery({ data: [], error: null }));
 
-    const response = await GET(requestWithToken("valid-token"), {
+    const response = await GET(requestWithSession("valid-session"), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = await response.json();

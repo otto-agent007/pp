@@ -91,15 +91,9 @@ function EmptyState({ children }: { children: string }) {
   );
 }
 
-function GeneralPestUpgradeCard({
-  accessToken,
-  customerId,
-}: {
-  accessToken: string;
-  customerId: string;
-}) {
+function GeneralPestUpgradeCard({ customerId }: { customerId: string }) {
   const upgradeSummary = getCustomerPortalUpgradeSummary();
-  const upgradeIntent = useCustomerPortalUpgradeIntent(customerId, accessToken);
+  const upgradeIntent = useCustomerPortalUpgradeIntent(customerId);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const upgradeCardSummary =
     "Ask us to review recurring service needs for this property. We will confirm service type, pricing, and start date before any routine service is scheduled or billed.";
@@ -641,16 +635,14 @@ function CloseoutCard({
 }
 
 export function CustomerPortalClient({
-  accessToken,
   customerId,
 }: {
-  accessToken: string;
   customerId: string;
 }) {
   const [search, setSearch] = useState("");
   const [mounted, setMounted] = useState(false);
-  const portal = useCustomerPortalCloseouts(customerId, accessToken);
-  const billing = useCustomerPortalBilling(customerId, accessToken);
+  const portal = useCustomerPortalCloseouts(customerId);
+  const billing = useCustomerPortalBilling(customerId);
   const portalCloseouts = mounted ? portal.closeouts : emptyCloseouts;
   const billingInvoices = mounted ? billing.invoices : emptyInvoices;
   const portalError = mounted ? portal.error : null;
@@ -736,10 +728,7 @@ export function CustomerPortalClient({
         </div>
       </section>
 
-      <GeneralPestUpgradeCard
-        accessToken={accessToken}
-        customerId={customerId}
-      />
+      <GeneralPestUpgradeCard customerId={customerId} />
 
       <BillingSection
         error={billingError}

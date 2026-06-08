@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   validateCustomerPortalSendInput,
   validateCustomerPortalAccessToken,
@@ -11,6 +10,7 @@ import {
   getAdminAccess,
 } from "../../../_lib/server-auth";
 import { recordCustomerPortalAccessTokenEvent } from "../../_lib/access-token-events";
+import { hashPortalSecret } from "../../_lib/portal-session";
 
 export const runtime = "nodejs";
 
@@ -27,10 +27,6 @@ type PortalTokenSendRecord = {
   status: "active" | "revoked";
   token_hash: string;
 };
-
-function hashToken(accessToken: string) {
-  return createHash("sha256").update(accessToken).digest("hex");
-}
 
 function validatePortalUrl(input: {
   customerId: string;
@@ -55,7 +51,7 @@ function validatePortalUrl(input: {
   }
 
   const accessToken = validateCustomerPortalAccessToken(
-    portalUrl.searchParams.get("access_token") ?? "",
+    portalUrl.searchParams.get("grant") ?? "",
   );
 
   return {
@@ -169,7 +165,7 @@ export async function POST(request: Request) {
       requestUrl: request.url,
     });
 
-    if (hashToken(accessToken) !== data.token_hash) {
+    if (hashPortalSecret(accessToken) !== data.token_hash) {
       return NextResponse.json(
         { error: "Portal URL does not match this link" },
         { status: 400 },

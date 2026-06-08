@@ -49,7 +49,7 @@ describe("useCustomerPortal local fixture mode", () => {
 
   it("returns customer-safe closeouts and proof media from local fixtures", () => {
     const { result } = renderHook(
-      () => useCustomerPortalCloseouts(riveraCustomerId(), "portal-token"),
+      () => useCustomerPortalCloseouts(riveraCustomerId()),
       { wrapper: createWrapper() },
     );
 
@@ -79,7 +79,7 @@ describe("useCustomerPortal local fixture mode", () => {
 
   it("returns customer-safe billing from local fixtures", () => {
     const { result } = renderHook(
-      () => useCustomerPortalBilling(riveraCustomerId(), "portal-token"),
+      () => useCustomerPortalBilling(riveraCustomerId()),
       { wrapper: createWrapper() },
     );
 

@@ -85,8 +85,7 @@ function sendBody(overrides: Record<string, unknown> = {}) {
   return {
     customer_id: "customer-1",
     token_id: "token-1",
-    portal_url:
-      "http://localhost/portal/customer-1?access_token=portal-token",
+    portal_url: "http://localhost/portal/customer-1?grant=portal-token",
     ...overrides,
   };
 }
@@ -149,7 +148,7 @@ describe("customer portal send route", () => {
       request(
         sendBody({
           portal_url:
-            "http://localhost/portal/customer-2?access_token=portal-token",
+            "http://localhost/portal/customer-2?grant=portal-token",
         }),
       ),
     );
@@ -213,7 +212,7 @@ describe("customer portal send route", () => {
       request(
         sendBody({
           portal_url:
-            "http://localhost/portal/customer-1?access_token=wrong-token",
+            "http://localhost/portal/customer-1?grant=wrong-token",
         }),
       ),
     );
@@ -282,8 +281,7 @@ describe("customer portal send route", () => {
         body: JSON.stringify({
           portal_access: {
             customer_id: "customer-1",
-            portal_url:
-              "http://localhost/portal/customer-1?access_token=portal-token",
+            portal_url: "http://localhost/portal/customer-1?grant=portal-token",
             token_id: "token-1",
           },
           customer: {

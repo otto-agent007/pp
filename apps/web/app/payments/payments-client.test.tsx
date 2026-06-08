@@ -337,7 +337,7 @@ describe("PaymentsClient", () => {
       customer_id: "customer-1",
       expires_at: null,
       portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=portal-token",
+        "http://localhost:3000/portal/customer-1?grant=portal-token",
       token_id: "token-portal",
     });
   });
@@ -776,7 +776,7 @@ describe("PaymentsClient", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByDisplayValue(
-        "http://localhost:3000/portal/customer-1?access_token=portal-token",
+        "http://localhost:3000/portal/customer-1?grant=portal-token",
       ),
     ).toBeInTheDocument();
     expect(

@@ -912,9 +912,7 @@ export interface CustomerPortalUpgradeIntentInput {
   plan_id: CustomerPortalUpgradePlanId;
 }
 
-export interface CustomerPortalUpgradeIntentRequest extends CustomerPortalUpgradeIntentInput {
-  access_token: string;
-}
+export type CustomerPortalUpgradeIntentRequest = CustomerPortalUpgradeIntentInput;
 
 export interface CustomerPortalUpgradeIntentResult {
   notification_id: string | null;

@@ -163,7 +163,7 @@ describe("demo smoke preflight", () => {
       "7. /inventory",
       "8. /technicians",
       "9. /escrow-re",
-      "10. tokened /portal",
+      "10. /portal",
     ]);
     expect(
       routes.map((route) => route.progressionCtaLabels.length),
@@ -181,12 +181,12 @@ describe("demo smoke preflight", () => {
       3,
     ]);
     expect(routes.find((route) => route.id === "portal")).toMatchObject({
-      label: "10. tokened /portal",
-      redactedPath: "/portal/<fixture-customer-id>?access_token=<redacted>",
+      label: "10. /portal",
+      redactedPath: "/portal/<fixture-customer-id>",
       requiresAdminSession: false,
     });
-    expect(routes.find((route) => route.id === "portal")?.path).toContain(
-      "access_token=portal-token",
+    expect(routes.find((route) => route.id === "portal")?.path).toMatch(
+      /^\/portal\/[^?]+$/,
     );
     expect(routes.find((route) => route.id === "escrow-re")?.path).toBe(
       "/escrow-re",
@@ -246,6 +246,7 @@ describe("demo smoke preflight", () => {
       "pest-patrol-demo-fixture-session",
     ]);
     expect(localFixtureSmokeSensitivePatterns).toContain("access_token=");
+    expect(localFixtureSmokeSensitivePatterns).toContain("grant=");
     expect(localFixtureSmokeSensitivePatterns).toContain("portal-token");
     expect(localFixtureSmokeSensitivePatterns).toContain("STRIPE_SECRET_KEY");
     expect(localFixtureSmokeSensitivePatterns).toContain(

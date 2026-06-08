@@ -80,6 +80,7 @@ export const localFixtureSmokeStorageKeys = [
 
 export const localFixtureSmokeSensitivePatterns = [
   "access_token=",
+  "grant=",
   "portal-token",
   "local-demo-access-token",
   "local-demo-refresh-token",
@@ -215,7 +216,7 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
         customersWithPaymentLinks.has(customer.id) &&
         customersWithCompletedHistory.has(customer.id),
     ) ?? fixtures.customers[1] ?? fixtures.customers[0];
-  const portalPath = `/portal/${portalCustomer.id}?access_token=portal-token`;
+  const portalPath = `/portal/${portalCustomer.id}`;
 
   return [
     {
@@ -371,10 +372,10 @@ export function buildLocalFixtureSmokePlan(): LocalFixtureSmokeRoute[] {
       ],
       id: "portal",
       keyBusinessStateText: ["Invoice", "Service history", "Review", "Recurring"],
-      label: "10. tokened /portal",
+      label: "10. /portal",
       path: portalPath,
       progressionCtaLabels: [],
-      redactedPath: "/portal/<fixture-customer-id>?access_token=<redacted>",
+      redactedPath: "/portal/<fixture-customer-id>",
       requiresAdminSession: false,
     },
   ];
