@@ -453,6 +453,7 @@ describe("offline sync domain", () => {
       client,
       "job-1",
       "in_progress",
+      "en_route",
     );
     expect(item.status).toBe("synced");
   });

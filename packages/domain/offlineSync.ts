@@ -508,6 +508,7 @@ export async function processJobStatusUpdateQueueItem(
       options.client,
       payload.job_id,
       payload.status,
+      payload.previous_status,
     );
     return markQueueItemSynced(item, { now });
   } catch (error) {
