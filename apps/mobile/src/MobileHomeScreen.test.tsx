@@ -87,20 +87,27 @@ vi.mock("./store/useJobSignatures", () => ({
   useJobSignatures: { getState: () => ({ hydrate: vi.fn() }) },
 }));
 vi.mock("./store/useLanguage", () => ({
-  useLanguage: (selector: (state: unknown) => unknown) =>
-    selector({
-      t: {
-        jobs: {
-          status: {
-            canceled: "Canceled",
-            completed: "Completed",
-            en_route: "En route",
-            in_progress: "In progress",
-            scheduled: "Scheduled",
+  useLanguage: Object.assign(
+    (selector: (state: unknown) => unknown) =>
+      selector({
+        t: {
+          jobs: {
+            status: {
+              canceled: "Canceled",
+              completed: "Completed",
+              en_route: "En route",
+              in_progress: "In progress",
+              scheduled: "Scheduled",
+            },
           },
         },
-      },
-    }),
+      }),
+    {
+      getState: () => ({
+        hydrateLanguagePreference: vi.fn(),
+      }),
+    },
+  ),
 }));
 vi.mock("./store/useOfflineQueue", () => {
   const useOfflineQueue = (selector: (state: typeof offlineQueueState) => unknown) =>

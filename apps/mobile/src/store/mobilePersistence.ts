@@ -1,7 +1,13 @@
 import * as SecureStore from "expo-secure-store";
 
 export async function readMobileJson<T>(key: string, fallback: T): Promise<T> {
-  const value = await SecureStore.getItemAsync(key);
+  let value: string | null = null;
+
+  try {
+    value = await SecureStore.getItemAsync(key);
+  } catch {
+    return fallback;
+  }
 
   if (!value) {
     return fallback;
@@ -15,5 +21,11 @@ export async function readMobileJson<T>(key: string, fallback: T): Promise<T> {
 }
 
 export function writeMobileJson(key: string, value: unknown) {
-  void SecureStore.setItemAsync(key, JSON.stringify(value));
+  try {
+    void SecureStore.setItemAsync(key, JSON.stringify(value)).catch(
+      () => undefined,
+    );
+  } catch {
+    // Persistence is best-effort; callers keep in-memory state usable.
+  }
 }

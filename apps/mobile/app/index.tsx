@@ -186,6 +186,10 @@ export default function MobileHomeScreen() {
   }, [initialize]);
 
   useEffect(() => {
+    void useLanguage.getState().hydrateLanguagePreference();
+  }, []);
+
+  useEffect(() => {
     if (status === "signed_in" && jobsStatus === "idle") {
       void load();
     }
