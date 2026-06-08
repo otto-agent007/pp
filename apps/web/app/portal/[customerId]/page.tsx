@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { CustomerPortalClient } from "./portal-client";
 
 export default async function CustomerPortalPage({
@@ -5,13 +7,19 @@ export default async function CustomerPortalPage({
   searchParams,
 }: {
   params: Promise<{ customerId: string }>;
-  searchParams: Promise<{ access_token?: string | string[] }>;
+  searchParams: Promise<{ grant?: string | string[] }>;
 }) {
   const { customerId } = await params;
-  const { access_token: accessTokenParam } = await searchParams;
-  const accessToken = Array.isArray(accessTokenParam)
-    ? accessTokenParam[0] ?? ""
-    : accessTokenParam ?? "";
+  const { grant: grantParam } = await searchParams;
+  const grant = Array.isArray(grantParam)
+    ? grantParam[0] ?? ""
+    : grantParam ?? "";
 
-  return <CustomerPortalClient accessToken={accessToken} customerId={customerId} />;
+  if (grant.trim()) {
+    redirect(
+      `/api/portal/${encodeURIComponent(customerId)}/sessions?grant=${encodeURIComponent(grant)}`,
+    );
+  }
+
+  return <CustomerPortalClient customerId={customerId} />;
 }

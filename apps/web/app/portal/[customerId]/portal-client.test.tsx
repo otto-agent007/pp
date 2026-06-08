@@ -137,21 +137,10 @@ describe("CustomerPortalClient", () => {
   });
 
   it("renders customer-safe completed service details and media", () => {
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
-    expect(useCustomerPortalCloseouts).toHaveBeenCalledWith(
-      "customer-1",
-      "portal-token",
-    );
-    expect(useCustomerPortalBilling).toHaveBeenCalledWith(
-      "customer-1",
-      "portal-token",
-    );
+    expect(useCustomerPortalCloseouts).toHaveBeenCalledWith("customer-1");
+    expect(useCustomerPortalBilling).toHaveBeenCalledWith("customer-1");
     expect(screen.getByText("Service history")).toBeInTheDocument();
     expect(screen.getByText("Services")).toBeInTheDocument();
     expect(screen.getByText("Open balance")).toBeInTheDocument();
@@ -205,17 +194,9 @@ describe("CustomerPortalClient", () => {
 
   it("lets customers request a recurring service review once", async () => {
     const user = userEvent.setup();
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
-    expect(useCustomerPortalUpgradeIntent).toHaveBeenCalledWith(
-      "customer-1",
-      "portal-token",
-    );
+    expect(useCustomerPortalUpgradeIntent).toHaveBeenCalledWith("customer-1");
     expect(
       screen.getByText("Ask Pest Patrol about routine service"),
     ).toBeInTheDocument();
@@ -239,12 +220,7 @@ describe("CustomerPortalClient", () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     const user = userEvent.setup();
 
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     await user.click(
       screen.getByRole("button", { name: "Print or save records" }),
@@ -260,12 +236,7 @@ describe("CustomerPortalClient", () => {
   });
 
   it("uses semantic portal polish tokens without nested metric cards", () => {
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     expect(screen.getByLabelText("Search portal activity")).toHaveClass(
       "focus:border-theme-action-primary",
@@ -289,12 +260,7 @@ describe("CustomerPortalClient", () => {
   });
 
   it("does not render admin-only service notes or chemical internals", () => {
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     expect(screen.queryByText("Interior treatment")).not.toBeInTheDocument();
     expect(screen.queryByText("Bait Gel")).not.toBeInTheDocument();
@@ -308,12 +274,7 @@ describe("CustomerPortalClient", () => {
 
   it("filters completed service visits", async () => {
     const user = userEvent.setup();
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     await user.type(screen.getByLabelText("Search portal activity"), "missing");
 
@@ -329,12 +290,7 @@ describe("CustomerPortalClient", () => {
       isLoading: false,
     } as never);
 
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     expect(screen.getByText("Account timeline")).toBeInTheDocument();
     expect(screen.getByText("Invoice activity")).toBeInTheDocument();
@@ -360,12 +316,7 @@ describe("CustomerPortalClient", () => {
       isLoading: false,
     } as never);
 
-    render(
-      <CustomerPortalClient
-        accessToken="portal-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     expect(
       screen.getByText("No service forms are available for this visit."),
@@ -385,7 +336,7 @@ describe("CustomerPortalClient", () => {
       isLoading: false,
     } as never);
 
-    render(<CustomerPortalClient accessToken="" customerId="customer-1" />);
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     expect(
       screen.getAllByText(
@@ -401,12 +352,7 @@ describe("CustomerPortalClient", () => {
       isLoading: false,
     } as never);
 
-    render(
-      <CustomerPortalClient
-        accessToken="expired-token"
-        customerId="customer-1"
-      />,
-    );
+    render(<CustomerPortalClient customerId="customer-1" />);
 
     expect(
       screen.getByText(

@@ -127,6 +127,6 @@ describe("customer portal access token route", () => {
 
     expect(response.status).toBe(200);
     expect(body.token_id).toBe("token-1");
-    expect(body.portal_url).toContain("/portal/customer-1?access_token=");
+    expect(body.portal_url).toContain("/portal/customer-1?grant=");
   });
 });

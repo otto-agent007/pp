@@ -718,11 +718,9 @@ export async function getCustomerPortalProviderStatus() {
 
 export async function listCustomerPortalCloseouts(
   customerId: string,
-  accessToken: string,
 ) {
   return listCustomerPortalCloseoutRecords(
     validateCustomerPortalCustomerId(customerId),
-    validateCustomerPortalAccessToken(accessToken),
   );
 }
 
@@ -732,22 +730,18 @@ export async function listCloseoutCaptureSummaries(jobIds: string[]) {
 
 export async function listCustomerPortalBilling(
   customerId: string,
-  accessToken: string,
 ) {
   return listCustomerPortalBillingRecords(
     validateCustomerPortalCustomerId(customerId),
-    validateCustomerPortalAccessToken(accessToken),
   );
 }
 
 export async function requestCustomerPortalUpgradeIntent(
   customerId: string,
-  accessToken: string,
   input: CustomerPortalUpgradeIntentInput,
 ): Promise<CustomerPortalUpgradeIntentResult> {
   return requestCustomerPortalUpgradeIntentRecord(
     validateCustomerPortalCustomerId(customerId),
-    validateCustomerPortalAccessToken(accessToken),
     validateCustomerPortalUpgradeIntentInput(input),
   );
 }

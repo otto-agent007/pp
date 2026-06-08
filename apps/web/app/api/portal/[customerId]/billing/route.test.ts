@@ -124,10 +124,14 @@ const invoice = {
   ],
 };
 
-function requestWithToken(token?: string) {
-  const suffix = token ? `?access_token=${token}` : "";
+function requestWithSession(sessionToken?: string) {
+  const headers = sessionToken
+    ? { Cookie: `pp_customer_portal_session=${sessionToken}` }
+    : undefined;
 
-  return new Request(`http://localhost/api/portal/customer-1/billing${suffix}`);
+  return new Request("http://localhost/api/portal/customer-1/billing", {
+    headers,
+  });
 }
 
 describe("customer portal billing route", () => {
@@ -137,22 +141,38 @@ describe("customer portal billing route", () => {
     };
   });
 
-  it("requires a portal access token", async () => {
-    const response = await GET(requestWithToken(), {
+  it("rejects query-token access without a portal session cookie", async () => {
+    const response = await GET(
+      new Request(
+        "http://localhost/api/portal/customer-1/billing?access_token=legacy-token",
+      ),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(401);
+    expect(body.error).toBe("Portal session is required");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("requires a portal session cookie", async () => {
+    const response = await GET(requestWithSession(), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(401);
-    expect(body.error).toBe("Portal access token is required");
+    expect(body.error).toBe("Portal session is required");
   });
 
-  it("rejects invalid portal tokens", async () => {
+  it("rejects invalid portal sessions", async () => {
     serviceClient.from.mockReturnValue(
       new MockQuery({ data: null, error: null }),
     );
 
-    const response = await GET(requestWithToken("bad-token"), {
+    const response = await GET(requestWithSession("bad-session"), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
 
@@ -165,18 +185,20 @@ describe("customer portal billing route", () => {
       .mockReturnValueOnce(
         new MockQuery({
           data: {
-            id: "token-1",
             customer_id: "customer-1",
-            expires_at: null,
-            status: "active",
+            expires_at: "2099-05-07T12:00:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
           },
           error: null,
         }),
       )
       .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
       .mockReturnValueOnce(invoiceQuery);
 
-    const response = await GET(requestWithToken("valid-token"), {
+    const response = await GET(requestWithSession("valid-session"), {
       params: Promise.resolve({ customerId: "customer-1" }),
     });
     const body = (await response.json()) as { invoices?: unknown[] };

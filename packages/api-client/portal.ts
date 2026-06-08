@@ -28,7 +28,7 @@ async function getAccessToken() {
 
 function responseError(status: number) {
   if (status === 401) {
-    return "Portal access token is required";
+    return "Portal session is required";
   }
 
   if (status === 403) {
@@ -38,13 +38,9 @@ function responseError(status: number) {
   return "Unable to load customer portal";
 }
 
-export async function listCustomerPortalCloseoutRecords(
-  customerId: string,
-  accessToken: string,
-) {
-  const params = new URLSearchParams({ access_token: accessToken });
+export async function listCustomerPortalCloseoutRecords(customerId: string) {
   const response = await fetch(
-    `/api/portal/${encodeURIComponent(customerId)}/closeouts?${params}`,
+    `/api/portal/${encodeURIComponent(customerId)}/closeouts`,
   );
 
   if (!response.ok) {
@@ -56,13 +52,9 @@ export async function listCustomerPortalCloseoutRecords(
   return body.closeouts;
 }
 
-export async function listCustomerPortalBillingRecords(
-  customerId: string,
-  accessToken: string,
-) {
-  const params = new URLSearchParams({ access_token: accessToken });
+export async function listCustomerPortalBillingRecords(customerId: string) {
   const response = await fetch(
-    `/api/portal/${encodeURIComponent(customerId)}/billing?${params}`,
+    `/api/portal/${encodeURIComponent(customerId)}/billing`,
   );
 
   if (!response.ok) {
@@ -76,13 +68,9 @@ export async function listCustomerPortalBillingRecords(
 
 export async function requestCustomerPortalUpgradeIntentRecord(
   customerId: string,
-  accessToken: string,
   input: CustomerPortalUpgradeIntentInput,
 ) {
-  const body: CustomerPortalUpgradeIntentRequest = {
-    access_token: accessToken,
-    ...input,
-  };
+  const body: CustomerPortalUpgradeIntentRequest = input;
   const response = await fetch(
     `/api/portal/${encodeURIComponent(customerId)}/upgrade-intents`,
     {

@@ -715,13 +715,12 @@ describe("closeouts domain", () => {
         customer_id: " customer-1 ",
         token_id: " token-1 ",
         portal_url:
-          " http://localhost:3000/portal/customer-1?access_token=raw-token ",
+          " http://localhost:3000/portal/customer-1?grant=raw-token ",
       }),
     ).toEqual({
       customer_id: "customer-1",
       token_id: "token-1",
-      portal_url:
-        "http://localhost:3000/portal/customer-1?access_token=raw-token",
+      portal_url: "http://localhost:3000/portal/customer-1?grant=raw-token",
     });
     expect(() =>
       validateCustomerPortalSendInput({
