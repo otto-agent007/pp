@@ -106,6 +106,70 @@ describe("compliance ingestion CLI", () => {
     expect(createEmbedding).not.toHaveBeenCalled();
   });
 
+  it("rejects manifest traversal text paths before reading source files", async () => {
+    const readTextFile = vi.fn(async () => "Should not be read");
+
+    await expect(
+      runComplianceIngestion(
+        {
+          dryRun: true,
+          manifest: [{ ...manifest[0], text_path: "../secrets.txt" }],
+          noEmbed: true,
+        },
+        {
+          readTextFile,
+          upsertSource: vi.fn(),
+        },
+      ),
+    ).rejects.toThrow(
+      "Compliance source text path cannot contain parent traversal for epa-label-guidance: ../secrets.txt",
+    );
+    expect(readTextFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects absolute manifest text paths before reading source files", async () => {
+    const readTextFile = vi.fn(async () => "Should not be read");
+
+    await expect(
+      runComplianceIngestion(
+        {
+          dryRun: true,
+          manifest: [{ ...manifest[0], text_path: "C:/Users/bckup/secret.txt" }],
+          noEmbed: true,
+        },
+        {
+          readTextFile,
+          upsertSource: vi.fn(),
+        },
+      ),
+    ).rejects.toThrow(
+      "Compliance source text path must be relative for epa-label-guidance: C:/Users/bckup/secret.txt",
+    );
+    expect(readTextFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects manifest source paths resolved outside the compliance source root", async () => {
+    const readTextFile = vi.fn(async () => "Should not be read");
+
+    await expect(
+      runComplianceIngestion(
+        {
+          dryRun: true,
+          manifest,
+          manifestPath: "outside/manifest.json",
+          noEmbed: true,
+        },
+        {
+          readTextFile,
+          upsertSource: vi.fn(),
+        },
+      ),
+    ).rejects.toThrow(
+      "Compliance source text path must stay inside packages/domain/fixtures/compliance for epa-label-guidance: epa-label.txt",
+    );
+    expect(readTextFile).not.toHaveBeenCalled();
+  });
+
   it("reports live-run env gaps without exposing secret values", () => {
     const report = formatComplianceIngestionPreflight(
       {

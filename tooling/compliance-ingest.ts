@@ -25,6 +25,7 @@ import type {
 
 const DEFAULT_MANIFEST_PATH =
   "packages/domain/fixtures/compliance/manifest.json";
+const COMPLIANCE_SOURCE_ROOT = "packages/domain/fixtures/compliance";
 const DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
 
 export interface ComplianceIngestCliOptions {
@@ -302,12 +303,58 @@ function isMissingSourceTextError(error: unknown) {
   );
 }
 
+function hasParentTraversal(sourcePath: string) {
+  return sourcePath.split(/[\\/]+/).includes("..");
+}
+
+function isInsidePath(rootPath: string, candidatePath: string) {
+  const relativePath = path.relative(rootPath, candidatePath);
+
+  return (
+    relativePath === "" ||
+    (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
+  );
+}
+
+function resolveComplianceSourceTextPath(
+  manifestBaseDir: string,
+  sourceRoot: string,
+  entry: ComplianceSourceManifestEntry,
+) {
+  if (path.isAbsolute(entry.text_path)) {
+    throw new Error(
+      `Compliance source text path must be relative for ${entry.id}: ${entry.text_path}`,
+    );
+  }
+
+  if (hasParentTraversal(entry.text_path)) {
+    throw new Error(
+      `Compliance source text path cannot contain parent traversal for ${entry.id}: ${entry.text_path}`,
+    );
+  }
+
+  const sourceTextPath = path.resolve(manifestBaseDir, entry.text_path);
+
+  if (!isInsidePath(sourceRoot, sourceTextPath)) {
+    throw new Error(
+      `Compliance source text path must stay inside ${COMPLIANCE_SOURCE_ROOT} for ${entry.id}: ${entry.text_path}`,
+    );
+  }
+
+  return sourceTextPath;
+}
+
 async function readComplianceSourceText(
   manifestBaseDir: string,
+  sourceRoot: string,
   entry: ComplianceSourceManifestEntry,
   readTextFile: (filePath: string) => Promise<string>,
 ) {
-  const sourceTextPath = path.resolve(manifestBaseDir, entry.text_path);
+  const sourceTextPath = resolveComplianceSourceTextPath(
+    manifestBaseDir,
+    sourceRoot,
+    entry,
+  );
 
   try {
     return await readTextFile(sourceTextPath);
@@ -390,6 +437,7 @@ export async function runComplianceIngestion(
 ): Promise<ComplianceIngestionSummary> {
   const manifestPath = path.resolve(options.manifestPath ?? DEFAULT_MANIFEST_PATH);
   const manifestBaseDir = path.dirname(manifestPath);
+  const sourceRoot = path.resolve(COMPLIANCE_SOURCE_ROOT);
   const manifest = options.manifest ?? (await loadManifest(manifestPath));
   const readTextFile = dependencies.readTextFile ?? defaultReadTextFile;
   const env = options.env ?? process.env;
@@ -430,6 +478,7 @@ export async function runComplianceIngestion(
   for (const entry of selectedEntries) {
     const sourceText = await readComplianceSourceText(
       manifestBaseDir,
+      sourceRoot,
       entry,
       readTextFile,
     );
