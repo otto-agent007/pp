@@ -2,10 +2,27 @@
 
 Active implementation slice:
 
-- No active implementation slice is open on this branch; PRs #103-#108 are merged on
-  `main`, and the buyer walkthrough readiness slice is complete.
-- This file now serves as the status and blocker ledger for the next slice instead of
-  an open implementation plan.
+- Mobile Language Preference Persistence V1 is implemented on branch
+  `codex/mobile-language-preference-persistence-v1` from latest `origin/main`
+  and is ready for draft PR handoff.
+- The mobile language store now persists the technician's English/Spanish
+  preference locally through the existing `mobilePersistence` SecureStore
+  helper, hydrates on app mount, and falls back to English for invalid or
+  unreadable stored values.
+- The technician header keeps the existing simple toggle behavior:
+  English mode shows `Español`, and Spanish mode shows `English`.
+- Storage write failures keep the in-session language change usable and do not
+  crash the app.
+- Verified with focused language/header/mobile-home tests, full mobile tests,
+  mobile typecheck/lint/build, full repo test/typecheck/lint/build, and
+  `git diff --check`.
+- No migration, Supabase/profile persistence, provider/env mutation,
+  seed/reset write, preview mutation, production mutation, settings system, or
+  JSONB form field ID change is in scope.
+- PRs #103-#108 are merged on `main`, and the buyer walkthrough readiness
+  slice is complete.
+- This file now serves as the status and blocker ledger for the current mobile
+  language preference slice instead of an open buyer walkthrough plan.
 - This pass validates a deterministic 10-step customer journey:
   `"/"` → `"/dispatch"` → `"/customers"` → `"/closeouts"` → `"/payments"` →
   `"/compliance"` → `"/inventory"` → `"/technicians"` → `"/escrow-re"` →

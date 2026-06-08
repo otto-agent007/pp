@@ -142,6 +142,54 @@ function flattenStyles(style: unknown): Record<string, unknown>[] {
 }
 
 describe("MobileTechnicianHeader", () => {
+  it("shows the Spanish language option while English is active", () => {
+    language.lang = "en";
+
+    const element = (
+      <MobileTechnicianHeader
+        assignedJobCount={1}
+        onSignOut={() => undefined}
+        profileId="technician-1"
+      />
+    );
+
+    expect(collectText(element)).toContain("Español");
+  });
+
+  it("shows the English language option while Spanish is active", () => {
+    language.lang = "es";
+
+    const element = (
+      <MobileTechnicianHeader
+        assignedJobCount={1}
+        onSignOut={() => undefined}
+        profileId="technician-1"
+      />
+    );
+
+    expect(collectText(element)).toContain("English");
+  });
+
+  it("keeps the header language button wired to the language toggle", () => {
+    language.lang = "en";
+    language.toggleLanguage.mockReset();
+
+    const element = (
+      <MobileTechnicianHeader
+        assignedJobCount={1}
+        onSignOut={() => undefined}
+        profileId="technician-1"
+      />
+    );
+    const languageButton = collectElementsByType(element, "Pressable").find(
+      (item) => collectText(item).includes("Español"),
+    );
+
+    languageButton?.props.onPress();
+
+    expect(language.toggleLanguage).toHaveBeenCalledTimes(1);
+  });
+
   it("uses operational rail tokens for the technician command panel", () => {
     const element = (
       <MobileTechnicianHeader
