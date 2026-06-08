@@ -45,6 +45,24 @@ export interface OfflineQueueJobTriage {
 }
 
 const pendingStatuses = new Set<OfflineQueueStatus>(["queued", "retrying", "failed"]);
+const sensitiveProofPayloadKeys = new Set([
+  "base64",
+  "base64_data",
+  "base64Data",
+  "data_url",
+  "dataUrl",
+  "local_uri",
+  "localUri",
+  "photo_data",
+  "photoData",
+  "signature_data",
+  "signatureData",
+  "uri",
+]);
+const sensitiveProofActions = new Set<OfflineQueueAction>([
+  "photo_upload",
+  "signature_capture",
+]);
 
 function timestamp(value?: string) {
   return value ?? new Date().toISOString();
@@ -134,9 +152,23 @@ export function markQueueItemSynced<TPayload>(
     ...item,
     last_error: null,
     next_retry_at: null,
+    payload: scrubSensitiveSyncedProofPayload(item.action, item.payload),
     status: "synced",
     updated_at: now,
   };
+}
+
+export function scrubSensitiveSyncedProofPayload<TPayload>(
+  action: OfflineQueueAction,
+  payload: TPayload,
+): TPayload {
+  if (!sensitiveProofActions.has(action) || !isRecord(payload)) {
+    return payload;
+  }
+
+  return Object.fromEntries(
+    Object.entries(payload).filter(([key]) => !sensitiveProofPayloadKeys.has(key)),
+  ) as TPayload;
 }
 
 export function clearSyncedQueueItems<TPayload>(

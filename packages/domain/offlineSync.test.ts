@@ -538,6 +538,15 @@ describe("offline sync domain", () => {
       client,
     );
     expect(item.status).toBe("synced");
+    expect(item.payload).toEqual({
+      job_id: "job-1",
+      file_name: "photo.jpg",
+      content_type: "image/jpeg",
+      storage_bucket: "job-media",
+      storage_path: "job-1/photo.jpg",
+      description: "Kitchen",
+      captured_at: now,
+    });
   });
 
   it("retries temporary photo upload sync failures", async () => {
@@ -557,6 +566,7 @@ describe("offline sync domain", () => {
       next_retry_at: "2026-05-05T20:01:30.000Z",
       status: "retrying",
     });
+    expect(item.payload).toMatchObject({ local_uri: "file:///photo.jpg" });
   });
 
   it("syncs signature captures with the authenticated client", async () => {
@@ -581,6 +591,15 @@ describe("offline sync domain", () => {
       client,
     );
     expect(item.status).toBe("synced");
+    expect(item.payload).toEqual({
+      job_id: "job-1",
+      file_name: "signature.png",
+      content_type: "image/png",
+      storage_bucket: "job-media",
+      storage_path: "job-1/signature.png",
+      signer_name: "Jamie Customer",
+      captured_at: now,
+    });
   });
 
   it("retries temporary signature capture sync failures", async () => {
@@ -599,6 +618,9 @@ describe("offline sync domain", () => {
       last_error: "Signature upload failed",
       next_retry_at: "2026-05-05T20:01:30.000Z",
       status: "retrying",
+    });
+    expect(item.payload).toMatchObject({
+      local_uri: "data:image/png;base64,signature",
     });
   });
 

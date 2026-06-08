@@ -83,4 +83,35 @@ describe("useOfflineQueue", () => {
       JSON.stringify([]),
     );
   });
+
+  it("scrubs sensitive proof payloads before persisting synced history", () => {
+    const synced = useOfflineQueue.getState().enqueue({
+      action: "signature_capture",
+      payload: {
+        job_id: "job-1",
+        local_uri: "data:image/png;base64,signature",
+        data_url: "data:image/png;base64,signature",
+        signature_data: "raw-signature",
+        file_name: "signature.png",
+        storage_path: "job-1/signature.png",
+      },
+    });
+
+    useOfflineQueue.getState().markSynced(synced.id);
+
+    const [persistedKey, persistedValue] =
+      secureStore.setItemAsync.mock.calls.at(-1) ?? [];
+    expect(persistedKey).toBe("pest-patrol:offline-queue:v1");
+    expect(JSON.parse(persistedValue as string)).toEqual([
+      expect.objectContaining({
+        id: synced.id,
+        status: "synced",
+        payload: {
+          job_id: "job-1",
+          file_name: "signature.png",
+          storage_path: "job-1/signature.png",
+        },
+      }),
+    ]);
+  });
 });
