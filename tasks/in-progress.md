@@ -2,49 +2,26 @@
 
 Active implementation slice:
 
-- Mobile Language Preference Persistence V1 is implemented on branch
-  `codex/mobile-language-preference-persistence-v1` from latest `origin/main`
-  and is ready for draft PR handoff.
-- The mobile language store now persists the technician's English/Spanish
-  preference locally through the existing `mobilePersistence` SecureStore
-  helper, hydrates on app mount, and falls back to English for invalid or
-  unreadable stored values.
-- The technician header keeps the existing simple toggle behavior:
-  English mode shows `Español`, and Spanish mode shows `English`.
-- Storage write failures keep the in-session language change usable and do not
-  crash the app.
-- Verified with focused language/header/mobile-home tests, full mobile tests,
-  mobile typecheck/lint/build, full repo test/typecheck/lint/build, and
-  `git diff --check`.
-- No migration, Supabase/profile persistence, provider/env mutation,
-  seed/reset write, preview mutation, production mutation, settings system, or
-  JSONB form field ID change is in scope.
-- PRs #103-#108 are merged on `main`, and the buyer walkthrough readiness
-  slice is complete.
-- This file now serves as the status and blocker ledger for the current mobile
-  language preference slice instead of an open buyer walkthrough plan.
-- This pass validates a deterministic 10-step customer journey:
-  `"/"` → `"/dispatch"` → `"/customers"` → `"/closeouts"` → `"/payments"` →
-  `"/compliance"` → `"/inventory"` → `"/technicians"` → `"/escrow-re"` →
-  tokened `"/portal/:customerId"`.
-- `packages/domain/demoSmokePreflight.ts` and `tooling/local-fixture-smoke.ts`
-  now drive the structured journey and strict step-level checks.
-- `demo:fixture-smoke` is now responsible for verifying route text markers,
-  internal links, dead-end CTAs, console/page errors, horizontal overflow, and
-  forbidden internal/dev copy.
-- No migration, provider/env mutation, seed/reset write, live compliance
-  ingestion, or production mutation is in scope.
-- PR #101, `[codex] Technician License / Branch Credential Tracking V1`, merged
-  on June 4, 2026.
-- PR #99, `[codex] Shared Compliance Review Items Safe Hook V1`, merged on June
-  4, 2026.
-- PR #98, `[codex] Pest Patrol Service Billing Catalog V1`, merged on June 4,
-  2026.
-- PR #89, `[codex] Chemical Product Binder V1`, merged on June 3, 2026.
-- PR #90, `[codex] Require fresh branch and draft PR per slice`, merged on
-  June 3, 2026.
-- Recommended next implementation candidates should be chosen from live operator
-  priority now that the buyer walkthrough slice and PRs #103-#108 are complete.
+- Supabase Security Advisor Fix V1 is now the active slice on branch
+  `codex/supabase-security-advisor-fix-v1`, started from `origin/main`.
+- Added migration hardening for technician RPC execute grants:
+  `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql`.
+- Updated migration verification assertions in
+  `tooling/technician-job-rpc-security-migration.test.ts` to assert
+  `anon`/`public` revokes and authenticated-only grants.
+- Added launch-doc operator follow-ups in
+  `docs/PREVIEW_LAUNCH_READINESS.md` and
+  `docs/PRODUCTION_READINESS.md` for Security Advisor rerun and leaked-password
+  ownership.
+- Verified with focused migration-static assertion test attempt; full repo checks are
+  currently blocked in this worktree by a missing local `node_modules` setup and were
+  not executed.
+- No migration apply, Supabase/profile persistence, provider mutation,
+  seed/reset write, preview migration apply, or production mutation is in scope.
+- Current focus remains provider-safe and operator-assisted; function bodies and
+  business logic are unchanged by this slice.
+- This run is ready for full verification and PR handoff once branch checks are
+  passed.
 
 Current blockers and guardrails:
 
@@ -54,6 +31,8 @@ Current blockers and guardrails:
 - No Codex-run local/preview/production migration apply, provider/env mutation,
   seed/reset write, live compliance ingestion, or production data action has
   been performed.
+- The security advisor RPC and leaked-password warnings are still pending until
+  migration apply, advisor rerun, and operator dashboard action are completed.
 
 Recent closure:
 
