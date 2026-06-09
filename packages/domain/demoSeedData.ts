@@ -4,11 +4,17 @@ import type {
   DemoSeedSummary as SharedDemoSeedSummary,
   InventoryStatus,
   InventoryUnit,
+  JobBillingDisposition,
+  JobEstimateStatus,
+  JobPurpose,
+  JobServiceCadence,
   InvoiceStatus,
   JobStatus,
   JobMediaType,
   PaymentStatus,
   PropertyType,
+  ServiceBillingFamily,
+  ServiceBillingOfferingId,
   UserRole,
 } from "@pest-patrol/types";
 
@@ -96,14 +102,21 @@ export interface DemoSeedInventoryItem {
 
 export interface DemoSeedJob {
   assigned_technician_key?: string | null;
+  billing_disposition?: JobBillingDisposition;
   customer_id: string;
+  estimate_status?: JobEstimateStatus;
   id: string;
   inventory_key?: string;
+  job_purpose?: JobPurpose;
   key: string;
   location_id: string;
+  parent_job_id?: string | null;
   scheduled_end: string;
   scheduled_start: string;
+  service_cadence?: JobServiceCadence;
+  service_family?: ServiceBillingFamily | null;
   service_notes: string;
+  service_offering_id?: ServiceBillingOfferingId | null;
   status: JobStatus;
 }
 
@@ -1546,6 +1559,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
   const jobs: DemoSeedJob[] = [
     {
       assigned_technician_key: "maya",
+      billing_disposition: "billable",
       customer_id: demoId("c", 1),
       id: demoId("j", 1),
       inventory_key: "perimeter",
@@ -1556,6 +1570,9 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       service_notes: markerNote(
         "Exterior perimeter, clubhouse kitchen, and pool room.",
       ),
+      service_cadence: "one_time",
+      service_family: "general_pest",
+      service_offering_id: "general_pest_initial",
       status: "scheduled",
     },
     {
@@ -1574,6 +1591,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
     },
     {
       assigned_technician_key: "maya",
+      billing_disposition: "included_in_recurring",
       customer_id: demoId("c", 3),
       id: demoId("j", 3),
       key: "nguyen-today",
@@ -1581,22 +1599,32 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       scheduled_end: currentWeekRelativeWallClockIso(now, 0, 12, 15),
       scheduled_start: currentWeekRelativeWallClockIso(now, 0, 11, 15),
       service_notes: markerNote("Quarterly residential service."),
+      service_cadence: "quarterly",
+      service_family: "recurring_general_pest",
+      service_offering_id: "general_pest_quarterly",
       status: "en_route",
     },
     {
       assigned_technician_key: "sol",
+      billing_disposition: "estimate_only",
       customer_id: demoId("c", 4),
+      estimate_status: "presented",
       id: demoId("j", 4),
       inventory_key: "rodent",
+      job_purpose: "estimate",
       key: "mesa-tomorrow",
       location_id: demoId("l", 5),
       scheduled_end: currentWeekRelativeWallClockIso(now, 1, 10, 30),
       scheduled_start: currentWeekRelativeWallClockIso(now, 1, 9, 0),
-      service_notes: markerNote("Warehouse dock-door inspection."),
+      service_notes: markerNote("Rodent exclusion estimate for warehouse dock doors."),
+      service_cadence: "one_time",
+      service_family: "rodent_attic",
+      service_offering_id: "rodent_inspection",
       status: "scheduled",
     },
     {
       assigned_technician_key: "eli",
+      billing_disposition: "billable",
       customer_id: demoId("c", 1),
       id: demoId("j", 5),
       inventory_key: "dust",
@@ -1605,6 +1633,10 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
       scheduled_end: currentWeekRelativeWallClockIso(now, 1, 14, 0),
       scheduled_start: currentWeekRelativeWallClockIso(now, 1, 13, 0),
       service_notes: markerNote("Pool equipment room follow-up."),
+      job_purpose: "follow_up",
+      service_cadence: "one_time",
+      service_family: "general_pest",
+      service_offering_id: "general_pest_initial",
       status: "scheduled",
     },
     {
@@ -1683,40 +1715,55 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
     },
     {
       assigned_technician_key: "omar",
+      billing_disposition: "billable",
       customer_id: demoId("c", 11),
       id: demoId("j", 12),
       inventory_key: "glueboard",
+      job_purpose: "inspection",
       key: "mission-brewery-completed",
       location_id: demoId("l", 15),
       scheduled_end: currentWeekRelativeWallClockIso(now, -1, 11, 0),
       scheduled_start: currentWeekRelativeWallClockIso(now, -1, 10, 0),
-      service_notes: markerNote("Completed taproom and brewhouse inspection."),
+      service_notes: markerNote("Completed WDO / escrow inspection."),
+      service_cadence: "one_time",
+      service_family: "termite_wdo",
+      service_offering_id: "wdo_escrow_inspection",
       status: "completed",
     },
     {
       assigned_technician_key: "nina",
+      billing_disposition: "billable",
       customer_id: demoId("c", 12),
       id: demoId("j", 13),
       inventory_key: "rodent",
+      job_purpose: "project_phase",
       key: "otay-tomorrow",
       location_id: demoId("l", 17),
       scheduled_end: currentWeekRelativeWallClockIso(now, 1, 12, 0),
       scheduled_start: currentWeekRelativeWallClockIso(now, 1, 10, 30),
-      service_notes: markerNote("Logistics dock-door and break room route."),
+      service_notes: markerNote("Rodent exclusion project phase for dock doors."),
+      service_cadence: "project",
+      service_family: "rodent_attic",
+      service_offering_id: "rodent_exclusion",
       status: "scheduled",
     },
     {
       assigned_technician_key: "gabe",
+      billing_disposition: "warranty_callback",
       customer_id: demoId("c", 13),
       id: demoId("j", 14),
       inventory_key: "bait",
+      job_purpose: "callback",
       key: "hillcrest-late",
       location_id: demoId("l", 18),
       scheduled_end: currentWeekRelativeWallClockIso(now, 0, 8, 0),
       scheduled_start: currentWeekRelativeWallClockIso(now, 0, 7, 0),
       service_notes: markerNote(
-        "Late scheduled clinic review needs dispatch triage.",
+        "Warranty callback review needs dispatch triage.",
       ),
+      service_cadence: "one_time",
+      service_family: "general_pest",
+      service_offering_id: "general_pest_initial",
       status: "scheduled",
     },
     {

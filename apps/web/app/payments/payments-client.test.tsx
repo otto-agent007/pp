@@ -454,6 +454,39 @@ describe("PaymentsClient", () => {
     ).toContain("Rodent exclusion and attic sanitation completed");
   });
 
+  it("shows advisory classification warnings without blocking invoices", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        {
+          ...completedJob,
+          billing_disposition: "estimate_only",
+          estimate_status: "presented",
+          job_purpose: "estimate",
+          service_cadence: "one_time",
+          service_family: "rodent_attic",
+          service_offering_id: "rodent_inspection",
+        },
+      ],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(screen.getByText("Estimate")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Estimate only - review before invoicing as completed service.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Save invoice" }),
+    ).toBeEnabled();
+  });
+
   it("preserves operator-entered invoice copy when selecting another job", async () => {
     const user = userEvent.setup();
     vi.mocked(useJobs).mockReturnValue({

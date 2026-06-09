@@ -1,35 +1,48 @@
 # Implementation Plan
 
-## Current Priority: Protected Preview Security Closure V1
+## Current Priority: Job Classification Foundation V1
 
 As of June 9, 2026, the active branch is
-`codex/production-readiness-protection-v1`, started from latest `origin/main`
-after PR #123 merged.
+`codex/job-classification-foundation-v1`, started from latest `origin/main`.
 
 Current slice objective:
 
-1. Turn the OWASP review follow-ups into a single protected-preview security
-   closure ledger with pass/blocker/owner status.
-2. Add conservative static coverage so required production-readiness gates
-   remain documented before production sign-off.
-3. Record repo-verifiable evidence from static security, RLS, compliance dry-run,
-   and demo-smoke preflight commands without secrets or provider calls.
-4. Keep migrations, provider/dashboard mutations, env changes, seed/reset writes,
-   preview mutations, production mutations, paid scanners, and live provider
-   calls out of scope unless explicitly approved.
+1. Add first-class job intent fields so dispatch, admins, technicians,
+   closeouts, and payments can distinguish estimates, recurring service,
+   general pest work, exclusion/project work, WDO/escrow inspections,
+   warranty/callbacks, follow-ups, and future project phases.
+2. Connect job classification to the existing service billing catalog through
+   shared `packages/domain` helpers and `packages/api-client` mapping while
+   keeping legacy rows safe before the proposed migration is applied.
+3. Surface technician-friendly labels such as Estimate, Recurring Service,
+   General Pest, Exclusion, WDO / Escrow, Warranty, Follow-up, Callback, and
+   Inspection without exposing internal field names.
+4. Keep this foundation-only: no dynamic mobile checklists, estimate-to-work
+   order conversion, pricing/quote generation, recurring subscription billing,
+   project management, provider changes, seed/reset writes, preview mutation,
+   production mutation, or migration apply.
 
 Current slice status:
 
-1. `docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md` is being added as the live
-   production-readiness protection ledger.
-2. `tooling/production-readiness-protection.test.ts` is being added to keep the
-   required security gates and out-of-scope guardrails visible.
-3. Repo evidence is partially verified: static OWASP/RLS tests passed,
-   `security:baseline` passed, compliance dry-run/no-embed passed, and local
-   demo smoke correctly blocked on missing approved Supabase env names.
-4. Live Supabase migration/advisor closure, Vercel Firewall/WAF configuration,
-   provider test-mode smoke, authenticated preview smoke, and privacy/legal
-   sign-off remain operator-approved blockers.
+1. Proposed migration
+   `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`
+   adds the classification columns, defaults, check constraints, self-reference,
+   comments, and indexes for review only. It has not been applied.
+2. Shared types, catalog metadata, domain normalization/guidance helpers,
+   API-client read/write mapping, local fixture carrying, and demo job
+   classifications are included.
+3. Admin jobs, dispatch cards, mobile job cards/timeline, payments warnings,
+   and closeouts guidance show compact classification signals while preserving
+   current invoice and closeout flows.
+4. Follow-up slices remain: mobile dynamic workflows, estimate acceptance or
+   conversion, recurring contract billing, and project phase management.
+
+## Previous Priority: Protected Preview Security Closure V1
+
+The prior protected-preview security closure added a production-readiness
+protection ledger, static closure coverage, and repo-verifiable evidence without
+migration, provider/dashboard, preview, production, seed/reset, or live
+compliance writes.
 
 ## Previous Priority: OWASP API Security Review V1
 

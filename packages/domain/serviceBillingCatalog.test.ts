@@ -191,4 +191,30 @@ describe("service billing catalog", () => {
     expect(notes).toMatch(/WDO \/ escrow inspection completed/i);
     expect(notes).not.toMatch(/internal compliance warning/i);
   });
+
+  it("carries job-classification defaults for recurring, exclusion, and WDO work", () => {
+    expect(getServiceBillingOffering("general_pest_quarterly")).toMatchObject({
+      defaultBillingDisposition: "included_in_recurring",
+      defaultJobPurpose: "service",
+      defaultServiceCadence: "quarterly",
+      techBadgeLabel: "Recurring Service",
+    });
+    expect(getServiceBillingOffering("rodent_exclusion")).toMatchObject({
+      defaultBillingDisposition: "billable",
+      defaultJobPurpose: "project_phase",
+      defaultServiceCadence: "project",
+      techBadgeLabel: "Exclusion",
+    });
+    expect(getServiceBillingOffering("wdo_escrow_inspection")).toMatchObject({
+      defaultBillingDisposition: "billable",
+      defaultJobPurpose: "inspection",
+      defaultServiceCadence: "one_time",
+      techBadgeLabel: "WDO / Escrow",
+    });
+    expect(getServiceBillingOffering("rodent_inspection")).toMatchObject({
+      defaultBillingDisposition: "estimate_only",
+      defaultJobPurpose: "inspection",
+      defaultServiceCadence: "one_time",
+    });
+  });
 });

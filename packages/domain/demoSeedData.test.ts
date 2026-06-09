@@ -74,6 +74,27 @@ describe("demo seed data", () => {
     expect(plan.jobs.some((job) => job.status === "completed")).toBe(true);
     expect(plan.jobs.some((job) => job.status === "in_progress")).toBe(true);
     expect(plan.jobs.some((job) => job.status === "canceled")).toBe(true);
+    expect(plan.jobs.find((job) => job.key === "nguyen-today")).toMatchObject({
+      billing_disposition: "included_in_recurring",
+      service_cadence: "quarterly",
+      service_offering_id: "general_pest_quarterly",
+    });
+    expect(plan.jobs.find((job) => job.key === "mesa-tomorrow")).toMatchObject({
+      billing_disposition: "estimate_only",
+      job_purpose: "estimate",
+      service_offering_id: "rodent_inspection",
+    });
+    expect(plan.jobs.find((job) => job.key === "otay-tomorrow")).toMatchObject({
+      job_purpose: "project_phase",
+      service_cadence: "project",
+      service_offering_id: "rodent_exclusion",
+    });
+    expect(
+      plan.jobs.find((job) => job.key === "mission-brewery-completed"),
+    ).toMatchObject({
+      job_purpose: "inspection",
+      service_offering_id: "wdo_escrow_inspection",
+    });
     expect(
       plan.jobs.filter((job) => !job.assigned_technician_key).length,
     ).toBeGreaterThanOrEqual(3);

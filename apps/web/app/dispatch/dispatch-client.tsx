@@ -9,9 +9,11 @@ import {
   buildDispatchStaticMapState,
   buildDispatchWeek,
   filterDispatchRouteStops,
+  getJobClassificationBadge,
   getTechnicianLabel,
   getDispatchWeekStart,
   getRelativeDispatchWeek,
+  normalizeJobClassification,
   parseJobScheduleWallTime,
 } from "@pest-patrol/domain";
 import type {
@@ -1290,6 +1292,9 @@ export function DispatchClient() {
                   </div>
                 ) : (
                   day.jobs.map((job) => {
+                    const classificationBadge = getJobClassificationBadge(
+                      normalizeJobClassification(job),
+                    );
                     const isExpanded = expandedJobId === job.id;
                     const techLabel = job.assigned_tech_id
                       ? (technicianLabels[job.assigned_tech_id] ?? "Assigned")
@@ -1314,6 +1319,15 @@ export function DispatchClient() {
                       >
                         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 text-xs font-semibold">
                           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                            {classificationBadge.prominent ? (
+                              <StatusPill
+                                className="max-w-full whitespace-normal break-words text-left"
+                                dot={false}
+                                tone={classificationBadge.tone}
+                              >
+                                {classificationBadge.label}
+                              </StatusPill>
+                            ) : null}
                             <StatusPill
                               className="max-w-full whitespace-normal break-words text-left"
                               dot={false}

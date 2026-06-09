@@ -180,6 +180,21 @@ export default function MobileHomeScreen() {
     }),
     [jobCopy.status],
   );
+  const classificationLabels = useMemo<Record<string, string>>(
+    () => ({
+      Callback: jobCopy.classification.callback,
+      Estimate: jobCopy.classification.estimate,
+      Exclusion: jobCopy.classification.exclusion,
+      "Follow-up": jobCopy.classification.follow_up,
+      "General Pest": jobCopy.classification.general_pest,
+      Inspection: jobCopy.classification.inspection,
+      "Project Work": jobCopy.classification.project_work,
+      "Recurring Service": jobCopy.classification.recurring_service,
+      Warranty: jobCopy.classification.warranty,
+      "WDO / Escrow": jobCopy.classification.wdo_escrow,
+    }),
+    [jobCopy.classification],
+  );
 
   useEffect(() => {
     void initialize();
@@ -428,8 +443,9 @@ export default function MobileHomeScreen() {
         ) : null}
 
         {jobsStatus === "ready" && routeJobCount > 0 ? (
-          <MobileRouteTimeline
-            focusedJobId={focusedRouteJobId}
+        <MobileRouteTimeline
+          classificationLabels={classificationLabels}
+          focusedJobId={focusedRouteJobId}
             onFocusJob={setFocusedRouteJobId}
             renderJobControls={renderFieldControls}
             statusLabels={statusLabels}

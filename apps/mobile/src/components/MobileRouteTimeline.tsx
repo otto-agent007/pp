@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  getJobClassificationLabel,
+  getJobClassificationTechSummary,
+  normalizeJobClassification,
+} from "@pest-patrol/domain";
 import type { MobileDailyRouteTimeline, MobileRouteTimelineJob } from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
 import type { StatusPillTone } from "@pest-patrol/ui-native";
@@ -19,6 +24,7 @@ const statusTones: Record<JobStatus, StatusPillTone> = {
 };
 
 interface MobileRouteTimelineProps {
+  classificationLabels: Record<string, string>;
   focusedJobId?: string | null;
   onFocusJob?: (jobId: string) => void;
   renderJobControls: (job: Job, workPlan: MobileRouteTimelineJob["workPlan"]) => ReactNode;
@@ -35,9 +41,11 @@ function formatRouteTime(value: string) {
 
 function RouteSection({
   item,
+  classificationLabels,
   renderJobControls,
   statusLabels,
 }: {
+  classificationLabels: Record<string, string>;
   item: MobileRouteTimelineJob;
   renderJobControls: (
     job: Job,
@@ -45,6 +53,11 @@ function RouteSection({
   ) => ReactNode;
   statusLabels: Record<JobStatus, string>;
 }) {
+  const classification = normalizeJobClassification(item.job);
+  const classificationLabel = getJobClassificationLabel(classification);
+  const localizedClassificationLabel =
+    classificationLabels[classificationLabel] ?? classificationLabel;
+
   return (
     <View style={styles.routeSection}>
       <View style={styles.sectionHeader}>
@@ -57,6 +70,8 @@ function RouteSection({
       </View>
       <AssignedJobCard
         address={item.job.location?.address}
+        classificationLabel={localizedClassificationLabel}
+        classificationSummary={getJobClassificationTechSummary(classification)}
         customerName={item.job.customer?.name}
         notes={item.job.service_notes}
         scheduledStart={item.job.scheduled_start}
@@ -106,6 +121,7 @@ function LaterRouteRow({
 }
 
 export function MobileRouteTimeline({
+  classificationLabels,
   focusedJobId,
   onFocusJob,
   renderJobControls,
@@ -122,6 +138,7 @@ export function MobileRouteTimeline({
 
       {timeline.current ? (
         <RouteSection
+          classificationLabels={classificationLabels}
           item={timeline.current}
           renderJobControls={renderJobControls}
           statusLabels={statusLabels}
@@ -130,6 +147,7 @@ export function MobileRouteTimeline({
 
       {timeline.next ? (
         <RouteSection
+          classificationLabels={classificationLabels}
           item={timeline.next}
           renderJobControls={renderJobControls}
           statusLabels={statusLabels}
@@ -142,6 +160,7 @@ export function MobileRouteTimeline({
           {timeline.later.map((item) => (
             item.job.id === focusedJobId ? (
               <RouteSection
+                classificationLabels={classificationLabels}
                 item={item}
                 key={item.job.id}
                 renderJobControls={renderJobControls}

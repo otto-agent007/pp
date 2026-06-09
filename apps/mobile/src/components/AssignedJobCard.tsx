@@ -12,6 +12,8 @@ import { useLanguage } from "../store/useLanguage";
 export interface AssignedJobCardProps {
   address?: string | null;
   children?: ReactNode;
+  classificationLabel?: string | null;
+  classificationSummary?: string | null;
   customerName?: string | null;
   notes?: string | null;
   scheduledStart: string;
@@ -49,6 +51,8 @@ function normalizeFieldFlowState(
 export function AssignedJobCard({
   address,
   children,
+  classificationLabel,
+  classificationSummary,
   customerName,
   notes,
   scheduledStart,
@@ -88,6 +92,16 @@ export function AssignedJobCard({
       </View>
 
       <View style={styles.body}>
+        {classificationLabel ? (
+          <View style={styles.classificationBox}>
+            <Text style={styles.classificationLabel}>{classificationLabel}</Text>
+            {classificationSummary ? (
+              <Text style={styles.classificationSummary}>
+                {classificationSummary}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
         <Text style={styles.customer}>{customerName ?? "Unknown customer"}</Text>
         <Text style={styles.address}>{address ?? "No location saved"}</Text>
         {notes ? (
@@ -152,6 +166,26 @@ const styles = StyleSheet.create({
   },
   card: {
     ...mobileRouteShellStyles.card,
+  },
+  classificationBox: {
+    backgroundColor: mobileRouteShellPalette.routeSoft,
+    borderColor: mobileRouteShellPalette.border,
+    borderRadius: mobileRouteShellStyles.card.borderRadius,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
+  },
+  classificationLabel: {
+    color: mobileRouteShellPalette.accentText,
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+  classificationSummary: {
+    color: mobileRouteShellPalette.secondaryText,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 3,
   },
   controls: {
     gap: 10,

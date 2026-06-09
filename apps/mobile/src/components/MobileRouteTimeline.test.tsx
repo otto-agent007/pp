@@ -171,6 +171,8 @@ const timeline = {
       assigned_tech_id: "technician-1",
       scheduled_start: "2026-05-07T08:00:00",
       scheduled_end: null,
+      service_offering_id: "wdo_escrow_inspection",
+      service_family: "termite_wdo",
       status: "in_progress",
       service_notes: "Check bait stations",
       created_at: now,
@@ -305,10 +307,24 @@ const timeline = {
   },
 } satisfies MobileDailyRouteTimeline;
 
+const classificationLabels = {
+  Callback: "Callback",
+  Estimate: "Estimate",
+  Exclusion: "Exclusion",
+  "Follow-up": "Follow-up",
+  "General Pest": "General Pest",
+  Inspection: "Inspection",
+  "Project Work": "Project Work",
+  "Recurring Service": "Recurring Service",
+  Warranty: "Warranty",
+  "WDO / Escrow": "WDO / Escrow",
+};
+
 describe("MobileRouteTimeline", () => {
   it("renders current, next, and compact later route sections", () => {
     const element = (
       <MobileRouteTimeline
+        classificationLabels={classificationLabels}
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
           canceled: "Canceled",
@@ -326,6 +342,7 @@ describe("MobileRouteTimeline", () => {
     expect(text).toContain("Today's route");
     expect(text).toContain("3 jobs assigned today");
     expect(text).toContain("Current job");
+    expect(text).toContain("WDO / Escrow");
     expect(text).toContain("Apex Homes");
     expect(text).toContain("1 queued sync item");
     expect(text).toContain("Submit treatment form");
@@ -346,6 +363,7 @@ describe("MobileRouteTimeline", () => {
   it("renders the operational rail summary with shared route-shell tokens", () => {
     const element = (
       <MobileRouteTimeline
+        classificationLabels={classificationLabels}
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
           canceled: "Canceled",
@@ -379,6 +397,7 @@ describe("MobileRouteTimeline", () => {
   it("renders full controls for a focused later route stop", () => {
     const element = (
       <MobileRouteTimeline
+        classificationLabels={classificationLabels}
         focusedJobId="job-later"
         onFocusJob={() => undefined}
         renderJobControls={(job) => `Controls for ${job.id}`}
@@ -402,6 +421,7 @@ describe("MobileRouteTimeline", () => {
   it("keeps later stops compact when focus points elsewhere", () => {
     const element = (
       <MobileRouteTimeline
+        classificationLabels={classificationLabels}
         focusedJobId="job-missing"
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
@@ -422,6 +442,7 @@ describe("MobileRouteTimeline", () => {
     const onFocusJob = vi.fn();
     const element = (
       <MobileRouteTimeline
+        classificationLabels={classificationLabels}
         onFocusJob={onFocusJob}
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{

@@ -248,6 +248,27 @@ describe("DispatchClient", () => {
     expect(screen.getByText("9:38 AM")).toBeInTheDocument();
   });
 
+  it("shows compact classification badges for non-standard dispatch work", () => {
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        {
+          ...scheduledJob,
+          billing_disposition: "estimate_only",
+          estimate_status: "presented",
+          job_purpose: "estimate",
+          service_cadence: "one_time",
+          service_family: "rodent_attic",
+          service_offering_id: "rodent_inspection",
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    render(<DispatchClient />);
+
+    expect(screen.getByText("Estimate")).toBeInTheDocument();
+  });
+
   it("explains scheduled job visibility and completed handoff", () => {
     render(<DispatchClient />);
     openDispatchDisclosure("Route intelligence");

@@ -91,6 +91,36 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   return [];
 }
 
+function collectText(node: ReactNode): string[] {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return [];
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return [String(node)];
+  }
+
+  if (Array.isArray(node)) {
+    return node.flatMap(collectText);
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement;
+    const rendered =
+      typeof element.type === "function"
+        ? collectText(
+            (element.type as (props: typeof element.props) => ReactNode)(
+              element.props,
+            ),
+          )
+        : [];
+
+    return [...collectText(element.props.children), ...rendered];
+  }
+
+  return [];
+}
+
 function flattenStyles(style: unknown): Record<string, unknown>[] {
   if (!style) {
     return [];
@@ -141,5 +171,23 @@ describe("AssignedJobCard", () => {
         color: mobileRouteShellPalette.primaryText,
       }),
     );
+  });
+
+  it("renders technician-friendly classification copy", () => {
+    const element = (
+      <AssignedJobCard
+        address="10 Pine Street"
+        classificationLabel="WDO / Escrow"
+        classificationSummary="Office review is required before release."
+        customerName="Apex Homes"
+        scheduledStart="2026-05-07T08:00:00"
+        statusLabel="Scheduled"
+      />
+    );
+    const text = collectText(element);
+
+    expect(text).toContain("WDO / Escrow");
+    expect(text).toContain("Office review is required before release.");
+    expect(text.join(" ")).not.toMatch(/billing_disposition|service_offering/i);
   });
 });

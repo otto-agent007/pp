@@ -97,6 +97,12 @@ describe("demo workflow fixtures", () => {
     const harborJob = fixtures.jobs.find(
       (job) => job.id === "00000000-0000-4000-8000-00000000e001",
     );
+    const recurringJob = fixtures.jobs.find((job) =>
+      job.service_offering_id === "general_pest_quarterly"
+    );
+    const wdoJob = fixtures.jobs.find(
+      (job) => job.service_offering_id === "wdo_escrow_inspection",
+    );
     const customerIds = new Set(
       fixtures.customers.map((customer) => customer.id),
     );
@@ -116,6 +122,14 @@ describe("demo workflow fixtures", () => {
     );
     expect(paidInvoice?.job?.id).toBe(completedJob?.id);
     expect(paidInvoice?.customer?.id).toBe(completedJob?.customer_id);
+    expect(recurringJob).toMatchObject({
+      billing_disposition: "included_in_recurring",
+      service_cadence: "quarterly",
+    });
+    expect(wdoJob).toMatchObject({
+      job_purpose: "inspection",
+      service_family: "termite_wdo",
+    });
     expect(paidInvoice?.payments?.[0]).toMatchObject({
       amount_cents: 14500,
       status: "succeeded",

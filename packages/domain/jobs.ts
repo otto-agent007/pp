@@ -21,6 +21,7 @@ import { buildDispatchLocationMapUrl } from "./geofencing";
 import type { DispatchLocationEvidenceByJob } from "./geofencing";
 import { getOfflineQueueJobTriage } from "./offlineQueue";
 import type { OfflineQueueJobTriage } from "./offlineQueue";
+import { applyJobClassificationToInput } from "./jobClassification";
 
 export type JobStatusFilter = JobStatus | "all";
 export type TechnicianFilter = "all" | "unassigned" | string;
@@ -286,7 +287,7 @@ export function normalizeJobInput(input: JobInput): JobInput {
     throw new Error("Scheduled end must be after scheduled start");
   }
 
-  return {
+  return applyJobClassificationToInput({
     customer_id: requireNonEmpty(input.customer_id, "Customer"),
     location_id: requireNonEmpty(input.location_id, "Location"),
     assigned_tech_id: normalizeOptional(input.assigned_tech_id),
@@ -294,7 +295,14 @@ export function normalizeJobInput(input: JobInput): JobInput {
     scheduled_end: scheduledEnd,
     status: input.status ?? "scheduled",
     service_notes: normalizeOptional(input.service_notes),
-  };
+    job_purpose: input.job_purpose,
+    service_offering_id: input.service_offering_id,
+    service_family: input.service_family,
+    billing_disposition: input.billing_disposition,
+    service_cadence: input.service_cadence,
+    estimate_status: input.estimate_status,
+    parent_job_id: input.parent_job_id,
+  });
 }
 
 export function validateJobInput(input: JobInput) {
@@ -1362,6 +1370,13 @@ export function jobToInput(
     scheduled_end: job.scheduled_end,
     status: job.status,
     service_notes: job.service_notes,
+    job_purpose: job.job_purpose,
+    service_offering_id: job.service_offering_id,
+    service_family: job.service_family,
+    billing_disposition: job.billing_disposition,
+    service_cadence: job.service_cadence,
+    estimate_status: job.estimate_status,
+    parent_job_id: job.parent_job_id,
     ...override,
   });
 }

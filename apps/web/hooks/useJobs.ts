@@ -7,6 +7,7 @@ import {
   createJob,
   listJobs,
   updateJob,
+  validateJobInput,
 } from "@pest-patrol/domain";
 import type { Job, JobInput, JobStatus } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,16 +25,24 @@ export const jobsQueryKey = ["jobs"] as const;
 
 function makeOptimisticJob(input: JobInput): Job {
   const now = new Date().toISOString();
+  const normalized = validateJobInput(input);
 
   return {
     id: `optimistic-${crypto.randomUUID()}`,
-    customer_id: input.customer_id,
-    location_id: input.location_id,
-    assigned_tech_id: input.assigned_tech_id ?? null,
-    scheduled_start: input.scheduled_start,
-    scheduled_end: input.scheduled_end ?? null,
-    status: input.status ?? "scheduled",
-    service_notes: input.service_notes ?? null,
+    customer_id: normalized.customer_id,
+    location_id: normalized.location_id,
+    assigned_tech_id: normalized.assigned_tech_id ?? null,
+    scheduled_start: normalized.scheduled_start,
+    scheduled_end: normalized.scheduled_end ?? null,
+    status: normalized.status ?? "scheduled",
+    service_notes: normalized.service_notes ?? null,
+    job_purpose: normalized.job_purpose,
+    service_offering_id: normalized.service_offering_id,
+    service_family: normalized.service_family,
+    billing_disposition: normalized.billing_disposition,
+    service_cadence: normalized.service_cadence,
+    estimate_status: normalized.estimate_status,
+    parent_job_id: normalized.parent_job_id,
     created_at: now,
     updated_at: now,
   };

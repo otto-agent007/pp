@@ -2,25 +2,29 @@
 
 Active implementation slice:
 
-- Protected Preview Security Closure V1 is verified on branch
-  `codex/production-readiness-protection-v1`, started from latest `origin/main`
-  after PR #123 merged.
-- Added a production-readiness protection ledger, static closure coverage,
-  repo-verifiable evidence, and status links for protected-preview security
-  sign-off.
-- Verified with focused static/route security tests, `security:baseline`,
-  compliance dry-run/no-embed, full repo tests, typecheck, lint, build, and
-  `git diff --check`.
-- Local demo smoke preflight remains blocked on missing approved Supabase env
-  names, as recorded in `docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md`.
+- Job Classification Foundation V1 is active on branch
+  `codex/job-classification-foundation-v1`, started from latest `origin/main`.
+- Added structured job classification fields across shared types, domain
+  helpers, service billing catalog metadata, API-client mapping, demo fixtures,
+  admin jobs, dispatch, mobile cards, payments warnings, closeouts guidance,
+  and focused tests.
+- Added proposed-only migration
+  `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`
+  for `public.jobs` columns, defaults, check constraints, `parent_job_id`
+  self-reference, indexes, and comments. It has not been applied.
+- Technician-facing copy uses labels like Estimate, Recurring Service,
+  General Pest, Exclusion, WDO / Escrow, Warranty, Follow-up, Callback, and
+  Inspection; internal field names remain out of technician copy.
+- Focused domain, API-client, web jobs/dispatch/payments/closeouts, mobile
+  card/timeline/home, and migration static tests are passing. Full repo gates,
+  commit, push, and draft PR handoff are still in progress.
 - Out of scope unless explicitly approved: migration apply, Supabase/Vercel/
   Stripe/provider dashboard mutation, env mutation, seed/reset write, preview
-  mutation, production mutation, paid scanner, live provider call, live
-  compliance ingestion, or secret printing.
-- Remaining blockers: live Supabase migration/advisor closure, Vercel WAF/rate
-  limits, Stripe/provider test-mode smoke, authenticated protected-preview
-  smoke, technician/mobile preview smoke, and privacy/legal sign-off.
-- This run is ready for commit, push, and draft PR handoff.
+  mutation, production mutation, live compliance ingestion, dynamic mobile
+  checklists, estimate-to-work-order conversion, pricing/quote generation,
+  recurring subscription billing, or project management.
+- Protected Preview Security Closure V1 is merged and captured in
+  `tasks/done.md`.
 - OWASP API Security Review V1 is merged via PR #123 and captured in
   `tasks/done.md`.
 - Backup Rollback + Security CI + Privacy Retention + Auth Hardening V1 is
