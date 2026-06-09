@@ -15,6 +15,7 @@ function request(url: string, headers: Record<string, string> = {}) {
 
 describe("rate-limit helper", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     __setTestRateLimitChecker(() =>
       Promise.resolve({
         rateLimited: false,
@@ -23,14 +24,12 @@ describe("rate-limit helper", () => {
   });
 
   afterEach(() => {
-    delete process.env.VERCEL;
-    delete process.env.VERCEL_ENV;
-    process.env.NODE_ENV = "test";
+    vi.unstubAllEnvs();
   });
 
   it("allows requests in test/local context by default", async () => {
-    process.env.NODE_ENV = "test";
-    process.env.VERCEL = "1";
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("VERCEL", "1");
 
     const limited = await checkApiRateLimit({
       id: "payment-link-create",
@@ -41,8 +40,8 @@ describe("rate-limit helper", () => {
   });
 
   it("delegates to the checker when in a vercel runtime", async () => {
-    process.env.NODE_ENV = "production";
-    process.env.VERCEL = "1";
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
     const checker = vi.fn().mockResolvedValue({
       rateLimited: true,
     });
@@ -66,7 +65,7 @@ describe("rate-limit helper", () => {
   });
 
   it("extracts client ip from trusted vercel headers", () => {
-    process.env.VERCEL = "1";
+    vi.stubEnv("VERCEL", "1");
 
     const withRealIp = getClientIpFromRequest(
       request("http://localhost", {
@@ -85,8 +84,8 @@ describe("rate-limit helper", () => {
   });
 
   it("does not trust generic forwarded headers", () => {
-    process.env.NODE_ENV = "production";
-    process.env.VERCEL = "1";
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
 
     const localOnly = getClientIpFromRequest(
       request("http://localhost", {
