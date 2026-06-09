@@ -77,6 +77,7 @@ Apply all migrations in timestamp order for a new preview database. The latest l
 
 - `20260507130000_technicians_admin_v1.sql`
 - `20260507220000_supabase_security_hardening_v1.sql`
+- `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql`
 - `20260512043439_portal_token_audit_events_v1.sql`
 - `20260513120000_portal_send_audit_events_v1.sql`
 - `20260516175724_california_compliance_rag_v1.sql` (operator-approved compliance RAG proposal; not applied by Codex)
@@ -84,7 +85,7 @@ Apply all migrations in timestamp order for a new preview database. The latest l
 
 Before applying migrations, the operator should confirm the target Supabase project/environment, backup/rollback comfort, and whether any migrations have already been applied. Inspect remote migration history before any apply, then apply pending files strictly in timestamp order. The compliance and portal send-event migrations are currently proposals; Codex should not run migration apply commands without explicit approval.
 
-RLS/Data API note: apply migrations strictly in timestamp order. The compliance RAG and portal audit migrations depend on `20260507220000_supabase_security_hardening_v1.sql` because their policies call `private.has_admin_access()`; do not apply them as standalone SQL to a target missing that hardening migration. The compliance tables deliberately grant Data API reachability to `authenticated` and `service_role`, not `anon`; RLS remains the row-level boundary for authenticated users. `service_role` access is server/tooling-only, bypasses RLS, and must never be exposed as `NEXT_PUBLIC_*` or `EXPO_PUBLIC_*`.
+RLS/Data API note: apply migrations strictly in timestamp order. The compliance RAG and portal audit migrations depend on `20260507220000_supabase_security_hardening_v1.sql` because their policies call `private.has_admin_access()`; do not apply them as standalone SQL to a target missing that hardening migration. `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` must also be applied to remove `anon` and `public` execution from technician SECURITY DEFINER RPCs before rerunning Security Advisors. The compliance tables deliberately grant Data API reachability to `authenticated` and `service_role`, not `anon`; RLS remains the row-level boundary for authenticated users. `service_role` access is server/tooling-only, bypasses RLS, and must never be exposed as `NEXT_PUBLIC_*` or `EXPO_PUBLIC_*`.
 
 Apply-readiness checklist for local vs preview target:
 
@@ -94,6 +95,7 @@ Apply-readiness checklist for local vs preview target:
 - If using preview Supabase, use only an operator-approved shell or dashboard session and do not paste secrets, bypass values, or raw portal tokens into docs/chat.
 - Apply pending migrations strictly in timestamp order through `20260518021520_portal_send_succeeded_event.sql`.
 - After migration approval and application, rerun `corepack pnpm demo:smoke -- --target local|preview`, then `corepack pnpm compliance:ingest -- --dry-run --no-embed`, before seed/reset or live ingestion.
+- Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql`, rerun Security Advisors, and clear technician RPC execution warnings before production-like auth smoke.
 
 ## Preview Smoke Run
 
@@ -150,6 +152,17 @@ Run these in order after the preview deployment has the approved environment var
 - Durable provider delivery receipts for portal sends.
 - Richer provider failure classification in portal send UI.
 - Live compliance source ingestion after the compliance migration is explicitly approved and applied to the target environment.
+- Supabase Security Advisor follow-up:
+  - [ ] Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` to the approved local target.
+  - [ ] Verify local migration applies cleanly.
+  - [ ] Apply to approved preview target.
+  - [ ] Rerun Supabase Security Advisors.
+  - [ ] Confirm no anon SECURITY DEFINER RPC warnings remain.
+  - [ ] Confirm authenticated SECURITY DEFINER warnings are either gone or explicitly accepted with documented rationale.
+  - [ ] Enable leaked-password protection in Supabase Auth settings (operator action).
+  - [ ] Rerun Auth advisor and confirm leaked-password warning is resolved.
+  - [ ] Run authenticated mobile technician RPC smoke flows.
+  - [ ] Run admin smoke for jobs/dispatch/closeouts.
 - Supabase leaked password protection if the project moves to Supabase Pro.
 - Map-provider planning after token, cost, privacy, env, and provider-dashboard setup decisions are approved.
 - Production launch checklist after preview smoke passes.

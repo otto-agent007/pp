@@ -49,9 +49,10 @@ Mobile app:
 
 1. Create the Supabase project.
 2. Apply migrations in timestamp order from `supabase/migrations`.
-3. Create the private `job-media` bucket if not created by the migration runner.
-4. Create the first admin user in Supabase Auth.
-5. Manually bootstrap the admin profile:
+3. Apply security advisor follow-up migration `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` and rerun advisors before sign-off.
+4. Create the private `job-media` bucket if not created by the migration runner.
+5. Create the first admin user in Supabase Auth.
+6. Manually bootstrap the admin profile:
 
 ```sql
 insert into profiles (id, role)
@@ -60,9 +61,9 @@ on conflict (id) do update
 set role = 'admin', updated_at = now();
 ```
 
-6. Create dispatcher users in Supabase Auth as needed and set matching `profiles.role` values.
-7. Invite technician users from `/technicians` so the configured auth email path sends the password setup link and the app stores technician profile metadata.
-8. Confirm RLS is enabled on all migrated tables before production traffic.
+7. Create dispatcher users in Supabase Auth as needed and set matching `profiles.role` values.
+8. Invite technician users from `/technicians` so the configured auth email path sends the password setup link and the app stores technician profile metadata.
+9. Confirm RLS is enabled on all migrated tables before production traffic.
 
 ## Supabase Auth Redirects
 
@@ -80,17 +81,31 @@ Password recovery links must return to the deployed app, not localhost.
 
 1. Keep service-role keys private and rotate them if they are ever pasted into chat, logs, or docs.
 2. Rerun Supabase security and performance advisors after every production migration.
-3. Treat unused-index recommendations as advisory until the production database has enough real traffic to judge query patterns.
-4. If the project upgrades to Supabase Pro, enable leaked password protection in Supabase Auth settings.
+3. Keep `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` in place as the planned fix for technician RPC execute grants.
+4. Re-run Supabase Security Advisor after migration application and confirm security warnings align with documented intent.
+5. Treat leaked-password protection as an operator dashboard action in Supabase Auth.
+6. Document all explicit SECURITY DEFINER behavior and approved warning exceptions for production sign-off.
 
 Latest hardening status:
 
 - `20260507220000_supabase_security_hardening_v1.sql` was applied to production on May 7, 2026 after explicit approval.
+- `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` is prepared locally; it removes `anon` and `public` execute from the technician SECURITY DEFINER RPCs and keeps `authenticated` execute for intended mobile flow.
 - Local and remote Supabase migration history were aligned after repairing a duplicate technicians migration timestamp.
 - Supabase CLI advisors were rerun after the hardening migration.
 - Performance advisors reported no issues.
-- Security advisors reported one remaining warning: leaked password protection is disabled.
+- Security advisors report pending technician RPC execute warnings from `anon/public` before migration application.
+- Security advisors report one remaining warning: leaked password protection is disabled.
 - This warning is deferred while the project is not on a Supabase Pro plan.
+
+## Supabase Security Advisor Follow-up
+
+- [ ] Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` to approved local target.
+- [ ] Verify local migration applies cleanly.
+- [ ] Apply the same migration to approved preview target.
+- [ ] Rerun Supabase Security Advisors and confirm no `anon`/`public` technician RPC execute warnings remain.
+- [ ] Confirm authenticated execute for technician RPCs is documented and intentionally accepted with remaining status checks.
+- [ ] Confirm leaked-password protection is enabled in Supabase Auth settings (operator dashboard action).
+- [ ] Rerun Auth advisor and confirm leaked-password warning is resolved.
 
 ## Vercel Setup
 
