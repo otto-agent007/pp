@@ -381,6 +381,55 @@ describe("payment link route auth", () => {
     );
   });
 
+  it("ignores client-supplied invoice fields and provider metadata", async () => {
+    const fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        id: "plink_123",
+        url: "https://pay.stripe.com/test",
+      }),
+      ok: true,
+    });
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_123");
+    vi.stubGlobal("fetch", fetch);
+    serviceClient.from.mockReturnValue(
+      new MockQuery({ data: invoice, error: null }) as never,
+    );
+
+    const response = await POST(
+      request({
+        invoice: {
+          id: "attacker-invoice",
+          customer_id: "attacker-customer",
+          job_id: "attacker-job",
+          line_items: [
+            {
+              description: "Attacker supplied item",
+              invoice_id: "attacker-invoice",
+              quantity: 99,
+              unit_amount_cents: 1,
+            },
+          ],
+          provider_payment_link_id: "plink_attacker",
+          payment_url: "https://attacker.example/pay",
+        },
+        invoice_id: "invoice-1",
+        provider_payment_id: "pi_attacker",
+      }),
+    );
+    const fetchOptions = fetch.mock.calls[0]?.[1] as {
+      body?: URLSearchParams;
+    };
+    const requestBody = fetchOptions.body as URLSearchParams;
+
+    expect(response.status).toBe(200);
+    expect(requestBody.get("metadata[invoice_id]")).toBe("invoice-1");
+    expect(requestBody.get("metadata[job_id]")).toBe("job-1");
+    expect(requestBody.get("metadata[customer_id]")).toBe("customer-1");
+    expect(requestBody.toString()).not.toContain("attacker");
+    expect(requestBody.toString()).not.toContain("pi_attacker");
+    expect(requestBody.toString()).not.toContain("plink_attacker");
+  });
+
   it("allows live Stripe keys only when the approval flag is set", async () => {
     const fetch = vi.fn().mockResolvedValue({
       json: vi.fn().mockResolvedValue({

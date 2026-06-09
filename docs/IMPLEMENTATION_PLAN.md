@@ -1,29 +1,50 @@
 # Implementation Plan
 
-## Current Priority: Repo Status Refresh After PRs 103-108
+## Current Priority: OWASP API Security Review V1
 
-As of June 6, 2026, this branch is a docs-only refresh on
-`codex/docs-status-after-prs-103-108` after PRs `#103`-`#108` merged on
-`main`.
+As of June 9, 2026, the active branch is
+`codex/owasp-api-security-review-v1`, started from latest `origin/main` in
+`../pp-owasp-api-security-review-v1`.
 
 Current slice objective:
 
-1. Refresh the living docs and task ledgers so they reflect the merged-state
-   baseline after PRs `#103`-`#108`.
-2. Keep the buyer walkthrough, payment-link/webhook, compliance-ingestion,
-   arrival-notification, and mobile-field execution slices recorded as
-   complete.
-3. Avoid code, provider, migration, seed/reset, preview, or production
-   mutations in this pass.
+1. Map every `apps/web/app/api/**/route.ts` route to OWASP API Security Top 10
+   2023 risks, controls, current tests, and open production-readiness gaps.
+2. Add conservative static route-inventory coverage so undocumented API routes
+   fail focused verification.
+3. Preserve and extend payment-link evidence that clients cannot control Stripe
+   line items or provider metadata because the route loads invoices
+   server-side by `invoice_id`.
+4. Avoid migrations, provider/dashboard mutations, live provider calls,
+   seed/reset writes, preview mutations, production mutations, paid scanners,
+   and new external services.
 
 Current slice status:
 
-1. PRs `#103`-`#108` are merged on `main`.
-2. `tasks/done.md` and `docs/PREVIEW_SMOKE_FINDINGS.md` capture the completed
-   buyer walkthrough readiness evidence.
-3. No active implementation slice is open on this docs refresh branch.
-4. The next implementation slice should start from a fresh correctly named
-   `codex/*` branch when it begins.
+1. The OWASP API review doc is being added at
+   `docs/OWASP_API_SECURITY_REVIEW.md`.
+2. Static route-inventory verification is being added under `tooling/`.
+3. Readiness docs and task ledgers are being updated with static evidence only;
+   live Supabase advisor, Vercel Firewall/WAF, Stripe dashboard, and provider
+   smoke remain operator-approved follow-ups.
+4. The slice is not complete until focused checks, full repo gates,
+   `git diff --check`, commit, push, and draft PR publication are done.
+
+## Previous Priority: Repo Status Refresh After PRs 103-108
+
+As of June 6, 2026, this branch was a docs-only refresh on
+`codex/docs-status-after-prs-103-108` after PRs `#103`-`#108` merged on
+`main`.
+
+Completed in that pass:
+
+1. Refreshed the living docs and task ledgers so they reflected the merged-state
+   baseline after PRs `#103`-`#108`.
+2. Kept the buyer walkthrough, payment-link/webhook, compliance-ingestion,
+   arrival-notification, and mobile-field execution slices recorded as
+   complete.
+3. Avoided code, provider, migration, seed/reset, preview, or production
+   mutations.
 
 ## Previous Priority: Pest Patrol Customer Portal V1
 

@@ -1,5 +1,35 @@
 # Done
 
+## OWASP API Security Review V1
+
+- Added `docs/OWASP_API_SECURITY_REVIEW.md` with a repo-level OWASP API
+  Security Top 10 2023 inventory for every current `apps/web/app/api/**/route.ts`
+  route plus the development-only Whisper rewrites, then expanded it with a
+  companion OWASP Top 10 2025 web application risk mapping.
+- Documented auth type, object IDs, sensitive data, expected authorization
+  boundary, resource guards, provider calls, customer-visible output, evidence,
+  gaps, production blockers, and recommended next slices.
+- Added `tooling/owasp-api-route-inventory.test.ts` to keep route inventory,
+  server-only service-role usage, development-only Whisper rewrites, and
+  placeholder-only `.env.example` values from drifting silently, and to ensure
+  the broader OWASP Top 10 2025 companion lens remains documented.
+- Extended payment-link route coverage to prove client-supplied invoice bodies,
+  line items, and provider IDs are ignored in favor of server-side invoice
+  lookup and stored metadata.
+- Confirmed the current `origin/main` payment-link implementation already
+  accepts `invoice_id`, loads invoices through `packages/api-client` with a
+  service-role server client, reuses existing provider links, and sanitizes
+  provider failures; no code migration was required.
+- Updated production readiness, preview readiness, and implementation status
+  docs to reference the OWASP audit and keep remaining live/provider/dashboard
+  setup operator-approved.
+- No migration, seed/reset, live provider call, live compliance ingestion,
+  Supabase/Vercel/Stripe dashboard mutation, preview mutation, production
+  mutation, paid scanner, external service, or secret printing was performed.
+- Verified with focused route/security tests, `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`.
+
 ## Backup Rollback + Security CI + Privacy Retention + Auth Hardening V1
 
 - Added production-readiness runbooks for backup/rollback, customer data
