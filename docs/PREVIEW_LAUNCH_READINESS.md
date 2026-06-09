@@ -39,6 +39,19 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 - Open draft PRs for readiness docs or small blocking app fixes.
 - Record preview smoke findings without committing secrets, reset links, portal tokens, provider payloads, or production data.
 
+## Security Header Observation
+
+- Browser security headers are added through the web Next config with
+  Content-Security-Policy-Report-Only first; do not treat this as enforced CSP.
+- Review report-only CSP behavior in preview before any later enforcement slice.
+- Preview smoke should confirm admin pages, customer portal, QR portal cards,
+  Supabase signed media, Stripe payment-link handoffs, and the local Whisper dev
+  rewrite path still work after headers are present.
+- Enforced CSP, CSP report collection, Vercel Firewall/WAF changes, and rate
+  limiting policy updates remain separate reviewed slices.
+- HSTS should be reviewed only after the production HTTPS hosting path is
+  confirmed; this repo slice does not add HSTS for local or preview development.
+
 ## Operator-Only Setup
 
 - Document and configure Vercel Firewall/WAF rules (operator step) for `/api/*`, `/api/portal/*`, `/api/compliance/*`, and `/api/payments/stripe-webhook` before production go-live.
