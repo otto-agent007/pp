@@ -322,6 +322,47 @@ describe("notification delivery route", () => {
     ]);
   });
 
+  it("blocks production webhook delivery when the secret is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NOTIFICATION_DELIVERY_WEBHOOK_URL", "https://provider.example/send");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const sendingQuery = new MockQuery({
+      data: {
+        ...notification,
+        delivery_status: "sending",
+        delivery_attempts: 1,
+      },
+      error: null,
+    });
+    const updateQuery = new MockQuery({
+      data: {
+        ...notification,
+        delivery_status: "failed",
+        delivery_provider: "webhook",
+        provider_message_id: null,
+        delivery_attempts: 1,
+        last_delivery_error: "Notification delivery provider is unavailable",
+      },
+      error: null,
+    });
+    serviceClient.from
+      .mockReturnValueOnce(new MockQuery({ data: notification, error: null }))
+      .mockReturnValueOnce(sendingQuery)
+      .mockReturnValueOnce(updateQuery);
+
+    const response = await POST(request(), params());
+    const body = (await response.json()) as {
+      error?: string;
+      event?: typeof notification;
+    };
+
+    expect(response.status).toBe(503);
+    expect(body.error).toBe("Notification delivery provider is unavailable");
+    expect(body.event?.delivery_status).toBe("failed");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("records failed delivery attempts for retry visibility", async () => {
     vi.stubEnv("NOTIFICATION_DELIVERY_WEBHOOK_URL", "https://provider.example/send");
     vi.stubGlobal(

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeLogError, safeLogInfo, safeLogWarn } from "@pest-patrol/domain";
 
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
 import { recordCustomerPortalOpenedEvent } from "../../_lib/access-token-events";
@@ -29,6 +30,12 @@ export async function GET(
   const grant = url.searchParams.get("grant") ?? "";
 
   if (!grant.trim()) {
+    safeLogWarn("portal.session.grant_required", {
+      customer_id: customerId,
+      route: "portal/sessions",
+      status: "denied",
+    });
+
     return portalSessionRequired();
   }
 
@@ -42,10 +49,23 @@ export async function GET(
       .maybeSingle<PortalGrantRow>();
 
     if (error || !data || data.status !== "active") {
+      safeLogWarn("portal.session.denied", {
+        customer_id: customerId,
+        route: "portal/sessions",
+        status: "denied",
+      });
+
       return portalSessionDenied();
     }
 
     if (data.expires_at && Date.parse(data.expires_at) <= Date.now()) {
+      safeLogWarn("portal.session.expired", {
+        customer_id: data.customer_id,
+        route: "portal/sessions",
+        status: "denied",
+        token_id: data.id,
+      });
+
       return portalSessionDenied();
     }
 
@@ -62,6 +82,12 @@ export async function GET(
       });
 
     if (insertError) {
+      safeLogError("portal.session.create_failed", {
+        customer_id: data.customer_id,
+        route: "portal/sessions",
+        token_id: data.id,
+      });
+
       return NextResponse.json(
         { error: "Unable to create portal session" },
         { status: 500 },
@@ -77,6 +103,12 @@ export async function GET(
       tokenId: data.id,
     });
 
+    safeLogInfo("portal.session.opened", {
+      customer_id: data.customer_id,
+      route: "portal/sessions",
+      token_id: data.id,
+    });
+
     const redirectUrl = new URL(
       `/portal/${encodeURIComponent(customerId)}`,
       request.url,
@@ -88,6 +120,11 @@ export async function GET(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to exchange portal grant";
+
+    safeLogError("portal.session.exchange_failed", {
+      customer_id: customerId,
+      route: "portal/sessions",
+    });
 
     return NextResponse.json({ error: message }, { status: 500 });
   }

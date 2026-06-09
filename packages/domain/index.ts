@@ -91,11 +91,31 @@ export type {
   ProductionSmokeChecklistItem,
   RemainingProductionReadinessAction,
 } from "./productionReadiness";
-export { getProviderReadinessCopy } from "./providerReadiness";
+export {
+  getArrivalNotificationDeliveryReadiness,
+  getNotificationProviderReadiness,
+  getPortalDeliveryProviderReadiness,
+  getProviderReadinessCopy,
+  toCustomerPortalProviderStatus,
+  toNotificationProviderStatus,
+  validateNotificationDeliveryConfig,
+} from "./providerReadiness";
 export type {
+  NotificationDeliveryEnv,
+  NotificationDeliveryMode,
+  NotificationDeliveryReadiness,
   ProviderReadinessCopy,
   ProviderReadinessSurface,
 } from "./providerReadiness";
+export {
+  buildSafeErrorResponse,
+  redactObject,
+  redactValue,
+  safeLogError,
+  safeLogInfo,
+  safeLogWarn,
+} from "./safeLogging";
+export type { SafeLogPayload } from "./safeLogging";
 
 export {
   createAutomationRule,
@@ -104,6 +124,7 @@ export {
   archiveNotificationTemplate,
   buildAutomationSchedulerPlan,
   buildAutomationSchedulerPreview,
+  buildArrivalNotificationGeneratedKey,
   buildNotificationDeliveryProviderPayload,
   dismissNotificationEvent,
   filterAutomationRules,
@@ -112,6 +133,7 @@ export {
   filterNotificationTemplates,
   getAutomationSummary,
   getAutomationSchedulerStatus,
+  getCustomerSafeNotificationTemplate,
   getNotificationDeliveryAttemptSummary,
   getNotificationDeliveryLabel,
   getNotificationDeliveryTriageSummary,
@@ -152,6 +174,8 @@ export type {
   AutomationSchedulerPreviewItem,
   AutomationRuleStatusFilter,
   AutomationSummary,
+  CustomerSafeNotificationTemplate,
+  CustomerSafeNotificationTemplateKind,
   NotificationTemplatePreview,
   NotificationTemplatePreviewContext,
   NotificationTemplateVariable,
@@ -549,6 +573,11 @@ export {
   getInvoiceInputTotalCents,
   getInvoiceJobIds,
   getInvoicePaymentCoverageDecision,
+  getStripeKeyMode,
+  getStripeLiveModeGateCopy,
+  getStripePaymentProviderReadiness,
+  getStripePaymentProviderStatus,
+  assertStripeLiveModeAllowed,
   getInvoicePaidCents,
   getInvoiceReconciliation,
   getInvoiceReconciliationGuidance,
@@ -572,6 +601,8 @@ export type {
   InvoiceReconciliationSummary,
   InvoiceStatusFilter,
   InvoiceSummary,
+  StripeLiveModeGateCopy,
+  StripePaymentProviderEnv,
 } from "./payments";
 export {
   buildWdoEscrowClearanceQueue,

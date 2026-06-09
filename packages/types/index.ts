@@ -132,6 +132,23 @@ export type NotificationDeliveryStatus =
 
 export type NotificationDeliveryProvider = "manual" | "webhook";
 
+export type NotificationProviderReadinessState =
+  | "ready"
+  | "manual_fallback"
+  | "missing_webhook_url"
+  | "missing_webhook_secret"
+  | "disabled"
+  | "misconfigured";
+
+export type StripeKeyMode = "live" | "missing" | "test" | "unknown";
+
+export type StripePaymentProviderReadinessState =
+  | "live_mode_approved"
+  | "live_mode_blocked"
+  | "manual_fallback"
+  | "misconfigured"
+  | "test_mode_ready";
+
 export type ApiRateLimitPolicyId =
   | "portal-access-token-create"
   | "portal-access-token-send"
@@ -674,14 +691,28 @@ export interface NotificationDeliveryProviderPayload {
 }
 
 export interface NotificationProviderStatus {
+  manual_fallback?: boolean;
   provider: NotificationDeliveryProvider;
+  readiness_state?: NotificationProviderReadinessState;
   webhook_configured: boolean;
   webhook_secret_configured: boolean;
 }
 
 export interface CustomerPortalProviderStatus {
+  manual_fallback?: boolean;
   provider: CustomerPortalDeliveryProvider;
+  readiness_state?: NotificationProviderReadinessState;
   webhook_configured: boolean;
+  webhook_secret_configured: boolean;
+}
+
+export interface StripePaymentProviderStatus {
+  live_mode_approved: boolean;
+  manual_fallback: boolean;
+  provider: PaymentProvider;
+  readiness_state: StripePaymentProviderReadinessState;
+  secret_configured: boolean;
+  stripe_key_mode: StripeKeyMode;
   webhook_secret_configured: boolean;
 }
 
@@ -913,7 +944,8 @@ export interface CustomerPortalSendInput {
 }
 
 export interface CustomerPortalSendResult {
-  provider: "webhook";
+  manual_fallback?: boolean;
+  provider: CustomerPortalDeliveryProvider;
   status: "requested";
 }
 

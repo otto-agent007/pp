@@ -1,6 +1,7 @@
 import {
   createInvoicePaymentLinkRecord,
   createInvoiceRecord,
+  getStripePaymentProviderStatusRecord,
   listInvoiceRecords,
   updateInvoiceStatusRecord,
 } from "@pest-patrol/api-client";
@@ -13,6 +14,9 @@ import type {
   InvoiceStatus,
   Job,
   PaymentRecord,
+  StripeKeyMode,
+  StripePaymentProviderReadinessState,
+  StripePaymentProviderStatus,
 } from "@pest-patrol/types";
 import {
   buildInvoiceLineItemsFromOffering,
@@ -66,6 +70,149 @@ export interface BillingCloseoutHandoffSummary {
   label: string;
   nextStep: string;
   summary: string;
+}
+
+export interface StripePaymentProviderEnv {
+  [key: string]: string | null | undefined;
+  STRIPE_LIVE_MODE_APPROVED?: string | null;
+  STRIPE_SECRET_KEY?: string | null;
+  STRIPE_WEBHOOK_SECRET?: string | null;
+}
+
+export interface StripeLiveModeGateCopy {
+  action: string;
+  label: string;
+  stateLabel: string;
+  summary: string;
+}
+
+function isTruthyFlag(value?: string | null) {
+  return ["1", "true", "yes"].includes((value ?? "").trim().toLowerCase());
+}
+
+export function getStripeKeyMode(secretKey?: string | null): StripeKeyMode {
+  const normalized = secretKey?.trim();
+
+  if (!normalized) {
+    return "missing";
+  }
+
+  if (normalized.startsWith("sk_test_")) {
+    return "test";
+  }
+
+  if (normalized.startsWith("sk_live_")) {
+    return "live";
+  }
+
+  return "unknown";
+}
+
+export function getStripePaymentProviderReadiness(
+  env: StripePaymentProviderEnv = {},
+): StripePaymentProviderStatus {
+  const stripeKeyMode = getStripeKeyMode(env.STRIPE_SECRET_KEY);
+  const liveModeApproved = isTruthyFlag(env.STRIPE_LIVE_MODE_APPROVED);
+  let readinessState: StripePaymentProviderReadinessState;
+
+  if (stripeKeyMode === "missing") {
+    readinessState = "manual_fallback";
+  } else if (stripeKeyMode === "test") {
+    readinessState = "test_mode_ready";
+  } else if (stripeKeyMode === "live" && liveModeApproved) {
+    readinessState = "live_mode_approved";
+  } else if (stripeKeyMode === "live") {
+    readinessState = "live_mode_blocked";
+  } else {
+    readinessState = "misconfigured";
+  }
+
+  return {
+    live_mode_approved: liveModeApproved,
+    manual_fallback:
+      readinessState === "manual_fallback" ||
+      readinessState === "live_mode_blocked" ||
+      readinessState === "misconfigured",
+    provider: "stripe",
+    readiness_state: readinessState,
+    secret_configured: stripeKeyMode !== "missing",
+    stripe_key_mode: stripeKeyMode,
+    webhook_secret_configured: Boolean(env.STRIPE_WEBHOOK_SECRET?.trim()),
+  };
+}
+
+export function assertStripeLiveModeAllowed(
+  env: StripePaymentProviderEnv = {},
+) {
+  const readiness = getStripePaymentProviderReadiness(env);
+
+  if (
+    readiness.readiness_state === "live_mode_blocked" ||
+    readiness.readiness_state === "misconfigured"
+  ) {
+    throw new Error("Stripe live mode is not approved");
+  }
+
+  return readiness;
+}
+
+export function getStripeLiveModeGateCopy(
+  env: StripePaymentProviderEnv = {},
+): StripeLiveModeGateCopy {
+  const readiness = getStripePaymentProviderReadiness(env);
+
+  if (readiness.readiness_state === "test_mode_ready") {
+    return {
+      action:
+        "Run test-card payment links and webhook reconciliation before requesting live approval.",
+      label: "Stripe test mode ready",
+      stateLabel: "Test mode ready",
+      summary:
+        "Stripe is configured for test mode. Live payment operations remain blocked until approval.",
+    };
+  }
+
+  if (readiness.readiness_state === "live_mode_approved") {
+    return {
+      action:
+        "Keep the production checklist current before processing live customer payments.",
+      label: "Stripe live mode approved",
+      stateLabel: "Live mode approved",
+      summary:
+        "Live Stripe operations are explicitly approved by configuration.",
+    };
+  }
+
+  if (readiness.readiness_state === "live_mode_blocked") {
+    return {
+      action:
+        "Set STRIPE_LIVE_MODE_APPROVED only after operator approval and checklist evidence.",
+      label: "Stripe live mode blocked",
+      stateLabel: "Live mode blocked",
+      summary:
+        "A live Stripe key is present, but live operations are blocked until explicit approval.",
+    };
+  }
+
+  if (readiness.readiness_state === "misconfigured") {
+    return {
+      action:
+        "Use a test key or approved live key before enabling provider payment links.",
+      label: "Stripe key needs review",
+      stateLabel: "Provider misconfigured",
+      summary:
+        "Stripe key format is not recognized. Payment links remain in manual fallback.",
+    };
+  }
+
+  return {
+    action:
+      "Use manual payment follow-up until Stripe test-mode setup is configured.",
+    label: "Manual payment fallback",
+    stateLabel: "Manual fallback accepted",
+    summary:
+      "Stripe payment links are unavailable. Invoices can still be managed manually.",
+  };
 }
 
 function normalizeOptional(value?: string | null) {
@@ -154,6 +301,10 @@ export function normalizeInvoiceInput(input: InvoiceInput): InvoiceInput {
 
 export function validateInvoiceInput(input: InvoiceInput) {
   return normalizeInvoiceInput(input);
+}
+
+export function getStripePaymentProviderStatus() {
+  return getStripePaymentProviderStatusRecord();
 }
 
 export function buildInvoiceInputFromJob(

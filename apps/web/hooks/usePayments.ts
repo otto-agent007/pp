@@ -3,6 +3,7 @@
 import {
   createInvoice,
   createInvoicePaymentLink,
+  getStripePaymentProviderStatus,
   listInvoices,
   markInvoicePaid,
   voidInvoice,
@@ -18,11 +19,19 @@ import {
 } from "./localDemoData";
 
 export const invoicesQueryKey = ["invoices"] as const;
+export const paymentProviderStatusQueryKey = ["payment-provider-status"] as const;
 
 export function useInvoices() {
   return useQuery({
     queryKey: invoicesQueryKey,
     queryFn: () => getLocalDemoFixtures()?.invoices ?? listInvoices(),
+  });
+}
+
+export function usePaymentProviderStatus() {
+  return useQuery({
+    queryKey: paymentProviderStatusQueryKey,
+    queryFn: () => getStripePaymentProviderStatus(),
   });
 }
 

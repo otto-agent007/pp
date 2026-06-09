@@ -236,6 +236,18 @@ function ruleStatusTone(status: AutomationRule["status"]): StatusPillTone {
   return "neutral";
 }
 
+function providerStatusTone(state?: string): StatusPillTone {
+  if (state === "ready") {
+    return "info";
+  }
+
+  if (state === "misconfigured" || state === "missing_webhook_secret") {
+    return "danger";
+  }
+
+  return "warning";
+}
+
 export function AutomationClient() {
   const rulesQuery = useAutomationRules();
   const schedulerRunsQuery = useAutomationSchedulerRuns();
@@ -485,6 +497,10 @@ export function AutomationClient() {
     "notification",
     providerStatus,
   );
+  const providerTone = providerStatusTone(providerStatus?.readiness_state);
+  const providerReady =
+    providerStatus?.readiness_state === "ready" ||
+    (!providerStatus?.readiness_state && providerStatus?.provider === "webhook");
 
   async function submitRule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -995,9 +1011,7 @@ export function AutomationClient() {
             </div>
             <Card
               className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-              statusTone={
-                providerStatus?.provider === "webhook" ? "info" : "warning"
-              }
+              statusTone={providerTone}
             >
               <div>
                 <Eyebrow tone="accent">Provider readiness</Eyebrow>
@@ -1012,8 +1026,12 @@ export function AutomationClient() {
                   Provider:{" "}
                   {providerStatusQuery.isLoading
                     ? "Loading"
-                    : providerStatus?.provider === "webhook"
+                    : providerReady
                       ? "Webhook configured"
+                      : providerStatus?.readiness_state ===
+                          "missing_webhook_secret" ||
+                        providerStatus?.readiness_state === "misconfigured"
+                        ? "Manual follow-up needed"
                       : "Manual fallback"}
                 </p>
                 {providerStatus?.provider === "webhook" ? (
@@ -1027,9 +1045,7 @@ export function AutomationClient() {
                 {providerStatusQuery.isLoading ? null : (
                   <div
                     className={`mt-3 rounded-md border p-3 ${statusSurfaceClassName(
-                      providerStatus?.provider === "webhook"
-                        ? "info"
-                        : "warning",
+                      providerTone,
                     )}`}
                   >
                     <p className="text-sm font-semibold text-theme-text-primary">

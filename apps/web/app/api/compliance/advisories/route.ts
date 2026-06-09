@@ -12,6 +12,8 @@ import {
   getComplianceRuntimeStatus,
   getComplianceSchemaReadyReadiness,
   getComplianceSchemaUnavailableReadiness,
+  safeLogError,
+  safeLogWarn,
   validateComplianceAdvisoryRequest,
 } from "@pest-patrol/domain";
 import type { ComplianceAdvisoryRequest } from "@pest-patrol/types";
@@ -77,6 +79,12 @@ export async function POST(request: Request) {
     });
 
     if (!runtimeStatus.available) {
+      safeLogWarn("compliance.advisory.provider_unavailable", {
+        reason: runtimeStatus.reason,
+        route: "compliance/advisories",
+        workflow: parsedInput.workflow,
+      });
+
       const advisory = buildComplianceAdvisory({
         chunks: [],
         prompt: parsedInput.prompt,
@@ -147,6 +155,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (input && isComplianceSchemaUnavailableError(error)) {
       const advisoryInput = input;
+      safeLogWarn("compliance.advisory.schema_unavailable", {
+        route: "compliance/advisories",
+        workflow: advisoryInput.workflow,
+      });
       const advisory = buildComplianceAdvisory({
         chunks: [],
         prompt: advisoryInput.prompt,
@@ -166,6 +178,11 @@ export async function POST(request: Request) {
 
     const message =
       error instanceof Error ? error.message : "Unable to create compliance advisory";
+
+    safeLogError("compliance.advisory.failed", {
+      route: "compliance/advisories",
+      workflow: input?.workflow ?? null,
+    });
 
     return NextResponse.json({ error: message }, { status: 500 });
   }

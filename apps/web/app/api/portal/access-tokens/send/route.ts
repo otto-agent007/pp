@@ -1,4 +1,7 @@
 import {
+  getPortalDeliveryProviderReadiness,
+  safeLogError,
+  safeLogWarn,
   validateCustomerPortalSendInput,
   validateCustomerPortalAccessToken,
 } from "@pest-patrol/domain";
@@ -66,7 +69,10 @@ function isExpired(expiresAt: string | null) {
 }
 
 function errorStatus(message: string) {
-  if (message === "Portal delivery provider is not configured") {
+  if (
+    message === "Portal delivery provider is not configured" ||
+    message === "Portal delivery provider is unavailable"
+  ) {
     return 503;
   }
 
@@ -208,8 +214,56 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.PORTAL_DELIVERY_WEBHOOK_URL) {
-      throw new Error("Portal delivery provider is not configured");
+    const readiness = getPortalDeliveryProviderReadiness(process.env);
+
+    if (
+      readiness.state === "manual_fallback" ||
+      readiness.state === "disabled"
+    ) {
+      await recordCustomerPortalAccessTokenEvent(client, {
+        actorProfileId: auth.access.userId,
+        customerId: data.customer_id,
+        kind: "send_requested",
+        tokenId: data.id,
+      });
+
+      safeLogWarn("portal.send.manual_fallback", {
+        customer_id: data.customer_id,
+        provider: "manual",
+        route: "portal/access-tokens/send",
+        token_id: data.id,
+      });
+
+      return NextResponse.json({
+        manual_fallback: true,
+        provider: "manual",
+        status: "requested",
+      });
+    }
+
+    if (readiness.state === "misconfigured") {
+      await recordCustomerPortalAccessTokenEvent(client, {
+        actorProfileId: auth.access.userId,
+        customerId: data.customer_id,
+        kind: "send_failed",
+        tokenId: data.id,
+      });
+
+      safeLogWarn("portal.send.provider_misconfigured", {
+        customer_id: data.customer_id,
+        provider: "webhook",
+        route: "portal/access-tokens/send",
+        token_id: data.id,
+      });
+
+      return NextResponse.json(
+        {
+          error: "Portal delivery provider is unavailable",
+          manual_fallback: true,
+          provider: "manual",
+        },
+        { status: 503 },
+      );
     }
 
     const payload = buildProviderPayload({
@@ -226,6 +280,13 @@ export async function POST(request: Request) {
         customerId: data.customer_id,
         kind: "send_failed",
         tokenId: data.id,
+      });
+
+      safeLogError("portal.send.provider_failed", {
+        customer_id: data.customer_id,
+        provider: "webhook",
+        route: "portal/access-tokens/send",
+        token_id: data.id,
       });
 
       throw error;
@@ -246,6 +307,14 @@ export async function POST(request: Request) {
     const message =
       error instanceof Error ? error.message : "Unable to request portal send";
 
-    return NextResponse.json({ error: message }, { status: errorStatus(message) });
+    return NextResponse.json(
+      {
+        error:
+          message === "Portal delivery provider request failed"
+            ? message
+            : message,
+      },
+      { status: errorStatus(message) },
+    );
   }
 }

@@ -656,6 +656,8 @@ describe("offline sync domain", () => {
       "2026-05-05T20:00:00.000Z",
       "pending",
       null,
+      "Technician arrived",
+      "Your Pest Patrol technician has arrived and will begin shortly.",
     ],
     [
       "delay 5 min",
@@ -663,11 +665,21 @@ describe("offline sync domain", () => {
       "2026-05-05T20:05:00.000Z",
       "pending",
       null,
+      "Technician arriving shortly",
+      "Your Pest Patrol technician is nearby and will begin shortly after the scheduled delay.",
     ],
-    ["skip", "skip", "2026-05-05T20:00:00.000Z", "dismissed", now],
+    [
+      "skip",
+      "skip",
+      "2026-05-05T20:00:00.000Z",
+      "dismissed",
+      now,
+      "Arrival notice skipped",
+      null,
+    ],
   ] as const)(
     "syncs arrival notification events for %s",
-    async (_label, decision, dueAt, status, handledAt) => {
+    async (_label, decision, dueAt, status, handledAt, title, message) => {
       vi.mocked(createGeneratedNotificationEventRecord).mockResolvedValueOnce(
         {} as never,
       );
@@ -684,10 +696,12 @@ describe("offline sync domain", () => {
         expect.objectContaining({
           customer_id: null,
           due_at: dueAt,
+          generated_key: `arrival-notice:job-1:00000000-0000-4000-8000-000000000202:${decision}`,
           handled_at: handledAt,
           job_id: "job-1",
+          message,
           status,
-          title: "Arrival notice",
+          title,
           type: "arrival_notification",
         }),
         client,

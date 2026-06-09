@@ -29,6 +29,7 @@ Web app:
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | Used by portal access routes to validate hashed customer portal tokens and return customer-safe closeouts. Never expose as `NEXT_PUBLIC_*`. |
 | `STRIPE_SECRET_KEY` | Server only | Used only by `apps/web/app/api/payments/payment-link/route.ts`. Never expose as `NEXT_PUBLIC_*`. |
 | `STRIPE_WEBHOOK_SECRET` | Server only | Used only by `apps/web/app/api/payments/stripe-webhook/route.ts` to verify Stripe webhook signatures. Never expose as `NEXT_PUBLIC_*`. |
+| `STRIPE_LIVE_MODE_APPROVED` | Server only | Default `false`. Must be explicitly set to `true` before live Stripe payment links or live webhook processing are allowed. |
 | `NOTIFICATION_DELIVERY_WEBHOOK_URL` | Server only | Optional webhook endpoint for Notification Delivery V1. If omitted, delivery is recorded through the server-side manual provider. |
 | `NOTIFICATION_DELIVERY_WEBHOOK_SECRET` | Server only | Optional bearer secret sent only from the server delivery route to the webhook provider. |
 | `PORTAL_DELIVERY_WEBHOOK_URL` | Server only | Optional webhook endpoint for Portal Send Provider V1. If omitted, generated portal links remain manual-copy only. |
@@ -44,6 +45,36 @@ Mobile app:
 | --- | --- | --- |
 | `EXPO_PUBLIC_SUPABASE_URL` | Mobile runtime | Supabase project URL. |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Mobile runtime | Supabase anon key protected by RLS. |
+
+## Stripe Live-Mode Gate
+
+This slice does not turn on live Stripe, create Stripe objects, or modify the Stripe dashboard. It only adds a server-side gate so a live secret key cannot accidentally process payment links or webhooks unless `STRIPE_LIVE_MODE_APPROVED=true` is set by an operator.
+
+Required pre-live checklist:
+
+1. Configure Stripe test-mode `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
+2. Configure the Stripe webhook endpoint in the Stripe dashboard and copy the test webhook secret into approved server env storage.
+3. Verify a test-card payment link flow from `/payments`.
+4. Verify duplicate webhook delivery is idempotent and does not duplicate payment records.
+5. Document the refund, dispute, and failed-payment review plan.
+6. Switch to live Stripe keys only after operator approval.
+7. Set `STRIPE_LIVE_MODE_APPROVED=true` only after the live-mode operator approval is recorded.
+
+Readiness states are exposed without secret values:
+
+- `manual_fallback`: no Stripe secret key is configured.
+- `test_mode_ready`: a `sk_test_` secret is configured.
+- `live_mode_blocked`: a `sk_live_` secret is configured but the approval flag is not true.
+- `live_mode_approved`: a `sk_live_` secret is configured and `STRIPE_LIVE_MODE_APPROVED=true`.
+- `misconfigured`: the key format is unknown and provider calls are blocked.
+
+## Safe Observability
+
+Runtime logs should identify the failing route, provider, object IDs, and status only. Never log raw request bodies, Stripe signatures, webhook secrets, portal grants, token hashes, service-role keys, cookies, customer signatures, exact GPS coordinates, admin notes, technician private notes, or compliance internals.
+
+Use Vercel runtime logs manually for review of critical events such as Stripe webhook errors, payment-link provider failures, portal send failures, notification delivery failures, rate-limit spikes, origin guard failures, compliance advisory unavailable states, and mobile sync failures. No external monitoring provider is configured by this slice.
+
+The admin-only `/api/ops/readiness` endpoint reports static configured/missing states for Supabase, Stripe, portal delivery, notification delivery, and compliance OpenAI readiness. It does not call Stripe, OpenAI, Supabase provider dashboards, or notification providers.
 
 ## Supabase Setup Order
 

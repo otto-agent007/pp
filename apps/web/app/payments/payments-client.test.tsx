@@ -19,6 +19,7 @@ import {
   useCreateInvoicePaymentLink,
   useInvoices,
   useMarkInvoicePaid,
+  usePaymentProviderStatus,
   useVoidInvoice,
 } from "../../hooks/usePayments";
 import { PaymentsClient } from "./payments-client";
@@ -52,6 +53,7 @@ vi.mock("../../hooks/usePayments", () => ({
   useCreateInvoicePaymentLink: vi.fn(),
   useInvoices: vi.fn(),
   useMarkInvoicePaid: vi.fn(),
+  usePaymentProviderStatus: vi.fn(),
   useVoidInvoice: vi.fn(),
 }));
 
@@ -300,6 +302,18 @@ describe("PaymentsClient", () => {
       data: [invoice],
       isLoading: false,
     } as never);
+    vi.mocked(usePaymentProviderStatus).mockReturnValue({
+      data: {
+        live_mode_approved: false,
+        manual_fallback: true,
+        provider: "stripe",
+        readiness_state: "manual_fallback",
+        secret_configured: false,
+        stripe_key_mode: "missing",
+        webhook_secret_configured: false,
+      },
+      isLoading: false,
+    } as never);
     vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
       data: [fullSummary("job-1")],
       isLoading: false,
@@ -348,7 +362,9 @@ describe("PaymentsClient", () => {
 
     expect(screen.getByText("Payment workspace")).toBeInTheDocument();
     expect(screen.getByText("Reconciliation snapshot")).toBeInTheDocument();
-    expect(screen.getByText("Manual fallback mode")).toBeInTheDocument();
+    expect(screen.getAllByText("Manual fallback accepted").length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText("Apex Homes")).toBeInTheDocument();
     expect(screen.getAllByText("$125.00").length).toBeGreaterThan(0);
     expect(
@@ -582,17 +598,12 @@ describe("PaymentsClient", () => {
     expect(providerReadiness?.tagName).toBe("SECTION");
     expect(
       screen.getByText(
-        "Manual payment fallback is active for provider-free demos.",
+        "Stripe payment links are unavailable. Invoices can still be managed manually.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Payment links and webhook receipts stay deferred until provider setup is approved.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Invoices and manual paid status still work for non-payment demos without Stripe.",
+        "Use manual payment follow-up until Stripe test-mode setup is configured.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/sk_test_/i)).not.toBeInTheDocument();

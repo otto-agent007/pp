@@ -3,7 +3,12 @@ import {
   updateInvoiceStatusRecord,
   upsertPaymentRecordRecord,
 } from "@pest-patrol/api-client";
-import { getInvoicePaymentCoverageDecision } from "@pest-patrol/domain";
+import {
+  getInvoicePaymentCoverageDecision,
+  getStripePaymentProviderReadiness,
+  safeLogInfo,
+  safeLogWarn,
+} from "@pest-patrol/domain";
 import type {
   Invoice,
   PaymentRecord,
@@ -270,9 +275,42 @@ export async function POST(request: Request) {
       getStripeWebhookToleranceSeconds(),
     )
   ) {
+    safeLogWarn("stripe.webhook.invalid_signature", {
+      provider: "stripe",
+      route: "payments/stripe-webhook",
+    });
+
     return NextResponse.json(
       { error: "Invalid Stripe webhook signature" },
       { status: 400 },
+    );
+  }
+
+  const stripeReadiness = getStripePaymentProviderReadiness(process.env);
+
+  if (stripeReadiness.readiness_state === "live_mode_blocked") {
+    safeLogWarn("stripe.webhook.live_mode_blocked", {
+      provider: "stripe",
+      route: "payments/stripe-webhook",
+      stripe_key_mode: stripeReadiness.stripe_key_mode,
+    });
+
+    return NextResponse.json(
+      { error: "Stripe live mode is not approved" },
+      { status: 409 },
+    );
+  }
+
+  if (stripeReadiness.readiness_state === "misconfigured") {
+    safeLogWarn("stripe.webhook.misconfigured", {
+      provider: "stripe",
+      route: "payments/stripe-webhook",
+      stripe_key_mode: stripeReadiness.stripe_key_mode,
+    });
+
+    return NextResponse.json(
+      { error: "Stripe webhook processing is unavailable" },
+      { status: 503 },
     );
   }
 
@@ -288,6 +326,14 @@ export async function POST(request: Request) {
   }
 
   const result = await reconcileStripeEvent(event);
+
+  safeLogInfo("stripe.webhook.reconciled", {
+    invoice_id: result.invoice_id,
+    payment_id: result.payment_id,
+    provider: "stripe",
+    route: "payments/stripe-webhook",
+    status: result.status,
+  });
 
   return NextResponse.json(result, {
     status: result.status === "processed" ? 200 : 202,

@@ -31,6 +31,10 @@ import {
   validateJobSignatureCaptureQueuePayload,
 } from "./media";
 import {
+  buildArrivalNotificationGeneratedKey,
+  getCustomerSafeNotificationTemplate,
+} from "./automation";
+import {
   markQueueItemFailed,
   markQueueItemRetrying,
   markQueueItemSynced,
@@ -720,17 +724,26 @@ function buildArrivalNotificationInput(
   }
 
   const isSkipped = payload.decision === "skip";
+  const template = getCustomerSafeNotificationTemplate(
+    payload.decision === "delay_5_min"
+      ? "arrival_delayed"
+      : "arrival_send_now",
+  );
 
   return {
     customer_id: null,
     due_at: dueAt.toISOString(),
-    generated_key: `arrival-notice:${payload.job_id}:${payload.client_event_id}`,
+    generated_key: buildArrivalNotificationGeneratedKey({
+      clientEventId: payload.client_event_id,
+      decision: payload.decision,
+      jobId: payload.job_id,
+    }),
     handled_at: isSkipped ? payload.captured_at : null,
     job_id: payload.job_id,
-    message: "Your technician has arrived and is ready to begin service.",
+    message: isSkipped ? null : template.message,
     rule_id: null,
     status: isSkipped ? "dismissed" : "pending",
-    title: "Arrival notice",
+    title: isSkipped ? "Arrival notice skipped" : template.title,
     type: "arrival_notification",
   };
 }

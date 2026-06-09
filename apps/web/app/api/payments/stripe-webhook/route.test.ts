@@ -265,6 +265,69 @@ describe("stripe webhook route", () => {
     expect(serviceClient.from).not.toHaveBeenCalled();
   });
 
+  it("allows signed test-mode webhooks", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_123");
+
+    const response = await POST(
+      request({
+        id: "evt_999",
+        type: "customer.subscription.created",
+        data: {
+          object: {
+            id: "sub_123",
+            metadata: {
+              invoice_id: "invoice-1",
+            },
+          },
+        },
+      }),
+    );
+    const body = (await response.json()) as { status?: string };
+
+    expect(response.status).toBe(202);
+    expect(body.status).toBe("ignored");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("blocks signed live-mode webhooks before reconciliation without approval", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_123");
+    vi.stubEnv("STRIPE_LIVE_MODE_APPROVED", "false");
+
+    const response = await POST(request(checkoutCompletedEvent()));
+    const body = (await response.json()) as { error?: string };
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(409);
+    expect(body.error).toBe("Stripe live mode is not approved");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(serialized).not.toContain("sk_live_123");
+  });
+
+  it("allows signed live-mode webhooks when approval is set", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_123");
+    vi.stubEnv("STRIPE_LIVE_MODE_APPROVED", "true");
+
+    const response = await POST(
+      request({
+        id: "evt_999",
+        type: "customer.subscription.created",
+        data: {
+          object: {
+            id: "sub_123",
+            metadata: {
+              invoice_id: "invoice-1",
+            },
+          },
+        },
+      }),
+    );
+    const body = (await response.json()) as { status?: string };
+
+    expect(response.status).toBe(202);
+    expect(body.status).toBe("ignored");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
   it("accepts a current Stripe webhook timestamp and marks the invoice paid", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
     const existingPaymentQuery = new MockQuery({
