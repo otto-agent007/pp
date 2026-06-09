@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "./route";
+import { __setTestRateLimitChecker } from "../../../../_lib/rate-limit";
 
 let adminError: Response | null = null;
 let serviceClient: {
@@ -129,6 +130,11 @@ describe("notification delivery route", () => {
     serviceClient = {
       from: vi.fn(),
     };
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: false,
+      }),
+    );
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -144,6 +150,21 @@ describe("notification delivery route", () => {
 
     expect(response.status).toBe(401);
     expect(body.error).toBe("Authentication is required");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 before notification lookup when the rate limit is reached", async () => {
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: true,
+      }),
+    );
+
+    const response = await POST(request(), params());
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe("Too many requests. Please retry later.");
     expect(serviceClient.from).not.toHaveBeenCalled();
   });
 

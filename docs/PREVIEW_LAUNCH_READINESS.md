@@ -6,6 +6,27 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 
 - Keep `README.md`, `docs/IMPLEMENTATION_PLAN.md`, `tasks/in-progress.md`, and `docs/PRODUCTION_READINESS.md` aligned to preview launch readiness.
 - Verify route and env names against the code before smoke testing.
+- Route-level abuse protection in this slice is layered with Vercel Firewall/WAF rules:
+  - run Vercel rules as operator tasks before production
+  - keep route-level checks in `apps/web/app/api/_lib/rate-limit.ts` as defense-in-depth
+  - local/test environments use no-op behavior to avoid blocking development retries
+- Example production-oriented firewall policy payloads:
+
+```json
+{ "source": "/api/*", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 1200, "period": "60s" }] }
+```
+
+```json
+{ "source": "/api/portal/*", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 120, "period": "60s" }] }
+```
+
+```json
+{ "source": "/api/compliance/*", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 90, "period": "60s" }] }
+```
+
+```json
+{ "source": "/api/payments/stripe-webhook", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 240, "period": "60s", "note": "allow retries" }] }
+```
 - Run the read-only demo smoke preflight before seed/reset commands:
   - `corepack pnpm demo:smoke -- --target local`
   - `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>`
@@ -19,6 +40,11 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 - Record preview smoke findings without committing secrets, reset links, portal tokens, provider payloads, or production data.
 
 ## Operator-Only Setup
+
+- Document and configure Vercel Firewall/WAF rules (operator step) for `/api/*`, `/api/portal/*`, `/api/compliance/*`, and `/api/payments/stripe-webhook` before production go-live.
+- Keep route-level checks active as a runtime fallback where suitable.
+- Route 429 bodies remain generic and do not include provider keys, signatures, secrets, or tokens.
+- Ensure `/api/payments/stripe-webhook` relies on signature verification and idempotent Stripe event handling for normal operations; avoid strict edge caps that would reject valid retries.
 
 - Choose the Supabase project/environment for preview.
 - Apply Supabase migrations in timestamp order only after approving the target environment.
@@ -43,6 +69,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 - Optionally configure notification and portal delivery webhook endpoints. If omitted, notification delivery and portal sharing must be smoke-tested through manual fallback behavior.
 - Stripe payment-link creates should use deterministic `Idempotency-Key` headers, webhook verification requires the raw request body plus the endpoint secret, stale webhook signatures are rejected, and Stripe test mode or the Stripe CLI should be used before any production payment smoke.
 - Provide an interactive Vercel preview access path before browser smoke. If Deployment Protection is enabled, use an authenticated browser session, a temporary share link, or explicitly approve Codex to create a protected-preview access link if available.
+- Ensure Supabase Auth session-rate limiting and leaked-password protection are reviewed in dashboard settings.
 - For synthetic demo smoke, run `corepack pnpm demo:smoke -- --target preview --base-url <protected-preview-url>` first. It is read-only and reports shell seed readiness separately from the required protected-preview browser access and admin/dispatcher sign-in path.
 
 ## Operator Smoke Access Handoff

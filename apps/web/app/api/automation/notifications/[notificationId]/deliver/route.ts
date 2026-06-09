@@ -9,6 +9,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../../../_lib/server-auth";
+import { checkApiRateLimit, rateLimitResponse } from "../../../../_lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -108,13 +109,24 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ notificationId: string }> },
 ) {
-  const { response: authError } = await getAdminAccess(request);
+  const auth = await getAdminAccess(request);
 
-  if (authError) {
-    return authError;
+  if (auth.response) {
+    return auth.response;
   }
 
   const { notificationId } = await params;
+
+  if (
+    await checkApiRateLimit({
+      id: "arrival-notification-delivery",
+      request,
+      key: `arrival-notification-delivery:${auth.access.userId}:${notificationId}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
+
   const id = requireNonEmpty(notificationId, "Notification");
   const client = createServiceRoleSupabaseClient();
   const { data, error } = await client

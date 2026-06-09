@@ -5,6 +5,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../_lib/server-auth";
+import { checkApiRateLimit, rateLimitResponse } from "../../_lib/rate-limit";
 
 interface PaymentLinkRequest {
   invoice_id?: string;
@@ -75,22 +76,16 @@ function providerUnavailableResponse() {
 }
 
 export async function POST(request: Request) {
-  const { response: authError } = await getAdminAccess(request);
+  const adminAccess = await getAdminAccess(request);
+  const authError = adminAccess.response;
 
   if (authError) {
     return authError;
   }
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-  if (!stripeSecretKey) {
-    return providerUnavailableResponse();
-  }
-
-  let body: PaymentLinkRequest;
-
+  let requestBody: PaymentLinkRequest = {};
   try {
-    body = (await request.json()) as PaymentLinkRequest;
+    requestBody = (await request.json()) as PaymentLinkRequest;
   } catch {
     return NextResponse.json(
       { error: "Invalid payment link request" },
@@ -98,13 +93,29 @@ export async function POST(request: Request) {
     );
   }
 
-  const invoiceId = body.invoice_id?.trim();
+  const invoiceId = requestBody.invoice_id?.trim();
 
   if (!invoiceId) {
     return NextResponse.json(
       { error: "Invoice ID is required" },
       { status: 400 },
     );
+  }
+
+  if (
+    await checkApiRateLimit({
+      id: "payment-link-create",
+      request,
+      key: `payment-link-create:${adminAccess.access.userId}:${invoiceId}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    return providerUnavailableResponse();
   }
 
   const client = createServiceRoleSupabaseClient();

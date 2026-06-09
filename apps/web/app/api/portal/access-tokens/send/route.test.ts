@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "./route";
+import { __setTestRateLimitChecker } from "../../../_lib/rate-limit";
 
 let adminAccess:
   | {
@@ -100,6 +101,11 @@ describe("customer portal send route", () => {
       from: vi.fn(() => new MockQuery({ error: null })),
     };
     eventInsertCalls = [];
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: false,
+      }),
+    );
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -119,6 +125,24 @@ describe("customer portal send route", () => {
     expect(response.status).toBe(401);
     expect(body.error).toBe("Authentication is required");
     expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 before provider and persistence calls when rate limited", async () => {
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: true,
+      }),
+    );
+    vi.stubEnv("PORTAL_DELIVERY_WEBHOOK_URL", "https://provider.example/portal");
+    serviceClient.from.mockReturnValueOnce(new MockQuery({ data: tokenRecord, error: null }));
+
+    const response = await POST(request(sendBody()));
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe("Too many requests. Please retry later.");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain("portal-token");
   });
 
   it("requires a configured portal delivery webhook", async () => {

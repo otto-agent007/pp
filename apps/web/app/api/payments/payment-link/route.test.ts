@@ -10,6 +10,7 @@ vi.mock("../../_lib/server-auth", () => ({
   getAdminAccess: vi.fn(),
 }));
 
+import { __setTestRateLimitChecker } from "../../_lib/rate-limit";
 import { getAdminAccess } from "../../_lib/server-auth";
 import { POST } from "./route";
 
@@ -123,6 +124,11 @@ describe("payment link route auth", () => {
     serviceClient = {
       from: vi.fn(),
     };
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: false,
+      }),
+    );
     vi.mocked(getAdminAccess).mockResolvedValue({
       access: {
         profile: {
@@ -186,6 +192,28 @@ describe("payment link route auth", () => {
     expect(serialized).not.toContain("STRIPE_SECRET_KEY");
     expect(serialized).not.toContain("sk_test");
     expect(serialized).not.toContain("sk_live");
+  });
+
+  it("returns 429 before calling Stripe when the rate limit is reached", async () => {
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: true,
+      }),
+    );
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_123");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(request({ invoice_id: "invoice-1" }));
+    const body = (await response.json()) as {
+      error?: string;
+    };
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe("Too many requests. Please retry later.");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain("sk_test_123");
   });
 
   it("reuses an existing Stripe payment link without calling Stripe again", async () => {

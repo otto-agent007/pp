@@ -2,6 +2,7 @@ import { createGeneratedNotificationEventRecord } from "@pest-patrol/api-client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "./route";
+import { __setTestRateLimitChecker } from "../../../_lib/rate-limit";
 
 let serviceClient: {
   from: ReturnType<typeof vi.fn>;
@@ -69,6 +70,11 @@ describe("customer portal upgrade intent route", () => {
     serviceClient = {
       from: vi.fn(),
     };
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: false,
+      }),
+    );
     vi.mocked(createGeneratedNotificationEventRecord).mockReset();
   });
 
@@ -108,6 +114,29 @@ describe("customer portal upgrade intent route", () => {
 
     expect(response.status).toBe(401);
     expect(body.error).toBe("Portal session is required");
+  });
+
+  it("returns 429 before portal-session validation and notification creation", async () => {
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: true,
+      }),
+    );
+
+    const response = await POST(
+      request({ plan_id: "general_pest_recurring" }, "valid-session"),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe("Too many requests. Please retry later.");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(
+      vi.mocked(createGeneratedNotificationEventRecord).mock.calls.length,
+    ).toBe(0);
   });
 
   it("rejects invalid portal sessions", async () => {

@@ -9,6 +9,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../../_lib/server-auth";
+import { checkApiRateLimit, rateLimitResponse } from "../../../_lib/rate-limit";
 import { recordCustomerPortalAccessTokenEvent } from "../../_lib/access-token-events";
 import { hashPortalSecret } from "../../_lib/portal-session";
 
@@ -134,8 +135,36 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
+  let input:
+    | {
+        customer_id: string;
+        token_id: string;
+        portal_url: string;
+      }
+    | null = null;
+
   try {
-    const input = validateCustomerPortalSendInput(await request.json());
+    input = validateCustomerPortalSendInput(await request.json());
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to request portal send";
+
+    return NextResponse.json({ error: message }, { status: errorStatus(message) });
+  }
+
+  if (
+    await checkApiRateLimit({
+      id: "portal-access-token-send",
+      request,
+      key: `portal-access-token-send:${auth.access.userId}:${input.customer_id}:${input.token_id}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
+
+  try {
     const client = createServiceRoleSupabaseClient();
     const { data, error } = await client
       .from("customer_portal_access_tokens")
