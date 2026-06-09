@@ -1,4 +1,9 @@
 import { findInvoiceRecord } from "@pest-patrol/api-client";
+import {
+  getStripePaymentProviderReadiness,
+  safeLogError,
+  safeLogWarn,
+} from "@pest-patrol/domain";
 import type { Invoice } from "@pest-patrol/types";
 import { NextResponse } from "next/server";
 import {
@@ -75,6 +80,17 @@ function providerUnavailableResponse() {
   );
 }
 
+function providerBlockedResponse(message: string, status = 503) {
+  return NextResponse.json(
+    {
+      error: message,
+      manual_fallback: true,
+      provider: "stripe",
+    },
+    { status },
+  );
+}
+
 export async function POST(request: Request) {
   const adminAccess = await getAdminAccess(request);
   const authError = adminAccess.response;
@@ -112,10 +128,33 @@ export async function POST(request: Request) {
     return rateLimitResponse();
   }
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const stripeReadiness = getStripePaymentProviderReadiness(process.env);
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 
-  if (!stripeSecretKey) {
+  if (stripeReadiness.readiness_state === "manual_fallback") {
     return providerUnavailableResponse();
+  }
+
+  if (stripeReadiness.readiness_state === "live_mode_blocked") {
+    safeLogWarn("stripe.payment_link.live_mode_blocked", {
+      invoice_id: invoiceId,
+      provider: "stripe",
+      route: "payments/payment-link",
+      stripe_key_mode: stripeReadiness.stripe_key_mode,
+    });
+
+    return providerBlockedResponse("Stripe live mode is not approved", 409);
+  }
+
+  if (stripeReadiness.readiness_state === "misconfigured" || !stripeSecretKey) {
+    safeLogWarn("stripe.payment_link.misconfigured", {
+      invoice_id: invoiceId,
+      provider: "stripe",
+      route: "payments/payment-link",
+      stripe_key_mode: stripeReadiness.stripe_key_mode,
+    });
+
+    return providerBlockedResponse("Stripe payment links are unavailable");
   }
 
   const client = createServiceRoleSupabaseClient();
@@ -180,6 +219,15 @@ export async function POST(request: Request) {
   }
 
   if (!response.ok || !stripeBody?.id || !stripeBody?.url) {
+    safeLogError("stripe.payment_link.provider_failed", {
+      customer_id: invoice.customer_id,
+      invoice_id: invoice.id,
+      job_id: invoice.job_id,
+      provider: "stripe",
+      route: "payments/payment-link",
+      status: response.status,
+    });
+
     return NextResponse.json(
       { error: "Unable to create payment link" },
       { status: response.status || 502 },

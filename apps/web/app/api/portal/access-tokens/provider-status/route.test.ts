@@ -43,8 +43,10 @@ describe("portal provider status route", () => {
     const body = (await response.json()) as Record<string, unknown>;
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({
+    expect(body).toMatchObject({
+      manual_fallback: true,
       provider: "manual",
+      readiness_state: "manual_fallback",
       webhook_configured: false,
       webhook_secret_configured: true,
     });
@@ -59,12 +61,32 @@ describe("portal provider status route", () => {
     const body = (await response.json()) as Record<string, unknown>;
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({
+    expect(body).toMatchObject({
+      manual_fallback: false,
       provider: "webhook",
+      readiness_state: "ready",
       webhook_configured: true,
       webhook_secret_configured: true,
     });
     expect(JSON.stringify(body)).not.toContain("provider.test");
     expect(JSON.stringify(body)).not.toContain("secret-value");
+  });
+
+  it("reports production webhook secret gaps without exposing values", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PORTAL_DELIVERY_WEBHOOK_URL", "https://provider.test/send");
+
+    const response = await GET(request());
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      manual_fallback: true,
+      provider: "webhook",
+      readiness_state: "misconfigured",
+      webhook_configured: true,
+      webhook_secret_configured: false,
+    });
+    expect(JSON.stringify(body)).not.toContain("provider.test");
   });
 });

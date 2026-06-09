@@ -15,11 +15,11 @@ import {
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
   getPromotionSuggestionsForOffering,
-  getProviderReadinessCopy,
   getServiceBillingFamilyLabel,
   getServiceBillingFamilyOptions,
   getServiceBillingGuidanceForJob,
   getServiceBillingOffering,
+  getStripeLiveModeGateCopy,
   inferServiceBillingOfferingFromJob,
   isWdoEscrowLikeJob,
   listServiceBillingOfferings,
@@ -61,6 +61,7 @@ import {
   useCreateInvoicePaymentLink,
   useInvoices,
   useMarkInvoicePaid,
+  usePaymentProviderStatus,
   useVoidInvoice,
 } from "../../hooks/usePayments";
 import { adminWorkspaceClassName } from "../admin-workspace";
@@ -120,6 +121,32 @@ function formatPaymentDate(value: string | null) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
     new Date(value),
   );
+}
+
+function paymentReadinessTone(
+  state?: string,
+): StatusPillTone {
+  if (state === "test_mode_ready" || state === "live_mode_approved") {
+    return "success";
+  }
+
+  if (state === "live_mode_blocked" || state === "misconfigured") {
+    return "danger";
+  }
+
+  return "warning";
+}
+
+function paymentReadinessEyebrowTone(state?: string) {
+  if (state === "live_mode_blocked" || state === "misconfigured") {
+    return "danger";
+  }
+
+  if (state === "manual_fallback") {
+    return "muted";
+  }
+
+  return "accent";
 }
 
 function jobLabel(job: Job) {
@@ -394,6 +421,7 @@ export function PaymentsClient() {
   const searchParams = useSearchParams();
   const jobsQuery = useJobs();
   const invoicesQuery = useInvoices();
+  const paymentProviderStatusQuery = usePaymentProviderStatus();
   const createInvoice = useCreateInvoice();
   const createPaymentLink = useCreateInvoicePaymentLink();
   const markPaid = useMarkInvoicePaid();
@@ -580,7 +608,34 @@ export function PaymentsClient() {
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
       : null;
-  const paymentProviderCopy = getProviderReadinessCopy("payment");
+  const paymentProviderCopy = getStripeLiveModeGateCopy(
+    paymentProviderStatusQuery.data
+      ? {
+          STRIPE_LIVE_MODE_APPROVED: paymentProviderStatusQuery.data
+            .live_mode_approved
+            ? "true"
+            : "false",
+          STRIPE_SECRET_KEY:
+            paymentProviderStatusQuery.data.stripe_key_mode === "test"
+              ? "sk_test_configured"
+              : paymentProviderStatusQuery.data.stripe_key_mode === "live"
+                ? "sk_live_configured"
+                : paymentProviderStatusQuery.data.stripe_key_mode === "unknown"
+                  ? "unknown"
+                  : "",
+          STRIPE_WEBHOOK_SECRET: paymentProviderStatusQuery.data
+            .webhook_secret_configured
+            ? "configured"
+            : "",
+        }
+      : {},
+  );
+  const paymentProviderTone = paymentReadinessTone(
+    paymentProviderStatusQuery.data?.readiness_state,
+  );
+  const paymentProviderEyebrowTone = paymentReadinessEyebrowTone(
+    paymentProviderStatusQuery.data?.readiness_state,
+  );
 
   useEffect(() => {
     if (!selectedJob || servicePresetSource === "manual" || serviceCopyDirty) {
@@ -787,12 +842,14 @@ export function PaymentsClient() {
 
       <section
         className={`rounded-lg border p-4 shadow-sm ${statusSurfaceClassName(
-          "warning",
+          paymentProviderTone,
         )}`}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <Eyebrow tone="danger">Manual fallback mode</Eyebrow>
+            <Eyebrow tone={paymentProviderEyebrowTone}>
+              {paymentProviderCopy.stateLabel}
+            </Eyebrow>
             <h2 className="mt-1 text-lg font-semibold text-theme-text-primary">
               Payment provider readiness
             </h2>
@@ -803,10 +860,14 @@ export function PaymentsClient() {
               {paymentProviderCopy.summary}
             </p>
             <p className="mt-1 text-sm font-semibold text-theme-text-secondary">
-              {paymentProviderCopy.detail}
+              {paymentProviderCopy.action}
             </p>
           </div>
-          <StatusPill tone="warning">{paymentProviderCopy.stateLabel}</StatusPill>
+          <StatusPill tone={paymentProviderTone}>
+            {paymentProviderStatusQuery.isLoading
+              ? "Loading"
+              : paymentProviderCopy.stateLabel}
+          </StatusPill>
         </div>
       </section>
 

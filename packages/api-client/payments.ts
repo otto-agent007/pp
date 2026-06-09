@@ -8,6 +8,7 @@ import type {
   PaymentProvider,
   PaymentRecord,
   PaymentStatus,
+  StripePaymentProviderStatus,
 } from "@pest-patrol/types";
 import type { AuthSupabaseClient } from "./auth";
 
@@ -278,4 +279,23 @@ export async function createInvoicePaymentLinkRecord(
   const link = (await response.json()) as InvoicePaymentLinkResult;
 
   return saveInvoicePaymentLinkRecord(input.invoice_id, link);
+}
+
+export async function getStripePaymentProviderStatusRecord() {
+  const { data } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+
+  if (data.session?.access_token) {
+    headers.Authorization = `Bearer ${data.session.access_token}`;
+  }
+
+  const response = await fetch("/api/payments/provider-status", {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load payment provider status");
+  }
+
+  return (await response.json()) as StripePaymentProviderStatus;
 }

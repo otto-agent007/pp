@@ -17,6 +17,9 @@ import {
   getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
+  getStripeKeyMode,
+  getStripeLiveModeGateCopy,
+  getStripePaymentProviderReadiness,
   validateInvoiceInput,
 } from "./payments";
 
@@ -77,6 +80,44 @@ const invoice: Invoice = {
 };
 
 describe("payments domain", () => {
+  it("detects Stripe key modes and live-mode approval readiness", () => {
+    expect(getStripeKeyMode("")).toBe("missing");
+    expect(getStripeKeyMode("sk_test_123")).toBe("test");
+    expect(getStripeKeyMode("sk_live_123")).toBe("live");
+    expect(getStripeKeyMode("rk_live_123")).toBe("unknown");
+
+    expect(getStripePaymentProviderReadiness({}).readiness_state).toBe(
+      "manual_fallback",
+    );
+    expect(
+      getStripePaymentProviderReadiness({
+        STRIPE_SECRET_KEY: "sk_test_123",
+      }).readiness_state,
+    ).toBe("test_mode_ready");
+    expect(
+      getStripePaymentProviderReadiness({
+        STRIPE_SECRET_KEY: "sk_live_123",
+      }).readiness_state,
+    ).toBe("live_mode_blocked");
+    expect(
+      getStripePaymentProviderReadiness({
+        STRIPE_LIVE_MODE_APPROVED: "true",
+        STRIPE_SECRET_KEY: "sk_live_123",
+      }).readiness_state,
+    ).toBe("live_mode_approved");
+  });
+
+  it("returns live-mode gate copy without leaking key values", () => {
+    const copy = getStripeLiveModeGateCopy({
+      STRIPE_SECRET_KEY: "sk_live_secret-value",
+    });
+    const serialized = JSON.stringify(copy);
+
+    expect(copy.stateLabel).toBe("Live mode blocked");
+    expect(serialized).not.toContain("sk_live_secret-value");
+    expect(serialized).not.toContain("secret-value");
+  });
+
   it("validates invoice inputs and totals", () => {
     const input = validateInvoiceInput({
       job_id: " job-1 ",

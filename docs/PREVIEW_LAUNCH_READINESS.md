@@ -38,6 +38,8 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   - `git diff --check`
 - Open draft PRs for readiness docs or small blocking app fixes.
 - Record preview smoke findings without committing secrets, reset links, portal tokens, provider payloads, or production data.
+- Use `/api/ops/readiness` with an admin token only for static readiness checks; it must not call Stripe, OpenAI, Supabase dashboards, or notification providers.
+- Inspect preview runtime logs for sanitized event names and IDs only. Logs must not include raw request bodies, portal grants, token hashes, Stripe signatures, service-role keys, cookies, exact GPS coordinates, customer signatures, internal notes, or compliance internals.
 
 ## Security Header Observation
 
@@ -82,6 +84,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `STRIPE_SECRET_KEY`
   - `STRIPE_WEBHOOK_SECRET`
+  - `STRIPE_LIVE_MODE_APPROVED=false` unless live-mode operator approval has been completed
   - `NOTIFICATION_DELIVERY_WEBHOOK_URL`
   - `NOTIFICATION_DELIVERY_WEBHOOK_SECRET`
   - `PORTAL_DELIVERY_WEBHOOK_URL`
@@ -90,6 +93,9 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   - `AUTOMATION_CRON_SECRET`
   - `OPENAI_API_KEY` (optional, server-only compliance RAG)
   - `OPENAI_COMPLIANCE_EMBEDDING_MODEL` (optional compliance RAG model override)
+- Keep Stripe preview in test mode unless an operator explicitly approves a live-mode drill. A `sk_live_` key without `STRIPE_LIVE_MODE_APPROVED=true` should show live mode blocked and payment-link/webhook processing should not proceed.
+- Confirm portal and notification provider readiness reports manual fallback, ready, or misconfigured states without showing webhook URLs or secrets.
+- Watch critical preview log events for Stripe webhook errors, payment-link provider failures, portal send failures, notification delivery failures, compliance advisory unavailable states, rate-limit spikes, origin guard failures, and mobile sync failures. No external monitoring provider is configured by this slice.
 - Configure mobile preview variables when testing Expo:
   - `EXPO_PUBLIC_SUPABASE_URL`
   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`

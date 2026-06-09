@@ -138,6 +138,56 @@ export interface NotificationBulkDeliveryResult {
   sent_count: number;
 }
 
+export type CustomerSafeNotificationTemplateKind =
+  | "arrival_delayed"
+  | "arrival_send_now"
+  | "portal_access_send"
+  | "upgrade_intent_ack";
+
+export interface CustomerSafeNotificationTemplate {
+  message: string;
+  title: string;
+}
+
+const customerSafeNotificationTemplates: Record<
+  CustomerSafeNotificationTemplateKind,
+  CustomerSafeNotificationTemplate
+> = {
+  arrival_delayed: {
+    message:
+      "Your Pest Patrol technician is nearby and will begin shortly after the scheduled delay.",
+    title: "Technician arriving shortly",
+  },
+  arrival_send_now: {
+    message: "Your Pest Patrol technician has arrived and will begin shortly.",
+    title: "Technician arrived",
+  },
+  portal_access_send: {
+    message:
+      "Your Pest Patrol service portal is ready. Use your secure link to review available service details.",
+    title: "Service portal ready",
+  },
+  upgrade_intent_ack: {
+    message:
+      "We received your recurring service request and the Pest Patrol team will follow up soon.",
+    title: "Recurring service request received",
+  },
+};
+
+export function getCustomerSafeNotificationTemplate(
+  kind: CustomerSafeNotificationTemplateKind,
+) {
+  return customerSafeNotificationTemplates[kind];
+}
+
+export function buildArrivalNotificationGeneratedKey(input: {
+  clientEventId: string;
+  decision: string;
+  jobId: string;
+}) {
+  return `arrival-notice:${input.jobId}:${input.clientEventId}:${input.decision}`;
+}
+
 export function buildNotificationDeliveryProviderPayload(
   notification: NotificationEvent,
 ): NotificationDeliveryProviderPayload {

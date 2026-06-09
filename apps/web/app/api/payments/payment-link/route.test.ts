@@ -216,6 +216,53 @@ describe("payment link route auth", () => {
     expect(JSON.stringify(body)).not.toContain("sk_test_123");
   });
 
+  it("blocks live Stripe keys before provider or database calls without approval", async () => {
+    const fetch = vi.fn();
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_123");
+    vi.stubEnv("STRIPE_LIVE_MODE_APPROVED", "false");
+    vi.stubGlobal("fetch", fetch);
+
+    const response = await POST(request({ invoice_id: "invoice-1" }));
+    const body = (await response.json()) as {
+      error?: string;
+      manual_fallback?: boolean;
+      provider?: string;
+    };
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({
+      error: "Stripe live mode is not approved",
+      manual_fallback: true,
+      provider: "stripe",
+    });
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(serialized).not.toContain("sk_live_123");
+  });
+
+  it("blocks unknown Stripe key formats before provider calls", async () => {
+    const fetch = vi.fn();
+    vi.stubEnv("STRIPE_SECRET_KEY", "rk_live_unknown");
+    vi.stubGlobal("fetch", fetch);
+
+    const response = await POST(request({ invoice_id: "invoice-1" }));
+    const body = (await response.json()) as {
+      error?: string;
+      manual_fallback?: boolean;
+      provider?: string;
+    };
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      error: "Stripe payment links are unavailable",
+      manual_fallback: true,
+      provider: "stripe",
+    });
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("reuses an existing Stripe payment link without calling Stripe again", async () => {
     const fetch = vi.fn();
     vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_123");
@@ -329,6 +376,40 @@ describe("payment link route auth", () => {
         headers: expect.objectContaining({
           Authorization: "Bearer sk_test_123",
           "Idempotency-Key": "stripe-payment-link:invoice-1",
+        }),
+      }),
+    );
+  });
+
+  it("allows live Stripe keys only when the approval flag is set", async () => {
+    const fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        id: "plink_live",
+        url: "https://pay.stripe.com/live",
+      }),
+      ok: true,
+    });
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_123");
+    vi.stubEnv("STRIPE_LIVE_MODE_APPROVED", "true");
+    vi.stubGlobal("fetch", fetch);
+    serviceClient.from.mockReturnValue(
+      new MockQuery({ data: invoice, error: null }) as never,
+    );
+
+    const response = await POST(request({ invoice_id: "invoice-1" }));
+    const body = (await response.json()) as {
+      payment_url?: string;
+      provider_payment_link_id?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.provider_payment_link_id).toBe("plink_live");
+    expect(body.payment_url).toBe("https://pay.stripe.com/live");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.stripe.com/v1/payment_links",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer sk_live_123",
         }),
       }),
     );

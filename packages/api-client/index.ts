@@ -101,6 +101,7 @@ export {
   createInvoicePaymentLinkRecord,
   createInvoiceRecord,
   findInvoiceRecord,
+  getStripePaymentProviderStatusRecord,
   getInvoiceRecord,
   listCustomerPortalInvoiceRecords,
   listInvoiceRecords,

@@ -145,21 +145,69 @@ describe("customer portal send route", () => {
     expect(JSON.stringify(body)).not.toContain("portal-token");
   });
 
-  it("requires a configured portal delivery webhook", async () => {
+  it("returns manual fallback when the portal delivery webhook is missing", async () => {
     serviceClient.from.mockReturnValueOnce(
       new MockQuery({ data: tokenRecord, error: null }),
+    ).mockReturnValueOnce(
+      new MockQuery({ error: null }),
     );
 
     const response = await POST(request(sendBody()));
-    const body = (await response.json()) as { error?: string };
+    const body = (await response.json()) as {
+      manual_fallback?: boolean;
+      provider?: string;
+      status?: string;
+    };
 
-    expect(response.status).toBe(503);
-    expect(body.error).toBe("Portal delivery provider is not configured");
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      manual_fallback: true,
+      provider: "manual",
+      status: "requested",
+    });
     expect(JSON.stringify(body)).not.toContain("portal-token");
-    expect(serviceClient.from).not.toHaveBeenCalledWith(
+    expect(serviceClient.from).toHaveBeenCalledWith(
       "customer_portal_access_token_events",
     );
-    expect(eventInsertCalls).toHaveLength(0);
+    expect(eventInsertCalls[0]).toEqual([
+      expect.objectContaining({
+        kind: "send_requested",
+        token_id: "token-1",
+      }),
+    ]);
+  });
+
+  it("treats production webhook URL without a secret as misconfigured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PORTAL_DELIVERY_WEBHOOK_URL", "https://provider.example/portal");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    serviceClient.from
+      .mockReturnValueOnce(new MockQuery({ data: tokenRecord, error: null }))
+      .mockReturnValueOnce(new MockQuery({ error: null }));
+
+    const response = await POST(request(sendBody()));
+    const body = (await response.json()) as {
+      error?: string;
+      manual_fallback?: boolean;
+      provider?: string;
+    };
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      error: "Portal delivery provider is unavailable",
+      manual_fallback: true,
+      provider: "manual",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(serialized).not.toContain("portal-token");
+    expect(eventInsertCalls[0]).toEqual([
+      expect.objectContaining({
+        kind: "send_failed",
+        token_id: "token-1",
+      }),
+    ]);
   });
 
   it("rejects portal URLs that do not match the customer portal route", async () => {

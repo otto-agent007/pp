@@ -2,7 +2,12 @@ import type {
   NotificationDeliveryProvider,
   NotificationEvent,
 } from "@pest-patrol/types";
-import { buildNotificationDeliveryProviderPayload } from "@pest-patrol/domain";
+import {
+  buildNotificationDeliveryProviderPayload,
+  getArrivalNotificationDeliveryReadiness,
+  safeLogError,
+  safeLogWarn,
+} from "@pest-patrol/domain";
 import { NextResponse } from "next/server";
 
 import {
@@ -32,9 +37,22 @@ function requireNonEmpty(value: string, fieldName: string) {
 async function sendThroughProvider(
   notification: NotificationEvent,
 ): Promise<ProviderResult> {
+  const readiness = getArrivalNotificationDeliveryReadiness(process.env);
+
+  if (readiness.state === "misconfigured") {
+    throw new Error("Notification delivery provider is unavailable");
+  }
+
   const webhookUrl = process.env.NOTIFICATION_DELIVERY_WEBHOOK_URL;
 
-  if (!webhookUrl) {
+  if (!webhookUrl || readiness.state === "disabled") {
+    safeLogWarn("notification.delivery.manual_fallback", {
+      job_id: notification.job_id,
+      notification_id: notification.id,
+      provider: "manual",
+      route: "automation/notifications/deliver",
+    });
+
     return {
       provider: "manual",
       provider_message_id: `manual-${notification.id}-${Date.now()}`,
@@ -196,9 +214,20 @@ export async function POST(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to send notification";
+    const provider = process.env.NOTIFICATION_DELIVERY_WEBHOOK_URL
+      ? "webhook"
+      : "manual";
+
+    safeLogError("notification.delivery.failed", {
+      customer_id: notification.customer_id,
+      job_id: notification.job_id,
+      notification_id: notification.id,
+      provider,
+      route: "automation/notifications/deliver",
+    });
+
     const event = await updateDeliveryState(client, id, {
-      delivery_provider:
-        process.env.NOTIFICATION_DELIVERY_WEBHOOK_URL ? "webhook" : "manual",
+      delivery_provider: provider,
       delivery_status: "failed",
       last_delivery_attempted_at: attemptedAt,
       last_delivery_error: message,
@@ -213,7 +242,12 @@ export async function POST(
         provider: event.delivery_provider,
         provider_message_id: null,
       },
-      { status: 502 },
+      {
+        status:
+          message === "Notification delivery provider is unavailable"
+            ? 503
+            : 502,
+      },
     );
   }
 }
