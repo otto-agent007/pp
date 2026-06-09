@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { __setTestRateLimitChecker } from "../../_lib/rate-limit";
 import { POST } from "./route";
 
 const createComplianceAdvisoryAuditRecord = vi.fn();
@@ -99,6 +100,11 @@ describe("compliance advisory route", () => {
   beforeEach(() => {
     adminResponse = null;
     serviceClient = { from: vi.fn() };
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: false,
+      }),
+    );
     assertComplianceSchemaReady.mockReset();
     assertComplianceSchemaReady.mockResolvedValue(undefined);
     createComplianceAdvisoryAuditRecord.mockReset();
@@ -126,6 +132,31 @@ describe("compliance advisory route", () => {
     expect(response.status).toBe(401);
     expect(body.error).toBe("Authentication is required");
     expect(searchComplianceChunkRecords).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 before compliance compute when rate limited", async () => {
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: true,
+      }),
+    );
+    vi.stubEnv("OPENAI_API_KEY", "sk-test-secret");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(request());
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe("Too many requests. Please retry later.");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(assertComplianceSchemaReady).not.toHaveBeenCalled();
+    expect(searchComplianceChunkRecords).not.toHaveBeenCalled();
+    expect(listChemicalLogRecords).not.toHaveBeenCalled();
+    expect(listJobRecords).not.toHaveBeenCalled();
+    expect(createComplianceAdvisoryAuditRecord).not.toHaveBeenCalled();
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain("sk-test-secret");
   });
 
   it("returns a disabled advisory without touching OpenAI when the key is absent", async () => {

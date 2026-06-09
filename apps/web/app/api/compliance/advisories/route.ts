@@ -21,6 +21,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../_lib/server-auth";
+import { checkApiRateLimit, rateLimitResponse } from "../../_lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -62,6 +63,15 @@ export async function POST(request: Request) {
     const payload = (await request.json()) as ComplianceAdvisoryRequest;
     const parsedInput = validateComplianceAdvisoryRequest(payload);
     input = parsedInput;
+    if (
+      await checkApiRateLimit({
+        id: "compliance-advisory-create",
+        request,
+        key: `compliance-advisory-create:${adminAccess.access.userId}:${parsedInput.workflow}`,
+      })
+    ) {
+      return rateLimitResponse();
+    }
     runtimeStatus = getComplianceRuntimeStatus({
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     });

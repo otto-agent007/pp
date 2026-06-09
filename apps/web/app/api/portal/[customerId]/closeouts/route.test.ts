@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GET } from "./route";
+import { __setTestRateLimitChecker } from "../../../_lib/rate-limit";
 
 let serviceClient: {
   from: ReturnType<typeof vi.fn>;
@@ -67,6 +68,11 @@ describe("customer portal closeouts route", () => {
       from: vi.fn(),
       storage: { from: vi.fn() },
     };
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: false,
+      }),
+    );
   });
 
   it("rejects query-token access without a portal session cookie", async () => {
@@ -93,6 +99,23 @@ describe("customer portal closeouts route", () => {
 
     expect(response.status).toBe(401);
     expect(body.error).toBe("Portal session is required");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 before portal session validation when the rate limit is reached", async () => {
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        rateLimited: true,
+      }),
+    );
+
+    const response = await GET(requestWithSession("valid-session"), {
+      params: Promise.resolve({ customerId: "customer-1" }),
+    });
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe("Too many requests. Please retry later.");
     expect(serviceClient.from).not.toHaveBeenCalled();
   });
 

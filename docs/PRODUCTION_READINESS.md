@@ -222,6 +222,46 @@ Mobile:
 3. Queue a form submission, job status update, chemical log, photo, signature, and geofence event while offline.
 4. Restore connectivity and confirm the sync worker marks queued writes as synced.
 
+## Layered Abuse Protection
+
+Route-level rate-limit support for sensitive endpoints is implemented in
+`apps/web/app/api/_lib/rate-limit.ts` and should be paired with Vercel Firewall/WAF rules.
+
+- Production should configure Vercel Firewall/WAF rule IDs before enabling the routes.
+- Route-level checks are local/test no-ops unless production-like metadata is present.
+- Keep webhook signature verification and idempotency as the primary gateway for Stripe reconciliation.
+- 429 responses are intentionally generic and must not expose internal counters, tokens, or credentials.
+- Supabase Auth rate-limit settings and leaked-password protection are operator-configured checks.
+- Route rate-limit policy IDs used by this slice:
+  - `portal-access-token-create`
+  - `portal-access-token-send`
+  - `portal-session-exchange`
+  - `portal-upgrade-intent`
+  - `payment-link-create`
+  - `compliance-advisory-create`
+  - `arrival-notification-delivery`
+
+Example Vercel Firewall/WAF rule payloads (operator docs only):
+
+```json
+{ "source": "/api/*", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 1200, "period": "60s" }] }
+```
+
+```json
+{ "source": "/api/portal/*", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 120, "period": "60s" }] }
+```
+
+```json
+{ "source": "/api/compliance/*", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 90, "period": "60s" }] }
+```
+
+```json
+{ "source": "/api/payments/stripe-webhook", "mode": "waf", "actions": [{ "type": "rate_limit", "limit": 240, "period": "60s", "note": "allow retries" }] }
+```
+
+For ` /api/payments/stripe-webhook`, validate signatures first and prefer
+idempotent event handling. Do not configure a strict edge limit that can block valid retries during retry bursts.
+
 ## Security Boundaries
 
 - UI components must not import `supabase` directly.

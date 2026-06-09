@@ -8,6 +8,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../_lib/server-auth";
+import { checkApiRateLimit, rateLimitResponse } from "../../_lib/rate-limit";
 import { recordCustomerPortalAccessTokenEvent } from "../_lib/access-token-events";
 import { hashPortalSecret, newPortalSecret } from "../_lib/portal-session";
 
@@ -34,10 +35,20 @@ function tokenSummary(token: {
 }
 
 export async function GET(request: Request) {
-  const { response: authError } = await getAdminAccess(request);
+  const auth = await getAdminAccess(request);
 
-  if (authError) {
-    return authError;
+  if (auth.response) {
+    return auth.response;
+  }
+
+  if (
+    await checkApiRateLimit({
+      id: "portal-access-token-create",
+      request,
+      key: `portal-access-token-create:${auth.access.userId}`,
+    })
+  ) {
+    return rateLimitResponse();
   }
 
   try {
@@ -79,16 +90,42 @@ export async function POST(request: Request) {
   if (auth.response) {
     return auth.response;
   }
-  const access = auth.access;
+
+  let input:
+    | {
+        customer_id: string;
+        expires_at?: string | null;
+      }
+    | null = null;
 
   try {
-    const input = validateCustomerPortalAccessInput(await request.json());
+    input = validateCustomerPortalAccessInput(await request.json());
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to create portal access token";
+
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  if (
+    await checkApiRateLimit({
+      id: "portal-access-token-create",
+      request,
+      key: `portal-access-token-create:${auth.access.userId}:${input.customer_id}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
+
+  try {
     const accessToken = newPortalSecret();
     const client = createServiceRoleSupabaseClient();
     const { data, error } = await client
       .from("customer_portal_access_tokens")
       .insert({
-        created_by: access.userId,
+        created_by: auth.access.userId,
         customer_id: input.customer_id,
         expires_at: input.expires_at,
         token_hash: hashPortalSecret(accessToken),
@@ -106,7 +143,7 @@ export async function POST(request: Request) {
     }
 
     await recordCustomerPortalAccessTokenEvent(client, {
-      actorProfileId: access.userId,
+      actorProfileId: auth.access.userId,
       customerId: data.customer_id,
       kind: "generated",
       tokenId: data.id,

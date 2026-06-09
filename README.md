@@ -99,6 +99,14 @@ run stores text chunks without embeddings.
 
 See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current operator-assisted preview punch list, and [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel settings, Supabase admin bootstrap, smoke tests, and security boundaries.
 
+## Rate Limiting & Abuse Protection
+
+- Sensitive API routes use a shared server-only helper at
+  `apps/web/app/api/_lib/rate-limit.ts`.
+- Local development and local/test executions use a safe no-op fallback for rate-limit enforcement.
+- Production behavior is layered: route-level runtime policy checks and Vercel Firewall/WAF policy coverage.
+- Rate-limit responses are intentionally sanitized (`429` with a generic error message) and do not return counters, keys, tokens, or secret values.
+
 ## Current Focus
 
 Current status as of June 6, 2026:

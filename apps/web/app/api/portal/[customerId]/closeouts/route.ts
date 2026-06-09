@@ -7,8 +7,13 @@ import { buildCustomerPortalCloseouts } from "@pest-patrol/domain";
 import { NextResponse } from "next/server";
 
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
+import { checkApiRateLimit, getClientIpFromRequest, rateLimitResponse } from "../../../_lib/rate-limit";
+import {
+  hashPortalSecret,
+  readPortalSessionCookie,
+  validatePortalSession,
+} from "../../_lib/portal-session";
 import { recordCustomerPortalOpenedEvent } from "../../_lib/access-token-events";
-import { validatePortalSession } from "../../_lib/portal-session";
 
 export const runtime = "nodejs";
 
@@ -17,6 +22,22 @@ export async function GET(
   { params }: { params: Promise<{ customerId: string }> },
 ) {
   const { customerId } = await params;
+  const sessionContext = readPortalSessionCookie(request);
+  const clientIp = getClientIpFromRequest(request);
+  const sessionHash = sessionContext
+    ? hashPortalSecret(sessionContext)
+    : "no-session";
+  const ipSuffix = clientIp ? `:${clientIp}` : "";
+
+  if (
+    await checkApiRateLimit({
+      id: "portal-session-exchange",
+      request,
+      key: `portal-session-exchange:${customerId}:${sessionHash}${ipSuffix}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
 
   try {
     const client = createServiceRoleSupabaseClient();

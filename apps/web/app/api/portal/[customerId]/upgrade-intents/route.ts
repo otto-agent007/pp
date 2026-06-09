@@ -11,7 +11,12 @@ import type {
 import { NextResponse } from "next/server";
 
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
-import { validatePortalSession } from "../../_lib/portal-session";
+import {
+  hashPortalSecret,
+  readPortalSessionCookie,
+  validatePortalSession,
+} from "../../_lib/portal-session";
+import { checkApiRateLimit, rateLimitResponse } from "../../../_lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -34,6 +39,21 @@ export async function POST(
     const input = validateCustomerPortalUpgradeIntentInput({
       plan_id: body.plan_id as CustomerPortalUpgradePlanId,
     });
+    const sessionToken = readPortalSessionCookie(request);
+    const sessionContext = sessionToken
+      ? hashPortalSecret(sessionToken)
+      : "no-session";
+
+    if (
+      await checkApiRateLimit({
+        id: "portal-upgrade-intent",
+        request,
+        key: `portal-upgrade-intent:${customerId}:${sessionContext}:${input.plan_id}`,
+      })
+    ) {
+      return rateLimitResponse();
+    }
+
     const client = createServiceRoleSupabaseClient();
     const { error: accessError } = await validatePortalSession(
       client,
