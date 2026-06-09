@@ -67,4 +67,38 @@ describe("useJobPhotos", () => {
       JSON.stringify(useJobPhotos.getState().drafts),
     );
   });
+
+  it("carries image picker file size without changing the offline action", () => {
+    const payload = useJobPhotos.getState().queuePhoto({
+      jobId: "job-1",
+      localUri: "file://photo.webp",
+      fileName: "photo.webp",
+      contentType: "image/webp",
+      fileSizeBytes: 2048,
+    });
+
+    expect(useOfflineQueue.getState().items[0]).toMatchObject({
+      action: "photo_upload",
+      payload,
+      status: "queued",
+    });
+    expect(payload).toMatchObject({
+      content_type: "image/webp",
+      file_size_bytes: 2048,
+      job_id: "job-1",
+    });
+  });
+
+  it("rejects unsafe photo payloads before enqueueing", () => {
+    expect(() =>
+      useJobPhotos.getState().queuePhoto({
+        jobId: "job-1",
+        localUri: "file://photo.svg",
+        fileName: "photo.svg",
+        contentType: "image/svg+xml",
+      }),
+    ).toThrow("Photo content type is invalid");
+
+    expect(useOfflineQueue.getState().items).toEqual([]);
+  });
 });

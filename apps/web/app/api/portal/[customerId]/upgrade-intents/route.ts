@@ -10,6 +10,7 @@ import type {
 } from "@pest-patrol/types";
 import { NextResponse } from "next/server";
 
+import { requireSameOriginForUnsafeMethod } from "../../../_lib/origin-guard";
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
 import {
   hashPortalSecret,
@@ -32,6 +33,12 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ customerId: string }> },
 ) {
+  const originError = requireSameOriginForUnsafeMethod(request);
+
+  if (originError) {
+    return originError;
+  }
+
   const { customerId } = await params;
   const body = await requestBody(request);
 

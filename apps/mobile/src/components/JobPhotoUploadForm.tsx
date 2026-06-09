@@ -71,6 +71,7 @@ export function JobPhotoUploadForm({ jobId }: JobPhotoUploadFormProps) {
         localUri: asset.uri,
         fileName: getAssetFileName(asset),
         contentType: asset.mimeType,
+        fileSizeBytes: asset.fileSize ?? null,
       });
       setError(null);
     } catch (photoError) {

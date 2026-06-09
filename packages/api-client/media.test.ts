@@ -119,6 +119,8 @@ describe("media api client", () => {
     expect(from).toHaveBeenCalledWith("job_media");
     expect(query.calls).toContainEqual(["eq", ["job.customer_id", "customer-1"]]);
     expect(query.calls).toContainEqual(["eq", ["job.status", "completed"]]);
+    expect(JSON.stringify(records[0])).not.toContain("storage_path");
+    expect(JSON.stringify(records[0])).not.toContain("storage_bucket");
   });
 
   it("creates job media metadata", async () => {
@@ -145,6 +147,87 @@ describe("media api client", () => {
         }),
       ],
     ]);
+  });
+
+  it("rejects unsafe media metadata before inserting rows", async () => {
+    await expect(
+      createJobMediaRecord({
+        job_id: "job-1",
+        media_type: "photo",
+        storage_bucket: "job-media",
+        storage_path: "job-1/../photo.svg",
+        description: "Kitchen",
+        captured_at: now,
+      }),
+    ).rejects.toThrow("Photo storage path is invalid");
+
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsafe photo uploads before reading local files or touching storage", async () => {
+    const fetch = vi.fn();
+    const client = {
+      auth: {
+        getUser: vi.fn(),
+      },
+      from: vi.fn(),
+      storage: {
+        from: vi.fn(),
+      },
+    };
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(
+      uploadJobPhotoRecord(
+        {
+          job_id: "job-1",
+          local_uri: "file:///photo.svg",
+          file_name: "photo.svg",
+          content_type: "image/svg+xml",
+          storage_bucket: "job-media",
+          storage_path: "job-1/photo.svg",
+          file_size_bytes: 1024,
+        },
+        client as never,
+      ),
+    ).rejects.toThrow("Photo content type is invalid");
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(client.storage.from).not.toHaveBeenCalled();
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized signature uploads before reading local files or touching storage", async () => {
+    const fetch = vi.fn();
+    const client = {
+      auth: {
+        getUser: vi.fn(),
+      },
+      from: vi.fn(),
+      storage: {
+        from: vi.fn(),
+      },
+    };
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(
+      uploadJobSignatureRecord(
+        {
+          job_id: "job-1",
+          local_uri: "data:image/png;base64,signature",
+          file_name: "signature.png",
+          content_type: "image/png",
+          storage_bucket: "job-media",
+          storage_path: "job-1/signature.png",
+          file_size_bytes: 2 * 1024 * 1024 + 1,
+        },
+        client as never,
+      ),
+    ).rejects.toThrow("Signature file is too large");
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(client.storage.from).not.toHaveBeenCalled();
+    expect(client.from).not.toHaveBeenCalled();
   });
 
   it("uploads a photo then creates metadata with an authenticated client", async () => {

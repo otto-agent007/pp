@@ -107,6 +107,29 @@ Latest hardening status:
 - [ ] Confirm leaked-password protection is enabled in Supabase Auth settings (operator dashboard action).
 - [ ] Rerun Auth advisor and confirm leaked-password warning is resolved.
 
+## Portal, RLS, and Media Security V1
+
+- Customer portal unsafe POST routes now use a same-origin guard before request
+  body parsing or portal-session side effects. Cross-origin and missing-origin
+  cookie-backed portal POSTs return sanitized `403` responses.
+- `docs/RLS_BOUNDARY_AUDIT.md` maps role/data boundaries for anon,
+  admin/dispatcher, technician, customer portal session, and service-role
+  routes.
+- `tooling/rls-boundary-audit.ts` adds a static read-only migration audit for
+  missing RLS enablement, anon grants on sensitive tables, unconditional
+  `using (true)` policies, and public RPC execute grants.
+- Media upload validation now rejects unsafe MIME types, oversized
+  photos/signatures, unsafe storage paths, and overlong descriptions before
+  storage upload or `job_media` insert.
+- Job media storage must remain private unless a future reviewed slice
+  intentionally changes bucket posture. Use signed URLs with expirations for
+  staff and portal previews, and verify that customer portal DTOs do not expose
+  bucket or path values.
+- Before production sign-off, operators must apply approved migrations, rerun
+  Supabase advisors, verify RLS against the approved target, verify storage
+  bucket privacy, enable leaked-password protection, and configure rate
+  limiting/firewall policy if not already complete.
+
 ## Vercel Setup
 
 1. Import the GitHub repository into Vercel.
