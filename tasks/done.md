@@ -1,5 +1,19 @@
 # Done
 
+## Backup Rollback + Security CI + Privacy Retention + Auth Hardening V1
+
+- Added production-readiness runbooks for backup/rollback, customer data
+  privacy/retention, and auth production hardening.
+- Added static `security:baseline` CI coverage for obvious secrets, committed
+  env files, unsafe service-role references, raw portal list leakage, customer
+  portal internal imports, and lockfile presence.
+- Linked the new readiness docs from README, production readiness, and preview
+  readiness guidance.
+- Extended auth and portal safety coverage for customer-safe portal output,
+  redirect/reset boundaries, role boundaries, and token/hash redaction.
+- No migration, seed/reset, live compliance ingestion, provider dashboard
+  mutation, Supabase/Vercel/Stripe setting change, preview mutation, production
+  mutation, or secret printing is in scope.
 ## June 2026 Merged PRs 103-108
 
 - PR #108, `Harden mobile field execution flow`, merged on June 6, 2026.

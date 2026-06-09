@@ -267,6 +267,10 @@ describe("CustomerPortalClient", () => {
     expect(screen.queryByText("EPA-123")).not.toBeInTheDocument();
     expect(screen.queryByText("pi_secret")).not.toBeInTheDocument();
     expect(screen.queryByText("provider_payment_id")).not.toBeInTheDocument();
+    expect(screen.queryByText("access_token")).not.toBeInTheDocument();
+    expect(screen.queryByText("token_hash")).not.toBeInTheDocument();
+    expect(screen.queryByText("raw-token")).not.toBeInTheDocument();
+    expect(screen.queryByText("Internal compliance warning")).not.toBeInTheDocument();
     expect(screen.queryByText("33.8121")).not.toBeInTheDocument();
     expect(screen.queryByText("-117.919")).not.toBeInTheDocument();
     expect(screen.queryByText("Open service map")).not.toBeInTheDocument();

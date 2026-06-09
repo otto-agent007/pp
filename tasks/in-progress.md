@@ -2,6 +2,18 @@
 
 Active implementation slice:
 
+- Backup Rollback + Security CI + Privacy Retention + Auth Hardening V1 is active
+  on branch `codex/backup-ci-privacy-auth-hardening-v1`, started from latest
+  `origin/main` in worktree `../pp-backup-ci-privacy-auth-hardening-v1`.
+- Scope: add backup/rollback, privacy/retention, and auth hardening docs; add a
+  static `security:baseline` CI check; extend lightweight auth/portal privacy
+  guardrail coverage; update readiness docs and task ledgers.
+- Out of scope: migrations, seed/reset, live compliance ingestion, provider
+  dashboard mutations, Supabase/Vercel/Stripe setting changes, production or
+  preview mutations, new paid scanners, and new external services.
+- Planned verification: focused security/auth/portal tests, `corepack pnpm
+  security:baseline`, full `corepack pnpm test`, `corepack pnpm typecheck`,
+  `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`.
 - Portal CSRF + RLS Boundary + Media Upload Security V1 is verified on branch
   `codex/portal-rls-media-security-v1`, started from latest `origin/main`.
 - Added same-origin guarding for cookie-backed customer portal unsafe POST
