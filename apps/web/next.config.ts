@@ -4,6 +4,29 @@ import type { NextConfig } from "next";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
+type SecurityHeader = {
+  key: string;
+  value: string;
+};
+
+function uniqueSources(sources: string[]) {
+  return Array.from(new Set(sources));
+}
+
+function getPublicSupabaseOrigin() {
+  const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!publicSupabaseUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(publicSupabaseUrl).origin;
+  } catch {
+    return null;
+  }
+}
+
 export function buildLocalWhisperRewrites(nodeEnv = process.env.NODE_ENV) {
   if (nodeEnv !== "development") {
     return [];
@@ -21,7 +44,117 @@ export function buildLocalWhisperRewrites(nodeEnv = process.env.NODE_ENV) {
   ];
 }
 
+export function buildAllowedConnectSources(nodeEnv = process.env.NODE_ENV) {
+  const sources = [
+    "'self'",
+    "https://*.supabase.co",
+    getPublicSupabaseOrigin(),
+    "https://api.stripe.com",
+    "https://checkout.stripe.com",
+  ].filter((source): source is string => Boolean(source));
+
+  if (nodeEnv === "development") {
+    sources.push("http://127.0.0.1:8765", "http://localhost:8765");
+  }
+
+  return uniqueSources(sources);
+}
+
+export function buildAllowedImageSources(_nodeEnv = process.env.NODE_ENV) {
+  return uniqueSources(
+    [
+      "'self'",
+      "data:",
+      "blob:",
+      "https://*.supabase.co",
+      getPublicSupabaseOrigin(),
+    ].filter((source): source is string => Boolean(source)),
+  );
+}
+
+export function buildContentSecurityPolicyReportOnly(
+  nodeEnv = process.env.NODE_ENV,
+) {
+  const supabaseMediaSources = uniqueSources(
+    [
+      "https://*.supabase.co",
+      getPublicSupabaseOrigin(),
+    ].filter((source): source is string => Boolean(source)),
+  );
+  const directives = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    `img-src ${buildAllowedImageSources().join(" ")}`,
+    "font-src 'self' data:",
+    `connect-src ${buildAllowedConnectSources(nodeEnv).join(" ")}`,
+    "frame-src 'self' https://checkout.stripe.com https://js.stripe.com",
+    `media-src 'self' blob: data: ${supabaseMediaSources.join(" ")}`,
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+  ];
+
+  if (nodeEnv === "production") {
+    directives.push("upgrade-insecure-requests");
+  }
+
+  return directives.join("; ");
+}
+
+export function buildSecurityHeaders(
+  nodeEnv = process.env.NODE_ENV,
+): SecurityHeader[] {
+  return [
+    {
+      key: "Content-Security-Policy-Report-Only",
+      value: buildContentSecurityPolicyReportOnly(nodeEnv),
+    },
+    {
+      key: "X-Content-Type-Options",
+      value: "nosniff",
+    },
+    {
+      key: "Referrer-Policy",
+      value: "strict-origin-when-cross-origin",
+    },
+    {
+      key: "Permissions-Policy",
+      value: [
+        "camera=()",
+        "microphone=()",
+        "geolocation=()",
+        "payment=()",
+        "usb=()",
+        "bluetooth=()",
+        "accelerometer=()",
+        "gyroscope=()",
+        "magnetometer=()",
+      ].join(", "),
+    },
+    {
+      key: "X-Frame-Options",
+      value: "DENY",
+    },
+    {
+      key: "Cross-Origin-Opener-Policy",
+      value: "same-origin",
+    },
+  ];
+}
+
 const nextConfig: NextConfig = {
+  headers() {
+    return Promise.resolve([
+      {
+        headers: buildSecurityHeaders(),
+        source: "/(.*)",
+      },
+    ]);
+  },
   outputFileTracingRoot: join(appDir, "../.."),
   rewrites() {
     return Promise.resolve(buildLocalWhisperRewrites());
