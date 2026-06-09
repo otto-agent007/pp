@@ -4,6 +4,7 @@ import { fontSans } from "./fonts";
 import { AdminShell } from "./admin-nav";
 import { AdminAuthGate } from "./admin-auth-gate";
 import { AdminAuthProvider } from "./admin-auth-context";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "Pest Patrol OS",
@@ -25,6 +26,7 @@ export default function RootLayout({
             </AdminAuthGate>
           </AdminAuthProvider>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
