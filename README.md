@@ -99,6 +99,11 @@ run stores text chunks without embeddings.
 
 See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current operator-assisted preview punch list, and [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel settings, Supabase admin bootstrap, smoke tests, and security boundaries. Before production migration or deployment, review the [Backup and Rollback Runbook](docs/BACKUP_ROLLBACK_RUNBOOK.md), [Customer Data Privacy and Retention](docs/CUSTOMER_DATA_PRIVACY_RETENTION.md), and [Auth Production Hardening](docs/AUTH_PRODUCTION_HARDENING.md) checklists.
 
+Use [Protected Preview Security Closure](docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md)
+as the current production-readiness protection ledger. Production remains blocked
+until its High gates are closed and Medium gates are closed or explicitly
+accepted by the operator.
+
 ## Rate Limiting & Abuse Protection
 
 - Sensitive API routes use a shared server-only helper at
@@ -109,15 +114,14 @@ See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current
 
 ## Current Focus
 
-Current status as of June 6, 2026:
+Current status as of June 9, 2026:
 
-- PRs `#103` through `#108` are merged on `main`: Claude QA polish, buyer walkthrough
-  validation, Stripe payment links plus webhook reconciliation, compliance source
-  ingestion hardening, arrival notification approval, and mobile field execution
-  hardening.
-- The Buyer Walkthrough Showcase slice remains the completed 10-step fixture-smoke
-  baseline and is recorded in `tasks/done.md` and `docs/PREVIEW_SMOKE_FINDINGS.md`.
-- This refresh is docs-only; no new migration, provider, environment, seed/reset,
-  preview, or production mutation was performed.
-- Remaining authenticated smoke gates still need approved env names and protected
-  access paths when the next implementation slice starts.
+- PR #123 merged the OWASP API Security Review V1 inventory, route-boundary
+  coverage, and OWASP Top 10 2025 companion mapping.
+- The active protection focus is protected-preview security closure: repo
+  guardrails pass locally, while live Supabase advisor closure, Vercel WAF/rate
+  limits, provider test-mode smoke, authenticated preview smoke, and privacy
+  sign-off remain operator-approved production blockers.
+- No migration, provider/dashboard setting, seed/reset, preview data, production
+  data, paid scanner, or live provider mutation is part of the repo-only closure
+  evidence.

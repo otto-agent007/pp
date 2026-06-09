@@ -1,5 +1,31 @@
 # Done
 
+## Protected Preview Security Closure V1
+
+- Merged PR #123 first so the OWASP API Security Review V1 inventory and
+  OWASP Top 10 2025 companion mapping are now on `main`.
+- Added `docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md` as the live
+  production-readiness protection ledger with pass, blocker, evidence, and owner
+  status for repo guardrails, Supabase advisor closure, Vercel Firewall/WAF,
+  Stripe/provider smoke, authenticated preview smoke, technician/mobile smoke,
+  and privacy sign-off.
+- Added `tooling/production-readiness-protection.test.ts` to keep every required
+  production-readiness gate and no-mutation/no-secret guardrail documented.
+- Linked the closure ledger from README, preview readiness, production
+  readiness, implementation status, and task ledgers.
+- Verified repo-side protection evidence: OWASP/RLS static tests passed,
+  `security:baseline` passed, compliance dry-run/no-embed passed, route-boundary
+  focused tests passed, full repo tests/typecheck/lint/build passed, and
+  `git diff --check` passed.
+- Local demo smoke preflight remains blocked exactly as expected until approved
+  Supabase env names are loaded; authenticated protected-preview smoke,
+  migration/advisor closure, Vercel WAF/rate-limit setup, provider test-mode
+  smoke, and privacy/legal sign-off remain operator-owned blockers.
+- No migration apply, Supabase/Vercel/Stripe/provider dashboard mutation, env
+  mutation, seed/reset write, preview mutation, production mutation, paid
+  scanner, live provider call, live compliance ingestion, or secret printing was
+  performed.
+
 ## OWASP API Security Review V1
 
 - Added `docs/OWASP_API_SECURITY_REVIEW.md` with a repo-level OWASP API

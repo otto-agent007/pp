@@ -8,6 +8,7 @@ Production migration or deployment is blocked until these operator-owned checkli
 - [Customer Data Privacy and Retention](CUSTOMER_DATA_PRIVACY_RETENTION.md)
 - [Auth Production Hardening](AUTH_PRODUCTION_HARDENING.md)
 - [OWASP API Security Review](OWASP_API_SECURITY_REVIEW.md)
+- [Protected Preview Security Closure](PROTECTED_PREVIEW_SECURITY_CLOSURE.md)
 
 The `corepack pnpm security:baseline` check is a conservative static CI guardrail for obvious secret, service-role, portal leakage, and package-lock regressions. It is not a penetration test or a replacement for Supabase advisors, RLS smoke, Vercel Firewall/WAF review, Stripe webhook review, provider dashboard review, or operator-owned production configuration checks.
 
@@ -17,6 +18,12 @@ against the broader OWASP Top 10 2025 web application categories. It is static
 repo evidence: production sign-off still requires approved Supabase
 migration/advisor verification, Vercel Firewall/WAF review, provider-dashboard
 setup review, and sanitized preview smoke.
+
+`docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md` is the production-readiness
+protection ledger. It records which security gates have passed in repo
+verification, which gates are blocked on approved protected-preview setup, and
+which operator-owned actions must be closed or explicitly accepted before
+production launch.
 
 This checklist prepares Pest Patrol OS for a first real GitHub, Supabase, and Vercel setup.
 

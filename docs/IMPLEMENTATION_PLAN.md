@@ -1,34 +1,43 @@
 # Implementation Plan
 
-## Current Priority: OWASP API Security Review V1
+## Current Priority: Protected Preview Security Closure V1
 
 As of June 9, 2026, the active branch is
-`codex/owasp-api-security-review-v1`, started from latest `origin/main` in
-`../pp-owasp-api-security-review-v1`.
+`codex/production-readiness-protection-v1`, started from latest `origin/main`
+after PR #123 merged.
 
 Current slice objective:
 
-1. Map every `apps/web/app/api/**/route.ts` route to OWASP API Security Top 10
-   2023 risks, controls, current tests, and open production-readiness gaps.
-2. Add conservative static route-inventory coverage so undocumented API routes
-   fail focused verification.
-3. Preserve and extend payment-link evidence that clients cannot control Stripe
-   line items or provider metadata because the route loads invoices
-   server-side by `invoice_id`.
-4. Avoid migrations, provider/dashboard mutations, live provider calls,
-   seed/reset writes, preview mutations, production mutations, paid scanners,
-   and new external services.
+1. Turn the OWASP review follow-ups into a single protected-preview security
+   closure ledger with pass/blocker/owner status.
+2. Add conservative static coverage so required production-readiness gates
+   remain documented before production sign-off.
+3. Record repo-verifiable evidence from static security, RLS, compliance dry-run,
+   and demo-smoke preflight commands without secrets or provider calls.
+4. Keep migrations, provider/dashboard mutations, env changes, seed/reset writes,
+   preview mutations, production mutations, paid scanners, and live provider
+   calls out of scope unless explicitly approved.
 
 Current slice status:
 
-1. The OWASP API review doc is being added at
-   `docs/OWASP_API_SECURITY_REVIEW.md`.
-2. Static route-inventory verification is being added under `tooling/`.
-3. Readiness docs and task ledgers are being updated with static evidence only;
-   live Supabase advisor, Vercel Firewall/WAF, Stripe dashboard, and provider
-   smoke remain operator-approved follow-ups.
-4. The slice is not complete until focused checks, full repo gates,
-   `git diff --check`, commit, push, and draft PR publication are done.
+1. `docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md` is being added as the live
+   production-readiness protection ledger.
+2. `tooling/production-readiness-protection.test.ts` is being added to keep the
+   required security gates and out-of-scope guardrails visible.
+3. Repo evidence is partially verified: static OWASP/RLS tests passed,
+   `security:baseline` passed, compliance dry-run/no-embed passed, and local
+   demo smoke correctly blocked on missing approved Supabase env names.
+4. Live Supabase migration/advisor closure, Vercel Firewall/WAF configuration,
+   provider test-mode smoke, authenticated preview smoke, and privacy/legal
+   sign-off remain operator-approved blockers.
+
+## Previous Priority: OWASP API Security Review V1
+
+PR #123 merged on June 9, 2026. It added
+`docs/OWASP_API_SECURITY_REVIEW.md`, static API inventory coverage, payment-link
+server-side invoice lookup regression evidence, OWASP Top 10 2025 companion
+mapping, and readiness status links without migration, provider/dashboard,
+preview, production, paid scanner, or live provider mutation.
 
 ## Previous Priority: Repo Status Refresh After PRs 103-108
 
