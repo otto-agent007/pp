@@ -1,5 +1,29 @@
 # Done
 
+## Job Classification Foundation V1
+
+- Added structured job classification contracts for jobs: purpose, service
+  offering, service family, billing disposition, cadence, estimate status, and
+  nullable parent job reference.
+- Added shared domain helpers for safe defaults, legacy/catalog inference,
+  technician-friendly labels, badges, tech summaries, closeout guidance,
+  billing guidance, predicates, and conservative invoice availability.
+- Extended the service billing catalog with backwards-compatible default job
+  metadata for recurring general pest, rodent/bird exclusion, attic/project
+  work, WDO/escrow, termite, and rodent inspection presets.
+- Added proposed-only migration
+  `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`
+  with `public.jobs` columns, enum-like checks, defaults, `parent_job_id`
+  self-reference, indexes, and comments. The migration was not applied.
+- Wired classification through API-client job mapping, optimistic/demo job
+  hooks, representative demo fixtures, admin job create/edit, dispatch badges,
+  mobile route cards, payments advisory warnings, and closeouts advisory
+  guidance.
+- Kept mobile dynamic checklists, estimate-to-work-order conversion,
+  quote/pricing generation, recurring subscription billing, project management,
+  provider/dashboard changes, seed/reset writes, preview/production mutation,
+  and migration apply out of scope.
+
 ## Protected Preview Security Closure V1
 
 - Merged PR #123 first so the OWASP API Security Review V1 inventory and

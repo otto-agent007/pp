@@ -292,6 +292,29 @@ export {
   validateCustomerInput,
 } from "./customers";
 export {
+  applyJobClassificationToInput,
+  getDefaultJobClassification,
+  getJobClassificationBadge,
+  getJobClassificationBillingGuidance,
+  getJobClassificationCloseoutGuidance,
+  getJobClassificationLabel,
+  getJobClassificationTechSummary,
+  inferJobClassificationFromJob,
+  inferJobClassificationFromServiceOffering,
+  isBillableJob,
+  isEstimateJob,
+  isExclusionJob,
+  isRecurringJob,
+  isWdoEscrowJob,
+  normalizeJobClassification,
+  shouldOfferInvoiceForJob,
+} from "./jobClassification";
+export type {
+  JobClassificationBadge,
+  JobClassificationBadgeTone,
+  JobClassificationGuidance,
+} from "./jobClassification";
+export {
   assignJobTechnician,
   buildDispatchStaticMapState,
   buildDispatchRouteExceptionSummary,

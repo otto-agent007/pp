@@ -87,6 +87,12 @@ describe("job api client", () => {
     const jobs = await listJobRecords();
 
     expect(jobs).toHaveLength(1);
+    expect(jobs[0]).toMatchObject({
+      billing_disposition: "billable",
+      estimate_status: "not_applicable",
+      job_purpose: "service",
+      service_cadence: "one_time",
+    });
     expect(from).toHaveBeenCalledWith("jobs");
     expect(jobsQuery.calls[0]).toEqual([
       "select",
@@ -136,26 +142,46 @@ describe("job api client", () => {
   });
 
   it("creates a job", async () => {
-    const jobQuery = new MockQuery({ data: job, error: null });
+    const jobQuery = new MockQuery({
+      data: {
+        ...job,
+        billing_disposition: "included_in_recurring",
+        job_purpose: "service",
+        service_cadence: "quarterly",
+        service_family: "recurring_general_pest",
+        service_offering_id: "general_pest_quarterly",
+      },
+      error: null,
+    });
     from.mockReturnValue(jobQuery as never);
 
-    await createJobRecord({
+    const created = await createJobRecord({
       customer_id: "customer-1",
       location_id: "location-1",
       assigned_tech_id: null,
       scheduled_start: "2026-05-06T09:00:00Z",
       scheduled_end: null,
       service_notes: "Interior",
+      billing_disposition: "included_in_recurring",
+      job_purpose: "service",
+      service_cadence: "quarterly",
+      service_family: "recurring_general_pest",
+      service_offering_id: "general_pest_quarterly",
     });
 
+    expect(created.service_family).toBe("recurring_general_pest");
     expect(jobQuery.calls[0]).toEqual([
       "insert",
       [
         expect.objectContaining({
+          billing_disposition: "included_in_recurring",
           customer_id: "customer-1",
           location_id: "location-1",
           status: "scheduled",
           service_notes: "Interior",
+          service_cadence: "quarterly",
+          service_family: "recurring_general_pest",
+          service_offering_id: "general_pest_quarterly",
         }),
       ],
     ]);
@@ -173,10 +199,23 @@ describe("job api client", () => {
       scheduled_end: null,
       status: "en_route",
       service_notes: null,
+      billing_disposition: "billable",
+      job_purpose: "project_phase",
+      service_cadence: "project",
+      service_family: "rodent_attic",
+      service_offering_id: "rodent_exclusion",
     });
 
     expect(jobQuery.calls).toContainEqual(["eq", ["id", "job-1"]]);
     expect(jobQuery.calls[0][0]).toBe("update");
+    expect(jobQuery.calls[0][1]).toEqual([
+      expect.objectContaining({
+        job_purpose: "project_phase",
+        service_cadence: "project",
+        service_family: "rodent_attic",
+        service_offering_id: "rodent_exclusion",
+      }),
+    ]);
   });
 
   it("updates an assigned technician job status with an authenticated client", async () => {

@@ -8,6 +8,8 @@ import {
   formatJobScheduleDateTime,
   getAdminCloseoutProofReview,
   getBillingQueueCounts,
+  getJobClassificationBadge,
+  getJobClassificationCloseoutGuidance,
   getCloseoutProofHandoffSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
@@ -15,6 +17,7 @@ import {
   getInvoiceBalanceCents,
   buildWdoEscrowReadinessForJob,
   isWdoEscrowLikeJob,
+  normalizeJobClassification,
   type ComplianceGuardrail,
   type BillingQueueGroup,
   type BillingQueueItem,
@@ -288,6 +291,44 @@ function ComplianceGuardrailPanel({
           ))}
         </ul>
       ) : null}
+    </Card>
+  );
+}
+
+function JobClassificationCloseoutGuidance({
+  guidance,
+  label,
+}: {
+  guidance: ReturnType<typeof getJobClassificationCloseoutGuidance>;
+  label: string;
+}) {
+  if (!guidance) {
+    return null;
+  }
+
+  return (
+    <Card padding="md" statusTone="info">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Eyebrow>Job classification</Eyebrow>
+          <h3 className="mt-1 text-base font-semibold text-theme-text-primary">
+            {label}
+          </h3>
+          <p className="mt-2 text-sm text-theme-text-secondary">
+            {guidance.summary}
+          </p>
+          {guidance.items.length > 0 ? (
+            <ul className="mt-3 grid gap-1 text-sm text-theme-text-secondary">
+              {guidance.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+        <StatusPill dot={false} tone="info">
+          {label}
+        </StatusPill>
+      </div>
     </Card>
   );
 }
@@ -994,6 +1035,15 @@ export function CloseoutsClient() {
         technicianLicenses,
       })
     : null;
+  const selectedJobClassification = selectedJob
+    ? normalizeJobClassification(selectedJob)
+    : null;
+  const selectedClassificationBadge = selectedJobClassification
+    ? getJobClassificationBadge(selectedJobClassification)
+    : null;
+  const selectedClassificationGuidance = selectedJobClassification
+    ? getJobClassificationCloseoutGuidance(selectedJobClassification)
+    : null;
   const complianceSummaryTone: StatusPillTone =
     complianceGuardrailSummary.criticalJobs > 0
       ? "danger"
@@ -1213,6 +1263,12 @@ export function CloseoutsClient() {
                 {selectedWdoEscrowReadiness ? (
                   <WdoEscrowReadinessCard
                     readiness={selectedWdoEscrowReadiness}
+                  />
+                ) : null}
+                {selectedClassificationBadge ? (
+                  <JobClassificationCloseoutGuidance
+                    guidance={selectedClassificationGuidance}
+                    label={selectedClassificationBadge.label}
                   />
                 ) : null}
                 {selectedGuardrail ? (

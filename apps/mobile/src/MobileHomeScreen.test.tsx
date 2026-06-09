@@ -92,16 +92,28 @@ vi.mock("./store/useLanguage", () => ({
       selector({
         t: {
           jobs: {
-            status: {
-              canceled: "Canceled",
-              completed: "Completed",
-              en_route: "En route",
-              in_progress: "In progress",
-              scheduled: "Scheduled",
-            },
+          status: {
+            canceled: "Canceled",
+            completed: "Completed",
+            en_route: "En route",
+            in_progress: "In progress",
+            scheduled: "Scheduled",
+          },
+          classification: {
+            callback: "Callback",
+            estimate: "Estimate",
+            exclusion: "Exclusion",
+            follow_up: "Follow-up",
+            general_pest: "General Pest",
+            inspection: "Inspection",
+            project_work: "Project Work",
+            recurring_service: "Recurring Service",
+            warranty: "Warranty",
+            wdo_escrow: "WDO / Escrow",
           },
         },
-      }),
+      },
+    }),
     {
       getState: () => ({
         hydrateLanguagePreference: vi.fn(),

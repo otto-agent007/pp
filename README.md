@@ -116,12 +116,15 @@ accepted by the operator.
 
 Current status as of June 9, 2026:
 
-- PR #123 merged the OWASP API Security Review V1 inventory, route-boundary
-  coverage, and OWASP Top 10 2025 companion mapping.
-- The active protection focus is protected-preview security closure: repo
-  guardrails pass locally, while live Supabase advisor closure, Vercel WAF/rate
-  limits, provider test-mode smoke, authenticated preview smoke, and privacy
-  sign-off remain operator-approved production blockers.
-- No migration, provider/dashboard setting, seed/reset, preview data, production
-  data, paid scanner, or live provider mutation is part of the repo-only closure
-  evidence.
+- The active implementation focus is Job Classification Foundation V1 on
+  `codex/job-classification-foundation-v1`.
+- Jobs now carry structured intent in shared types/domain and admin/mobile
+  surfaces can show technician-friendly labels such as Estimate, Recurring
+  Service, Exclusion, WDO / Escrow, Warranty, Follow-up, Callback, and
+  Inspection.
+- The job-classification database change is a proposed migration only:
+  `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`.
+  It has not been applied.
+- Dynamic mobile checklists, estimate-to-work-order conversion, pricing/quote
+  generation, recurring subscription billing, and project phase management are
+  deferred to later approved slices.

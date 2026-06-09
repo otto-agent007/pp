@@ -9,6 +9,8 @@ import {
   formatJobScheduleDateTime,
   getBillingCloseoutHandoffSummary,
   getBillingQueueCounts,
+  getJobClassificationBadge,
+  getJobClassificationBillingGuidance,
   getInvoiceJobIds,
   getInvoiceReconciliation,
   getInvoiceReconciliationGuidance,
@@ -23,6 +25,7 @@ import {
   inferServiceBillingOfferingFromJob,
   isWdoEscrowLikeJob,
   listServiceBillingOfferings,
+  normalizeJobClassification,
   type ComplianceGuardrail,
   type InvoiceReconciliationStatus,
   type InvoiceStatusFilter,
@@ -257,6 +260,40 @@ function EmptyState({ children }: { children: string }) {
     <p className="rounded-md border border-dashed border-theme-border-default bg-theme-background-subtle p-4 text-sm text-theme-text-secondary">
       {children}
     </p>
+  );
+}
+
+function JobClassificationPaymentGuidance({
+  guidance,
+  label,
+  prominent,
+}: {
+  guidance: ReturnType<typeof getJobClassificationBillingGuidance>;
+  label: string;
+  prominent: boolean;
+}) {
+  if (!guidance && !prominent) {
+    return null;
+  }
+
+  return (
+    <div className={`rounded-md border p-3 ${statusSurfaceClassName("warning")}`}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-theme-text-primary">
+            Job classification
+          </p>
+          {guidance ? (
+            <p className="mt-1 text-xs text-theme-text-secondary">
+              {guidance.summary}
+            </p>
+          ) : null}
+        </div>
+        <StatusPill dot={false} tone="warning">
+          {label}
+        </StatusPill>
+      </div>
+    </div>
   );
 }
 
@@ -604,6 +641,15 @@ export function PaymentsClient() {
   const selectedIsWdoEscrowJob = selectedJob
     ? isWdoEscrowLikeJob(selectedJob)
     : false;
+  const selectedJobClassification = selectedJob
+    ? normalizeJobClassification(selectedJob)
+    : null;
+  const selectedJobClassificationBadge = selectedJobClassification
+    ? getJobClassificationBadge(selectedJobClassification)
+    : null;
+  const selectedJobBillingGuidance = selectedJobClassification
+    ? getJobClassificationBillingGuidance(selectedJobClassification)
+    : null;
   const closeoutHandoffJob =
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
@@ -1383,6 +1429,13 @@ export function PaymentsClient() {
           </div>
           {selectedJobGuardrail ? (
             <ComplianceGuardrailCard guardrail={selectedJobGuardrail} />
+          ) : null}
+          {selectedJobClassificationBadge ? (
+            <JobClassificationPaymentGuidance
+              guidance={selectedJobBillingGuidance}
+              label={selectedJobClassificationBadge.label}
+              prominent={selectedJobClassificationBadge.prominent}
+            />
           ) : null}
           {selectedIsWdoEscrowJob && selectedJob ? (
             <WdoEscrowPaymentGuidance jobId={selectedJob.id} />

@@ -191,6 +191,12 @@ describe("JobsClient", () => {
 
     const helper = screen.getByText("Job setup notes").closest("details");
     expect(helper).toHaveAttribute("open");
+    expect(screen.getByLabelText("Job purpose")).toHaveValue("service");
+    expect(
+      screen.getByRole("combobox", { name: "Service preset" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Billing disposition")).toHaveValue("billable");
+    expect(screen.getByLabelText("Cadence")).toHaveValue("one_time");
     expect(
       screen.getByText(
         "Select a customer first so the location list only shows that customer active service addresses.",
@@ -282,6 +288,16 @@ describe("JobsClient", () => {
     expect(screen.getByRole("combobox", { name: "Location" })).toHaveValue(
       "10 Pine Street",
     );
+    await chooseSearchableOption(
+      user,
+      "Service preset",
+      "quarterly",
+      /Quarterly General Pest/,
+    );
+    expect(screen.getByLabelText("Billing disposition")).toHaveValue(
+      "included_in_recurring",
+    );
+    expect(screen.getByLabelText("Cadence")).toHaveValue("quarterly");
 
     await chooseSearchableOption(user, "Location", "oak", /20 Oak Avenue/);
     await chooseSearchableOption(user, "Technician", "test", "Testnician");
@@ -294,7 +310,11 @@ describe("JobsClient", () => {
         customer_id: "customer-1",
         location_id: "location-2",
         assigned_tech_id: "technician-1",
+        billing_disposition: "included_in_recurring",
         scheduled_start: "2026-05-06T09:00",
+        service_cadence: "quarterly",
+        service_family: "recurring_general_pest",
+        service_offering_id: "general_pest_quarterly",
         service_notes: "Exterior",
       }),
     );
@@ -308,9 +328,28 @@ describe("JobsClient", () => {
     ).toHaveAttribute("href", "/dispatch");
     await waitFor(() =>
       expect(
-        screen.queryByRole("combobox", { name: "Customer" }),
+      screen.queryByRole("combobox", { name: "Customer" }),
       ).not.toBeInTheDocument(),
     );
+  });
+
+  it("preserves manual classification overrides after service preset changes", async () => {
+    const user = userEvent.setup();
+    render(<JobsClient />);
+
+    await user.click(screen.getByRole("button", { name: "New job" }));
+    await user.selectOptions(screen.getByLabelText("Cadence"), "project");
+    expect(screen.getByText("Manual override")).toBeInTheDocument();
+
+    await chooseSearchableOption(
+      user,
+      "Service preset",
+      "rodent exclusion",
+      /Rodent Exclusion/,
+    );
+
+    expect(screen.getByLabelText("Cadence")).toHaveValue("project");
+    expect(screen.getByLabelText("Job purpose")).toHaveValue("service");
   });
 
   it("edits an existing job", async () => {

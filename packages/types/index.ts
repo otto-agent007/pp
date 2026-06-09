@@ -9,6 +9,40 @@ export type JobStatus =
   | "completed"
   | "canceled";
 
+export type JobPurpose =
+  | "estimate"
+  | "service"
+  | "inspection"
+  | "follow_up"
+  | "callback"
+  | "warranty"
+  | "project_phase";
+
+export type JobBillingDisposition =
+  | "billable"
+  | "estimate_only"
+  | "included_in_recurring"
+  | "no_charge"
+  | "warranty_callback"
+  | "deposit_required";
+
+export type JobServiceCadence =
+  | "none"
+  | "one_time"
+  | "monthly"
+  | "bimonthly"
+  | "quarterly"
+  | "annual"
+  | "project";
+
+export type JobEstimateStatus =
+  | "not_applicable"
+  | "draft"
+  | "presented"
+  | "accepted"
+  | "declined"
+  | "needs_follow_up";
+
 export type CustomerStatus = "active" | "archived";
 
 export type PropertyType = "residential" | "commercial" | "other";
@@ -324,11 +358,19 @@ export interface Job {
   scheduled_start: string;
   scheduled_end: string | null;
   service_notes: string | null;
+  job_purpose?: JobPurpose | null;
+  service_offering_id?: ServiceBillingOfferingId | null;
+  service_family?: ServiceBillingFamily | null;
+  billing_disposition?: JobBillingDisposition | null;
+  service_cadence?: JobServiceCadence | null;
+  estimate_status?: JobEstimateStatus | null;
+  parent_job_id?: string | null;
   created_at: string;
   updated_at: string;
   customer?: Customer;
   location?: Location;
   assigned_technician?: UserProfile | null;
+  parent_job?: Job | null;
 }
 
 export interface JobInput {
@@ -339,6 +381,23 @@ export interface JobInput {
   scheduled_end?: string | null;
   status?: JobStatus;
   service_notes?: string | null;
+  job_purpose?: JobPurpose | null;
+  service_offering_id?: ServiceBillingOfferingId | null;
+  service_family?: ServiceBillingFamily | null;
+  billing_disposition?: JobBillingDisposition | null;
+  service_cadence?: JobServiceCadence | null;
+  estimate_status?: JobEstimateStatus | null;
+  parent_job_id?: string | null;
+}
+
+export interface JobClassification {
+  job_purpose: JobPurpose;
+  service_offering_id: ServiceBillingOfferingId | null;
+  service_family: ServiceBillingFamily | null;
+  billing_disposition: JobBillingDisposition;
+  service_cadence: JobServiceCadence;
+  estimate_status: JobEstimateStatus;
+  parent_job_id: string | null;
 }
 
 export interface JobStatusUpdateQueuePayload extends Record<string, unknown> {
@@ -508,18 +567,24 @@ export interface ServiceBillingPromotionSuggestion {
 export interface ServiceBillingOffering {
   closeoutGuidance: string[];
   customerSafeDescription: string;
+  defaultBillingDisposition?: JobBillingDisposition;
+  defaultJobPurpose?: JobPurpose;
+  defaultServiceCadence?: JobServiceCadence;
   family: ServiceBillingFamily;
   id: ServiceBillingOfferingId;
   internalBillingGuidance: string;
   label: string;
   pestTags: string[];
   portalSafeSummary: string;
+  proofProfile?: "general" | "estimate" | "exclusion" | "wdo_escrow" | "warranty";
   promotionSuggestions: ServiceBillingPromotionSuggestion[];
   searchTerms: string[];
   serviceTags: string[];
   shortLabel: string;
   suggestedLineItems: ServiceBillingLineItemTemplate[];
   suggestedNotes: string[];
+  techBadgeLabel?: string;
+  techWorkflow?: "general_service" | "estimate" | "inspection" | "project" | "wdo_escrow";
 }
 
 export interface ServiceBillingInferenceResult {

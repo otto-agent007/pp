@@ -478,6 +478,11 @@ describe("CloseoutsClient", () => {
     render(<CloseoutsClient />);
 
     expect(screen.getByText("WDO / Escrow readiness")).toBeInTheDocument();
+    expect(screen.getByText("Job classification")).toBeInTheDocument();
+    expect(screen.getAllByText("WDO / Escrow").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("Office review required before final document release."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Final release requires authorized human review."),
     ).toBeInTheDocument();

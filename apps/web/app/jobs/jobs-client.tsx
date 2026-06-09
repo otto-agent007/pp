@@ -2,11 +2,28 @@
 
 import {
   filterJobs,
+  getJobClassificationBadge,
+  getJobClassificationLabel,
+  getServiceBillingFamilyLabel,
   getTechnicianLabel,
+  inferJobClassificationFromServiceOffering,
+  listServiceBillingOfferings,
+  normalizeJobClassification,
   parseJobScheduleWallTime,
   validateJobInput,
 } from "@pest-patrol/domain";
-import type { Customer, Job, JobInput, JobStatus } from "@pest-patrol/types";
+import type {
+  Customer,
+  Job,
+  JobBillingDisposition,
+  JobEstimateStatus,
+  JobInput,
+  JobPurpose,
+  JobServiceCadence,
+  JobStatus,
+  ServiceBillingOffering,
+  ServiceBillingOfferingId,
+} from "@pest-patrol/types";
 import {
   Button,
   Card,
@@ -47,6 +64,13 @@ const emptyForm: JobInput = {
   scheduled_end: "",
   status: "scheduled",
   service_notes: "",
+  job_purpose: "service",
+  service_offering_id: null,
+  service_family: null,
+  billing_disposition: "billable",
+  service_cadence: "one_time",
+  estimate_status: "not_applicable",
+  parent_job_id: null,
 };
 
 const statusLabels: Record<JobStatus, string> = {
@@ -55,6 +79,40 @@ const statusLabels: Record<JobStatus, string> = {
   in_progress: "In progress",
   completed: "Completed",
   canceled: "Canceled",
+};
+const serviceBillingOfferings = listServiceBillingOfferings();
+const jobPurposeLabels: Record<JobPurpose, string> = {
+  callback: "Callback",
+  estimate: "Estimate",
+  follow_up: "Follow-up",
+  inspection: "Inspection",
+  project_phase: "Project phase",
+  service: "Service",
+  warranty: "Warranty",
+};
+const billingDispositionLabels: Record<JobBillingDisposition, string> = {
+  billable: "Billable",
+  deposit_required: "Deposit required",
+  estimate_only: "Estimate only",
+  included_in_recurring: "Included in recurring",
+  no_charge: "No charge",
+  warranty_callback: "Warranty/callback",
+};
+const cadenceLabels: Record<JobServiceCadence, string> = {
+  annual: "Annual",
+  bimonthly: "Bi-monthly",
+  monthly: "Monthly",
+  none: "None",
+  one_time: "One-time",
+  project: "Project",
+  quarterly: "Quarterly",
+};
+const estimateStatusLabels: Record<Exclude<JobEstimateStatus, "not_applicable">, string> = {
+  accepted: "Accepted",
+  declined: "Declined",
+  draft: "Draft",
+  needs_follow_up: "Needs follow-up",
+  presented: "Presented",
 };
 
 function jobStatusTone(status: JobStatus): StatusPillTone {
@@ -73,6 +131,23 @@ function jobStatusTone(status: JobStatus): StatusPillTone {
   return "info";
 }
 
+function servicePresetLabel(offering: ServiceBillingOffering) {
+  return `${offering.label} - ${getServiceBillingFamilyLabel(offering.family)}`;
+}
+
+function servicePresetKeywords(offering: ServiceBillingOffering) {
+  return [
+    offering.shortLabel,
+    offering.customerSafeDescription,
+    offering.portalSafeSummary,
+    offering.family,
+    offering.id,
+    ...offering.searchTerms,
+    ...offering.serviceTags,
+    ...offering.pestTags,
+  ];
+}
+
 function toDateTimeInput(value: string | null | undefined) {
   if (!value) {
     return "";
@@ -88,6 +163,8 @@ function toDateTimeInput(value: string | null | undefined) {
 }
 
 function jobToInput(job: Job): JobInput {
+  const classification = normalizeJobClassification(job);
+
   return {
     customer_id: job.customer_id,
     location_id: job.location_id,
@@ -96,6 +173,7 @@ function jobToInput(job: Job): JobInput {
     scheduled_end: toDateTimeInput(job.scheduled_end),
     status: job.status,
     service_notes: job.service_notes ?? "",
+    ...classification,
   };
 }
 
@@ -135,6 +213,7 @@ export function JobsClient() {
   const [visibleJobCount, setVisibleJobCount] = useState(INITIAL_VISIBLE_JOBS);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [form, setForm] = useState<JobInput>(emptyForm);
+  const [classificationOverride, setClassificationOverride] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -198,6 +277,17 @@ export function JobsClient() {
     ],
     [techniciansQuery.data],
   );
+  const servicePresetOptions = useMemo(
+    () => [
+      { label: "Other", value: "" },
+      ...serviceBillingOfferings.map((offering) => ({
+        keywords: servicePresetKeywords(offering),
+        label: servicePresetLabel(offering),
+        value: offering.id,
+      })),
+    ],
+    [],
+  );
   const decoratedJobs = useMemo(
     () =>
       (jobsQuery.data ?? []).map((job) =>
@@ -253,6 +343,7 @@ export function JobsClient() {
   function resetForm() {
     setEditingJob(null);
     setForm(emptyForm);
+    setClassificationOverride(false);
     setFormError(null);
   }
 
@@ -271,6 +362,39 @@ export function JobsClient() {
     setForm((current) => ({
       ...current,
       ...update,
+    }));
+  }
+
+  function updateClassification(update: Partial<JobInput>) {
+    setClassificationOverride(true);
+    updateForm(update);
+  }
+
+  function selectServicePreset(offeringId: string) {
+    if (!offeringId) {
+      updateClassification({
+        service_offering_id: null,
+        service_family: null,
+      });
+      return;
+    }
+
+    const classification = inferJobClassificationFromServiceOffering(
+      offeringId as ServiceBillingOfferingId,
+    );
+
+    setForm((current) => ({
+      ...current,
+      service_offering_id: classification.service_offering_id,
+      service_family: classification.service_family,
+      ...(classificationOverride
+        ? {}
+        : {
+            billing_disposition: classification.billing_disposition,
+            estimate_status: classification.estimate_status,
+            job_purpose: classification.job_purpose,
+            service_cadence: classification.service_cadence,
+          }),
     }));
   }
 
@@ -293,6 +417,7 @@ export function JobsClient() {
   function editJob(job: Job) {
     setEditingJob(job);
     setForm(jobToInput(job));
+    setClassificationOverride(false);
     setFormError(null);
     setSaveMessage(null);
     setJobPanelMode("edit");
@@ -487,6 +612,8 @@ export function JobsClient() {
           ) : (
             <>
               {displayedJobs.map((job) => {
+              const classification = normalizeJobClassification(job);
+              const classificationBadge = getJobClassificationBadge(classification);
               const assignedTechnician = job.assigned_tech_id
                 ? technicianById.get(job.assigned_tech_id)
                 : null;
@@ -520,6 +647,15 @@ export function JobsClient() {
                           <StatusPill tone={jobStatusTone(job.status)}>
                             {statusLabels[job.status]}
                           </StatusPill>
+                          {classificationBadge.prominent ||
+                          classificationBadge.label !== "General Pest" ? (
+                            <StatusPill
+                              dot={false}
+                              tone={classificationBadge.tone}
+                            >
+                              {classificationBadge.label}
+                            </StatusPill>
+                          ) : null}
                         </div>
                         <p className="mt-2 text-sm text-theme-text-secondary">
                           {formatSchedule(job.scheduled_start)}
@@ -686,6 +822,123 @@ export function JobsClient() {
             options={technicianOptions}
             value={form.assigned_tech_id ?? ""}
           />
+
+          <div className="grid gap-3 rounded-md border border-theme-border-subtle bg-theme-background-subtle p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-theme-text-primary">
+                  Job classification
+                </p>
+                <p className="mt-1 text-xs font-semibold text-theme-text-secondary">
+                  {classificationOverride
+                    ? "Manual override"
+                    : form.service_offering_id
+                      ? "Auto-selected from service preset"
+                      : "Default service classification"}
+                </p>
+              </div>
+              <StatusPill dot={false} tone="info">
+                {getJobClassificationLabel(normalizeJobClassification(form))}
+              </StatusPill>
+            </div>
+
+            <label className={formLabelClassName}>
+              Job purpose
+              <select
+                className={formControlClassName}
+                onChange={(event) =>
+                  updateClassification({
+                    job_purpose: event.target.value as JobPurpose,
+                  })
+                }
+                value={form.job_purpose ?? "service"}
+              >
+                {Object.entries(jobPurposeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <SearchableSelect
+              ariaLabel="Service preset"
+              emptyMessage="No service presets found"
+              label="Service preset"
+              onChange={selectServicePreset}
+              options={servicePresetOptions}
+              value={form.service_offering_id ?? ""}
+            />
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={formLabelClassName}>
+                Billing disposition
+                <select
+                  className={formControlClassName}
+                  onChange={(event) =>
+                    updateClassification({
+                      billing_disposition: event.target
+                        .value as JobBillingDisposition,
+                    })
+                  }
+                  value={form.billing_disposition ?? "billable"}
+                >
+                  {Object.entries(billingDispositionLabels).map(
+                    ([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+
+              <label className={formLabelClassName}>
+                Cadence
+                <select
+                  className={formControlClassName}
+                  onChange={(event) =>
+                    updateClassification({
+                      service_cadence: event.target.value as JobServiceCadence,
+                    })
+                  }
+                  value={form.service_cadence ?? "one_time"}
+                >
+                  {Object.entries(cadenceLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {form.job_purpose === "estimate" ? (
+              <label className={formLabelClassName}>
+                Estimate status
+                <select
+                  className={formControlClassName}
+                  onChange={(event) =>
+                    updateClassification({
+                      estimate_status: event.target
+                        .value as JobEstimateStatus,
+                    })
+                  }
+                  value={
+                    form.estimate_status === "not_applicable"
+                      ? "draft"
+                      : (form.estimate_status ?? "draft")
+                  }
+                >
+                  {Object.entries(estimateStatusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className={formLabelClassName}>

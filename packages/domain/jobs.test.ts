@@ -67,6 +67,25 @@ describe("job domain", () => {
       scheduled_end: null,
       status: "scheduled",
       service_notes: "Bring bait stations",
+      billing_disposition: "billable",
+      estimate_status: "not_applicable",
+      job_purpose: "service",
+      service_cadence: "one_time",
+    });
+  });
+
+  it("normalizes classification fields from service offerings", () => {
+    const result = validateJobInput({
+      ...validInput,
+      service_offering_id: "general_pest_quarterly",
+    });
+
+    expect(result).toMatchObject({
+      billing_disposition: "included_in_recurring",
+      job_purpose: "service",
+      service_cadence: "quarterly",
+      service_family: "recurring_general_pest",
+      service_offering_id: "general_pest_quarterly",
     });
   });
 

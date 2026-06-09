@@ -10,7 +10,19 @@ import { supabase } from "./supabase";
 import { listTechnicianProfileRecords } from "./technicians";
 
 type JobsClient = typeof supabase | AuthSupabaseClient;
-type JobRow = Job;
+type JobRow = Partial<Job> & Pick<
+  Job,
+  | "assigned_tech_id"
+  | "created_at"
+  | "customer_id"
+  | "id"
+  | "location_id"
+  | "scheduled_end"
+  | "scheduled_start"
+  | "service_notes"
+  | "status"
+  | "updated_at"
+>;
 
 function toJobRow(input: JobInput) {
   return {
@@ -21,7 +33,32 @@ function toJobRow(input: JobInput) {
     scheduled_end: input.scheduled_end ?? null,
     status: input.status ?? "scheduled",
     service_notes: input.service_notes ?? null,
+    job_purpose: input.job_purpose,
+    service_offering_id: input.service_offering_id,
+    service_family: input.service_family,
+    billing_disposition: input.billing_disposition,
+    service_cadence: input.service_cadence,
+    estimate_status: input.estimate_status,
+    parent_job_id: input.parent_job_id,
   };
+}
+
+function toJob(row: JobRow): Job {
+  return {
+    ...row,
+    billing_disposition: row.billing_disposition ?? "billable",
+    estimate_status: row.estimate_status ?? "not_applicable",
+    job_purpose: row.job_purpose ?? "service",
+    parent_job: row.parent_job ?? null,
+    parent_job_id: row.parent_job_id ?? null,
+    service_cadence: row.service_cadence ?? "one_time",
+    service_family: row.service_family ?? null,
+    service_offering_id: row.service_offering_id ?? null,
+  } as Job;
+}
+
+function toJobs(rows: JobRow[] | null) {
+  return (rows ?? []).map(toJob);
 }
 
 const jobSelect =
@@ -39,7 +76,7 @@ export async function listJobRecords(client: JobsClient = supabase) {
     throw error;
   }
 
-  return (data ?? []) as Job[];
+  return toJobs(data as JobRow[] | null);
 }
 
 export async function listAssignedTechnicianJobRecords(client: AuthSupabaseClient) {
@@ -63,7 +100,7 @@ export async function listAssignedTechnicianJobRecords(client: AuthSupabaseClien
     throw error;
   }
 
-  return (data ?? []) as Job[];
+  return toJobs(data as JobRow[] | null);
 }
 
 export async function listCustomerPortalJobRecords(
@@ -95,7 +132,7 @@ export async function createJobRecord(input: JobInput) {
     throw error;
   }
 
-  return data as Job;
+  return toJob(data as JobRow);
 }
 
 export async function updateJobRecord(id: string, input: JobInput) {
@@ -110,7 +147,7 @@ export async function updateJobRecord(id: string, input: JobInput) {
     throw error;
   }
 
-  return data as Job;
+  return toJob(data as JobRow);
 }
 
 export async function updateAssignedTechnicianJobStatusRecord(
@@ -136,7 +173,7 @@ export async function updateAssignedTechnicianJobStatusRecord(
     throw error;
   }
 
-  return data as Job;
+  return toJob(data as JobRow);
 }
 
 export async function cancelJobRecord(id: string) {
@@ -151,7 +188,7 @@ export async function cancelJobRecord(id: string) {
     throw error;
   }
 
-  return data as Job;
+  return toJob(data as JobRow);
 }
 
 export async function listTechnicianProfiles() {

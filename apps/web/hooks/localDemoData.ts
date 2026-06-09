@@ -571,6 +571,13 @@ export function createLocalDemoJob(input: JobInput): Job {
     scheduled_start: normalized.scheduled_start,
     scheduled_end: normalized.scheduled_end ?? null,
     service_notes: normalized.service_notes ?? null,
+    job_purpose: normalized.job_purpose,
+    service_offering_id: normalized.service_offering_id,
+    service_family: normalized.service_family,
+    billing_disposition: normalized.billing_disposition,
+    service_cadence: normalized.service_cadence,
+    estimate_status: normalized.estimate_status,
+    parent_job_id: normalized.parent_job_id,
     created_at: createdAt,
     updated_at: createdAt,
   };
@@ -593,6 +600,13 @@ export function updateLocalDemoJob(id: string, input: JobInput): Job {
     scheduled_start: normalized.scheduled_start,
     scheduled_end: normalized.scheduled_end ?? null,
     service_notes: normalized.service_notes ?? null,
+    job_purpose: normalized.job_purpose,
+    service_offering_id: normalized.service_offering_id,
+    service_family: normalized.service_family,
+    billing_disposition: normalized.billing_disposition,
+    service_cadence: normalized.service_cadence,
+    estimate_status: normalized.estimate_status,
+    parent_job_id: normalized.parent_job_id,
     updated_at: nowIso(),
   }));
 }
