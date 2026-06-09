@@ -1,9 +1,10 @@
 # OWASP API Security Review V1
 
 Focused repo-level review for Pest Patrol OS API routes against the OWASP API
-Security Top 10 2023. This is not a penetration test and did not mutate
-preview, production, Supabase, Vercel, Stripe, provider dashboards, migrations,
-seed/reset data, or live compliance ingestion.
+Security Top 10 2023, with a companion cross-check against the broader OWASP
+Top 10 2025 web application risks. This is not a penetration test and did not
+mutate preview, production, Supabase, Vercel, Stripe, provider dashboards,
+migrations, seed/reset data, or live compliance ingestion.
 
 ## Summary
 
@@ -23,6 +24,29 @@ seed/reset data, or live compliance ingestion.
   `docs/CUSTOMER_DATA_PRIVACY_RETENTION.md`, `docs/AUTH_PRODUCTION_HARDENING.md`,
   route tests under `apps/web/app/api/**`, `tooling/security-baseline-check.ts`,
   and `tooling/rls-boundary-audit.ts`.
+
+## Standards Used
+
+- OWASP API Security Top 10 2023 remains the route-by-route API checklist for
+  this review because it is the latest official API-specific OWASP Top 10.
+- OWASP Top 10 2025 is broader web application guidance. It is used here as a
+  companion lens for app-wide risks such as supply chain integrity,
+  cryptography, injection, logging/alerting, and exception handling.
+
+## OWASP Web Top 10 2025 Companion Mapping
+
+| OWASP Top 10 2025 category | Pest Patrol review focus | Current evidence | Gap / next step |
+| --- | --- | --- | --- |
+| A01:2025 Broken Access Control | Admin, portal, cron, webhook, technician, media, payment, and mobile/RLS boundaries | API1/API5 route inventory rows; portal session tests; payment-link server-side invoice lookup; `docs/RLS_BOUNDARY_AUDIT.md` | Live Supabase RLS/advisor closure still requires operator-approved target verification. |
+| A02:2025 Security Misconfiguration | Env placeholders, service-role server-only use, dev-only rewrites, CSP/security headers, provider readiness, Stripe live gate | `tooling/owasp-api-route-inventory.test.ts`; `tooling/security-baseline-check.ts`; readiness docs; `/api/ops/readiness` | Vercel Firewall/WAF and dashboard settings remain operator-owned preview/production tasks. |
+| A03:2025 Software Supply Chain Failures | Dependency and CI hygiene without adding paid scanners or new services | lockfile presence in baseline checks; full `pnpm install --frozen-lockfile`, tests, typecheck, lint, build | Add SBOM/dependency-review policy later if the project wants stronger supply-chain evidence. |
+| A04:2025 Cryptographic Failures | Portal grants/sessions, Stripe webhook HMAC, secret redaction, HTTPS/operator setup | hashed portal grants/sessions; Stripe raw-body HMAC with timestamp tolerance; no secret values in docs/tests | Production TLS/HSTS and key rotation are deployment/operator runbook items. |
+| A05:2025 Injection | Supabase query boundaries, manifest-controlled compliance sources, route validation, no arbitrary server-side URL fetches | DB access through `packages/api-client`; compliance manifest tests; route input validation; SSRF notes | Live DB policy verification remains part of Supabase advisor/RLS closure. |
+| A06:2025 Insecure Design | Sensitive business flows, manual fallback clarity, destructive confirmation, advisory-only compliance, customer-safe portal output | API6 section; payment/portal/notification idempotency tests; customer privacy and auth hardening docs | Threat-model review for new production workflows should become a recurring launch gate. |
+| A07:2025 Authentication Failures | Staff bearer auth, portal cookie auth, cron secrets, provider signatures, password reset/update boundaries | `getAdminAccess`; `validatePortalSession`; Stripe/provider route tests; `docs/AUTH_PRODUCTION_HARDENING.md` | MFA/CAPTCHA and final auth-provider policy remain production hardening decisions. |
+| A08:2025 Software or Data Integrity Failures | Webhook idempotency, Stripe metadata requirements, portal one-time grant consumption, demo seed/reset safeguards | Stripe webhook duplicate-event tests; generated-key idempotency; one-time portal grants; demo production refusal | Preview provider smoke should verify integrity behavior with test-mode provider payloads. |
+| A09:2025 Security Logging & Alerting Failures | Sanitized logs, no secret/token leakage, critical event visibility | `safe-log` route usage; route tests asserting sanitized provider failures; readiness log guidance | External alerting/monitoring provider selection is out of scope and should be operator-owned. |
+| A10:2025 Mishandling of Exceptional Conditions | Sanitized error paths, provider-unavailable fallbacks, schema-unavailable compliance behavior, manual fallback routes | compliance/provider unavailable tests; Stripe/provider failure tests; portal/notification manual fallback tests | Keep adding regression tests when new provider or customer-visible error paths are introduced. |
 
 ## API Inventory
 

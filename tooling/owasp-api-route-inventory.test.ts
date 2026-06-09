@@ -47,6 +47,29 @@ describe("OWASP API route inventory", () => {
     });
   });
 
+  it("documents the broader OWASP Web Top 10 2025 companion lens", () => {
+    const review = readFileSync(
+      join(repoRoot, "docs", "OWASP_API_SECURITY_REVIEW.md"),
+      "utf8",
+    );
+    const webTop10Categories = [
+      "A01:2025 Broken Access Control",
+      "A02:2025 Security Misconfiguration",
+      "A03:2025 Software Supply Chain Failures",
+      "A04:2025 Cryptographic Failures",
+      "A05:2025 Injection",
+      "A06:2025 Insecure Design",
+      "A07:2025 Authentication Failures",
+      "A08:2025 Software or Data Integrity Failures",
+      "A09:2025 Security Logging & Alerting Failures",
+      "A10:2025 Mishandling of Exceptional Conditions",
+    ];
+
+    webTop10Categories.forEach((category) => {
+      expect(review).toContain(category);
+    });
+  });
+
   it("keeps service-role references inside server API code", () => {
     const appFiles = listFiles(join(repoRoot, "apps", "web", "app")).filter(
       (file) => /\.(ts|tsx)$/.test(file) && !file.endsWith(".test.ts"),

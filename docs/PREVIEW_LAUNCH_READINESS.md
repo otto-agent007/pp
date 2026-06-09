@@ -19,8 +19,9 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 - Keep `README.md`, `docs/IMPLEMENTATION_PLAN.md`, `tasks/in-progress.md`, and `docs/PRODUCTION_READINESS.md` aligned to preview launch readiness.
 - Verify route and env names against the code before smoke testing.
 - Keep `docs/OWASP_API_SECURITY_REVIEW.md` aligned with every
-  `apps/web/app/api/**/route.ts` file; the static route-inventory test should
-  fail when a new API route is undocumented.
+  `apps/web/app/api/**/route.ts` file and the broader OWASP Top 10 2025
+  companion mapping; the static route-inventory test should fail when a new API
+  route is undocumented or the 2025 web-risk lens is dropped.
 - Route-level abuse protection in this slice is layered with Vercel Firewall/WAF rules:
   - run Vercel rules as operator tasks before production
   - keep route-level checks in `apps/web/app/api/_lib/rate-limit.ts` as defense-in-depth

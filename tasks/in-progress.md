@@ -6,8 +6,9 @@ Active implementation slice:
   `codex/owasp-api-security-review-v1`, started from latest `origin/main` in
   worktree `../pp-owasp-api-security-review-v1` and captured in
   `tasks/done.md`.
-- Added the OWASP API inventory/audit, static route inventory guard, payment-link
-  server-side invoice lookup regression coverage, and readiness doc links.
+- Added the OWASP API inventory/audit, broader OWASP Top 10 2025 companion
+  mapping, static route inventory guard, payment-link server-side invoice lookup
+  regression coverage, and readiness doc links.
 - Verified with focused OWASP inventory/payment/portal/Stripe/compliance/
   automation route tests plus full `corepack pnpm test`,
   `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and

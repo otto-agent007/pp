@@ -4,13 +4,15 @@
 
 - Added `docs/OWASP_API_SECURITY_REVIEW.md` with a repo-level OWASP API
   Security Top 10 2023 inventory for every current `apps/web/app/api/**/route.ts`
-  route plus the development-only Whisper rewrites.
+  route plus the development-only Whisper rewrites, then expanded it with a
+  companion OWASP Top 10 2025 web application risk mapping.
 - Documented auth type, object IDs, sensitive data, expected authorization
   boundary, resource guards, provider calls, customer-visible output, evidence,
   gaps, production blockers, and recommended next slices.
 - Added `tooling/owasp-api-route-inventory.test.ts` to keep route inventory,
   server-only service-role usage, development-only Whisper rewrites, and
-  placeholder-only `.env.example` values from drifting silently.
+  placeholder-only `.env.example` values from drifting silently, and to ensure
+  the broader OWASP Top 10 2025 companion lens remains documented.
 - Extended payment-link route coverage to prove client-supplied invoice bodies,
   line items, and provider IDs are ignored in favor of server-side invoice
   lookup and stored metadata.
