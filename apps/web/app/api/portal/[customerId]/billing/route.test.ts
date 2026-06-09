@@ -211,6 +211,8 @@ describe("customer portal billing route", () => {
     expect(serialized).not.toContain("pi_secret");
     expect(serialized).not.toContain("Internal note");
     expect(serialized).not.toContain("Interior treatment");
+    expect(serialized).not.toContain("access_token");
+    expect(serialized).not.toContain("token_hash");
     expect(invoiceQuery.calls).toContainEqual([
       "eq",
       ["customer_id", "customer-1"],

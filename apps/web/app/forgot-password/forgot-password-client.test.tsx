@@ -45,4 +45,18 @@ describe("ForgotPasswordClient", () => {
     expect(screen.getByText("Check your email for a password reset link."))
       .toBeInTheDocument();
   });
+  it("uses the current app origin for password reset redirects", async () => {
+    const user = userEvent.setup();
+    requestPasswordReset.mockResolvedValue(undefined);
+
+    render(<ForgotPasswordClient />);
+
+    await user.type(screen.getByLabelText("Email"), "admin@example.com");
+    await user.click(screen.getByRole("button", { name: "Send reset link" }));
+
+    expect(requestPasswordReset).toHaveBeenCalledWith(
+      "admin@example.com",
+      `${window.location.origin}/auth/update-password`,
+    );
+  });
 });

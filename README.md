@@ -97,7 +97,7 @@ without `--dry-run` after an operator approves the local or preview Supabase
 target and loads the required env names. If `OPENAI_API_KEY` is unset, the live
 run stores text chunks without embeddings.
 
-See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current operator-assisted preview punch list, and [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel settings, Supabase admin bootstrap, smoke tests, and security boundaries.
+See [Preview Launch Readiness](docs/PREVIEW_LAUNCH_READINESS.md) for the current operator-assisted preview punch list, and [Production Readiness](docs/PRODUCTION_READINESS.md) for setup order, Vercel settings, Supabase admin bootstrap, smoke tests, and security boundaries. Before production migration or deployment, review the [Backup and Rollback Runbook](docs/BACKUP_ROLLBACK_RUNBOOK.md), [Customer Data Privacy and Retention](docs/CUSTOMER_DATA_PRIVACY_RETENTION.md), and [Auth Production Hardening](docs/AUTH_PRODUCTION_HARDENING.md) checklists.
 
 ## Rate Limiting & Abuse Protection
 

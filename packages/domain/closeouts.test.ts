@@ -1031,4 +1031,71 @@ describe("closeouts domain", () => {
       }),
     ).toThrow("Unsupported portal upgrade plan");
   });
+  it("excludes portal secrets and staff-only privacy fields from customer portal closeouts", () => {
+    const closeouts = buildCustomerPortalCloseouts({
+      jobs: [
+        ({
+          ...completedJob,
+          service_notes:
+            "Admin note: internal compliance warning with raw GPS 33.8121,-117.919",
+        } as never),
+      ],
+      formSubmissions: [
+        {
+          id: "submission-private",
+          job_id: "job-1",
+          form_data: {
+            customer_safe_summary: "Exterior treatment complete",
+            internal_admin_note: "Do not show this internal note",
+            access_token: "raw-token",
+            token_hash: "raw-hash",
+          },
+          submitted_at: now,
+          template: {
+            id: "template-private",
+            name: "Service summary",
+            version: 1,
+            status: "active",
+            created_at: now,
+            updated_at: now,
+            schema: {
+              fields: [
+                {
+                  id: "customer_safe_summary",
+                  label: "Service summary",
+                  type: "textarea",
+                },
+              ],
+            },
+          },
+        },
+      ],
+      media: [
+        {
+          id: "media-safe",
+          job_id: "job-1",
+          media_type: "photo",
+          signed_url: "https://signed.example/photo.jpg",
+          description: "Customer-safe proof photo",
+          captured_at: now,
+        },
+      ],
+    });
+    const serialized = JSON.stringify(closeouts);
+    const upgrade = JSON.stringify(getCustomerPortalUpgradeSummary());
+
+    expect(serialized).toContain("Exterior treatment complete");
+    expect(serialized).toContain("Customer-safe proof photo");
+    expect(serialized).not.toContain("Admin note");
+    expect(serialized).not.toContain("internal compliance warning");
+    expect(serialized).not.toContain("33.8121");
+    expect(serialized).not.toContain("-117.919");
+    expect(serialized).not.toContain("raw-token");
+    expect(serialized).not.toContain("raw-hash");
+    expect(serialized).not.toContain("access_token");
+    expect(serialized).not.toContain("token_hash");
+    expect(upgrade).toContain("before anything is scheduled or billed");
+    expect(upgrade).not.toContain("access_token");
+    expect(upgrade).not.toContain("provider_payment_id");
+  });
 });

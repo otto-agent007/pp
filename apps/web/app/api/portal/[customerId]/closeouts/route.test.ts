@@ -243,4 +243,59 @@ describe("customer portal closeouts route", () => {
     expect(serialized).not.toContain("33.8121");
     expect(serialized).not.toContain("-117.919");
   });
+  it("does not serialize portal secrets or staff-only fields in portal closeouts", async () => {
+    serviceClient.from
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            customer_id: "customer-1",
+            expires_at: "2099-05-01T00:00:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: [
+            {
+              id: "job-1",
+              customer_id: "customer-1",
+              location_id: "location-1",
+              status: "completed",
+              scheduled_start: "2026-05-06T09:00:00Z",
+              scheduled_end: null,
+              service_notes: "Internal admin note with compliance warning",
+              token_hash: "raw-hash",
+              customer: { id: "customer-1", name: "Apex Homes" },
+              location: {
+                id: "location-1",
+                address: "10 Pine Street",
+                nickname: "Main house",
+              },
+            },
+          ],
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: [], error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: [], error: null }));
+
+    const response = await GET(requestWithSession("valid-session"), {
+      params: Promise.resolve({ customerId: "customer-1" }),
+    });
+    const serialized = JSON.stringify(await response.json());
+
+    expect(response.status).toBe(200);
+    expect(serialized).not.toContain("raw-hash");
+    expect(serialized).not.toContain("token_hash");
+    expect(serialized).not.toContain("access_token");
+    expect(serialized).not.toContain("Internal admin note");
+    expect(serialized).not.toContain("compliance warning");
+  });
 });

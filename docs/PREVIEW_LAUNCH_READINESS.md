@@ -1,8 +1,19 @@
 # Preview Launch Readiness
 
+## Operational Readiness Links
+
+Protected-preview promotion should use the same launch guardrails that will later gate production:
+
+- [Backup and Rollback Runbook](BACKUP_ROLLBACK_RUNBOOK.md)
+- [Customer Data Privacy and Retention](CUSTOMER_DATA_PRIVACY_RETENTION.md)
+- [Auth Production Hardening](AUTH_PRODUCTION_HARDENING.md)
+
+Codex may run static checks and read-only smoke/preflight commands, but preview/provider/dashboard mutations remain approval-gated.
+
 This punch list prepares Pest Patrol OS for a Vercel preview backed by an approved Supabase environment. It is operator-assisted: Codex may inspect code, docs, and local verification output, but dashboard changes, secrets, production data, provider config, and migration application require explicit operator approval.
 
 ## Codex-Owned Repo Work
+
 
 - Keep `README.md`, `docs/IMPLEMENTATION_PLAN.md`, `tasks/in-progress.md`, and `docs/PRODUCTION_READINESS.md` aligned to preview launch readiness.
 - Verify route and env names against the code before smoke testing.
@@ -43,6 +54,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 
 ## Security Header Observation
 
+
 - Browser security headers are added through the web Next config with
   Content-Security-Policy-Report-Only first; do not treat this as enforced CSP.
 - Review report-only CSP behavior in preview before any later enforcement slice.
@@ -55,6 +67,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   confirmed; this repo slice does not add HSTS for local or preview development.
 
 ## Portal, RLS, and Media Security
+
 
 - Customer portal cookie-backed unsafe POST routes require same-origin
   `Origin` or same-origin `Referer` evidence and return sanitized `403`
@@ -70,6 +83,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   configure rate limiting/firewall policy outside this repo slice.
 
 ## Operator-Only Setup
+
 
 - Document and configure Vercel Firewall/WAF rules (operator step) for `/api/*`, `/api/portal/*`, `/api/compliance/*`, and `/api/payments/stripe-webhook` before production go-live.
 - Keep route-level checks active as a runtime fallback where suitable.
@@ -108,6 +122,7 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 
 ## Operator Smoke Access Handoff
 
+
 Before authenticated smoke can run, the operator should provide access through an interactive protected-preview browser session and a valid admin or dispatcher sign-in path. Share credentials, reset links, bypass values, and portal tokens only through an approved out-of-band channel; do not paste them into repo files, docs, tests, commits, or chat.
 
 Codex should record only sanitized smoke evidence:
@@ -122,6 +137,7 @@ Use these blocker categories consistently: app bug, missing env/setup, migration
 
 ## Preview Deployment Discovery
 
+
 Use local Vercel project metadata and CLI access when connector/API access is unavailable:
 
 - `corepack pnpm dlx vercel ls pest-patrol-os`
@@ -133,6 +149,7 @@ Use local Vercel project metadata and CLI access when connector/API access is un
 `vercel curl` can verify that a Deployment Protection-protected preview boots, but it does not replace an operator-approved interactive browser access path for the web smoke.
 
 ## Migration Readiness
+
 
 Apply all migrations in timestamp order for a new preview database. The latest launch-readiness-sensitive migrations are:
 
@@ -159,6 +176,7 @@ Apply-readiness checklist for local vs preview target:
 - Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql`, rerun Security Advisors, and clear technician RPC execution warnings before production-like auth smoke.
 
 ## Preview Smoke Run
+
 
 Record preflight and smoke outcomes in `docs/PREVIEW_SMOKE_FINDINGS.md`.
 
@@ -209,6 +227,7 @@ Run these in order after the preview deployment has the approved environment var
 22. Confirm browser-visible screens do not expose service-role keys, cron secrets, Stripe secrets, webhook secrets, token hashes, raw stored tokens, provider payloads, or provider message internals.
 
 ## Deferred Follow-Ups
+
 
 - Durable provider delivery receipts for portal sends.
 - Richer provider failure classification in portal send UI.

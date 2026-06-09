@@ -924,6 +924,65 @@ export async function sendCustomerPortalAccessToken(
   );
 }
 
+function toCustomerPortalJob(job: CustomerPortalJob): CustomerPortalJob {
+  return {
+    id: job.id,
+    customer_id: job.customer_id,
+    location_id: job.location_id,
+    status: "completed",
+    scheduled_start: job.scheduled_start,
+    scheduled_end: job.scheduled_end,
+    customer: job.customer
+      ? {
+          id: job.customer.id,
+          name: job.customer.name,
+        }
+      : undefined,
+    location: job.location
+      ? {
+          id: job.location.id,
+          address: job.location.address,
+          nickname: job.location.nickname,
+        }
+      : undefined,
+  };
+}
+
+function toCustomerPortalFormSubmission(
+  submission: CustomerPortalFormSubmission,
+): CustomerPortalFormSubmission {
+  const fieldIds = new Set(
+    submission.template?.schema.fields.map((field) => field.id) ?? [],
+  );
+  const formData =
+    fieldIds.size > 0
+      ? Object.fromEntries(
+          Object.entries(submission.form_data).filter(([key]) =>
+            fieldIds.has(key),
+          ),
+        )
+      : submission.form_data;
+
+  return {
+    id: submission.id,
+    job_id: submission.job_id,
+    form_data: formData,
+    submitted_at: submission.submitted_at,
+    template: submission.template,
+  };
+}
+
+function toCustomerPortalMedia(media: CustomerPortalMedia): CustomerPortalMedia {
+  return {
+    id: media.id,
+    job_id: media.job_id,
+    media_type: media.media_type,
+    signed_url: media.signed_url,
+    description: media.description,
+    captured_at: media.captured_at,
+  };
+}
+
 export function buildCustomerPortalCloseouts(input: {
   formSubmissions: CustomerPortalFormSubmission[];
   jobs: CustomerPortalJob[];
@@ -938,10 +997,14 @@ export function buildCustomerPortalCloseouts(input: {
     const jobMedia = input.media.filter((media) => media.job_id === job.id);
 
     return {
-      job,
-      form_submissions: jobForms,
-      photos: jobMedia.filter((media) => media.media_type === "photo"),
-      signatures: jobMedia.filter((media) => media.media_type === "signature"),
+      job: toCustomerPortalJob(job),
+      form_submissions: jobForms.map(toCustomerPortalFormSubmission),
+      photos: jobMedia
+        .filter((media) => media.media_type === "photo")
+        .map(toCustomerPortalMedia),
+      signatures: jobMedia
+        .filter((media) => media.media_type === "signature")
+        .map(toCustomerPortalMedia),
     };
   });
 }

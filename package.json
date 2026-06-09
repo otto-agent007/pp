@@ -20,9 +20,11 @@
     "demo:smoke": "tsx tooling/demo-smoke-preflight.ts",
     "lint": "tsx tooling/no-hardcoded-hex.ts && turbo lint",
     "tokens:no-hardcoded-hex": "tsx tooling/no-hardcoded-hex.ts",
-    "test": "vitest run tooling/compliance-ingest.test.ts && turbo test",
+    "test": "vitest run tooling/compliance-ingest.test.ts tooling/security-baseline-check.test.ts && turbo test",
     "typecheck": "turbo typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "security:audit": "pnpm audit",
+    "security:baseline": "tsx tooling/security-baseline-check.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

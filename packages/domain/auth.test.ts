@@ -64,6 +64,21 @@ describe("auth domain", () => {
     ).toThrow("Email is required");
   });
 
+
+  it("rejects missing password reset redirects", () => {
+    expect(() =>
+      validatePasswordResetRequestInput({
+        email: "admin@example.com",
+        redirectTo: " ",
+      }),
+    ).toThrow("Password reset redirect is required");
+  });
+
+  it("returns null for missing role records", () => {
+    expect(validateAdminProfile(null)).toBeNull();
+    expect(validateAdminAccess(null)).toBeNull();
+    expect(validateTechnicianAccess(null)).toBeNull();
+  });
   it("validates password recovery session tokens", () => {
     expect(
       validatePasswordRecoverySessionInput({

@@ -1,10 +1,21 @@
 # Production Readiness V1
 
+## Production Readiness Runbooks
+
+Production migration or deployment is blocked until these operator-owned checklists are reviewed:
+
+- [Backup and Rollback Runbook](BACKUP_ROLLBACK_RUNBOOK.md)
+- [Customer Data Privacy and Retention](CUSTOMER_DATA_PRIVACY_RETENTION.md)
+- [Auth Production Hardening](AUTH_PRODUCTION_HARDENING.md)
+
+The `corepack pnpm security:baseline` check is a conservative static CI guardrail for obvious secret, service-role, portal leakage, and package-lock regressions. It is not a penetration test or a replacement for Supabase advisors, RLS smoke, Vercel Firewall/WAF review, Stripe webhook review, provider dashboard review, or operator-owned production configuration checks.
+
 This checklist prepares Pest Patrol OS for a first real GitHub, Supabase, and Vercel setup.
 
 For the current preview-first launch pass, use `docs/PREVIEW_LAUNCH_READINESS.md` as the short punch list. This document remains the detailed setup and smoke-test reference.
 
 ## Buyer Readiness Validation Snapshot
+
 
 As of June 5, 2026, local demonstration readiness now emphasizes a 10-step buyer
 journey route validation for fixture smoke:
@@ -19,6 +30,7 @@ journey route validation for fixture smoke:
   approved env names, protected-preview access, and an admin/dispatcher sign-in.
 
 ## Required Environment Variables
+
 
 Web app:
 
@@ -48,6 +60,7 @@ Mobile app:
 
 ## Stripe Live-Mode Gate
 
+
 This slice does not turn on live Stripe, create Stripe objects, or modify the Stripe dashboard. It only adds a server-side gate so a live secret key cannot accidentally process payment links or webhooks unless `STRIPE_LIVE_MODE_APPROVED=true` is set by an operator.
 
 Required pre-live checklist:
@@ -70,6 +83,7 @@ Readiness states are exposed without secret values:
 
 ## Safe Observability
 
+
 Runtime logs should identify the failing route, provider, object IDs, and status only. Never log raw request bodies, Stripe signatures, webhook secrets, portal grants, token hashes, service-role keys, cookies, customer signatures, exact GPS coordinates, admin notes, technician private notes, or compliance internals.
 
 Use Vercel runtime logs manually for review of critical events such as Stripe webhook errors, payment-link provider failures, portal send failures, notification delivery failures, rate-limit spikes, origin guard failures, compliance advisory unavailable states, and mobile sync failures. No external monitoring provider is configured by this slice.
@@ -77,6 +91,7 @@ Use Vercel runtime logs manually for review of critical events such as Stripe we
 The admin-only `/api/ops/readiness` endpoint reports static configured/missing states for Supabase, Stripe, portal delivery, notification delivery, and compliance OpenAI readiness. It does not call Stripe, OpenAI, Supabase provider dashboards, or notification providers.
 
 ## Supabase Setup Order
+
 
 1. Create the Supabase project.
 2. Apply migrations in timestamp order from `supabase/migrations`.
@@ -98,6 +113,7 @@ set role = 'admin', updated_at = now();
 
 ## Supabase Auth Redirects
 
+
 Password recovery links must return to the deployed app, not localhost.
 
 1. Set Supabase Auth Site URL to the production Pest Patrol OS domain.
@@ -109,6 +125,7 @@ Password recovery links must return to the deployed app, not localhost.
 7. Treat any pasted recovery, invite, or magic-link URL as exposed and request a fresh link.
 
 ## Supabase Dashboard Security
+
 
 1. Keep service-role keys private and rotate them if they are ever pasted into chat, logs, or docs.
 2. Rerun Supabase security and performance advisors after every production migration.
@@ -130,6 +147,7 @@ Latest hardening status:
 
 ## Supabase Security Advisor Follow-up
 
+
 - [ ] Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` to approved local target.
 - [ ] Verify local migration applies cleanly.
 - [ ] Apply the same migration to approved preview target.
@@ -139,6 +157,7 @@ Latest hardening status:
 - [ ] Rerun Auth advisor and confirm leaked-password warning is resolved.
 
 ## Portal, RLS, and Media Security V1
+
 
 - Customer portal unsafe POST routes now use a same-origin guard before request
   body parsing or portal-session side effects. Cross-origin and missing-origin
@@ -162,6 +181,7 @@ Latest hardening status:
   limiting/firewall policy if not already complete.
 
 ## Vercel Setup
+
 
 1. Import the GitHub repository into Vercel.
 2. Set the project root or build settings so Vercel builds `apps/web`.
@@ -187,6 +207,7 @@ Latest hardening status:
 
 ## Preview Launch Guardrails
 
+
 - Provider setup is operator-assisted: Codex may verify names and smoke-test behavior, but it must not mutate Vercel, Supabase, Stripe, notification, or portal provider dashboards without explicit approval.
 - For preview, optional `NOTIFICATION_DELIVERY_*` and `PORTAL_DELIVERY_*` webhook variables may be omitted. When omitted, smoke tests should confirm manual fallback behavior instead of provider delivery.
 - Migration application is operator-approved only. A new preview database should apply every approved file in `supabase/migrations` in timestamp order. The compliance RAG migration `20260516175724_california_compliance_rag_v1.sql` remains proposal-only until the operator explicitly approves the target environment.
@@ -194,6 +215,7 @@ Latest hardening status:
 - Never paste secrets, recovery links, portal URLs with raw tokens, provider payloads, or production records into docs, commits, task files, or chat.
 
 ## Smoke Tests
+
 
 Use this manual checklist when admin login credentials are ready. Do not run
 these against production until the operator is comfortable keeping the records
@@ -278,6 +300,7 @@ Mobile:
 
 ## Layered Abuse Protection
 
+
 Route-level rate-limit support for sensitive endpoints is implemented in
 `apps/web/app/api/_lib/rate-limit.ts` and should be paired with Vercel Firewall/WAF rules.
 
@@ -317,6 +340,7 @@ For ` /api/payments/stripe-webhook`, validate signatures first and prefer
 idempotent event handling. Do not configure a strict edge limit that can block valid retries during retry bursts.
 
 ## Security Boundaries
+
 
 - UI components must not import `supabase` directly.
 - Provider secrets must stay in server-only code.

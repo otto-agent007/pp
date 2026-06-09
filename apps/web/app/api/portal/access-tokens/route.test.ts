@@ -129,4 +129,45 @@ describe("customer portal access token route", () => {
     expect(body.token_id).toBe("token-1");
     expect(body.portal_url).toContain("/portal/customer-1?grant=");
   });
+  it("lists token summaries without raw grants, hashes, or portal URLs", async () => {
+    adminAccess = {
+      access: { userId: "admin-1" },
+      response: null,
+    };
+    serviceClient.from.mockReturnValueOnce(
+      new MockQuery({
+        data: [
+          {
+            id: "token-1",
+            customer_id: "customer-1",
+            status: "active",
+            expires_at: null,
+            last_used_at: null,
+            created_at: "2026-05-06T00:00:00.000Z",
+            updated_at: "2026-05-06T00:00:00.000Z",
+            token_hash: "raw-hash",
+            access_token: "raw-token",
+            portal_url: "http://localhost/portal/customer-1?grant=raw-token",
+          },
+        ],
+        error: null,
+      }),
+    );
+
+    const response = await GET(
+      new Request(
+        "http://localhost/api/portal/access-tokens?customer_id=customer-1",
+      ),
+    );
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(serialized).toContain("token-1");
+    expect(serialized).not.toContain("raw-hash");
+    expect(serialized).not.toContain("raw-token");
+    expect(serialized).not.toContain("access_token");
+    expect(serialized).not.toContain("token_hash");
+    expect(serialized).not.toContain("portal_url");
+  });
 });
