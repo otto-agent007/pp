@@ -509,10 +509,17 @@ export {
   createJobSignatureCaptureQueuePayload,
   createJobPhotoUploadQueuePayload,
   JOB_MEDIA_BUCKET,
+  JOB_MEDIA_DESCRIPTION_MAX_LENGTH,
+  JOB_MEDIA_MAX_PHOTO_BYTES,
+  JOB_MEDIA_MAX_SIGNATURE_BYTES,
   listCustomerPortalMedia,
   listJobMedia,
+  sanitizeMediaDescription,
+  validateJobMediaInput,
   validateJobSignatureCaptureQueuePayload,
   validateJobPhotoUploadQueuePayload,
+  validateMediaFileSize,
+  validateMediaMimeType,
 } from "./media";
 export {
   buildInvoiceLineItemsFromOffering,

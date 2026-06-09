@@ -969,6 +969,7 @@ export interface JobPhotoUploadQueuePayload extends Record<string, unknown> {
   storage_path: string;
   description?: string | null;
   captured_at?: string | null;
+  file_size_bytes?: number | null;
 }
 
 export interface JobSignatureCaptureQueuePayload extends Record<
@@ -983,6 +984,7 @@ export interface JobSignatureCaptureQueuePayload extends Record<
   storage_path: string;
   signer_name?: string | null;
   captured_at?: string | null;
+  file_size_bytes?: number | null;
 }
 
 export interface FormFieldOption {

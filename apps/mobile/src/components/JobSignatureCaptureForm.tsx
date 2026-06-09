@@ -62,6 +62,17 @@ const signatureWebStyle = `
   }
 `;
 
+function estimateDataUriBytes(value: string) {
+  const base64 = value.split(",", 2)[1];
+
+  if (!base64) {
+    return null;
+  }
+
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
+}
+
 export function JobSignatureCaptureForm({
   jobId,
 }: JobSignatureCaptureFormProps) {
@@ -77,6 +88,7 @@ export function JobSignatureCaptureForm({
       queueSignature({
         jobId,
         localUri: signature,
+        fileSizeBytes: estimateDataUriBytes(signature),
       });
       signatureRef.current?.clearSignature();
       setError(null);

@@ -2,26 +2,24 @@
 
 Active implementation slice:
 
-- Supabase Security Advisor Fix V1 is now the active slice on branch
-  `codex/supabase-security-advisor-fix-v1`, started from `origin/main`.
-- Added migration hardening for technician RPC execute grants:
-  `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql`.
-- Updated migration verification assertions in
-  `tooling/technician-job-rpc-security-migration.test.ts` to assert
-  `anon`/`public` revokes and authenticated-only grants.
-- Added launch-doc operator follow-ups in
-  `docs/PREVIEW_LAUNCH_READINESS.md` and
-  `docs/PRODUCTION_READINESS.md` for Security Advisor rerun and leaked-password
-  ownership.
-- Verified with focused migration-static assertion test attempt; full repo checks are
-  currently blocked in this worktree by a missing local `node_modules` setup and were
-  not executed.
+- Portal CSRF + RLS Boundary + Media Upload Security V1 is verified on branch
+  `codex/portal-rls-media-security-v1`, started from latest `origin/main`.
+- Added same-origin guarding for cookie-backed customer portal unsafe POST
+  routes, with sanitized `403` responses for cross-site or missing-origin
+  requests.
+- Added static RLS boundary audit tooling and `docs/RLS_BOUNDARY_AUDIT.md` for
+  role/data scope review without applying migrations or touching Supabase
+  settings.
+- Hardened media upload validation for photo/signature MIME types, size limits,
+  storage paths, descriptions, and portal-safe media DTO behavior while
+  preserving mobile offline queue contracts.
+- Verified with focused origin/media/RLS/boundary tests plus full
+  `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
+  `corepack pnpm build`, and `git diff --check`.
 - No migration apply, Supabase/profile persistence, provider mutation,
-  seed/reset write, preview migration apply, or production mutation is in scope.
-- Current focus remains provider-safe and operator-assisted; function bodies and
-  business logic are unchanged by this slice.
-- This run is ready for full verification and PR handoff once branch checks are
-  passed.
+  storage bucket setting change, Vercel setting change, seed/reset write,
+  preview mutation, or production mutation was performed.
+- This run is ready for commit, push, and draft PR handoff.
 
 Current blockers and guardrails:
 

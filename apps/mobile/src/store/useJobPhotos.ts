@@ -15,6 +15,7 @@ interface JobPhotoDraft {
 
 interface QueuePhotoInput {
   contentType?: string | null;
+  fileSizeBytes?: number | null;
   fileName?: string | null;
   jobId: string;
   localUri: string;
@@ -54,6 +55,7 @@ export const useJobPhotos = create<JobPhotosState>((set, get) => ({
       local_uri: input.localUri,
       file_name: input.fileName,
       content_type: input.contentType,
+      file_size_bytes: input.fileSizeBytes,
       description: draft.description,
     });
 

@@ -46,8 +46,22 @@ class MockQuery<T> {
   }
 }
 
-function request(body: Record<string, unknown>, sessionToken?: string) {
+function request(
+  body: Record<string, unknown>,
+  sessionToken?: string,
+  init: { origin?: string | null; referer?: string | null } = {
+    origin: "http://localhost",
+  },
+) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  if (init.origin !== null) {
+    headers.Origin = init.origin ?? "http://localhost";
+  }
+
+  if (init.referer) {
+    headers.Referer = init.referer;
+  }
 
   if (sessionToken) {
     headers.Cookie = `pp_customer_portal_session=${sessionToken}`;
@@ -88,7 +102,10 @@ describe("customer portal upgrade intent route", () => {
         "http://localhost/api/portal/customer-1/upgrade-intents?access_token=legacy-token",
         {
           body: JSON.stringify({ plan_id: "general_pest_recurring" }),
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://localhost",
+          },
           method: "POST",
         },
       ),
@@ -101,6 +118,75 @@ describe("customer portal upgrade intent route", () => {
     expect(response.status).toBe(401);
     expect(body.error).toBe("Portal session is required");
     expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects cross-origin portal upgrade intent posts before session validation", async () => {
+    const response = await POST(
+      request({ plan_id: "general_pest_recurring" }, "valid-session", {
+        origin: "https://evil.example",
+      }),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(403);
+    expect(bodyText).toContain("Request origin is not allowed");
+    expect(bodyText).not.toContain("valid-session");
+    expect(bodyText).not.toContain("evil.example");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(createGeneratedNotificationEventRecord).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing-origin portal upgrade intent posts explicitly", async () => {
+    const response = await POST(
+      request({ plan_id: "general_pest_recurring" }, "valid-session", {
+        origin: null,
+      }),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Request origin is not allowed");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+    expect(createGeneratedNotificationEventRecord).not.toHaveBeenCalled();
+  });
+
+  it("allows same-origin Referer fallback when Origin is missing", async () => {
+    serviceClient.from
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            customer_id: "customer-1",
+            expires_at: "2099-06-01T18:12:00.000Z",
+            id: "session-1",
+            revoked_at: null,
+            token_id: "token-1",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }));
+    vi.mocked(createGeneratedNotificationEventRecord).mockResolvedValue({
+      id: "notification-1",
+    } as never);
+
+    const response = await POST(
+      request({ plan_id: "general_pest_recurring" }, "valid-session", {
+        origin: null,
+        referer: "http://localhost/portal/customer-1",
+      }),
+      {
+        params: Promise.resolve({ customerId: "customer-1" }),
+      },
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it("requires a portal session cookie", async () => {

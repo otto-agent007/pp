@@ -52,6 +52,21 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
 - HSTS should be reviewed only after the production HTTPS hosting path is
   confirmed; this repo slice does not add HSTS for local or preview development.
 
+## Portal, RLS, and Media Security
+
+- Customer portal cookie-backed unsafe POST routes require same-origin
+  `Origin` or same-origin `Referer` evidence and return sanitized `403`
+  responses for cross-site requests.
+- RLS boundary documentation lives in `docs/RLS_BOUNDARY_AUDIT.md`; the static
+  migration audit runs with `corepack pnpm exec vitest run tooling/rls-boundary-audit.test.ts`.
+- Media uploads are validated before storage upload and `job_media` insert for
+  safe raster MIME types, size limits, private bucket path shape, and
+  customer-safe descriptions.
+- Preview operators still need to verify RLS against the approved Supabase
+  target after migrations, rerun Supabase advisors, verify private `job-media`
+  bucket posture, enable leaked-password protection before production, and
+  configure rate limiting/firewall policy outside this repo slice.
+
 ## Operator-Only Setup
 
 - Document and configure Vercel Firewall/WAF rules (operator step) for `/api/*`, `/api/portal/*`, `/api/compliance/*`, and `/api/payments/stripe-webhook` before production go-live.

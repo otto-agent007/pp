@@ -14,6 +14,7 @@ interface JobSignatureDraft {
 }
 
 interface QueueSignatureInput {
+  fileSizeBytes?: number | null;
   jobId: string;
   localUri: string;
 }
@@ -52,6 +53,7 @@ export const useJobSignatures = create<JobSignaturesState>((set, get) => ({
     const payload = createJobSignatureCaptureQueuePayload({
       job_id: input.jobId,
       local_uri: input.localUri,
+      file_size_bytes: input.fileSizeBytes,
       signer_name: draft.signerName,
     });
 

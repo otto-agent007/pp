@@ -67,6 +67,38 @@ describe("useJobSignatures", () => {
     expect(useOfflineQueue.getState().items).toEqual([]);
   });
 
+  it("rejects oversized signatures before enqueueing", () => {
+    expect(() =>
+      useJobSignatures.getState().queueSignature({
+        jobId: "job-1",
+        localUri: "data:image/png;base64,signature",
+        fileSizeBytes: 2 * 1024 * 1024 + 1,
+      }),
+    ).toThrow("Signature file is too large");
+
+    expect(useOfflineQueue.getState().items).toEqual([]);
+  });
+
+  it("trims signer names and carries file size in queued signature payloads", () => {
+    useJobSignatures.getState().setSignerName("job-1", "  Jamie Customer  ");
+
+    const payload = useJobSignatures.getState().queueSignature({
+      jobId: "job-1",
+      localUri: "data:image/png;base64,signature",
+      fileSizeBytes: 2048,
+    });
+
+    expect(payload).toMatchObject({
+      file_size_bytes: 2048,
+      signer_name: "Jamie Customer",
+    });
+    expect(useOfflineQueue.getState().items[0]).toMatchObject({
+      action: "signature_capture",
+      payload,
+      status: "queued",
+    });
+  });
+
   it("persists signature drafts and hydrates them after restart", async () => {
     useJobSignatures.getState().setSignerName("job-1", "Jamie Customer");
     const storedDrafts = useJobSignatures.getState().drafts;
