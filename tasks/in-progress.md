@@ -2,22 +2,27 @@
 
 Active implementation slice:
 
-- OWASP API Security Review V1 is verified on branch
-  `codex/owasp-api-security-review-v1`, started from latest `origin/main` in
-  worktree `../pp-owasp-api-security-review-v1` and captured in
-  `tasks/done.md`.
-- Added the OWASP API inventory/audit, broader OWASP Top 10 2025 companion
-  mapping, static route inventory guard, payment-link server-side invoice lookup
-  regression coverage, and readiness doc links.
-- Verified with focused OWASP inventory/payment/portal/Stripe/compliance/
-  automation route tests plus full `corepack pnpm test`,
-  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+- Protected Preview Security Closure V1 is verified on branch
+  `codex/production-readiness-protection-v1`, started from latest `origin/main`
+  after PR #123 merged.
+- Added a production-readiness protection ledger, static closure coverage,
+  repo-verifiable evidence, and status links for protected-preview security
+  sign-off.
+- Verified with focused static/route security tests, `security:baseline`,
+  compliance dry-run/no-embed, full repo tests, typecheck, lint, build, and
   `git diff --check`.
-- No migration, seed/reset, live compliance ingestion, live provider call,
-  provider/dashboard mutation, Supabase/Vercel/Stripe setting change, preview
-  mutation, production mutation, paid scanner, external service, or secret
-  printing was performed.
+- Local demo smoke preflight remains blocked on missing approved Supabase env
+  names, as recorded in `docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md`.
+- Out of scope unless explicitly approved: migration apply, Supabase/Vercel/
+  Stripe/provider dashboard mutation, env mutation, seed/reset write, preview
+  mutation, production mutation, paid scanner, live provider call, live
+  compliance ingestion, or secret printing.
+- Remaining blockers: live Supabase migration/advisor closure, Vercel WAF/rate
+  limits, Stripe/provider test-mode smoke, authenticated protected-preview
+  smoke, technician/mobile preview smoke, and privacy/legal sign-off.
 - This run is ready for commit, push, and draft PR handoff.
+- OWASP API Security Review V1 is merged via PR #123 and captured in
+  `tasks/done.md`.
 - Backup Rollback + Security CI + Privacy Retention + Auth Hardening V1 is
   complete on `main` and captured in `tasks/done.md`.
 - Portal CSRF + RLS Boundary + Media Upload Security V1 is verified on branch

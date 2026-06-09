@@ -8,6 +8,7 @@ Protected-preview promotion should use the same launch guardrails that will late
 - [Customer Data Privacy and Retention](CUSTOMER_DATA_PRIVACY_RETENTION.md)
 - [Auth Production Hardening](AUTH_PRODUCTION_HARDENING.md)
 - [OWASP API Security Review](OWASP_API_SECURITY_REVIEW.md)
+- [Protected Preview Security Closure](PROTECTED_PREVIEW_SECURITY_CLOSURE.md)
 
 Codex may run static checks and read-only smoke/preflight commands, but preview/provider/dashboard mutations remain approval-gated.
 
@@ -22,6 +23,9 @@ This punch list prepares Pest Patrol OS for a Vercel preview backed by an approv
   `apps/web/app/api/**/route.ts` file and the broader OWASP Top 10 2025
   companion mapping; the static route-inventory test should fail when a new API
   route is undocumented or the 2025 web-risk lens is dropped.
+- Keep `docs/PROTECTED_PREVIEW_SECURITY_CLOSURE.md` aligned with the current
+  protected-preview security gate status; the static closure test should fail
+  when required production-readiness gates are removed from the ledger.
 - Route-level abuse protection in this slice is layered with Vercel Firewall/WAF rules:
   - run Vercel rules as operator tasks before production
   - keep route-level checks in `apps/web/app/api/_lib/rate-limit.ts` as defense-in-depth
