@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   cancelJobRecord,
+  convertEstimateToWorkOrderRecord,
   createJobRecord,
   listAssignedTechnicianJobRecords,
   listCustomerPortalJobRecords,
@@ -49,6 +50,21 @@ class MockQuery<T> {
     return this;
   }
 
+  neq(...args: unknown[]) {
+    this.calls.push(["neq", args]);
+    return this;
+  }
+
+  limit(...args: unknown[]) {
+    this.calls.push(["limit", args]);
+    return this;
+  }
+
+  maybeSingle() {
+    this.calls.push(["maybeSingle", []]);
+    return Promise.resolve(this.result);
+  }
+
   single() {
     this.calls.push(["single", []]);
     return Promise.resolve(this.result);
@@ -71,6 +87,31 @@ const job = {
   service_notes: null,
   created_at: now,
   updated_at: now,
+};
+
+const estimateJob = {
+  ...job,
+  billing_disposition: "estimate_only",
+  estimate_status: "presented",
+  id: "estimate-1",
+  job_purpose: "estimate",
+  service_cadence: "none",
+  service_family: "rodent_attic",
+  service_notes: "Rodent exclusion scope",
+  service_offering_id: "rodent_inspection",
+};
+
+const workOrderJob = {
+  ...job,
+  billing_disposition: "billable",
+  estimate_status: "not_applicable",
+  id: "work-order-1",
+  job_purpose: "project_phase",
+  parent_job_id: "estimate-1",
+  service_cadence: "project",
+  service_family: "rodent_attic",
+  service_notes: "Rodent exclusion scope",
+  service_offering_id: "rodent_exclusion",
 };
 
 describe("job api client", () => {
@@ -185,6 +226,117 @@ describe("job api client", () => {
         }),
       ],
     ]);
+  });
+
+  it("creates a work order from an estimate and marks the estimate accepted", async () => {
+    const estimateQuery = new MockQuery({ data: estimateJob, error: null });
+    const existingQuery = new MockQuery({ data: null, error: null });
+    const createQuery = new MockQuery({ data: workOrderJob, error: null });
+    const acceptQuery = new MockQuery({
+      data: { ...estimateJob, estimate_status: "accepted" },
+      error: null,
+    });
+    from
+      .mockReturnValueOnce(estimateQuery as never)
+      .mockReturnValueOnce(existingQuery as never)
+      .mockReturnValueOnce(createQuery as never)
+      .mockReturnValueOnce(acceptQuery as never);
+
+    const result = await convertEstimateToWorkOrderRecord({
+      estimate_job_id: "estimate-1",
+      scheduled_start: "2026-06-10T09:00",
+    });
+
+    expect(result.reused_existing_work_order).toBe(false);
+    expect(result.estimate_job.estimate_status).toBe("accepted");
+    expect(result.work_order_job).toMatchObject({
+      parent_job_id: "estimate-1",
+      service_offering_id: "rodent_exclusion",
+    });
+    expect(createQuery.calls[0]).toEqual([
+      "insert",
+      [
+        expect.objectContaining({
+          billing_disposition: "billable",
+          customer_id: "customer-1",
+          job_purpose: "project_phase",
+          parent_job_id: "estimate-1",
+          service_cadence: "project",
+          service_family: "rodent_attic",
+          service_offering_id: "rodent_exclusion",
+        }),
+      ],
+    ]);
+    expect(acceptQuery.calls[0]).toEqual([
+      "update",
+      [{ estimate_status: "accepted" }],
+    ]);
+    expect(from).toHaveBeenCalledTimes(4);
+    expect(from).toHaveBeenCalledWith("jobs");
+    expect(from).not.toHaveBeenCalledWith("invoices");
+    expect(from).not.toHaveBeenCalledWith("payments");
+  });
+
+  it("returns an existing linked work order without creating another one", async () => {
+    const estimateQuery = new MockQuery({ data: estimateJob, error: null });
+    const existingQuery = new MockQuery({ data: workOrderJob, error: null });
+    from
+      .mockReturnValueOnce(estimateQuery as never)
+      .mockReturnValueOnce(existingQuery as never);
+
+    const result = await convertEstimateToWorkOrderRecord({
+      estimate_job_id: "estimate-1",
+      scheduled_start: "2026-06-10T09:00",
+    });
+
+    expect(result.reused_existing_work_order).toBe(true);
+    expect(result.work_order_job.id).toBe("work-order-1");
+    expect(existingQuery.calls).toContainEqual([
+      "eq",
+      ["parent_job_id", "estimate-1"],
+    ]);
+    expect(existingQuery.calls).toContainEqual(["neq", ["status", "canceled"]]);
+    expect(from).toHaveBeenCalledTimes(2);
+  });
+
+  it("handles missing estimates safely", async () => {
+    const estimateQuery = new MockQuery({
+      data: null,
+      error: new Error("not found"),
+    });
+    from.mockReturnValueOnce(estimateQuery as never);
+
+    await expect(
+      convertEstimateToWorkOrderRecord({
+        estimate_job_id: "missing",
+        scheduled_start: "2026-06-10T09:00",
+      }),
+    ).rejects.toThrow("not found");
+    expect(from).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns a warning if status update fails after creating the work order", async () => {
+    const estimateQuery = new MockQuery({ data: estimateJob, error: null });
+    const existingQuery = new MockQuery({ data: null, error: null });
+    const createQuery = new MockQuery({ data: workOrderJob, error: null });
+    const acceptQuery = new MockQuery({
+      data: null,
+      error: new Error("status update failed"),
+    });
+    from
+      .mockReturnValueOnce(estimateQuery as never)
+      .mockReturnValueOnce(existingQuery as never)
+      .mockReturnValueOnce(createQuery as never)
+      .mockReturnValueOnce(acceptQuery as never);
+
+    const result = await convertEstimateToWorkOrderRecord({
+      estimate_job_id: "estimate-1",
+      scheduled_start: "2026-06-10T09:00",
+    });
+
+    expect(result.warning).toMatch(/could not be updated/i);
+    expect(result.work_order_job.id).toBe("work-order-1");
+    expect(result.estimate_job.estimate_status).toBe("presented");
   });
 
   it("updates a job", async () => {

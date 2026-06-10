@@ -15,6 +15,10 @@ import {
   getCloseoutReviewQueueFilters,
   getInvoiceBalanceCents,
   buildWdoEscrowReadinessForJob,
+  buildWorkOrderInputFromEstimate,
+  getEstimateConversionGuidance,
+  getEstimateConversionSuccessCopy,
+  getExistingWorkOrderForEstimate,
   isWdoEscrowLikeJob,
   type CloseoutBillingRule,
   type ComplianceGuardrail,
@@ -43,8 +47,14 @@ import type {
   JobFormSubmission,
   JobMedia,
   TechnicianLicense,
+  EstimateConversionInput,
+  EstimateConversionResult,
+  JobBillingDisposition,
+  ServiceBillingOfferingId,
+  TechnicianProfile,
 } from "@pest-patrol/types";
-import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   useCloseoutCaptureSummaries,
@@ -52,9 +62,12 @@ import {
 } from "../../hooks/useCloseouts";
 import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
-import { useJobs } from "../../hooks/useJobs";
+import { useConvertEstimateToWorkOrder, useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
-import { useTechnicianLicenses } from "../../hooks/useTechnicians";
+import {
+  useTechnicianLicenses,
+  useTechnicians,
+} from "../../hooks/useTechnicians";
 import { adminWorkspaceClassName } from "../admin-workspace";
 
 type QueueFilter =
@@ -66,6 +79,40 @@ type QueueFilter =
 const emptyInvoices: Invoice[] = [];
 const emptyJobs: Job[] = [];
 const emptyTechnicianLicenses: TechnicianLicense[] = [];
+const emptyTechnicians: TechnicianProfile[] = [];
+
+const serviceOfferingOptions: Array<{
+  label: string;
+  value: ServiceBillingOfferingId;
+}> = [
+  { label: "General pest initial", value: "general_pest_initial" },
+  { label: "Rodent exclusion", value: "rodent_exclusion" },
+  { label: "Bird exclusion", value: "bird_exclusion" },
+  {
+    label: "Attic cleanup / sanitation",
+    value: "attic_cleanup_sanitation",
+  },
+  { label: "Termite repair", value: "termite_repair" },
+  { label: "WDO / escrow inspection", value: "wdo_escrow_inspection" },
+];
+
+const billingDispositionOptions: Array<{
+  label: string;
+  value: JobBillingDisposition;
+}> = [
+  { label: "Billable", value: "billable" },
+  { label: "Deposit required", value: "deposit_required" },
+  { label: "No charge", value: "no_charge" },
+];
+
+interface ConversionFormState {
+  assigned_tech_id: string;
+  billing_disposition: JobBillingDisposition;
+  scheduled_end: string;
+  scheduled_start: string;
+  service_notes: string;
+  service_offering_id: ServiceBillingOfferingId;
+}
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
@@ -709,6 +756,279 @@ function NextActionCard({ item }: { item: BillingQueueItem | null }) {
   );
 }
 
+function buildInitialConversionForm(job: Job): ConversionFormState {
+  const defaults = buildWorkOrderInputFromEstimate(job, {
+    estimate_job_id: job.id,
+    scheduled_start: job.scheduled_start,
+  });
+
+  return {
+    assigned_tech_id: defaults.assigned_tech_id ?? "",
+    billing_disposition: defaults.billing_disposition ?? "billable",
+    scheduled_end: "",
+    scheduled_start: "",
+    service_notes: defaults.service_notes ?? "",
+    service_offering_id: defaults.service_offering_id ?? "general_pest_initial",
+  };
+}
+
+function EstimateConversionCard({
+  estimateJob,
+  jobs,
+  lastResult,
+  onConvert,
+  technicians,
+}: {
+  estimateJob: Job;
+  jobs: Job[];
+  lastResult: EstimateConversionResult | null;
+  onConvert: (input: EstimateConversionInput) => Promise<unknown>;
+  technicians: TechnicianProfile[];
+}) {
+  const existingWorkOrder =
+    getExistingWorkOrderForEstimate(estimateJob, jobs) ??
+    (lastResult?.estimate_job.id === estimateJob.id
+      ? lastResult.work_order_job
+      : null);
+  const guidance = getEstimateConversionGuidance(
+    estimateJob,
+    existingWorkOrder,
+  );
+  const [form, setForm] = useState<ConversionFormState>(() =>
+    buildInitialConversionForm(estimateJob),
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setForm(buildInitialConversionForm(estimateJob));
+    setError(null);
+  }, [estimateJob]);
+
+  if (
+    guidance.readiness.status === "blocked" &&
+    guidance.readiness.reasons.some((reason) =>
+      /Only estimate jobs/i.test(reason),
+    )
+  ) {
+    return null;
+  }
+
+  async function submitConversion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    try {
+      await onConvert({
+        assigned_tech_id: form.assigned_tech_id || null,
+        billing_disposition: form.billing_disposition,
+        estimate_job_id: estimateJob.id,
+        scheduled_end: form.scheduled_end || null,
+        scheduled_start: form.scheduled_start,
+        service_notes: form.service_notes || null,
+        service_offering_id: form.service_offering_id,
+      });
+    } catch (conversionError) {
+      setError(
+        conversionError instanceof Error
+          ? conversionError.message
+          : "Could not convert this estimate. Review the job and try again.",
+      );
+    }
+  }
+
+  return (
+    <Card className="border-theme-border-default" padding="md">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <Eyebrow tone="muted">Estimate conversion</Eyebrow>
+            <h2 className="mt-1 text-lg font-semibold text-theme-text-primary">
+              {guidance.readiness.title}
+            </h2>
+            <p className="mt-1 text-sm text-theme-text-secondary">
+              {guidance.readiness.summary}
+            </p>
+          </div>
+          <StatusPill
+            tone={
+              guidance.readiness.status === "ready"
+                ? "success"
+                : guidance.readiness.status === "already_converted"
+                  ? "info"
+                  : "warning"
+            }
+          >
+            {guidance.readiness.status === "already_converted"
+              ? "Work order created"
+              : guidance.readiness.can_convert
+                ? "Ready"
+                : "Unavailable"}
+          </StatusPill>
+        </div>
+
+        <ul className="space-y-1 text-sm text-theme-text-secondary">
+          {guidance.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+
+        {existingWorkOrder ? (
+          <div className="rounded-md bg-theme-background-subtle p-3 text-sm text-theme-text-secondary">
+            <p className="font-semibold text-theme-text-primary">
+              {lastResult?.estimate_job.id === estimateJob.id
+                ? getEstimateConversionSuccessCopy(lastResult)
+                : "Work order created. Open the linked job to continue scheduling or office review."}
+            </p>
+            <a
+              className={`${buttonClassName({ variant: "ghost" })} mt-3`}
+              href={`/jobs?job_id=${existingWorkOrder.id}`}
+            >
+              Open work order
+            </a>
+          </div>
+        ) : guidance.readiness.can_convert ? (
+          <form className="grid gap-3" onSubmit={submitConversion}>
+            <label className="grid gap-1 text-sm font-medium text-theme-text-primary">
+              Scheduled start
+              <input
+                aria-label="Work order scheduled start"
+                className={formControlClassName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    scheduled_start: event.target.value,
+                  }))
+                }
+                required
+                type="datetime-local"
+                value={form.scheduled_start}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-theme-text-primary">
+              Scheduled end
+              <input
+                aria-label="Work order scheduled end"
+                className={formControlClassName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    scheduled_end: event.target.value,
+                  }))
+                }
+                type="datetime-local"
+                value={form.scheduled_end}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-theme-text-primary">
+              Work type
+              <select
+                aria-label="Work order type"
+                className={formControlClassName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    service_offering_id: event.target
+                      .value as ServiceBillingOfferingId,
+                  }))
+                }
+                value={form.service_offering_id}
+              >
+                {serviceOfferingOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-theme-text-primary">
+              Billing handling
+              <select
+                aria-label="Work order billing handling"
+                className={formControlClassName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    billing_disposition: event.target
+                      .value as JobBillingDisposition,
+                  }))
+                }
+                value={form.billing_disposition}
+              >
+                {billingDispositionOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-theme-text-primary">
+              Technician
+              <select
+                aria-label="Work order technician"
+                className={formControlClassName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    assigned_tech_id: event.target.value,
+                  }))
+                }
+                value={form.assigned_tech_id}
+              >
+                <option value="">Unassigned</option>
+                {technicians.map((technician) => (
+                  <option key={technician.id} value={technician.id}>
+                    {technician.display_name ?? technician.email ?? technician.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-theme-text-primary">
+              Work order notes
+              <textarea
+                aria-label="Work order notes"
+                className={formControlClassName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    service_notes: event.target.value,
+                  }))
+                }
+                rows={4}
+                value={form.service_notes}
+              />
+            </label>
+            <p className="rounded-md bg-theme-background-subtle p-3 text-sm text-theme-text-secondary">
+              This creates a new job linked to the estimate. It does not create
+              an invoice.
+            </p>
+            {error ? (
+              <p
+                className={`rounded-md border px-3 py-2 text-sm font-medium ${statusSurfaceClassName(
+                  "danger",
+                )}`}
+              >
+                {error}
+              </p>
+            ) : null}
+            <button
+              className={buttonClassName({ variant: "primary" })}
+              type="submit"
+            >
+              Convert to work order
+            </button>
+          </form>
+        ) : (
+          <div className="rounded-md bg-theme-background-subtle p-3 text-sm text-theme-text-secondary">
+            {guidance.readiness.reasons.map((reason) => (
+              <p key={reason}>{reason}</p>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function ProofHandoffCard({
   evidence,
   handoff,
@@ -922,6 +1242,7 @@ function WdoEscrowReadinessCard({
 
 export function CloseoutsClient() {
   const jobsQuery = useJobs();
+  const convertEstimate = useConvertEstimateToWorkOrder();
   const invoicesQuery = useInvoices();
   const geofenceEventsQuery = useJobGeofenceEvents();
   const [search, setSearch] = useState("");
@@ -948,8 +1269,12 @@ export function CloseoutsClient() {
   const jobs = jobsQuery.data ?? emptyJobs;
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const technicianLicensesQuery = useTechnicianLicenses();
+  const techniciansQuery = useTechnicians();
   const technicianLicenses =
     technicianLicensesQuery.data ?? emptyTechnicianLicenses;
+  const technicians = techniciansQuery.data ?? emptyTechnicians;
+  const [lastConversionResult, setLastConversionResult] =
+    useState<EstimateConversionResult | null>(null);
   const complianceReview = useComplianceReviewItems({ jobs });
   const completedJobIds = useMemo(
     () => jobs.filter((job) => job.status === "completed").map((job) => job.id),
@@ -1093,6 +1418,12 @@ export function CloseoutsClient() {
         query ? `?${query}` : window.location.pathname,
       );
     }
+  }
+
+  async function convertSelectedEstimate(input: EstimateConversionInput) {
+    const result = await convertEstimate.mutateAsync(input);
+
+    setLastConversionResult(result);
   }
 
   return (
@@ -1268,6 +1599,13 @@ export function CloseoutsClient() {
                     guidance={selectedClassificationGuidance}
                   />
                 ) : null}
+                <EstimateConversionCard
+                  estimateJob={selectedJob}
+                  jobs={jobs}
+                  lastResult={lastConversionResult}
+                  onConvert={convertSelectedEstimate}
+                  technicians={technicians}
+                />
                 {selectedGuardrail ? (
                   <ComplianceGuardrailPanel guardrail={selectedGuardrail} />
                 ) : null}

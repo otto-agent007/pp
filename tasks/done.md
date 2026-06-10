@@ -1,5 +1,35 @@
 # Done
 
+## Estimate to Work Order Conversion V1
+
+- Added shared estimate conversion contracts and domain helpers for readiness,
+  duplicate linked-work-order detection, classified work-order input defaults,
+  guidance copy, and success copy.
+- Added an idempotent API-client conversion workflow that loads the source
+  estimate, reuses an active linked work order by `parent_job_id` when present,
+  creates a new scheduled work order only when absent, and best-effort updates
+  the estimate status to accepted.
+- Added the office-side `/closeouts` conversion card with required scheduled
+  start, optional scheduled end, optional technician assignment, service
+  offering override, billing handling override, editable work-order notes,
+  declined/canceled/non-estimate blocking copy, and existing-work-order handoff.
+- Preserved the estimate as the source record, linked the new work order by
+  `parent_job_id`, inherited customer/location, mapped rodent/bird/attic/
+  termite/general pest classifications, and kept the work order visible as a
+  normal scheduled classified job for jobs, dispatch, closeouts, payments, and
+  mobile work modes.
+- Kept customer portal output customer-safe and did not add invoices, Stripe
+  payment links, payments, customer notifications, customer acceptance flows,
+  quote/pricing engines, recurring subscription billing, deposit/progress
+  billing, project billing automation, provider/dashboard changes,
+  seed/reset writes, preview mutation, production mutation, or migration apply.
+- Confirmed `parent_job_id` and the needed classification fields already exist
+  in Job Classification Foundation V1, so no new migration was needed.
+- Verified with focused estimate conversion, job classification, closeout
+  billing rules, mobile work modes, API-client jobs, and Closeouts UI tests,
+  plus full `corepack pnpm test`, `corepack pnpm typecheck`,
+  `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`.
+
 ## Closeout & Billing Rules V1
 
 - Added shared closeout/billing rule helpers in `packages/domain` for

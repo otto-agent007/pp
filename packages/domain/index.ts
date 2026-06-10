@@ -118,6 +118,17 @@ export {
 export type { SafeLogPayload } from "./safeLogging";
 
 export {
+  buildWorkOrderInputFromEstimate,
+  canConvertEstimateToWorkOrder,
+  getEstimateConversionGuidance,
+  getEstimateConversionReadiness,
+  getEstimateConversionSuccessCopy,
+  getExistingWorkOrderForEstimate,
+  getWorkOrderConversionCandidate,
+  isEstimateJobClassifiableForConversion,
+} from "./estimateConversion";
+
+export {
   createAutomationRule,
   createNotificationEvent,
   createNotificationTemplate,

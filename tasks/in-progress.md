@@ -2,31 +2,32 @@
 
 Active implementation slice:
 
-- Closeout & Billing Rules V1 is active on branch
-  `codex/closeout-billing-rules-v1`, started from latest `origin/main` after
-  Job Classification Foundation V1 and Mobile Work Modes V1 merged.
-- Added shared closeout/billing rule helpers in `packages/domain` so
-  `/closeouts` and `/payments` can distinguish estimate-only, recurring,
-  standard billable, exclusion/project, WDO/Escrow, warranty/callback, and
-  follow-up/inspection jobs from structured classification first.
-- `/closeouts` now surfaces compact job type / billing review guidance with
-  classification-aware proof expectations while preserving the existing
-  ready/needs-captures/invoiced queue shape.
-- `/payments` now shows classification-aware invoice guardrails and requires an
-  explicit "Create invoice anyway" confirmation before invoicing
-  estimate-only, included-in-recurring, warranty/callback, or no-charge jobs.
-- Standard billable service jobs keep the fast normal invoice path, service
-  preset behavior remains intact, manual payment fallback remains intact, and
-  Stripe payment-link/webhook behavior is unchanged.
-- WDO/Escrow jobs continue to link staff to `/escrow-re`; final document
-  release remains authorized human review only.
-- This slice does not implement Estimate to Work Order conversion,
-  quote/pricing, customer estimate approval, recurring subscription billing,
-  deposit/progress billing, project phase billing, new mobile workflows,
-  migrations, provider/dashboard changes, seed/reset writes, preview mutation,
-  production mutation, or migration apply.
-- Focused domain/web tests and full repo gates are passing. Commit, push, and
-  draft PR handoff are still in progress.
+- Estimate to Work Order Conversion V1 is active on branch
+  `codex/estimate-to-work-order-conversion-v1`, started from latest
+  `origin/main` after Job Classification Foundation V1, Mobile Work Modes V1,
+  and Closeout & Billing Rules V1 merged.
+- Added shared conversion helpers in `packages/domain` to evaluate estimate
+  readiness, block canceled/declined/non-estimate jobs, reuse existing linked
+  work orders, build classified work-order input, and keep operator copy free of
+  internal field names.
+- Added an idempotent API-client conversion workflow that loads the source
+  estimate, checks active linked work orders by `parent_job_id`, creates a new
+  scheduled work order only when absent, and best-effort marks the estimate
+  accepted.
+- `/closeouts` now surfaces the office-side estimate conversion card with
+  required scheduled start, optional scheduled end, optional technician,
+  work-type override, billing handling override, editable notes, declined-state
+  copy, and existing-work-order handoff.
+- `parent_job_id` and classification fields already exist from Job
+  Classification Foundation V1, so no new migration is needed and no migration
+  apply has been performed.
+- Conversion does not create invoices, Stripe payment links, payments,
+  customer notifications, customer estimate acceptance flows, quote/pricing
+  engines, recurring billing, deposit/progress billing, or project billing
+  automation.
+- Focused domain, API-client, closeouts UI, job classification, closeout
+  billing rules, and mobile work mode tests are passing. Full repo gates,
+  commit, push, and draft PR handoff are still in progress.
 - Protected Preview Security Closure V1 is merged and captured in
   `tasks/done.md`.
 - OWASP API Security Review V1 is merged via PR #123 and captured in
