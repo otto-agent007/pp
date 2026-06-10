@@ -1,43 +1,52 @@
 # Implementation Plan
 
-## Current Priority: Closeout & Billing Rules V1
+## Current Priority: Estimate to Work Order Conversion V1
 
 As of June 9, 2026, the active branch is
-`codex/closeout-billing-rules-v1`, started from latest `origin/main` after
-Job Classification Foundation V1 and Mobile Work Modes V1 merged.
+`codex/estimate-to-work-order-conversion-v1`, started from latest
+`origin/main` after Job Classification Foundation V1, Mobile Work Modes V1, and
+Closeout & Billing Rules V1 merged.
 
 Current slice objective:
 
-1. Use structured job classification fields to drive office closeout proof
-   expectations and payment guardrails for estimates, recurring service,
-   general billable service, exclusion/project work, WDO/Escrow, warranty/
-   callback, and follow-up/inspection jobs.
-2. Keep shared rule mapping in `packages/domain` so `/closeouts` and
-   `/payments` use the same conservative office-review behavior.
-3. Require explicit office confirmation before creating invoices for
-   estimate-only, included-in-recurring, warranty/callback, and no-charge jobs
-   while preserving manual override.
-4. Keep standard billable service jobs on the fast normal invoice path.
-5. Preserve WDO/Escrow readiness as staff-side review only; final release still
-   requires authorized human review.
+1. Let office staff convert an accepted or ready estimate job into a new
+   scheduled work order while preserving the estimate as the source record.
+2. Link the work order to the estimate with `parent_job_id` and prevent silent
+   duplicate conversion when an active linked work order already exists.
+3. Map estimate offerings into classified billable/project work orders so jobs,
+   dispatch, mobile work modes, closeout, WDO/Escrow, and payments continue to
+   use structured job intent.
+4. Keep scheduling operator-controlled with required scheduled start, optional
+   scheduled end, optional technician assignment, editable work notes, work type
+   override, and billing handling override.
+5. Do not create invoices, Stripe payment links, customer notifications,
+   customer acceptance flows, quote/pricing engines, recurring billing, or
+   project billing automation.
 
 Current slice status:
 
-1. Shared closeout/billing rule helpers derive office labels, proof
-   expectations, invoice guidance, confirmation requirements, and customer-safe
-   summaries from structured classification first, then legacy service-catalog
-   inference.
-2. `/closeouts` shows compact job type / billing review guidance for
-   non-standard work without changing the existing ready/needs-captures/
-   invoiced queue shape.
-3. `/payments` warns and arms an explicit "Create invoice anyway" override for
-   review-required jobs while preserving service preset copy behavior, manual
-   payment fallback, and Stripe payment-link/webhook behavior.
-4. This slice does not implement quote generation, recurring subscriptions,
-   deposits/progress billing, project phase billing, customer estimate
-   acceptance, estimate PDFs, estimate-to-work-order conversion, migrations,
-   provider/dashboard changes, seed/reset writes, preview mutation, production
-   mutation, or migration apply.
+1. `parent_job_id`, estimate status, billing disposition, service offering,
+   service family, job purpose, and service cadence already exist from Job
+   Classification Foundation V1, so no new migration is needed for this slice.
+2. Shared domain helpers evaluate conversion readiness, duplicate linked work
+   orders, work-order input defaults, guidance copy, and success copy.
+3. The API-client conversion workflow loads the estimate, reuses an existing
+   linked work order when present, creates a classified work order only when
+   absent, and best-effort marks the estimate accepted.
+4. `/closeouts` is the primary office UI surface for conversion. It shows
+   readiness, blocked/declined states, existing linked work order handoff, and
+   an operator-controlled conversion form.
+5. Focused domain, API-client, closeouts UI, and classification/mobile/billing
+   regression tests are passing locally. Full repo gates and draft PR handoff
+   are still in progress.
+
+## Previous Priority: Closeout & Billing Rules V1
+
+Closeout & Billing Rules V1 added shared closeout/billing rule helpers and
+classification-aware `/closeouts` and `/payments` guidance so estimate-only,
+included-recurring, warranty/callback, no-charge, exclusion/project, WDO/Escrow,
+and standard billable service jobs follow conservative invoice behavior without
+changing Stripe payment-link/webhook behavior.
 
 ## Previous Priority: Mobile Work Modes V1
 

@@ -11,6 +11,9 @@ import {
   validateCustomerPortalSendInput,
   validateCustomerPortalUpgradeIntentInput,
   buildCustomerPortalUpgradeGeneratedKey,
+  buildWorkOrderInputFromEstimate,
+  getEstimateConversionReadiness,
+  getExistingWorkOrderForEstimate,
   validateInvoiceInput,
   validateJobInput,
   validateTechnicianLicenseInput,
@@ -32,6 +35,8 @@ import type {
   CustomerPortalSendResult,
   CustomerPortalUpgradeIntentInput,
   CustomerPortalUpgradeIntentResult,
+  EstimateConversionInput,
+  EstimateConversionResult,
   Invoice,
   InvoiceInput,
   InvoiceLineItem,
@@ -586,6 +591,49 @@ export function createLocalDemoJob(input: JobInput): Job {
   rebuildDerivedFixtureRelations();
 
   return requireJob(fixtures, job.id);
+}
+
+export function convertLocalDemoEstimateToWorkOrder(
+  input: EstimateConversionInput,
+): EstimateConversionResult {
+  const fixtures = requireLocalDemoFixtures();
+  const estimateJob = requireJob(fixtures, input.estimate_job_id);
+  const existingWorkOrder = getExistingWorkOrderForEstimate(
+    estimateJob,
+    fixtures.jobs,
+  );
+  const readiness = getEstimateConversionReadiness(
+    estimateJob,
+    existingWorkOrder,
+  );
+
+  if (existingWorkOrder) {
+    return {
+      estimate_job: estimateJob,
+      reused_existing_work_order: true,
+      work_order_job: existingWorkOrder,
+    };
+  }
+
+  if (!readiness.can_convert) {
+    throw new Error(readiness.reasons[0] ?? readiness.summary);
+  }
+
+  const workOrder = createLocalDemoJob(
+    buildWorkOrderInputFromEstimate(estimateJob, input),
+  );
+  const acceptedEstimate = updateLocalJob(estimateJob.id, (job) => ({
+    ...job,
+    estimate_status: "accepted",
+    updated_at: nowIso(),
+  }));
+
+  return {
+    estimate_job: acceptedEstimate,
+    reused_existing_work_order: false,
+    warning: null,
+    work_order_job: workOrder,
+  };
 }
 
 export function updateLocalDemoJob(id: string, input: JobInput): Job {

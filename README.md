@@ -116,16 +116,16 @@ accepted by the operator.
 
 Current status as of June 9, 2026:
 
-- The active implementation focus is Closeout & Billing Rules V1 on
-  `codex/closeout-billing-rules-v1`.
-- Closeouts and Payments now use structured job classification to distinguish
-  estimate-only, recurring, general billable, exclusion/project, WDO/Escrow,
-  warranty/callback, and follow-up/inspection jobs.
-- Estimate-only, included-recurring, warranty/callback, and no-charge jobs
-  require explicit office review before invoice creation; invoice override
-  remains possible.
-- Standard billable service jobs keep the normal fast invoice path, WDO/Escrow
-  final release remains authorized human review, and this slice does not add
-  quote generation, recurring subscriptions, deposits/progress billing,
-  estimate-to-work-order conversion, migrations, provider changes, preview
-  mutations, or production mutations.
+- The active implementation focus is Estimate to Work Order Conversion V1 on
+  `codex/estimate-to-work-order-conversion-v1`.
+- Office staff can convert an estimate into a new scheduled work order from
+  `/closeouts` while preserving the estimate as the source record.
+- The work order is linked by `parent_job_id`, inherits customer/location,
+  maps to structured job classification, and appears to jobs/dispatch/mobile as
+  normal scheduled work.
+- Conversion prevents silent duplicate work orders, marks the estimate accepted
+  where supported, and does not create invoices, payment links, payments,
+  customer notifications, customer acceptance flows, quote engines, recurring
+  billing, or project billing automation.
+- `parent_job_id` and the needed classification fields already exist from Job
+  Classification Foundation V1, so no new migration is needed for this slice.

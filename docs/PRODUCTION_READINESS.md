@@ -29,6 +29,21 @@ This checklist prepares Pest Patrol OS for a first real GitHub, Supabase, and Ve
 
 For the current preview-first launch pass, use `docs/PREVIEW_LAUNCH_READINESS.md` as the short punch list. This document remains the detailed setup and smoke-test reference.
 
+## Estimate Conversion Readiness
+
+Estimate to Work Order Conversion V1 is an office-side workflow only. It creates
+a new scheduled job linked to the source estimate by `parent_job_id`, preserves
+the estimate for history, and does not create invoices, Stripe payment links,
+payments, customer notifications, customer estimate acceptance flows,
+quote/pricing engines, recurring billing, deposit/progress billing, or project
+billing automation.
+
+The required job fields already exist in
+`supabase/migrations/20260609170000_job_classification_foundation_v1.sql`, so
+this slice does not add or apply a migration. Before launch, operators should
+confirm that migration has been applied in the intended environment and that
+office staff can review the linked work order before billing completed service.
+
 ## Buyer Readiness Validation Snapshot
 
 

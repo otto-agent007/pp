@@ -63,6 +63,7 @@ export {
 } from "./customers";
 export {
   cancelJobRecord,
+  convertEstimateToWorkOrderRecord,
   createJobRecord,
   listAssignedTechnicianJobRecords,
   listCustomerPortalJobRecords,

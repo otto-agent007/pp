@@ -9,11 +9,19 @@ import {
   updateJob,
   validateJobInput,
 } from "@pest-patrol/domain";
-import type { Job, JobInput, JobStatus } from "@pest-patrol/types";
+import { convertEstimateToWorkOrderRecord } from "@pest-patrol/api-client";
+import type {
+  EstimateConversionInput,
+  EstimateConversionResult,
+  Job,
+  JobInput,
+  JobStatus,
+} from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   assignLocalDemoJobTechnician,
   cancelLocalDemoJob,
+  convertLocalDemoEstimateToWorkOrder,
   createLocalDemoJob,
   getLocalDemoFixtures,
   updateLocalDemoJob,
@@ -78,6 +86,33 @@ export function useCreateJob() {
       queryClient.setQueryData(jobsQueryKey, context?.previous ?? []);
     },
     onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: jobsQueryKey });
+    },
+  });
+}
+
+export function useConvertEstimateToWorkOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: EstimateConversionInput) =>
+      getLocalDemoFixtures()
+        ? Promise.resolve(convertLocalDemoEstimateToWorkOrder(input))
+        : convertEstimateToWorkOrderRecord(input),
+    onSuccess: (result: EstimateConversionResult) => {
+      queryClient.setQueryData<Job[]>(jobsQueryKey, (previous = []) => {
+        const withoutConverted = previous.filter(
+          (job) =>
+            job.id !== result.estimate_job.id &&
+            job.id !== result.work_order_job.id,
+        );
+
+        return [
+          result.work_order_job,
+          result.estimate_job,
+          ...withoutConverted,
+        ];
+      });
       void queryClient.invalidateQueries({ queryKey: jobsQueryKey });
     },
   });

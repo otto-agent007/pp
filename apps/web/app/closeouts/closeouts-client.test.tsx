@@ -16,9 +16,12 @@ import {
 } from "../../hooks/useCloseouts";
 import { useComplianceReviewItems } from "../../hooks/useComplianceReviewItems";
 import { useJobGeofenceEvents } from "../../hooks/useGeofencing";
-import { useJobs } from "../../hooks/useJobs";
+import { useConvertEstimateToWorkOrder, useJobs } from "../../hooks/useJobs";
 import { useInvoices } from "../../hooks/usePayments";
-import { useTechnicianLicenses } from "../../hooks/useTechnicians";
+import {
+  useTechnicianLicenses,
+  useTechnicians,
+} from "../../hooks/useTechnicians";
 import { CloseoutsClient } from "./closeouts-client";
 
 vi.mock("../../hooks/useCloseouts", () => ({
@@ -27,6 +30,7 @@ vi.mock("../../hooks/useCloseouts", () => ({
 }));
 
 vi.mock("../../hooks/useJobs", () => ({
+  useConvertEstimateToWorkOrder: vi.fn(),
   useJobs: vi.fn(),
 }));
 
@@ -44,6 +48,7 @@ vi.mock("../../hooks/usePayments", () => ({
 
 vi.mock("../../hooks/useTechnicians", () => ({
   useTechnicianLicenses: vi.fn(),
+  useTechnicians: vi.fn(),
 }));
 
 const now = "2026-05-05T00:00:00Z";
@@ -327,8 +332,14 @@ function mockComplianceReview(
 }
 
 describe("CloseoutsClient", () => {
+  const convertMutateAsync = vi.fn();
+
   beforeEach(() => {
     window.history.pushState(null, "", "/closeouts");
+    convertMutateAsync.mockReset();
+    vi.mocked(useConvertEstimateToWorkOrder).mockReturnValue({
+      mutateAsync: convertMutateAsync,
+    } as never);
     vi.mocked(useJobs).mockReturnValue({
       data: [completedJob, needsCapturesJob, invoicedJob, scheduledJob],
       isLoading: false,
@@ -362,6 +373,21 @@ describe("CloseoutsClient", () => {
       error: null,
       isLoading: false,
       schemaUnavailable: false,
+    } as never);
+    vi.mocked(useTechnicians).mockReturnValue({
+      data: [
+        {
+          id: "tech-1",
+          role: "technician",
+          email: "tech@example.com",
+          display_name: "Taylor Tech",
+          status: "active",
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      error: null,
+      isLoading: false,
     } as never);
   });
 
@@ -530,6 +556,185 @@ describe("CloseoutsClient", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Inspection notes")).toBeInTheDocument();
     expect(screen.getByText("Proposed scope")).toBeInTheDocument();
+    expect(screen.getByText("Estimate conversion")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Convert to work order" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This creates a new job linked to the estimate. It does not create an invoice.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("converts an estimate from the closeouts review panel", async () => {
+    const user = userEvent.setup();
+    const estimateJob = {
+      ...completedJob,
+      billing_disposition: "estimate_only",
+      estimate_status: "accepted",
+      id: "job-estimate",
+      job_purpose: "estimate",
+      service_family: "rodent_attic",
+      service_offering_id: "rodent_inspection",
+      service_notes: "Seal all entry points",
+    } as const;
+    const workOrderJob = {
+      ...estimateJob,
+      billing_disposition: "billable",
+      estimate_status: "not_applicable",
+      id: "job-work-order",
+      job_purpose: "project_phase",
+      parent_job_id: "job-estimate",
+      service_cadence: "project",
+      service_offering_id: "rodent_exclusion",
+    } as const;
+    convertMutateAsync.mockResolvedValue({
+      estimate_job: { ...estimateJob, estimate_status: "accepted" },
+      reused_existing_work_order: false,
+      warning: null,
+      work_order_job: workOrderJob,
+    });
+    vi.mocked(useJobs).mockReturnValue({
+      data: [estimateJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-estimate")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: estimateJob },
+    } as never);
+    mockComplianceReview([], [estimateJob] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    await user.type(
+      screen.getByLabelText("Work order scheduled start"),
+      "2026-06-10T09:00",
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Work order technician"),
+      "tech-1",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Convert to work order" }),
+    );
+
+    expect(convertMutateAsync).toHaveBeenCalledWith({
+      assigned_tech_id: "tech-1",
+      billing_disposition: "billable",
+      estimate_job_id: "job-estimate",
+      scheduled_end: null,
+      scheduled_start: "2026-06-10T09:00",
+      service_notes: "Seal all entry points",
+      service_offering_id: "rodent_exclusion",
+    });
+    expect(
+      await screen.findByText(
+        "Work order created and linked to the estimate. No invoice was created automatically.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open work order" })).toHaveAttribute(
+      "href",
+      "/jobs?job_id=job-work-order",
+    );
+  });
+
+  it("shows an existing linked work order instead of creating a duplicate", () => {
+    const estimateJob = {
+      ...completedJob,
+      billing_disposition: "estimate_only",
+      estimate_status: "accepted",
+      id: "job-estimate",
+      job_purpose: "estimate",
+      service_offering_id: "general_pest_initial",
+    } as const;
+    const linkedWorkOrder = {
+      ...completedJob,
+      id: "job-linked-work-order",
+      parent_job_id: "job-estimate",
+      service_notes: "Linked service",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [estimateJob, linkedWorkOrder],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-estimate")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: estimateJob },
+    } as never);
+    mockComplianceReview([], [estimateJob, linkedWorkOrder] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getAllByText("Work order created").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", { name: "Convert to work order" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open work order" })).toHaveAttribute(
+      "href",
+      "/jobs?job_id=job-linked-work-order",
+    );
+  });
+
+  it("shows declined estimates as unavailable", () => {
+    const estimateJob = {
+      ...completedJob,
+      billing_disposition: "estimate_only",
+      estimate_status: "declined",
+      id: "job-estimate",
+      job_purpose: "estimate",
+      service_offering_id: "general_pest_initial",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [estimateJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-estimate")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: estimateJob },
+    } as never);
+    mockComplianceReview([], [estimateJob] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getByText("Estimate declined")).toBeInTheDocument();
+    expect(screen.getByText("Unavailable")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Convert to work order" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows recurring included billing review guidance", () => {
