@@ -1,5 +1,32 @@
 # Done
 
+## Closeout & Billing Rules V1
+
+- Added shared closeout/billing rule helpers in `packages/domain` for
+  classification-aware office labels, proof expectations, invoice guidance,
+  confirmation requirements, payment guardrails, and customer-safe summaries.
+- Updated `/closeouts` to surface compact job type / billing review guidance
+  for estimate-only, included-recurring, exclusion/project, WDO/Escrow,
+  warranty/callback, and follow-up/inspection jobs without changing the
+  existing ready/needs-captures/invoiced queue shape.
+- Updated `/payments` so estimate-only, included-recurring, warranty/callback,
+  and no-charge jobs require an explicit "Create invoice anyway" confirmation
+  before invoice creation, while standard billable service jobs keep the normal
+  fast path.
+- Preserved service preset copy behavior, manual payment fallback, Stripe
+  payment-link/webhook behavior, service billing catalog defaults, WDO/Escrow
+  readiness links, and authorized human review for final WDO/Escrow release.
+- Kept customer portal output customer-safe; no internal billing disposition,
+  office guardrail copy, WDO release warning, exact GPS, provider internals,
+  migrations, provider/dashboard changes, seed/reset writes, preview mutation,
+  production mutation, quote engine, recurring subscription billing,
+  deposit/progress billing, project phase billing, or estimate-to-work-order
+  conversion was added.
+- Verified with focused closeout/billing rule, payments, closeouts,
+  service-billing-catalog, WDO/Escrow, and Closeouts/Payments UI tests, then
+  full `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`,
+  `corepack pnpm build`, and `git diff --check`.
+
 ## Mobile Work Modes V1
 
 - Added shared domain helpers that derive mobile technician work modes from

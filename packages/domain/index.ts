@@ -218,6 +218,21 @@ export type {
   TechnicianLoginInput,
 } from "./auth";
 export {
+  getClassificationAwareBillingGuidance,
+  getClassificationAwareCloseoutGuidance,
+  getCloseoutBillingRuleForJob,
+  getCloseoutProofExpectationsForClassification,
+  getInvoiceCreationWarningCopy,
+  getPaymentCreationGuardrailForJob,
+  shouldRequireInvoiceCreationConfirmation,
+  shouldShowInvoiceCreationWarning,
+} from "./closeoutBillingRules";
+export type {
+  CloseoutBillingAction,
+  CloseoutBillingRule,
+  CloseoutBillingRuleSeverity,
+} from "./closeoutBillingRules";
+export {
   buildBillingQueue,
   buildJobCloseoutReview,
   buildCustomerPortalCloseouts,

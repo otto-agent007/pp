@@ -23,6 +23,13 @@ import {
   getServiceBillingFamilyLabel,
   inferServiceBillingOfferingFromJob,
 } from "./serviceBillingCatalog";
+export {
+  getClassificationAwareBillingGuidance,
+  getInvoiceCreationWarningCopy,
+  getPaymentCreationGuardrailForJob,
+  shouldRequireInvoiceCreationConfirmation,
+  shouldShowInvoiceCreationWarning,
+} from "./closeoutBillingRules";
 
 export type InvoiceStatusFilter = InvoiceStatus | "all";
 export type CustomerPortalInvoiceStatusFilter = CustomerPortalInvoice["status"] | "all";

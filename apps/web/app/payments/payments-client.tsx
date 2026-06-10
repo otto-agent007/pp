@@ -7,10 +7,11 @@ import {
   buildInvoiceInputFromJob,
   filterInvoices,
   formatJobScheduleDateTime,
+  getClassificationAwareBillingGuidance,
+  getCloseoutBillingRuleForJob,
   getBillingCloseoutHandoffSummary,
   getBillingQueueCounts,
-  getJobClassificationBadge,
-  getJobClassificationBillingGuidance,
+  getInvoiceCreationWarningCopy,
   getInvoiceJobIds,
   getInvoiceReconciliation,
   getInvoiceReconciliationGuidance,
@@ -25,7 +26,8 @@ import {
   inferServiceBillingOfferingFromJob,
   isWdoEscrowLikeJob,
   listServiceBillingOfferings,
-  normalizeJobClassification,
+  shouldRequireInvoiceCreationConfirmation,
+  type CloseoutBillingRule,
   type ComplianceGuardrail,
   type InvoiceReconciliationStatus,
   type InvoiceStatusFilter,
@@ -265,32 +267,33 @@ function EmptyState({ children }: { children: string }) {
 
 function JobClassificationPaymentGuidance({
   guidance,
-  label,
-  prominent,
 }: {
-  guidance: ReturnType<typeof getJobClassificationBillingGuidance>;
-  label: string;
-  prominent: boolean;
+  guidance: CloseoutBillingRule | null;
 }) {
-  if (!guidance && !prominent) {
+  if (!guidance) {
     return null;
   }
 
+  const tone =
+    guidance.severity === "critical"
+      ? "danger"
+      : guidance.severity === "warning"
+        ? "warning"
+        : "info";
+
   return (
-    <div className={`rounded-md border p-3 ${statusSurfaceClassName("warning")}`}>
+    <div className={`rounded-md border p-3 ${statusSurfaceClassName(tone)}`}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-theme-text-primary">
-            Job classification
+            Job type / billing review
           </p>
-          {guidance ? (
-            <p className="mt-1 text-xs text-theme-text-secondary">
-              {guidance.summary}
-            </p>
-          ) : null}
+          <p className="mt-1 text-xs text-theme-text-secondary">
+            {guidance.summary}
+          </p>
         </div>
-        <StatusPill dot={false} tone="warning">
-          {label}
+        <StatusPill dot={false} tone={tone}>
+          {guidance.label}
         </StatusPill>
       </div>
     </div>
@@ -489,6 +492,8 @@ export function PaymentsClient() {
     ServiceBillingFamily | "all"
   >("all");
   const [serviceCopyDirty, setServiceCopyDirty] = useState(false);
+  const [invoiceBillingConfirmationJobId, setInvoiceBillingConfirmationJobId] =
+    useState<string | null>(null);
   const highlightedInvoiceId = searchParams.get("invoice_id") ?? "";
   const invoices = invoicesQuery.data ?? emptyInvoices;
   const jobs = jobsQuery.data ?? emptyJobs;
@@ -641,15 +646,17 @@ export function PaymentsClient() {
   const selectedIsWdoEscrowJob = selectedJob
     ? isWdoEscrowLikeJob(selectedJob)
     : false;
-  const selectedJobClassification = selectedJob
-    ? normalizeJobClassification(selectedJob)
+  const selectedJobBillingGuidance = selectedJob
+    ? getClassificationAwareBillingGuidance(selectedJob)
     : null;
-  const selectedJobClassificationBadge = selectedJobClassification
-    ? getJobClassificationBadge(selectedJobClassification)
-    : null;
-  const selectedJobBillingGuidance = selectedJobClassification
-    ? getJobClassificationBillingGuidance(selectedJobClassification)
-    : null;
+  const selectedJobRequiresBillingConfirmation = selectedJob
+    ? shouldRequireInvoiceCreationConfirmation(selectedJob)
+    : false;
+  const selectedJobBillingConfirmationArmed = Boolean(
+    selectedJob &&
+      selectedJobRequiresBillingConfirmation &&
+      invoiceBillingConfirmationJobId === selectedJob.id,
+  );
   const closeoutHandoffJob =
     closeoutHandoffJobId && form.job_id === closeoutHandoffJobId
       ? (jobs.find((job) => job.id === closeoutHandoffJobId) ?? null)
@@ -710,6 +717,10 @@ export function PaymentsClient() {
     });
   }, [selectedJob, serviceCopyDirty, servicePresetSource]);
 
+  useEffect(() => {
+    setInvoiceBillingConfirmationJobId(null);
+  }, [selectedJob?.id]);
+
   function applyServicePreset() {
     if (!selectedJob || !selectedOffering) {
       return;
@@ -734,6 +745,15 @@ export function PaymentsClient() {
         throw new Error("Completed job is required");
       }
 
+      if (
+        shouldRequireInvoiceCreationConfirmation(selectedJob) &&
+        invoiceBillingConfirmationJobId !== selectedJob.id
+      ) {
+        setInvoiceBillingConfirmationJobId(selectedJob.id);
+        setFormError(getInvoiceCreationWarningCopy(selectedJob));
+        return;
+      }
+
       const amountCents = Math.round(Number(form.amount) * 100);
       const input = buildInvoiceInputFromJob(
         selectedJob,
@@ -752,6 +772,7 @@ export function PaymentsClient() {
       setServiceFamilyFilter("all");
       setServiceCopyDirty(false);
       setCloseoutHandoffJobId("");
+      setInvoiceBillingConfirmationJobId(null);
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to create invoice",
@@ -988,6 +1009,14 @@ export function PaymentsClient() {
               const invoiceIsWdoEscrowJob = invoiceJob
                 ? isWdoEscrowLikeJob(invoiceJob)
                 : false;
+              const invoiceBillingRule = invoiceJob
+                ? getCloseoutBillingRuleForJob(invoiceJob)
+                : null;
+              const showInvoiceClassificationBadge = Boolean(
+                invoiceBillingRule &&
+                  invoiceBillingRule.id !== "standard_billable" &&
+                  invoiceBillingRule.id !== "recurring_billable",
+              );
               const confirmingAction =
                 actionConfirmation?.invoiceId === invoice.id
                   ? actionConfirmation.action
@@ -1026,6 +1055,11 @@ export function PaymentsClient() {
                                {invoiceServiceInferenceToShow.offering.shortLabel}
                              </StatusPill>
                            ) : null}
+                          {showInvoiceClassificationBadge && invoiceBillingRule ? (
+                            <StatusPill tone="warning">
+                              {invoiceBillingRule.label}
+                            </StatusPill>
+                          ) : null}
                           </div>
                           {invoiceServiceInferenceToShow ? (
                             <p className="mt-2 text-sm font-semibold text-theme-text-secondary">
@@ -1430,11 +1464,9 @@ export function PaymentsClient() {
           {selectedJobGuardrail ? (
             <ComplianceGuardrailCard guardrail={selectedJobGuardrail} />
           ) : null}
-          {selectedJobClassificationBadge ? (
+          {selectedJobBillingGuidance ? (
             <JobClassificationPaymentGuidance
               guidance={selectedJobBillingGuidance}
-              label={selectedJobClassificationBadge.label}
-              prominent={selectedJobClassificationBadge.prominent}
             />
           ) : null}
           {selectedIsWdoEscrowJob && selectedJob ? (
@@ -1507,7 +1539,9 @@ export function PaymentsClient() {
             />
           </label>
           <Button disabled={createInvoice.isPending} type="submit">
-            Save invoice
+            {selectedJobBillingConfirmationArmed
+              ? "Create invoice anyway"
+              : "Save invoice"}
           </Button>
         </form>
       </section>

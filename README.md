@@ -116,14 +116,16 @@ accepted by the operator.
 
 Current status as of June 9, 2026:
 
-- The active implementation focus is Mobile Work Modes V1 on
-  `codex/mobile-work-modes-v1`.
-- The technician mobile app now uses structured job classification to present
-  work-mode badges and checklist guidance for Estimate, Recurring Service,
-  General Pest, Exclusion / Project, WDO / Escrow, Warranty / Callback,
-  Follow-up, Inspection, and standard Service visits.
-- Mobile Work Modes V1 is presentation/checklist guidance only. It does not
-  enforce quote conversion, pricing, recurring billing, project billing, new
-  form templates, migrations, provider changes, preview mutations, or
-  production mutations.
-- Estimate to Work Order conversion remains future work.
+- The active implementation focus is Closeout & Billing Rules V1 on
+  `codex/closeout-billing-rules-v1`.
+- Closeouts and Payments now use structured job classification to distinguish
+  estimate-only, recurring, general billable, exclusion/project, WDO/Escrow,
+  warranty/callback, and follow-up/inspection jobs.
+- Estimate-only, included-recurring, warranty/callback, and no-charge jobs
+  require explicit office review before invoice creation; invoice override
+  remains possible.
+- Standard billable service jobs keep the normal fast invoice path, WDO/Escrow
+  final release remains authorized human review, and this slice does not add
+  quote generation, recurring subscriptions, deposits/progress billing,
+  estimate-to-work-order conversion, migrations, provider changes, preview
+  mutations, or production mutations.

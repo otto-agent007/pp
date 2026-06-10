@@ -478,10 +478,10 @@ describe("CloseoutsClient", () => {
     render(<CloseoutsClient />);
 
     expect(screen.getByText("WDO / Escrow readiness")).toBeInTheDocument();
-    expect(screen.getByText("Job classification")).toBeInTheDocument();
+    expect(screen.getByText("Job type / billing review")).toBeInTheDocument();
     expect(screen.getAllByText("WDO / Escrow").length).toBeGreaterThan(0);
     expect(
-      screen.getByText("Office review required before final document release."),
+      screen.getByText("Confirm WDO/Escrow readiness before final document release."),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Final release requires authorized human review."),
@@ -489,6 +489,133 @@ describe("CloseoutsClient", () => {
     expect(
       screen.getByRole("link", { name: "Open WDO / Escrow readiness" }),
     ).toHaveAttribute("href", "/escrow-re?job_id=job-wdo");
+  });
+
+  it("shows estimate proof and billing review guidance", () => {
+    const estimateJob = {
+      ...completedJob,
+      billing_disposition: "estimate_only",
+      estimate_status: "presented",
+      id: "job-estimate",
+      job_purpose: "estimate",
+      service_offering_id: "rodent_inspection",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [estimateJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-estimate")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: estimateJob },
+    } as never);
+    mockComplianceReview([], [estimateJob] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getByText("Job type / billing review")).toBeInTheDocument();
+    expect(screen.getAllByText("Estimate").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("Estimate only — review before invoicing as completed service."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Inspection notes")).toBeInTheDocument();
+    expect(screen.getByText("Proposed scope")).toBeInTheDocument();
+  });
+
+  it("shows recurring included billing review guidance", () => {
+    const recurringJob = {
+      ...completedJob,
+      billing_disposition: "included_in_recurring",
+      id: "job-recurring",
+      service_cadence: "quarterly",
+      service_family: "recurring_general_pest",
+      service_offering_id: "general_pest_quarterly",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [recurringJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-recurring")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: recurringJob },
+    } as never);
+    mockComplianceReview([], [recurringJob] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getAllByText("Recurring Service").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        "Included in recurring plan — verify account billing before creating a separate invoice.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Service checklist")).toBeInTheDocument();
+    expect(screen.getByText("Follow-up needs")).toBeInTheDocument();
+  });
+
+  it("shows exclusion project photo proof guidance", () => {
+    const exclusionJob = {
+      ...completedJob,
+      billing_disposition: "billable",
+      id: "job-exclusion",
+      job_purpose: "project_phase",
+      service_cadence: "project",
+      service_family: "rodent_attic",
+      service_offering_id: "rodent_exclusion",
+      service_notes: "Rodent exclusion scope and attic access work",
+    } as const;
+    vi.mocked(useJobs).mockReturnValue({
+      data: [exclusionJob],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    vi.mocked(useCloseoutCaptureSummaries).mockReturnValue({
+      data: [fullSummary("job-exclusion")],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(useJobCloseoutReview).mockReturnValue({
+      error: null,
+      isLoading: false,
+      review: { ...review, job: exclusionJob },
+    } as never);
+    mockComplianceReview([], [exclusionJob] as Job[]);
+
+    render(<CloseoutsClient />);
+
+    expect(screen.getAllByText("Exclusion / Project").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        "Project/exclusion work — confirm scope and photo proof before invoice release.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Before photos")).toBeInTheDocument();
+    expect(screen.getByText("After photos")).toBeInTheDocument();
   });
 
   it("surfaces warning and critical compliance guardrails for closeouts", async () => {

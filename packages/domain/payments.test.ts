@@ -17,9 +17,11 @@ import {
   getInvoiceReconciliationGuidance,
   getInvoiceReconciliationSummary,
   getInvoiceSummary,
+  getPaymentCreationGuardrailForJob,
   getStripeKeyMode,
   getStripeLiveModeGateCopy,
   getStripePaymentProviderReadiness,
+  shouldRequireInvoiceCreationConfirmation,
   validateInvoiceInput,
 } from "./payments";
 
@@ -175,6 +177,38 @@ describe("payments domain", () => {
           description: "Quarterly general pest service",
           unit_amount_cents: 12500,
         },
+      ],
+    });
+  });
+
+  it("keeps payment guardrails separate from invoice input defaults", () => {
+    const estimateJob = {
+      ...job,
+      billing_disposition: "estimate_only",
+      job_purpose: "estimate",
+      service_offering_id: "rodent_inspection",
+    } as const;
+    const standardJob = {
+      ...job,
+      billing_disposition: "billable",
+      job_purpose: "service",
+      service_family: "general_pest",
+      service_offering_id: "general_pest_initial",
+      service_notes: "Initial service",
+    } as const;
+
+    expect(getPaymentCreationGuardrailForJob(estimateJob)).toMatchObject({
+      action: "estimate_review",
+      canCreateInvoice: true,
+    });
+    expect(shouldRequireInvoiceCreationConfirmation(estimateJob)).toBe(true);
+    expect(shouldRequireInvoiceCreationConfirmation(standardJob)).toBe(false);
+    expect(buildInvoiceInputFromJob(estimateJob, 12500)).toMatchObject({
+      job_id: "job-1",
+      line_items: [
+        expect.objectContaining({
+          unit_amount_cents: 12500,
+        }),
       ],
     });
   });

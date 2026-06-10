@@ -1,37 +1,52 @@
 # Implementation Plan
 
-## Current Priority: Mobile Work Modes V1
+## Current Priority: Closeout & Billing Rules V1
 
-As of June 9, 2026, the active branch is `codex/mobile-work-modes-v1`, started
-from latest `origin/main` after Job Classification Foundation V1 merged.
+As of June 9, 2026, the active branch is
+`codex/closeout-billing-rules-v1`, started from latest `origin/main` after
+Job Classification Foundation V1 and Mobile Work Modes V1 merged.
 
 Current slice objective:
 
-1. Use structured job classification fields to derive technician-facing mobile
-   work modes for Estimate, Recurring Service, General Pest, Exclusion /
-   Project, WDO / Escrow, Warranty / Callback, Follow-up, Inspection, and
-   standard Service visits.
-2. Keep mode mapping and checklist guidance in `packages/domain`, with
-   English/Spanish mobile copy in `packages/i18n`.
-3. Update mobile route cards and the field checklist framing while preserving
-   existing status, geofence/arrival notification, treatment form, chemical,
-   photo, signature, and offline sync controls.
-4. Keep this mobile-presentation-only: no Estimate to Work Order conversion,
-   quote/pricing engine, project billing, recurring subscription billing, new
-   form templates, migrations, provider changes, seed/reset writes, preview
-   mutation, production mutation, or migration apply.
+1. Use structured job classification fields to drive office closeout proof
+   expectations and payment guardrails for estimates, recurring service,
+   general billable service, exclusion/project work, WDO/Escrow, warranty/
+   callback, and follow-up/inspection jobs.
+2. Keep shared rule mapping in `packages/domain` so `/closeouts` and
+   `/payments` use the same conservative office-review behavior.
+3. Require explicit office confirmation before creating invoices for
+   estimate-only, included-in-recurring, warranty/callback, and no-charge jobs
+   while preserving manual override.
+4. Keep standard billable service jobs on the fast normal invoice path.
+5. Preserve WDO/Escrow readiness as staff-side review only; final release still
+   requires authorized human review.
 
 Current slice status:
 
-1. Shared mobile work-mode helpers derive mode labels, summaries, checklist
-   expectations, and proof guidance from structured classification first, then
-   service billing catalog inference, then standard-service fallback.
-2. Mobile job cards show compact work-mode badges/summaries, and the field flow
-   renders work-mode-specific checklist guidance without exposing internal field
-   names.
-3. Checklist requirement states are display-only in V1; existing completion and
-   offline queue behavior remains unchanged.
-4. Estimate to Work Order conversion remains future work.
+1. Shared closeout/billing rule helpers derive office labels, proof
+   expectations, invoice guidance, confirmation requirements, and customer-safe
+   summaries from structured classification first, then legacy service-catalog
+   inference.
+2. `/closeouts` shows compact job type / billing review guidance for
+   non-standard work without changing the existing ready/needs-captures/
+   invoiced queue shape.
+3. `/payments` warns and arms an explicit "Create invoice anyway" override for
+   review-required jobs while preserving service preset copy behavior, manual
+   payment fallback, and Stripe payment-link/webhook behavior.
+4. This slice does not implement quote generation, recurring subscriptions,
+   deposits/progress billing, project phase billing, customer estimate
+   acceptance, estimate PDFs, estimate-to-work-order conversion, migrations,
+   provider/dashboard changes, seed/reset writes, preview mutation, production
+   mutation, or migration apply.
+
+## Previous Priority: Mobile Work Modes V1
+
+Mobile Work Modes V1 added shared technician-facing work-mode guidance for
+Estimate, Recurring Service, General Pest, Exclusion / Project, WDO / Escrow,
+Warranty / Callback, Follow-up, Inspection, and Standard Service visits. It
+kept checklist requirement states display-only and did not change mobile
+completion, offline queue, provider, migration, preview, or production
+behavior.
 
 ## Previous Priority: Protected Preview Security Closure V1
 
