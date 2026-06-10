@@ -2,27 +2,31 @@
 
 Active implementation slice:
 
-- Mobile Work Modes V1 is active on branch
-  `codex/mobile-work-modes-v1`, started from latest `origin/main` after Job
-  Classification Foundation V1 merged.
-- Added shared mobile work-mode helpers that derive technician-facing modes
-  from structured job classification fields first, service billing catalog
-  inference second, and Standard Service fallback last.
-- Mobile route cards and the technician field flow now show work-mode badges,
-  summaries, display-only checklist guidance, proof expectations, and
-  English/Spanish copy for Estimate, Recurring Service, General Pest,
-  Exclusion / Project, WDO / Escrow, Warranty / Callback, Follow-up,
-  Inspection, and Standard Service.
-- Existing field controls, arrival notification behavior, chemical/photo/
-  signature queues, treatment form JSONB field ids, and offline queue payload
-  contracts remain unchanged.
-- This slice is mobile presentation/checklist guidance only. Estimate to Work
-  Order conversion, quote/pricing, customer estimate approval, recurring
-  subscription billing, project billing, new form templates, migrations,
-  provider/dashboard changes, seed/reset writes, preview mutation, and
-  production mutation remain out of scope.
-- Focused domain and mobile component tests are passing. Full repo gates,
-  commit, push, and draft PR handoff are still in progress.
+- Closeout & Billing Rules V1 is active on branch
+  `codex/closeout-billing-rules-v1`, started from latest `origin/main` after
+  Job Classification Foundation V1 and Mobile Work Modes V1 merged.
+- Added shared closeout/billing rule helpers in `packages/domain` so
+  `/closeouts` and `/payments` can distinguish estimate-only, recurring,
+  standard billable, exclusion/project, WDO/Escrow, warranty/callback, and
+  follow-up/inspection jobs from structured classification first.
+- `/closeouts` now surfaces compact job type / billing review guidance with
+  classification-aware proof expectations while preserving the existing
+  ready/needs-captures/invoiced queue shape.
+- `/payments` now shows classification-aware invoice guardrails and requires an
+  explicit "Create invoice anyway" confirmation before invoicing
+  estimate-only, included-in-recurring, warranty/callback, or no-charge jobs.
+- Standard billable service jobs keep the fast normal invoice path, service
+  preset behavior remains intact, manual payment fallback remains intact, and
+  Stripe payment-link/webhook behavior is unchanged.
+- WDO/Escrow jobs continue to link staff to `/escrow-re`; final document
+  release remains authorized human review only.
+- This slice does not implement Estimate to Work Order conversion,
+  quote/pricing, customer estimate approval, recurring subscription billing,
+  deposit/progress billing, project phase billing, new mobile workflows,
+  migrations, provider/dashboard changes, seed/reset writes, preview mutation,
+  production mutation, or migration apply.
+- Focused domain/web tests and full repo gates are passing. Commit, push, and
+  draft PR handoff are still in progress.
 - Protected Preview Security Closure V1 is merged and captured in
   `tasks/done.md`.
 - OWASP API Security Review V1 is merged via PR #123 and captured in

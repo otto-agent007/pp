@@ -7,6 +7,9 @@ import type {
   TechnicianLicense,
 } from "@pest-patrol/types";
 import {
+  getCloseoutBillingRuleForJob,
+} from "./closeoutBillingRules";
+import {
   buildWdoEscrowClearanceQueue,
   buildWdoEscrowReadinessForJob,
   getWdoEscrowClearanceSummary,
@@ -288,17 +291,27 @@ describe("WDO escrow clearance readiness", () => {
   });
 
   it("marks complete evidence as ready for draft but not released", () => {
+    const wdoJob = job();
     const item = buildWdoEscrowReadinessForJob({
       closeoutReview: closeoutReview(),
       complianceGuardrail: guardrail("clear"),
       invoice: invoice({ status: "paid" }),
-      job: job(),
+      job: wdoJob,
       technicianLicenses: [branch3License()],
     });
+    const billingRule = getCloseoutBillingRuleForJob(wdoJob);
 
     expect(item.status).toBe("ready_for_draft");
     expect(item.status).not.toBe("released");
     expect(item.nextAction).toContain("draft clearance");
+    expect(billingRule).toMatchObject({
+      action: "wdo_review",
+      requiresConfirmation: false,
+      summary: "Confirm WDO/Escrow readiness before final document release.",
+    });
+    expect(item.documentHandoffNote).toMatch(
+      /final release approval remains required/i,
+    );
   });
 
   it("summarizes WDO queue statuses", () => {

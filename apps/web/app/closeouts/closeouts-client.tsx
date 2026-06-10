@@ -8,8 +8,7 @@ import {
   formatJobScheduleDateTime,
   getAdminCloseoutProofReview,
   getBillingQueueCounts,
-  getJobClassificationBadge,
-  getJobClassificationCloseoutGuidance,
+  getClassificationAwareCloseoutGuidance,
   getCloseoutProofHandoffSummary,
   getCloseoutCounts,
   getCloseoutReviewReadiness,
@@ -17,7 +16,7 @@ import {
   getInvoiceBalanceCents,
   buildWdoEscrowReadinessForJob,
   isWdoEscrowLikeJob,
-  normalizeJobClassification,
+  type CloseoutBillingRule,
   type ComplianceGuardrail,
   type BillingQueueGroup,
   type BillingQueueItem,
@@ -297,36 +296,41 @@ function ComplianceGuardrailPanel({
 
 function JobClassificationCloseoutGuidance({
   guidance,
-  label,
 }: {
-  guidance: ReturnType<typeof getJobClassificationCloseoutGuidance>;
-  label: string;
+  guidance: CloseoutBillingRule | null;
 }) {
   if (!guidance) {
     return null;
   }
 
+  const tone =
+    guidance.severity === "critical"
+      ? "danger"
+      : guidance.severity === "warning"
+        ? "warning"
+        : "info";
+
   return (
-    <Card padding="md" statusTone="info">
+    <Card padding="md" statusTone={tone}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Eyebrow>Job classification</Eyebrow>
+          <Eyebrow>Job type / billing review</Eyebrow>
           <h3 className="mt-1 text-base font-semibold text-theme-text-primary">
-            {label}
+            {guidance.label}
           </h3>
           <p className="mt-2 text-sm text-theme-text-secondary">
             {guidance.summary}
           </p>
-          {guidance.items.length > 0 ? (
+          {guidance.guidanceItems.length > 0 ? (
             <ul className="mt-3 grid gap-1 text-sm text-theme-text-secondary">
-              {guidance.items.map((item) => (
+              {guidance.guidanceItems.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           ) : null}
         </div>
-        <StatusPill dot={false} tone="info">
-          {label}
+        <StatusPill dot={false} tone={tone}>
+          {guidance.label}
         </StatusPill>
       </div>
     </Card>
@@ -1035,14 +1039,8 @@ export function CloseoutsClient() {
         technicianLicenses,
       })
     : null;
-  const selectedJobClassification = selectedJob
-    ? normalizeJobClassification(selectedJob)
-    : null;
-  const selectedClassificationBadge = selectedJobClassification
-    ? getJobClassificationBadge(selectedJobClassification)
-    : null;
-  const selectedClassificationGuidance = selectedJobClassification
-    ? getJobClassificationCloseoutGuidance(selectedJobClassification)
+  const selectedClassificationGuidance = selectedJob
+    ? getClassificationAwareCloseoutGuidance(selectedJob)
     : null;
   const complianceSummaryTone: StatusPillTone =
     complianceGuardrailSummary.criticalJobs > 0
@@ -1265,10 +1263,9 @@ export function CloseoutsClient() {
                     readiness={selectedWdoEscrowReadiness}
                   />
                 ) : null}
-                {selectedClassificationBadge ? (
+                {selectedClassificationGuidance ? (
                   <JobClassificationCloseoutGuidance
                     guidance={selectedClassificationGuidance}
-                    label={selectedClassificationBadge.label}
                   />
                 ) : null}
                 {selectedGuardrail ? (

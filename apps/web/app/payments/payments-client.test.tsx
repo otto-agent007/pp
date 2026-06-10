@@ -454,7 +454,8 @@ describe("PaymentsClient", () => {
     ).toContain("Rodent exclusion and attic sanitation completed");
   });
 
-  it("shows advisory classification warnings without blocking invoices", () => {
+  it("shows estimate warnings before invoice override", async () => {
+    const user = userEvent.setup();
     vi.mocked(useJobs).mockReturnValue({
       data: [
         {
@@ -479,12 +480,61 @@ describe("PaymentsClient", () => {
     expect(screen.getByText("Estimate")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Estimate only - review before invoicing as completed service.",
+        "Estimate only — review before invoicing as completed service.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Save invoice" }),
     ).toBeEnabled();
+
+    await user.type(screen.getByLabelText("Invoice amount"), "125");
+    await user.click(screen.getByRole("button", { name: "Save invoice" }));
+
+    expect(createInvoice).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Create invoice anyway" }),
+    ).toBeEnabled();
+  });
+
+  it("requires explicit confirmation before invoicing warranty callback work", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        {
+          ...completedJob,
+          billing_disposition: "warranty_callback",
+          job_purpose: "callback",
+          service_notes: "Callback for prior service issue",
+        },
+      ],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    expect(screen.getAllByText("Warranty / Callback").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        "Warranty/callback — confirm no-charge or billable follow-up before invoicing.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Invoice amount"), "125");
+    await user.click(screen.getByRole("button", { name: "Save invoice" }));
+
+    expect(createInvoice).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Create invoice anyway" }));
+
+    expect(createInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job_id: "job-1",
+      }),
+    );
   });
 
   it("preserves operator-entered invoice copy when selecting another job", async () => {
@@ -845,7 +895,7 @@ describe("PaymentsClient", () => {
     ).toBeInTheDocument();
   });
 
-  it("creates an invoice from a completed job", async () => {
+  it("requires explicit confirmation before invoicing included recurring work", async () => {
     const user = userEvent.setup();
     vi.mocked(useInvoices).mockReturnValue({
       data: [],
@@ -862,6 +912,15 @@ describe("PaymentsClient", () => {
     await user.type(screen.getByLabelText("Invoice amount"), "125");
     await user.click(screen.getByRole("button", { name: "Save invoice" }));
 
+    expect(createInvoice).not.toHaveBeenCalled();
+    expect(
+      screen.getAllByText(
+        "Included in recurring plan — verify account billing before creating a separate invoice.",
+      ).length,
+    ).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "Create invoice anyway" }));
+
     expect(createInvoice).toHaveBeenCalledWith(
       expect.objectContaining({
         job_id: "job-1",
@@ -874,6 +933,46 @@ describe("PaymentsClient", () => {
         ],
       }),
     );
+  });
+
+  it("creates invoices for standard billable jobs without extra confirmation", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useJobs).mockReturnValue({
+      data: [
+        {
+          ...completedJob,
+          billing_disposition: "billable",
+          job_purpose: "service",
+          service_family: "general_pest",
+          service_offering_id: "general_pest_initial",
+          service_notes: "Initial general pest service",
+        },
+      ],
+      isLoading: false,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+
+    render(<PaymentsClient />);
+
+    await user.type(screen.getByLabelText("Invoice amount"), "125");
+    await user.click(screen.getByRole("button", { name: "Save invoice" }));
+
+    expect(createInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job_id: "job-1",
+        line_items: [
+          expect.objectContaining({
+            description: "General pest initial service",
+          }),
+        ],
+      }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Create invoice anyway" }),
+    ).not.toBeInTheDocument();
   });
 
   it("preselects a completed job from the closeout handoff query param", async () => {
@@ -914,6 +1013,7 @@ describe("PaymentsClient", () => {
 
     await user.type(screen.getByLabelText("Invoice amount"), "225");
     await user.click(screen.getByRole("button", { name: "Save invoice" }));
+    await user.click(screen.getByRole("button", { name: "Create invoice anyway" }));
 
     expect(createInvoice).toHaveBeenCalledWith(
       expect.objectContaining({

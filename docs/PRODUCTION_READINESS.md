@@ -259,15 +259,16 @@ Admin web:
 3. Create a completed job for that customer and location.
 4. Open `/closeouts` and confirm the completed job appears.
 5. Open `/payments`, create an invoice for the completed job, and confirm it moves through draft and sent states.
-6. Return to `/customers`, expand the customer's account ledger, and confirm all/services/invoices/open/review filters show service and billing history without provider payment ids, raw payment records, or admin notes.
-7. Confirm the customer card's portal readiness explains whether closeout and billing data are ready to share.
-8. Configure Stripe to send `checkout.session.completed` events to `/api/payments/stripe-webhook`, then confirm a test payment marks the matching invoice paid.
-9. Open `/automation`, create a notification template with variables, confirm the preview renders customer/location/date values, bind it to a follow-up rule, create a reminder from the template, then mark it handled.
-10. Confirm the `/automation` scheduler preview shows due notification copy, target context, generated keys, and duplicate labels before any run is executed.
-11. Trigger `/api/automation/scheduler` with `Authorization: Bearer <CRON_SECRET>` and confirm due bound rules generate pending notification events with interpolated template copy and no duplicates.
-12. Open `/automation`, use the manual Run scheduler action, and confirm the scheduler panel refreshes without using a cron secret in the browser.
-13. Confirm the `/automation` scheduler panel shows the latest run status, cron/manual source, created count, duplicate count, and generated notifications.
-14. Send one pending reminder and then send visible pending reminders in bulk; confirm delivery status updates and failed reminders remain visible through the delivery-status filter and Failed/Retryable quick filters without exposing provider secrets in the browser.
+6. For estimate-only, included-recurring, warranty/callback, no-charge, project/exclusion, and WDO/Escrow jobs, confirm `/closeouts` and `/payments` show office billing-review guidance; invoice creation remains possible only after the explicit override where required.
+7. Return to `/customers`, expand the customer's account ledger, and confirm all/services/invoices/open/review filters show service and billing history without provider payment ids, raw payment records, or admin notes.
+8. Confirm the customer card's portal readiness explains whether closeout and billing data are ready to share.
+9. Configure Stripe to send `checkout.session.completed` events to `/api/payments/stripe-webhook`, then confirm a test payment marks the matching invoice paid.
+10. Open `/automation`, create a notification template with variables, confirm the preview renders customer/location/date values, bind it to a follow-up rule, create a reminder from the template, then mark it handled.
+11. Confirm the `/automation` scheduler preview shows due notification copy, target context, generated keys, and duplicate labels before any run is executed.
+12. Trigger `/api/automation/scheduler` with `Authorization: Bearer <CRON_SECRET>` and confirm due bound rules generate pending notification events with interpolated template copy and no duplicates.
+13. Open `/automation`, use the manual Run scheduler action, and confirm the scheduler panel refreshes without using a cron secret in the browser.
+14. Confirm the `/automation` scheduler panel shows the latest run status, cron/manual source, created count, duplicate count, and generated notifications.
+15. Send one pending reminder and then send visible pending reminders in bulk; confirm delivery status updates and failed reminders remain visible through the delivery-status filter and Failed/Retryable quick filters without exposing provider secrets in the browser.
 15. If a notification webhook is configured, inspect the provider request and confirm the payload includes event, target, customer, job, and location context while excluding internal service notes and provider secrets.
 16. Confirm sent reminders show provider message ids when the provider returns one, and failed retries do not show stale provider message ids.
 17. Trigger a notification delivery and confirm the reminder briefly moves through `sending`; duplicate sends while `sending` or already `sent` should be rejected without creating a second provider request.

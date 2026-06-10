@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Invoice } from "@pest-patrol/types";
 
 import {
+  getClassificationAwareCloseoutGuidance,
+  getCloseoutProofExpectationsForClassification,
+} from "./closeoutBillingRules";
+import {
   buildBillingQueue,
   buildCustomerPortalCloseouts,
   buildJobCloseoutReview,
@@ -215,6 +219,33 @@ describe("closeouts domain", () => {
         summary: "Jobs with invoice handoff already started.",
       },
     ]);
+  });
+
+  it("keeps estimate jobs in the existing queue shape while surfacing proof guidance", () => {
+    const estimateJob = {
+      ...completedJob,
+      billing_disposition: "estimate_only",
+      job_purpose: "estimate",
+      service_offering_id: "rodent_inspection",
+    } as const;
+    const queue = buildBillingQueue(
+      [estimateJob],
+      [],
+      [fullCaptureSummary(estimateJob.id)],
+    );
+
+    expect(queue.ready.map((item) => item.job.id)).toEqual([estimateJob.id]);
+    expect(getBillingQueueCounts(queue)).toMatchObject({
+      ready: 1,
+      totalCompleted: 1,
+    });
+    expect(getClassificationAwareCloseoutGuidance(estimateJob)).toMatchObject({
+      action: "estimate_review",
+      summary: "Estimate only — review before invoicing as completed service.",
+    });
+    expect(getCloseoutProofExpectationsForClassification(estimateJob)).toContain(
+      "Proposed scope",
+    );
   });
 
   it("formats missing capture lists for billing queue copy", () => {
