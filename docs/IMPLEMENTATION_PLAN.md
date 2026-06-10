@@ -1,41 +1,37 @@
 # Implementation Plan
 
-## Current Priority: Job Classification Foundation V1
+## Current Priority: Mobile Work Modes V1
 
-As of June 9, 2026, the active branch is
-`codex/job-classification-foundation-v1`, started from latest `origin/main`.
+As of June 9, 2026, the active branch is `codex/mobile-work-modes-v1`, started
+from latest `origin/main` after Job Classification Foundation V1 merged.
 
 Current slice objective:
 
-1. Add first-class job intent fields so dispatch, admins, technicians,
-   closeouts, and payments can distinguish estimates, recurring service,
-   general pest work, exclusion/project work, WDO/escrow inspections,
-   warranty/callbacks, follow-ups, and future project phases.
-2. Connect job classification to the existing service billing catalog through
-   shared `packages/domain` helpers and `packages/api-client` mapping while
-   keeping legacy rows safe before the proposed migration is applied.
-3. Surface technician-friendly labels such as Estimate, Recurring Service,
-   General Pest, Exclusion, WDO / Escrow, Warranty, Follow-up, Callback, and
-   Inspection without exposing internal field names.
-4. Keep this foundation-only: no dynamic mobile checklists, estimate-to-work
-   order conversion, pricing/quote generation, recurring subscription billing,
-   project management, provider changes, seed/reset writes, preview mutation,
-   production mutation, or migration apply.
+1. Use structured job classification fields to derive technician-facing mobile
+   work modes for Estimate, Recurring Service, General Pest, Exclusion /
+   Project, WDO / Escrow, Warranty / Callback, Follow-up, Inspection, and
+   standard Service visits.
+2. Keep mode mapping and checklist guidance in `packages/domain`, with
+   English/Spanish mobile copy in `packages/i18n`.
+3. Update mobile route cards and the field checklist framing while preserving
+   existing status, geofence/arrival notification, treatment form, chemical,
+   photo, signature, and offline sync controls.
+4. Keep this mobile-presentation-only: no Estimate to Work Order conversion,
+   quote/pricing engine, project billing, recurring subscription billing, new
+   form templates, migrations, provider changes, seed/reset writes, preview
+   mutation, production mutation, or migration apply.
 
 Current slice status:
 
-1. Proposed migration
-   `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`
-   adds the classification columns, defaults, check constraints, self-reference,
-   comments, and indexes for review only. It has not been applied.
-2. Shared types, catalog metadata, domain normalization/guidance helpers,
-   API-client read/write mapping, local fixture carrying, and demo job
-   classifications are included.
-3. Admin jobs, dispatch cards, mobile job cards/timeline, payments warnings,
-   and closeouts guidance show compact classification signals while preserving
-   current invoice and closeout flows.
-4. Follow-up slices remain: mobile dynamic workflows, estimate acceptance or
-   conversion, recurring contract billing, and project phase management.
+1. Shared mobile work-mode helpers derive mode labels, summaries, checklist
+   expectations, and proof guidance from structured classification first, then
+   service billing catalog inference, then standard-service fallback.
+2. Mobile job cards show compact work-mode badges/summaries, and the field flow
+   renders work-mode-specific checklist guidance without exposing internal field
+   names.
+3. Checklist requirement states are display-only in V1; existing completion and
+   offline queue behavior remains unchanged.
+4. Estimate to Work Order conversion remains future work.
 
 ## Previous Priority: Protected Preview Security Closure V1
 

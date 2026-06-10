@@ -116,15 +116,14 @@ accepted by the operator.
 
 Current status as of June 9, 2026:
 
-- The active implementation focus is Job Classification Foundation V1 on
-  `codex/job-classification-foundation-v1`.
-- Jobs now carry structured intent in shared types/domain and admin/mobile
-  surfaces can show technician-friendly labels such as Estimate, Recurring
-  Service, Exclusion, WDO / Escrow, Warranty, Follow-up, Callback, and
-  Inspection.
-- The job-classification database change is a proposed migration only:
-  `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`.
-  It has not been applied.
-- Dynamic mobile checklists, estimate-to-work-order conversion, pricing/quote
-  generation, recurring subscription billing, and project phase management are
-  deferred to later approved slices.
+- The active implementation focus is Mobile Work Modes V1 on
+  `codex/mobile-work-modes-v1`.
+- The technician mobile app now uses structured job classification to present
+  work-mode badges and checklist guidance for Estimate, Recurring Service,
+  General Pest, Exclusion / Project, WDO / Escrow, Warranty / Callback,
+  Follow-up, Inspection, and standard Service visits.
+- Mobile Work Modes V1 is presentation/checklist guidance only. It does not
+  enforce quote conversion, pricing, recurring billing, project billing, new
+  form templates, migrations, provider changes, preview mutations, or
+  production mutations.
+- Estimate to Work Order conversion remains future work.

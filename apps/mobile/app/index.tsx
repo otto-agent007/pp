@@ -11,7 +11,10 @@ import {
   buildMobileDailyRouteTimeline,
   hasReadyOfflineQueueItems,
 } from "@pest-patrol/domain";
-import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
+import type {
+  MobileJobWorkPlanItem,
+  MobileWorkModeId,
+} from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
 import {
   fontSize,
@@ -135,6 +138,7 @@ function renderFieldControls(job: Job, workPlan: MobileJobWorkPlanItem[]) {
     <MobileJobFieldFlow
       chemicalLog={<JobChemicalLogForm jobId={job.id} />}
       geofenceControls={<JobGeofenceControls job={job} />}
+      job={job}
       jobStatusControls={<JobStatusControls job={job} />}
       photoUpload={<JobPhotoUploadForm jobId={job.id} />}
       signatureCapture={<JobSignatureCaptureForm jobId={job.id} />}
@@ -180,20 +184,33 @@ export default function MobileHomeScreen() {
     }),
     [jobCopy.status],
   );
-  const classificationLabels = useMemo<Record<string, string>>(
+  const workModeLabels = useMemo<Record<MobileWorkModeId, string>>(
     () => ({
-      Callback: jobCopy.classification.callback,
-      Estimate: jobCopy.classification.estimate,
-      Exclusion: jobCopy.classification.exclusion,
-      "Follow-up": jobCopy.classification.follow_up,
-      "General Pest": jobCopy.classification.general_pest,
-      Inspection: jobCopy.classification.inspection,
-      "Project Work": jobCopy.classification.project_work,
-      "Recurring Service": jobCopy.classification.recurring_service,
-      Warranty: jobCopy.classification.warranty,
-      "WDO / Escrow": jobCopy.classification.wdo_escrow,
+      estimate: jobCopy.workModes.labels.estimate,
+      recurring_service: jobCopy.workModes.labels.recurring_service,
+      general_pest: jobCopy.workModes.labels.general_pest,
+      exclusion_project: jobCopy.workModes.labels.exclusion_project,
+      wdo_escrow: jobCopy.workModes.labels.wdo_escrow,
+      warranty_callback: jobCopy.workModes.labels.warranty_callback,
+      follow_up: jobCopy.workModes.labels.follow_up,
+      inspection: jobCopy.workModes.labels.inspection,
+      standard_service: jobCopy.workModes.labels.standard_service,
     }),
-    [jobCopy.classification],
+    [jobCopy.workModes.labels],
+  );
+  const workModeSummaries = useMemo<Record<MobileWorkModeId, string>>(
+    () => ({
+      estimate: jobCopy.workModes.summaries.estimate,
+      recurring_service: jobCopy.workModes.summaries.recurring_service,
+      general_pest: jobCopy.workModes.summaries.general_pest,
+      exclusion_project: jobCopy.workModes.summaries.exclusion_project,
+      wdo_escrow: jobCopy.workModes.summaries.wdo_escrow,
+      warranty_callback: jobCopy.workModes.summaries.warranty_callback,
+      follow_up: jobCopy.workModes.summaries.follow_up,
+      inspection: jobCopy.workModes.summaries.inspection,
+      standard_service: jobCopy.workModes.summaries.standard_service,
+    }),
+    [jobCopy.workModes.summaries],
   );
 
   useEffect(() => {
@@ -444,12 +461,13 @@ export default function MobileHomeScreen() {
 
         {jobsStatus === "ready" && routeJobCount > 0 ? (
         <MobileRouteTimeline
-          classificationLabels={classificationLabels}
           focusedJobId={focusedRouteJobId}
             onFocusJob={setFocusedRouteJobId}
             renderJobControls={renderFieldControls}
             statusLabels={statusLabels}
             timeline={routeTimeline}
+            workModeLabels={workModeLabels}
+            workModeSummaries={workModeSummaries}
           />
         ) : null}
 
