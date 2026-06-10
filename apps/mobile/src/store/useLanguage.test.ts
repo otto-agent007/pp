@@ -132,4 +132,32 @@ describe("useLanguage persistence", () => {
       "Formulario de tratamiento",
     );
   });
+
+  it("has English and Spanish work-mode copy for every mobile mode", () => {
+    const modeIds = [
+      "estimate",
+      "recurring_service",
+      "general_pest",
+      "exclusion_project",
+      "wdo_escrow",
+      "warranty_callback",
+      "follow_up",
+      "inspection",
+      "standard_service",
+    ] as const;
+
+    for (const modeId of modeIds) {
+      expect(translations.en.jobs.workModes.labels[modeId]).toBeTruthy();
+      expect(translations.en.jobs.workModes.summaries[modeId]).toBeTruthy();
+      expect(translations.es.jobs.workModes.labels[modeId]).toBeTruthy();
+      expect(translations.es.jobs.workModes.summaries[modeId]).toBeTruthy();
+      if (modeId !== "wdo_escrow") {
+        expect(translations.es.jobs.workModes.labels[modeId]).not.toBe(
+          translations.en.jobs.workModes.labels[modeId],
+        );
+      }
+    }
+
+    expect(translations.es.jobs.workModes.labels.wdo_escrow).toBe("WDO / Escrow");
+  });
 });

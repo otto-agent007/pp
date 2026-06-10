@@ -190,4 +190,30 @@ describe("AssignedJobCard", () => {
     expect(text).toContain("Office review is required before release.");
     expect(text.join(" ")).not.toMatch(/billing_disposition|service_offering/i);
   });
+
+  it.each([
+    ["Estimate", "Inspect, capture photos, and document the proposed scope."],
+    ["Recurring Service", "Complete the scheduled route service."],
+    ["Exclusion / Project", "Review scope, capture before/after photos."],
+    ["WDO / Escrow", "Office review is required before final document release."],
+  ])("renders a compact %s work-mode badge", (label, summary) => {
+    const element = (
+      <AssignedJobCard
+        address="10 Pine Street"
+        customerName="Apex Homes"
+        scheduledStart="2026-05-07T08:00:00"
+        statusLabel="Scheduled"
+        workModeBadgeTone="warning"
+        workModeLabel={label}
+        workModeSummary={summary}
+      />
+    );
+    const text = collectText(element);
+
+    expect(text).toContain(label);
+    expect(text).toContain(summary);
+    expect(text.join(" ")).not.toMatch(
+      /job_purpose|billing_disposition|service_family|service_offering_id/i,
+    );
+  });
 });

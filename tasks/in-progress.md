@@ -2,27 +2,27 @@
 
 Active implementation slice:
 
-- Job Classification Foundation V1 is active on branch
-  `codex/job-classification-foundation-v1`, started from latest `origin/main`.
-- Added structured job classification fields across shared types, domain
-  helpers, service billing catalog metadata, API-client mapping, demo fixtures,
-  admin jobs, dispatch, mobile cards, payments warnings, closeouts guidance,
-  and focused tests.
-- Added proposed-only migration
-  `supabase/migrations/20260609170000_job_classification_foundation_v1.sql`
-  for `public.jobs` columns, defaults, check constraints, `parent_job_id`
-  self-reference, indexes, and comments. It has not been applied.
-- Technician-facing copy uses labels like Estimate, Recurring Service,
-  General Pest, Exclusion, WDO / Escrow, Warranty, Follow-up, Callback, and
-  Inspection; internal field names remain out of technician copy.
-- Focused domain, API-client, web jobs/dispatch/payments/closeouts, mobile
-  card/timeline/home, and migration static tests are passing. Full repo gates,
+- Mobile Work Modes V1 is active on branch
+  `codex/mobile-work-modes-v1`, started from latest `origin/main` after Job
+  Classification Foundation V1 merged.
+- Added shared mobile work-mode helpers that derive technician-facing modes
+  from structured job classification fields first, service billing catalog
+  inference second, and Standard Service fallback last.
+- Mobile route cards and the technician field flow now show work-mode badges,
+  summaries, display-only checklist guidance, proof expectations, and
+  English/Spanish copy for Estimate, Recurring Service, General Pest,
+  Exclusion / Project, WDO / Escrow, Warranty / Callback, Follow-up,
+  Inspection, and Standard Service.
+- Existing field controls, arrival notification behavior, chemical/photo/
+  signature queues, treatment form JSONB field ids, and offline queue payload
+  contracts remain unchanged.
+- This slice is mobile presentation/checklist guidance only. Estimate to Work
+  Order conversion, quote/pricing, customer estimate approval, recurring
+  subscription billing, project billing, new form templates, migrations,
+  provider/dashboard changes, seed/reset writes, preview mutation, and
+  production mutation remain out of scope.
+- Focused domain and mobile component tests are passing. Full repo gates,
   commit, push, and draft PR handoff are still in progress.
-- Out of scope unless explicitly approved: migration apply, Supabase/Vercel/
-  Stripe/provider dashboard mutation, env mutation, seed/reset write, preview
-  mutation, production mutation, live compliance ingestion, dynamic mobile
-  checklists, estimate-to-work-order conversion, pricing/quote generation,
-  recurring subscription billing, or project management.
 - Protected Preview Security Closure V1 is merged and captured in
   `tasks/done.md`.
 - OWASP API Security Review V1 is merged via PR #123 and captured in

@@ -1,6 +1,9 @@
 import { useMemo, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import type { MobileJobWorkPlanItem } from "@pest-patrol/domain";
+import type {
+  MobileJobWorkPlanItem,
+  MobileWorkModeBadgeTone,
+} from "@pest-patrol/domain";
 import { StatusPill } from "@pest-patrol/ui-native";
 
 import {
@@ -19,6 +22,9 @@ export interface AssignedJobCardProps {
   scheduledStart: string;
   statusLabel: string;
   statusTone?: "danger" | "info" | "neutral" | "success" | "warning";
+  workModeBadgeTone?: MobileWorkModeBadgeTone;
+  workModeLabel?: string | null;
+  workModeSummary?: string | null;
   workPlan?: MobileJobWorkPlanItem[];
 }
 
@@ -58,9 +64,14 @@ export function AssignedJobCard({
   scheduledStart,
   statusLabel,
   statusTone = "info",
+  workModeBadgeTone = "neutral",
+  workModeLabel,
+  workModeSummary,
   workPlan = [],
 }: AssignedJobCardProps) {
   const copy = useLanguage((state) => state.t.jobs.fieldCopy);
+  const displayModeLabel = workModeLabel ?? classificationLabel;
+  const displayModeSummary = workModeSummary ?? classificationSummary;
   const localizedWorkPlan = useMemo(
     () =>
       workPlan.map((item) => ({
@@ -92,12 +103,25 @@ export function AssignedJobCard({
       </View>
 
       <View style={styles.body}>
-        {classificationLabel ? (
-          <View style={styles.classificationBox}>
-            <Text style={styles.classificationLabel}>{classificationLabel}</Text>
-            {classificationSummary ? (
+        {displayModeLabel ? (
+          <View
+            style={[
+              styles.classificationBox,
+              workModeBadgeTone === "danger"
+                ? styles.workModeDanger
+                : workModeBadgeTone === "info"
+                  ? styles.workModeInfo
+                  : workModeBadgeTone === "success"
+                    ? styles.workModeSuccess
+                    : workModeBadgeTone === "warning"
+                      ? styles.workModeWarning
+                      : styles.workModeNeutral,
+            ]}
+          >
+            <Text style={styles.classificationLabel}>{displayModeLabel}</Text>
+            {displayModeSummary ? (
               <Text style={styles.classificationSummary}>
-                {classificationSummary}
+                {displayModeSummary}
               </Text>
             ) : null}
           </View>
@@ -298,5 +322,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
+  },
+  workModeDanger: {
+    borderColor: mobileRouteShellPalette.signalDanger,
+  },
+  workModeInfo: {
+    borderColor: mobileRouteShellPalette.rail,
+  },
+  workModeNeutral: {
+    borderColor: mobileRouteShellPalette.border,
+  },
+  workModeSuccess: {
+    borderColor: mobileRouteShellPalette.signalSynced,
+  },
+  workModeWarning: {
+    borderColor: mobileRouteShellPalette.signalQueued,
   },
 });

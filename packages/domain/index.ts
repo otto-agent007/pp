@@ -315,6 +315,26 @@ export type {
   JobClassificationGuidance,
 } from "./jobClassification";
 export {
+  getMobileWorkModeById,
+  getMobileWorkModeChecklist,
+  getMobileWorkModeForJob,
+  getMobileWorkModeForOffering,
+  getMobileWorkModeLabel,
+  getMobileWorkModeProofExpectations,
+  getMobileWorkModeSummary,
+  shouldRequireChemicalLogForWorkMode,
+  shouldRequirePhotosForWorkMode,
+  shouldRequireSignatureForWorkMode,
+} from "./mobileWorkModes";
+export type {
+  MobileWorkMode,
+  MobileWorkModeBadgeTone,
+  MobileWorkModeChecklistItem,
+  MobileWorkModeId,
+  MobileWorkModeRelatedStep,
+  MobileWorkModeRequirement,
+} from "./mobileWorkModes";
+export {
   assignJobTechnician,
   buildDispatchStaticMapState,
   buildDispatchRouteExceptionSummary,

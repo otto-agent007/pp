@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
-  getJobClassificationLabel,
-  getJobClassificationTechSummary,
-  normalizeJobClassification,
+  getMobileWorkModeForJob,
 } from "@pest-patrol/domain";
-import type { MobileDailyRouteTimeline, MobileRouteTimelineJob } from "@pest-patrol/domain";
+import type {
+  MobileDailyRouteTimeline,
+  MobileRouteTimelineJob,
+  MobileWorkModeId,
+} from "@pest-patrol/domain";
 import type { Job, JobStatus } from "@pest-patrol/types";
 import type { StatusPillTone } from "@pest-patrol/ui-native";
 
@@ -24,12 +26,13 @@ const statusTones: Record<JobStatus, StatusPillTone> = {
 };
 
 interface MobileRouteTimelineProps {
-  classificationLabels: Record<string, string>;
   focusedJobId?: string | null;
   onFocusJob?: (jobId: string) => void;
   renderJobControls: (job: Job, workPlan: MobileRouteTimelineJob["workPlan"]) => ReactNode;
   statusLabels: Record<JobStatus, string>;
   timeline: MobileDailyRouteTimeline;
+  workModeLabels: Record<MobileWorkModeId, string>;
+  workModeSummaries: Record<MobileWorkModeId, string>;
 }
 
 function formatRouteTime(value: string) {
@@ -41,22 +44,21 @@ function formatRouteTime(value: string) {
 
 function RouteSection({
   item,
-  classificationLabels,
   renderJobControls,
   statusLabels,
+  workModeLabels,
+  workModeSummaries,
 }: {
-  classificationLabels: Record<string, string>;
   item: MobileRouteTimelineJob;
   renderJobControls: (
     job: Job,
     workPlan: MobileRouteTimelineJob["workPlan"],
   ) => ReactNode;
   statusLabels: Record<JobStatus, string>;
+  workModeLabels: Record<MobileWorkModeId, string>;
+  workModeSummaries: Record<MobileWorkModeId, string>;
 }) {
-  const classification = normalizeJobClassification(item.job);
-  const classificationLabel = getJobClassificationLabel(classification);
-  const localizedClassificationLabel =
-    classificationLabels[classificationLabel] ?? classificationLabel;
+  const workMode = getMobileWorkModeForJob(item.job);
 
   return (
     <View style={styles.routeSection}>
@@ -70,13 +72,14 @@ function RouteSection({
       </View>
       <AssignedJobCard
         address={item.job.location?.address}
-        classificationLabel={localizedClassificationLabel}
-        classificationSummary={getJobClassificationTechSummary(classification)}
         customerName={item.job.customer?.name}
         notes={item.job.service_notes}
         scheduledStart={item.job.scheduled_start}
         statusLabel={statusLabels[item.job.status]}
         statusTone={statusTones[item.job.status]}
+        workModeBadgeTone={workMode.badgeTone}
+        workModeLabel={workModeLabels[workMode.id] ?? workMode.label}
+        workModeSummary={workModeSummaries[workMode.id] ?? workMode.summary}
         workPlan={item.workPlan}
       >
         {renderJobControls(item.job, item.workPlan)}
@@ -121,12 +124,13 @@ function LaterRouteRow({
 }
 
 export function MobileRouteTimeline({
-  classificationLabels,
   focusedJobId,
   onFocusJob,
   renderJobControls,
   statusLabels,
   timeline,
+  workModeLabels,
+  workModeSummaries,
 }: MobileRouteTimelineProps) {
   return (
     <View style={styles.container}>
@@ -138,19 +142,21 @@ export function MobileRouteTimeline({
 
       {timeline.current ? (
         <RouteSection
-          classificationLabels={classificationLabels}
           item={timeline.current}
           renderJobControls={renderJobControls}
           statusLabels={statusLabels}
+          workModeLabels={workModeLabels}
+          workModeSummaries={workModeSummaries}
         />
       ) : null}
 
       {timeline.next ? (
         <RouteSection
-          classificationLabels={classificationLabels}
           item={timeline.next}
           renderJobControls={renderJobControls}
           statusLabels={statusLabels}
+          workModeLabels={workModeLabels}
+          workModeSummaries={workModeSummaries}
         />
       ) : null}
 
@@ -160,11 +166,12 @@ export function MobileRouteTimeline({
           {timeline.later.map((item) => (
             item.job.id === focusedJobId ? (
               <RouteSection
-                classificationLabels={classificationLabels}
                 item={item}
                 key={item.job.id}
                 renderJobControls={renderJobControls}
                 statusLabels={statusLabels}
+                workModeLabels={workModeLabels}
+                workModeSummaries={workModeSummaries}
               />
             ) : (
               <LaterRouteRow

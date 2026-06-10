@@ -1,5 +1,6 @@
 import React from "react";
 import type { ReactNode } from "react";
+import type { Job } from "@pest-patrol/types";
 import { describe, expect, it, vi } from "vitest";
 
 import { mobileRouteShellTone } from "../styles/routeShellStyles";
@@ -218,6 +219,96 @@ describe("MobileJobFieldFlow", () => {
     );
     expect(styles).toContainEqual(
       expect.objectContaining(mobileRouteShellTone.visit.missing),
+    );
+  });
+
+  it.each([
+    [
+      "Estimate",
+      {
+        billing_disposition: "estimate_only",
+        job_purpose: "estimate",
+      },
+      [
+        "Estimate",
+        "Treatment is not required unless directed.",
+        "Estimate scope",
+        "Chemical log is only needed if product was used.",
+        "Recommended",
+      ],
+    ],
+    [
+      "Recurring Service",
+      {
+        service_cadence: "monthly",
+        service_family: "recurring_general_pest",
+      },
+      ["Recurring Service", "Access/issues notes", "Chemical log if used"],
+    ],
+    [
+      "Exclusion / Project",
+      {
+        service_offering_id: "rodent_exclusion",
+      },
+      ["Exclusion / Project", "Before photos", "After photos", "Photo proof expected"],
+    ],
+    [
+      "WDO / Escrow",
+      {
+        service_family: "termite_wdo",
+        service_offering_id: "wdo_escrow_inspection",
+      },
+      [
+        "WDO / Escrow",
+        "Office review required before final document release.",
+        "Required photos",
+      ],
+    ],
+  ])("renders %s work-mode checklist copy", (_label, jobOverrides, expectedCopy) => {
+    const element = (
+      <MobileJobFieldFlow
+        chemicalLog="Chemical log control"
+        geofenceControls="Geofence control"
+        job={{
+          assigned_tech_id: null,
+          created_at: "2026-06-09T12:00:00Z",
+          customer_id: "customer-1",
+          id: "job-1",
+          location_id: "location-1",
+          scheduled_end: null,
+          scheduled_start: "2026-06-09T12:00:00Z",
+          service_notes: null,
+          status: "scheduled",
+          updated_at: "2026-06-09T12:00:00Z",
+          ...jobOverrides,
+        } as Job}
+        jobStatusControls="Status control"
+        photoUpload="Photo control"
+        signatureCapture="Signature control"
+        treatmentForm="Treatment form control"
+        workPlan={[
+          {
+            id: "status",
+            label: "Start or complete job",
+            state: "missing",
+            summary: "Job is scheduled.",
+          },
+        ]}
+      />
+    );
+    const renderedText = collectText(element).join(" ");
+
+    for (const expected of expectedCopy) {
+      expect(renderedText).toContain(expected);
+    }
+    expect(renderedText).toContain("Status control");
+    expect(renderedText).toContain("Geofence control");
+    expect(renderedText).toContain("Treatment form control");
+    expect(renderedText).toContain("Chemical log control");
+    expect(renderedText).toContain("Photo control");
+    expect(renderedText).toContain("Signature control");
+    expect(renderedText).not.toMatch(
+      /job_purpose|billing_disposition|service_family|service_offering_id/i,
     );
   });
 });

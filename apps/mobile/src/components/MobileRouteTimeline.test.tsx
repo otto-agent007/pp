@@ -307,24 +307,34 @@ const timeline = {
   },
 } satisfies MobileDailyRouteTimeline;
 
-const classificationLabels = {
-  Callback: "Callback",
-  Estimate: "Estimate",
-  Exclusion: "Exclusion",
-  "Follow-up": "Follow-up",
-  "General Pest": "General Pest",
-  Inspection: "Inspection",
-  "Project Work": "Project Work",
-  "Recurring Service": "Recurring Service",
-  Warranty: "Warranty",
-  "WDO / Escrow": "WDO / Escrow",
+const workModeLabels = {
+  estimate: "Estimate",
+  recurring_service: "Recurring Service",
+  general_pest: "General Pest",
+  exclusion_project: "Exclusion / Project",
+  wdo_escrow: "WDO / Escrow",
+  warranty_callback: "Warranty / Callback",
+  follow_up: "Follow-up",
+  inspection: "Inspection",
+  standard_service: "Service",
+};
+
+const workModeSummaries = {
+  estimate: "Estimate summary",
+  recurring_service: "Recurring summary",
+  general_pest: "General pest summary",
+  exclusion_project: "Project summary",
+  wdo_escrow: "WDO summary",
+  warranty_callback: "Callback summary",
+  follow_up: "Follow-up summary",
+  inspection: "Inspection summary",
+  standard_service: "Service summary",
 };
 
 describe("MobileRouteTimeline", () => {
   it("renders current, next, and compact later route sections", () => {
     const element = (
       <MobileRouteTimeline
-        classificationLabels={classificationLabels}
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
           canceled: "Canceled",
@@ -334,6 +344,8 @@ describe("MobileRouteTimeline", () => {
           scheduled: "Scheduled",
         }}
         timeline={timeline}
+        workModeLabels={workModeLabels}
+        workModeSummaries={workModeSummaries}
       />
     );
 
@@ -363,7 +375,6 @@ describe("MobileRouteTimeline", () => {
   it("renders the operational rail summary with shared route-shell tokens", () => {
     const element = (
       <MobileRouteTimeline
-        classificationLabels={classificationLabels}
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
           canceled: "Canceled",
@@ -373,6 +384,8 @@ describe("MobileRouteTimeline", () => {
           scheduled: "Scheduled",
         }}
         timeline={timeline}
+        workModeLabels={workModeLabels}
+        workModeSummaries={workModeSummaries}
       />
     );
     const viewStyles = collectElementsByType(element, "View").flatMap((item) =>
@@ -397,7 +410,6 @@ describe("MobileRouteTimeline", () => {
   it("renders full controls for a focused later route stop", () => {
     const element = (
       <MobileRouteTimeline
-        classificationLabels={classificationLabels}
         focusedJobId="job-later"
         onFocusJob={() => undefined}
         renderJobControls={(job) => `Controls for ${job.id}`}
@@ -409,6 +421,8 @@ describe("MobileRouteTimeline", () => {
           scheduled: "Scheduled",
         }}
         timeline={timeline}
+        workModeLabels={workModeLabels}
+        workModeSummaries={workModeSummaries}
       />
     );
 
@@ -421,7 +435,6 @@ describe("MobileRouteTimeline", () => {
   it("keeps later stops compact when focus points elsewhere", () => {
     const element = (
       <MobileRouteTimeline
-        classificationLabels={classificationLabels}
         focusedJobId="job-missing"
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
@@ -432,6 +445,8 @@ describe("MobileRouteTimeline", () => {
           scheduled: "Scheduled",
         }}
         timeline={timeline}
+        workModeLabels={workModeLabels}
+        workModeSummaries={workModeSummaries}
       />
     );
 
@@ -442,7 +457,6 @@ describe("MobileRouteTimeline", () => {
     const onFocusJob = vi.fn();
     const element = (
       <MobileRouteTimeline
-        classificationLabels={classificationLabels}
         onFocusJob={onFocusJob}
         renderJobControls={(job) => `Controls for ${job.id}`}
         statusLabels={{
@@ -453,6 +467,8 @@ describe("MobileRouteTimeline", () => {
           scheduled: "Scheduled",
         }}
         timeline={timeline}
+        workModeLabels={workModeLabels}
+        workModeSummaries={workModeSummaries}
       />
     );
     const pressables = collectElementsByType(element, "Pressable");

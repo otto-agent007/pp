@@ -1,5 +1,28 @@
 # Done
 
+## Mobile Work Modes V1
+
+- Added shared domain helpers that derive mobile technician work modes from
+  structured job classification first, service billing catalog inference
+  second, and Standard Service fallback last.
+- Added mobile work-mode coverage for Estimate, Recurring Service, General
+  Pest, Exclusion / Project, WDO / Escrow, Warranty / Callback, Follow-up,
+  Inspection, and Standard Service.
+- Mobile route cards now show compact technician-friendly work-mode badges and
+  summaries without exposing internal classification field names.
+- Mobile field flow now shows work-mode titles, summaries, display-only
+  checklist states, proof expectations, chemical-if-used guidance, and WDO
+  office-review guidance while preserving existing status, geofence, arrival,
+  treatment, chemical, photo, signature, and sync controls.
+- Added English and Spanish work-mode copy and tests for domain mapping,
+  mobile rendering, i18n coverage, fallback behavior, chemical defaults, photo
+  expectations, and internal-field redaction.
+- This is mobile presentation/checklist guidance only. It does not add
+  migrations, form templates, offline queue actions, Estimate to Work Order
+  conversion, quote/pricing, recurring subscription billing, project billing,
+  provider/dashboard changes, seed/reset writes, preview mutation, or
+  production mutation.
+
 ## Job Classification Foundation V1
 
 - Added structured job classification contracts for jobs: purpose, service
