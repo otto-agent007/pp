@@ -4,12 +4,13 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 
 import { buttonClassName } from "@pest-patrol/ui";
+import { useActiveBrandSkin } from "./brand";
 
 export function PortalShareCard({
   copyButtonRef,
   copied,
   copyButtonLabel = "Copy link",
-  description = "Share this customer portal link by text or invoice QR code.",
+  description,
   onCopy,
   portalUrl,
   title = "Customer portal link",
@@ -22,8 +23,12 @@ export function PortalShareCard({
   portalUrl: string;
   title?: string;
 }) {
+  const brandSkin = useActiveBrandSkin();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
+  const cardDescription =
+    description ??
+    `Share this ${brandSkin.portalCompanyName} customer portal link by text or invoice QR code.`;
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +78,7 @@ export function PortalShareCard({
             {title}
           </p>
           <p className="mt-1 text-xs text-theme-text-secondary">
-            {description}
+            {cardDescription}
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">

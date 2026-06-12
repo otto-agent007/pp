@@ -25,6 +25,7 @@ import {
   status as statusTokens,
 } from "@pest-patrol/ui-tokens";
 
+import { getMobileBrandSkin } from "../src/brand";
 import { JobChemicalLogForm } from "../src/components/JobChemicalLogForm";
 import { JobGeofenceControls } from "../src/components/JobGeofenceControls";
 import { MobileJobFieldFlow } from "../src/components/MobileJobFieldFlow";
@@ -149,6 +150,7 @@ function renderFieldControls(job: Job, workPlan: MobileJobWorkPlanItem[]) {
 }
 
 export default function MobileHomeScreen() {
+  const brandSkin = getMobileBrandSkin();
   const { error, initialize, profile, signIn, signOut, status } = useAuth();
   const {
     error: jobsError,
@@ -269,7 +271,9 @@ export default function MobileHomeScreen() {
   if (status === "signed_out") {
     return (
       <View style={mobileAuthShellStyles.screen}>
-        <Text style={mobileAuthShellStyles.title}>Pest Patrol OS</Text>
+        <Text style={mobileAuthShellStyles.title}>
+          {brandSkin.mobileHeaderTitle}
+        </Text>
         <Text style={mobileAuthShellStyles.subtitle}>Technician login</Text>
 
         <View style={mobileAuthShellStyles.form}>

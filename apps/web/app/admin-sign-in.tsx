@@ -13,7 +13,7 @@ import {
 } from "@pest-patrol/ui";
 import { usePrepareLocalDemoLogin } from "../hooks/useDemoSeed";
 import { useAdminAuth } from "./admin-auth-context";
-import { Wordmark } from "./brand";
+import { BrandWordmark, useActiveBrandSkin } from "./brand";
 
 const showLocalDemoShortcut = process.env.NODE_ENV !== "production";
 
@@ -25,6 +25,7 @@ function errorMessage(error: unknown) {
 
 export function AdminSignIn() {
   const { error, signIn, signInLocalDemo, status } = useAdminAuth();
+  const brandSkin = useActiveBrandSkin();
   const prepareDemoLogin = usePrepareLocalDemoLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -74,12 +75,12 @@ export function AdminSignIn() {
     <main className="min-h-screen bg-theme-background-canvas px-6 py-16 text-theme-text-primary">
       <section className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
         <div className="space-y-5">
-          <Wordmark label="Pest Patrol OS" width={220} />
+          <BrandWordmark label={brandSkin.logoAlt} width={220} />
           <p className="text-sm font-bold uppercase text-primitive-sky-600">
             Field-ready operations
           </p>
           <h1 className="text-4xl font-bold text-theme-text-primary">
-            Admin operations sign-in
+            {brandSkin.adminSignInTitle} sign-in
           </h1>
           <p className="max-w-2xl text-base leading-7 text-theme-text-secondary">
             Run the day from one field-ready workspace: dispatch routes,

@@ -1,5 +1,34 @@
 # Done
 
+## Sidebar Brand Skin V1
+
+- Added a shared brand-skin configuration in `@pest-patrol/ui-tokens` with Pest
+  Patrol as the default `pest_patrol` profile and a synthetic `demo_pest`
+  Coastal Shield Pest profile for resale/white-label demos.
+- Added safe active-brand helpers for web and mobile, including reviewed
+  sidebar/action CSS variables, env-based brand selection with fallback to Pest
+  Patrol, and brand config tests for fallback behavior, required fields, color
+  values, generated variables, and secret-shaped fields.
+- Updated the admin sidebar, admin sign-in, customer portal trust/upgrade copy,
+  portal share card copy, and mobile technician/signed-out header labels to use
+  the active brand while keeping Pest Patrol as the default.
+- Kept Pest Patrol on the existing checked-in static wordmark/logomark assets;
+  the demo brand uses safe React text/initials fallback rendering with no
+  arbitrary SVG ingestion, uploaded logo UI, remote logo fetch, or runtime SVG
+  injection.
+- Documented the V1 scope, env selection, safe new-brand procedure, logo safety
+  rules, exclusions, production checklist, and the design-system rule that
+  brand skin colors only enter through the reviewed token/config layer.
+- No migration, Supabase/Vercel/Stripe/provider dashboard change, env mutation,
+  seed/reset write, preview mutation, production mutation, tenant data model,
+  tenant onboarding UI, brand editor, or full Tailwind token rewrite was added.
+- Verified with focused ui-token, web sidebar/sign-in/portal/share-card,
+  mobile header, and no-hardcoded-hex tests, plus full `corepack pnpm test`,
+  `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and
+  `git diff --check`. Local `corepack pnpm demo:fixture-smoke` was attempted;
+  one run hit the default timeout and a rerun did not complete before the
+  longer command timeout in this shell.
+
 ## Estimate to Work Order Conversion V1
 
 - Added shared estimate conversion contracts and domain helpers for readiness,

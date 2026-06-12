@@ -12,6 +12,7 @@ Before this package, the web app held five brand colors in `tailwind.config.ts` 
 | --------------- | ----------------------------------------------------- | --------------------------------------------------------------------- |
 | `colors.ts`     | `primitive`, `palette`, `brand`, `colors`              | Pest Patrol primitives; `palette` aliases `primitive`                 |
 | `themes.ts`     | `lightTheme`, `darkTheme`, `customerTheme`, `semantic`, `figmaColorVariables` | Role-named background, border, text, action, status, and Figma variable paths |
+| `brand-skins.ts` | `BRAND_SKINS`, `getActiveBrandSkin`, `getBrandSkinCssVariables` | Public sidebar and identity skin config for approved demo branding |
 | `status.ts`     | `status`                                              | Visual status colors only; no workflow or label behavior              |
 | `motion.ts`     | `duration`, `easing`, `motion`                        | Numeric durations and CSS easing curves                               |
 | `spacing.ts`    | `spacing`                                             | 4px-base scale matching Tailwind defaults; values are numbers (RN-friendly) |
@@ -92,6 +93,7 @@ not one-off hex values in route components.
 
 - **Use theme tokens over `primitive`.** `lightTheme.text.secondary` survives a palette change; `primitive.slate[700]` does not.
 - **Use `brand` for product accents only** - primary CTAs, links, the logo. Body text and chrome should use theme tokens.
+- **Use `brand-skins` only for reviewed sidebar/identity skins.** App code should consume the exported helpers or generated CSS variables, not copy brand color values into components.
 - **Never hardcode a hex in app code.** If a value isn't in this package, either add it here or pick the closest token.
 - **Use `status` for visual state only.** Status tokens may style badges, sync panels, and visit steps; they must not define workflow order or business rules.
 - **Numbers, not strings, for spacing/radius/fontSize.** This keeps the same token usable in Tailwind classes (where it becomes `4`, `8`, etc.) and React Native styles (which require numbers).

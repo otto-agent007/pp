@@ -147,6 +147,11 @@ palette utilities such as `bg-blue-500`, `text-gray-600`, or `border-amber-200`.
 If a needed color is missing, add or extend a semantic token in
 `packages/ui-tokens` first, then consume that token from web or mobile.
 
+Brand skins are the only approved V1 exception for company-specific sidebar and
+identity colors. Add those values in the reviewed `packages/ui-tokens`
+brand-skin config and consume them through exported helpers or CSS variables;
+do not add one-off brand hex values inside app components.
+
 The root lint command runs `tooling/no-hardcoded-hex.ts` before package linting.
 That guard scans app code for one-off hex values and generic palette utilities;
 keep new token consumption inside the established token paths so the guard stays
