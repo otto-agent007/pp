@@ -4,7 +4,11 @@ import type * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { buttonClassName } from "@pest-patrol/ui";
-import { Wordmark } from "./brand";
+import {
+  BrandWordmark,
+  getActiveBrandSkinCssProperties,
+  useActiveBrandSkin,
+} from "./brand";
 import { useAdminAuth } from "./admin-auth-context";
 
 // Minimal inline SVG icons for the collapsed nav rail.
@@ -127,8 +131,8 @@ function adminLinkClassName(active: boolean) {
   return [
     "group inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold transition md:w-full md:px-2.5",
     active
-      ? "bg-theme-action-primary text-theme-text-inverse shadow-sm"
-      : "text-primitive-sky-100 hover:bg-primitive-navy-800 hover:text-theme-text-inverse",
+      ? "bg-[var(--pp-sidebar-active-bg)] text-[var(--pp-sidebar-active-text)] shadow-sm"
+      : "text-[var(--pp-sidebar-muted)] hover:bg-[var(--pp-sidebar-active-bg)] hover:text-[var(--pp-sidebar-active-text)]",
   ].join(" ");
 }
 
@@ -136,33 +140,38 @@ const railRevealClassName =
   "md:max-w-0 md:overflow-hidden md:opacity-0 md:transition-all md:duration-200 md:group-hover/admin-nav:max-w-44 md:group-hover/admin-nav:opacity-100 md:group-focus-within/admin-nav:max-w-44 md:group-focus-within/admin-nav:opacity-100";
 
 function MobileBrandRow({ role }: { role: string | null | undefined }) {
+  const brandSkin = useActiveBrandSkin();
+
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 border-b border-theme-text-inverse/10 px-3 py-2 md:block md:border-0 md:px-0 md:py-0">
+    <div className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--pp-sidebar-border)] px-3 py-2 md:block md:border-0 md:px-0 md:py-0">
       <Link
-        aria-label="Pest Patrol OS — Home"
-        className="inline-flex min-w-0 items-center rounded-md bg-primitive-navy-900 px-2 py-1 md:h-10 md:w-full md:px-1"
+        aria-label={`${brandSkin.productName} - Home`}
+        className="inline-flex min-w-0 items-center rounded-md bg-[var(--pp-sidebar-bg)] px-2 py-1 md:h-10 md:w-full md:px-1"
         href="/"
       >
         <span
           className={`hidden shrink-0 md:block ${railRevealClassName}`}
           data-testid="admin-nav-desktop-wordmark"
         >
-          <Wordmark label="decorative" variant="dark" width={156} />
+          <BrandWordmark label="decorative" variant="dark" width={156} />
         </span>
         <span className="shrink-0 md:hidden" data-testid="admin-nav-mobile-wordmark">
-          <Wordmark label="decorative" variant="dark" width={200} />
+          <BrandWordmark label="decorative" variant="dark" width={200} />
         </span>
       </Link>
       <div
         className={`hidden min-w-0 flex-col md:mt-3 md:flex ${railRevealClassName}`}
       >
-        <span className="text-xs font-bold uppercase text-primitive-sky-100">
+        <span className="text-xs font-bold uppercase text-[var(--pp-sidebar-muted)]">
           Admin console
+        </span>
+        <span className="truncate text-sm font-extrabold text-[var(--pp-sidebar-text)]">
+          {brandSkin.productName}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-2 md:hidden">
         {role ? (
-          <span className="rounded-md bg-primitive-navy-800 px-2 py-1 text-xs font-bold uppercase text-primitive-sky-100">
+          <span className="rounded-md bg-[var(--pp-sidebar-active-bg)] px-2 py-1 text-xs font-bold uppercase text-[var(--pp-sidebar-active-text)]">
             {role}
           </span>
         ) : null}
@@ -174,13 +183,17 @@ function MobileBrandRow({ role }: { role: string | null | undefined }) {
 export function AdminNav() {
   const pathname = usePathname();
   const { profile, signOut, status } = useAdminAuth();
+  const brandSkin = useActiveBrandSkin();
 
   if (isPublicRoute(pathname) || status !== "signed_in") {
     return null;
   }
 
   return (
-    <nav className="group/admin-nav sticky top-0 z-30 flex flex-col border-b border-primitive-navy-800 bg-primitive-navy-900 text-theme-text-inverse shadow-sm md:fixed md:inset-y-0 md:left-0 md:z-40 md:h-screen md:w-52 md:-translate-x-[calc(100%-1rem)] md:overflow-hidden md:border-b-0 md:border-r md:px-3 md:py-4 md:transition-transform md:duration-200 md:ease-out md:hover:translate-x-0 md:focus-within:translate-x-0 motion-reduce:transition-none">
+    <nav
+      className="group/admin-nav sticky top-0 z-30 flex flex-col border-b border-[var(--pp-sidebar-border)] bg-[var(--pp-sidebar-bg)] text-[var(--pp-sidebar-text)] shadow-sm md:fixed md:inset-y-0 md:left-0 md:z-40 md:h-screen md:w-52 md:-translate-x-[calc(100%-1rem)] md:overflow-hidden md:border-b-0 md:border-r md:px-3 md:py-4 md:transition-transform md:duration-200 md:ease-out md:hover:translate-x-0 md:focus-within:translate-x-0 motion-reduce:transition-none"
+      style={getActiveBrandSkinCssProperties(brandSkin)}
+    >
       <div
         className="flex min-h-0 flex-1 flex-col md:opacity-0 md:transition-opacity md:duration-150 md:group-hover/admin-nav:opacity-100 md:group-focus-within/admin-nav:opacity-100 motion-reduce:transition-none"
         data-testid="admin-nav-content"
@@ -196,7 +209,7 @@ export function AdminNav() {
               key={group.label}
             >
               <p
-                className={`hidden px-2 text-[10px] font-bold uppercase text-primitive-sky-100 md:mb-1 md:block ${railRevealClassName}`}
+                className={`hidden px-2 text-[10px] font-bold uppercase text-[var(--pp-sidebar-muted)] md:mb-1 md:block ${railRevealClassName}`}
               >
                 {group.label}
               </p>
@@ -216,8 +229,8 @@ export function AdminNav() {
                       <span
                         className={`shrink-0 ${
                           active
-                            ? "text-theme-text-inverse"
-                            : "text-primitive-sky-100/70"
+                            ? "text-[var(--pp-sidebar-active-text)]"
+                            : "text-[var(--pp-sidebar-muted)] opacity-80"
                         }`}
                       >
                         <NavIcon name={route.label} />
@@ -232,13 +245,13 @@ export function AdminNav() {
             </div>
           ))}
         </div>
-        <div className="border-t border-theme-text-inverse/10 px-3 py-2 md:px-0 md:pt-4">
+        <div className="border-t border-[var(--pp-sidebar-border)] px-3 py-2 md:px-0 md:pt-4">
           <div className={railRevealClassName}>
             <p className="truncate text-sm font-bold">
               {profile?.display_name ?? profile?.email ?? "Admin operator"}
             </p>
             {profile ? (
-              <p className="mt-1 text-xs font-bold uppercase text-primitive-sky-100">
+              <p className="mt-1 text-xs font-bold uppercase text-[var(--pp-sidebar-muted)]">
                 {profile.role}
               </p>
             ) : null}
@@ -246,7 +259,7 @@ export function AdminNav() {
           <button
             className={buttonClassName({
               className:
-                `mt-3 justify-start border-transparent px-2 text-primitive-sky-100 hover:bg-primitive-navy-800 hover:text-theme-text-inverse ${railRevealClassName}`,
+                `mt-3 justify-start border-transparent px-2 text-[var(--pp-sidebar-muted)] hover:bg-[var(--pp-sidebar-active-bg)] hover:text-[var(--pp-sidebar-active-text)] ${railRevealClassName}`,
               fullWidth: true,
               size: "sm",
               variant: "inverse",
@@ -261,7 +274,7 @@ export function AdminNav() {
       {/* Collapsed-rail edge — shows a subtle chevron so users know the rail expands */}
       <span
         aria-hidden="true"
-        className="absolute inset-y-0 right-0 hidden w-4 items-center justify-center border-r border-primitive-sky-100/20 bg-primitive-navy-800/70 md:flex md:transition-opacity md:duration-150 md:group-hover/admin-nav:opacity-0 md:group-focus-within/admin-nav:opacity-0 motion-reduce:transition-none"
+        className="absolute inset-y-0 right-0 hidden w-4 items-center justify-center border-r border-[var(--pp-sidebar-border)] bg-[var(--pp-sidebar-active-bg)] text-[var(--pp-sidebar-active-text)] opacity-80 md:flex md:transition-opacity md:duration-150 md:group-hover/admin-nav:opacity-0 md:group-focus-within/admin-nav:opacity-0 motion-reduce:transition-none"
         data-testid="admin-nav-reveal-edge"
       >
         <svg fill="none" height={10} stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" width={10}>

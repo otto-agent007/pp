@@ -55,7 +55,7 @@ describe("AdminAuthGate", () => {
       </AdminAuthGate>,
     );
 
-    expect(screen.getByRole("heading", { name: "Admin operations sign-in" }))
+    expect(screen.getByRole("heading", { name: "Pest Patrol OS sign-in" }))
       .toBeInTheDocument();
     expect(screen.queryByText("Protected admin content")).not.toBeInTheDocument();
   });
@@ -81,7 +81,7 @@ describe("AdminAuthGate", () => {
       </AdminAuthGate>,
     );
 
-    expect(screen.getByText("Admin operations sign-in")).toBeInTheDocument();
+    expect(screen.getByText("Pest Patrol OS sign-in")).toBeInTheDocument();
     expect(screen.queryByText("Protected portal admin content"))
       .not.toBeInTheDocument();
   });
@@ -128,7 +128,7 @@ describe("AdminAuthGate", () => {
       </AdminAuthGate>,
     );
 
-    expect(screen.getByText("Admin operations sign-in")).toBeInTheDocument();
+    expect(screen.getByText("Pest Patrol OS sign-in")).toBeInTheDocument();
     expect(screen.queryByText("Protected technician admin content"))
       .not.toBeInTheDocument();
   });
@@ -142,7 +142,7 @@ describe("AdminAuthGate", () => {
       </AdminAuthGate>,
     );
 
-    expect(screen.getByText("Admin operations sign-in")).toBeInTheDocument();
+    expect(screen.getByText("Pest Patrol OS sign-in")).toBeInTheDocument();
     expect(screen.queryByText("Protected content")).not.toBeInTheDocument();
   });
 

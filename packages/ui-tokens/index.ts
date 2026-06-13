@@ -9,6 +9,21 @@ export {
   type LegacyColorToken,
 } from "./colors";
 export {
+  BRAND_SKINS,
+  DEFAULT_BRAND_KEY,
+  getActiveBrandSkin,
+  getBrandSkin,
+  getBrandSkinCssVariables,
+  isBrandColorValue,
+  isBrandKey,
+  type BrandKey,
+  type BrandSkin,
+  type BrandSkinColors,
+  type BrandSkinCssVariables,
+  type BrandSkinCssVariableName,
+  type SidebarLogoKind,
+} from "./brand-skins";
+export {
   lightTheme,
   darkTheme,
   customerTheme,

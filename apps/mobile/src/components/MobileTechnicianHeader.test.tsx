@@ -1,6 +1,6 @@
 import React from "react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mobileRouteShellPalette } from "../styles/routeShellStyles";
 import { MobileTechnicianHeader } from "./MobileTechnicianHeader";
@@ -142,6 +142,39 @@ function flattenStyles(style: unknown): Record<string, unknown>[] {
 }
 
 describe("MobileTechnicianHeader", () => {
+  beforeEach(() => {
+    delete process.env.EXPO_PUBLIC_BRAND_KEY;
+    language.lang = "en";
+    language.toggleLanguage.mockReset();
+  });
+
+  it("renders the Pest Patrol mobile header title by default", () => {
+    const element = (
+      <MobileTechnicianHeader
+        assignedJobCount={1}
+        onSignOut={() => undefined}
+        profileId="technician-1"
+      />
+    );
+
+    expect(collectText(element)).toContain("Pest Patrol OS");
+  });
+
+  it("renders the demo brand mobile header title", () => {
+    process.env.EXPO_PUBLIC_BRAND_KEY = "demo_pest";
+
+    const element = (
+      <MobileTechnicianHeader
+        assignedJobCount={1}
+        onSignOut={() => undefined}
+        profileId="technician-1"
+      />
+    );
+
+    expect(collectText(element)).toContain("Coastal Shield OS");
+    expect(collectText(element)).not.toContain("Pest Patrol OS");
+  });
+
   it("shows the Spanish language option while English is active", () => {
     language.lang = "en";
 
@@ -171,9 +204,6 @@ describe("MobileTechnicianHeader", () => {
   });
 
   it("keeps the header language button wired to the language toggle", () => {
-    language.lang = "en";
-    language.toggleLanguage.mockReset();
-
     const element = (
       <MobileTechnicianHeader
         assignedJobCount={1}

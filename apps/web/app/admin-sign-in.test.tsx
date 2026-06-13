@@ -29,6 +29,7 @@ vi.mock("../hooks/useDemoSeed", () => ({
 
 describe("AdminSignIn", () => {
   beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_BRAND_KEY;
     authError = null;
     authStatus = "signed_out";
     prepareLocalDemoLogin.mockReset();
@@ -58,6 +59,9 @@ describe("AdminSignIn", () => {
       screen.getByRole("img", { name: "Pest Patrol OS" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", { name: "Pest Patrol OS sign-in" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText(/Run the day from one field-ready workspace/i),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toHaveClass(
@@ -65,6 +69,22 @@ describe("AdminSignIn", () => {
     );
     expect(screen.getByRole("button", { name: "Sign in" })).toHaveClass(
       "bg-theme-action-primary",
+    );
+  });
+
+  it("renders the active demo brand identity", () => {
+    process.env.NEXT_PUBLIC_BRAND_KEY = "demo_pest";
+
+    render(<AdminSignIn />);
+
+    expect(
+      screen.getByRole("img", { name: "Coastal Shield OS" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Coastal Shield OS sign-in" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("brand-wordmark-text-fallback")).toHaveTextContent(
+      "Coastal Shield",
     );
   });
 

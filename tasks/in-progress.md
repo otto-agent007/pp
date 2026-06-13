@@ -2,32 +2,25 @@
 
 Active implementation slice:
 
-- Estimate to Work Order Conversion V1 is active on branch
-  `codex/estimate-to-work-order-conversion-v1`, started from latest
-  `origin/main` after Job Classification Foundation V1, Mobile Work Modes V1,
-  and Closeout & Billing Rules V1 merged.
-- Added shared conversion helpers in `packages/domain` to evaluate estimate
-  readiness, block canceled/declined/non-estimate jobs, reuse existing linked
-  work orders, build classified work-order input, and keep operator copy free of
-  internal field names.
-- Added an idempotent API-client conversion workflow that loads the source
-  estimate, checks active linked work orders by `parent_job_id`, creates a new
-  scheduled work order only when absent, and best-effort marks the estimate
-  accepted.
-- `/closeouts` now surfaces the office-side estimate conversion card with
-  required scheduled start, optional scheduled end, optional technician,
-  work-type override, billing handling override, editable notes, declined-state
-  copy, and existing-work-order handoff.
-- `parent_job_id` and classification fields already exist from Job
-  Classification Foundation V1, so no new migration is needed and no migration
-  apply has been performed.
-- Conversion does not create invoices, Stripe payment links, payments,
-  customer notifications, customer estimate acceptance flows, quote/pricing
-  engines, recurring billing, deposit/progress billing, or project billing
-  automation.
-- Focused domain, API-client, closeouts UI, job classification, closeout
-  billing rules, and mobile work mode tests are passing. Full repo gates,
-  commit, push, and draft PR handoff are still in progress.
+- Sidebar Brand Skin V1 is active on branch
+  `codex/sidebar-brand-skin-v1`, started from latest `origin/main` in the
+  sibling worktree `../pp-sidebar-brand-skin-v1`.
+- Added a shared brand-skin config in `@pest-patrol/ui-tokens` with Pest
+  Patrol as the default and a synthetic `demo_pest` Coastal Shield demo skin.
+- Wired the active brand through the admin sidebar, admin sign-in, customer
+  portal trust copy, portal share copy, and mobile technician/signed-out header
+  labels without adding a tenant system, uploaded logos, remote assets, or
+  provider-specific credentials.
+- Sidebar runtime skinning is limited to reviewed CSS variables sourced from
+  the brand config layer, preserving the existing semantic token system and the
+  no-hardcoded-hex guard.
+- No migration, Supabase/Vercel/Stripe/provider dashboard change, env mutation,
+  seed/reset write, preview mutation, or production mutation has been
+  performed.
+- Focused brand/sidebar/sign-in/portal/mobile tests, full repo tests,
+  typecheck, lint, build, hardcoded-hex scan, and whitespace checks are
+  passing. Local fixture smoke was attempted but did not complete in this shell
+  before the command timeout.
 - Protected Preview Security Closure V1 is merged and captured in
   `tasks/done.md`.
 - OWASP API Security Review V1 is merged via PR #123 and captured in

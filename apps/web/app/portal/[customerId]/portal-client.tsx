@@ -32,6 +32,7 @@ import {
   useCustomerPortalCloseouts,
   useCustomerPortalUpgradeIntent,
 } from "../../../hooks/useCustomerPortal";
+import { useActiveBrandSkin } from "../../brand";
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
@@ -91,13 +92,19 @@ function EmptyState({ children }: { children: string }) {
   );
 }
 
-function GeneralPestUpgradeCard({ customerId }: { customerId: string }) {
+function GeneralPestUpgradeCard({
+  customerId,
+  companyName,
+}: {
+  companyName: string;
+  customerId: string;
+}) {
   const upgradeSummary = getCustomerPortalUpgradeSummary();
   const upgradeIntent = useCustomerPortalUpgradeIntent(customerId);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const upgradeCardSummary =
     "Ask us to review recurring service needs for this property. We will confirm service type, pricing, and start date before any routine service is scheduled or billed.";
-  const upgradeCardTitle = "Ask Pest Patrol about routine service";
+  const upgradeCardTitle = `Ask ${companyName} about routine service`;
 
   async function requestUpgrade() {
     const result = await upgradeIntent
@@ -639,6 +646,7 @@ export function CustomerPortalClient({
 }: {
   customerId: string;
 }) {
+  const brandSkin = useActiveBrandSkin();
   const [search, setSearch] = useState("");
   const [mounted, setMounted] = useState(false);
   const portal = useCustomerPortalCloseouts(customerId);
@@ -683,7 +691,7 @@ export function CustomerPortalClient({
         <div>
           <Eyebrow>Customer portal</Eyebrow>
           <p className="text-sm font-semibold text-theme-text-secondary">
-            Customer-facing records provided by Pest Patrol
+            Secure service portal for {brandSkin.portalCompanyName} customers.
           </p>
           <h1 className="text-3xl font-bold text-theme-text-primary">
             {documentTitle}
@@ -728,7 +736,10 @@ export function CustomerPortalClient({
         </div>
       </section>
 
-      <GeneralPestUpgradeCard customerId={customerId} />
+      <GeneralPestUpgradeCard
+        companyName={brandSkin.portalCompanyName}
+        customerId={customerId}
+      />
 
       <BillingSection
         error={billingError}

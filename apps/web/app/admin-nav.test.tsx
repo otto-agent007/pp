@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BRAND_SKINS } from "@pest-patrol/ui-tokens";
 
 import { AdminNav, AdminShell } from "./admin-nav";
 
@@ -42,6 +43,7 @@ vi.mock("next/link", () => ({
 
 describe("AdminNav", () => {
   beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_BRAND_KEY;
     signOut.mockReset();
   });
 
@@ -51,14 +53,14 @@ describe("AdminNav", () => {
     render(<AdminNav />);
 
     expect(
-      screen.getByRole("link", { name: "Pest Patrol OS — Home" }),
+      screen.getByRole("link", { name: "Pest Patrol OS - Home" }),
     ).toHaveAttribute("href", "/");
     expect(screen.getByText("Operations")).toHaveClass("hidden", "md:block");
     expect(screen.getAllByText("Customers").length).toBeGreaterThan(0);
     expect(screen.getByText("Billing")).toHaveClass("hidden", "md:block");
     expect(screen.getByText("System")).toHaveClass("hidden", "md:block");
     expect(screen.getByRole("navigation")).toHaveClass(
-      "bg-primitive-navy-900",
+      "bg-[var(--pp-sidebar-bg)]",
       "md:fixed",
       "md:left-0",
       "md:w-52",
@@ -67,6 +69,11 @@ describe("AdminNav", () => {
       "md:focus-within:translate-x-0",
       "motion-reduce:transition-none",
     );
+    expect(screen.getByRole("navigation")).toHaveStyle({
+      "--pp-sidebar-bg": BRAND_SKINS.pest_patrol.colors.sidebarBackground,
+      "--pp-sidebar-active-bg":
+        BRAND_SKINS.pest_patrol.colors.sidebarActiveBackground,
+    });
     expect(screen.getByRole("navigation")).not.toHaveClass(
       "md:w-[4.5rem]",
       "md:hover:w-64",
@@ -115,7 +122,7 @@ describe("AdminNav", () => {
     expect(screen.queryByText("Field command")).not.toBeInTheDocument();
     expect(screen.getAllByText("admin").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Sign out" })).toHaveClass(
-      "text-primitive-sky-100",
+      "text-[var(--pp-sidebar-muted)]",
     );
   });
 
@@ -125,7 +132,7 @@ describe("AdminNav", () => {
     const { container } = render(<AdminNav />);
 
     const homeLink = screen.getByRole("link", {
-      name: "Pest Patrol OS — Home",
+      name: "Pest Patrol OS - Home",
     });
     const compactLogomarks = homeLink.querySelectorAll(
       'svg[viewBox="0 0 100 100"]',
@@ -151,6 +158,31 @@ describe("AdminNav", () => {
     expect(brandMarks[1]).toHaveStyle({
       width: "200px",
     });
+  });
+
+  it("renders the demo brand with safe text fallback and CSS variables", () => {
+    process.env.NEXT_PUBLIC_BRAND_KEY = "demo_pest";
+    usePathname.mockReturnValue("/payments");
+
+    const { container } = render(<AdminNav />);
+
+    expect(
+      screen.getByRole("link", { name: "Coastal Shield OS - Home" }),
+    ).toHaveAttribute("href", "/");
+    expect(screen.getAllByText("Coastal Shield").length).toBeGreaterThan(0);
+    expect(screen.getByRole("navigation")).toHaveStyle({
+      "--pp-sidebar-bg": BRAND_SKINS.demo_pest.colors.sidebarBackground,
+      "--pp-sidebar-active-bg":
+        BRAND_SKINS.demo_pest.colors.sidebarActiveBackground,
+    });
+    expect(
+      screen.getByRole("link", { name: "Payments" }),
+    ).toHaveClass("bg-[var(--pp-sidebar-active-bg)]");
+    expect(
+      screen.getAllByTestId("brand-wordmark-text-fallback").length,
+    ).toBeGreaterThan(0);
+    expect(container.querySelector('svg[viewBox="0 0 420 96"]')).toBeNull();
+    expect(container.querySelector("[dangerouslySetInnerHTML]")).toBeNull();
   });
 
   it("marks the Escrow/RE route active from the sidebar", () => {

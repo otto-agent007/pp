@@ -9,6 +9,7 @@ import {
 } from "../styles/routeShellStyles";
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
 import { useLanguage } from "../store/useLanguage";
+import { getMobileBrandSkin } from "../brand";
 
 interface MobileTechnicianHeaderProps {
   assignedJobCount: number;
@@ -25,6 +26,7 @@ export function MobileTechnicianHeader({
 }: MobileTechnicianHeaderProps) {
   const lang = useLanguage((state) => state.lang);
   const toggleLanguage = useLanguage((state) => state.toggleLanguage);
+  const brandSkin = getMobileBrandSkin();
   const readiness = useMemo(
     () =>
       buildMobileTechnicianReadinessPanel({
@@ -52,7 +54,7 @@ export function MobileTechnicianHeader({
               fontWeight: "700",
             }}
           >
-            Technician
+            {brandSkin.mobileHeaderTitle}
           </Text>
           <Text
             style={{
@@ -71,6 +73,16 @@ export function MobileTechnicianHeader({
             }}
           >
             {readiness.identityLabel}
+          </Text>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.mutedText,
+              fontSize: 12,
+              fontWeight: "700",
+              marginTop: 4,
+            }}
+          >
+            Technician
           </Text>
         </View>
 

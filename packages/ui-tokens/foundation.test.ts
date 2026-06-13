@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BRAND_SKINS,
+  DEFAULT_BRAND_KEY,
   brand,
   customerTheme,
   darkTheme,
   duration,
   easing,
   figmaColorVariables,
+  getActiveBrandSkin,
+  getBrandSkinCssVariables,
+  isBrandColorValue,
   lightTheme,
   palette,
   primitive,
@@ -205,5 +210,58 @@ describe("Pest Patrol design token foundation", () => {
       exit: "cubic-bezier(0.4, 0, 1, 1)",
       emphasized: "cubic-bezier(0.2, 0, 0, 1)",
     });
+  });
+
+  it("exports default and demo brand skins with safe fallback behavior", () => {
+    expect(DEFAULT_BRAND_KEY).toBe("pest_patrol");
+    expect(getActiveBrandSkin()).toBe(BRAND_SKINS.pest_patrol);
+    expect(getActiveBrandSkin("unknown-brand")).toBe(BRAND_SKINS.pest_patrol);
+
+    expect(BRAND_SKINS.pest_patrol).toMatchObject({
+      brandKey: "pest_patrol",
+      companyName: "Pest Patrol",
+      productName: "Pest Patrol OS",
+      sidebarLogoKind: "pest_patrol_static",
+    });
+    expect(BRAND_SKINS.demo_pest).toMatchObject({
+      brandKey: "demo_pest",
+      companyName: "Coastal Shield Pest",
+      productName: "Coastal Shield OS",
+      sidebarLogoKind: "text_fallback",
+    });
+  });
+
+  it("keeps brand skins free of secret-shaped fields", () => {
+    const forbiddenPattern =
+      /(secret|token|password|key|stripe|supabase|webhook|credential)/i;
+
+    for (const brandSkin of Object.values(BRAND_SKINS)) {
+      for (const [field, value] of Object.entries(brandSkin)) {
+        if (field !== "brandKey") {
+          expect(field).not.toMatch(forbiddenPattern);
+        }
+
+        if (typeof value === "string") {
+          expect(value).not.toMatch(forbiddenPattern);
+        }
+      }
+    }
+  });
+
+  it("uses validated color values and generates sidebar CSS variables", () => {
+    for (const brandSkin of Object.values(BRAND_SKINS)) {
+      expect(Object.values(brandSkin.colors).every(isBrandColorValue)).toBe(true);
+      expect(getBrandSkinCssVariables(brandSkin)).toMatchObject({
+        "--pp-sidebar-bg": brandSkin.colors.sidebarBackground,
+        "--pp-sidebar-text": brandSkin.colors.sidebarText,
+        "--pp-sidebar-muted": brandSkin.colors.sidebarMutedText,
+        "--pp-sidebar-active-bg": brandSkin.colors.sidebarActiveBackground,
+        "--pp-sidebar-active-text": brandSkin.colors.sidebarActiveText,
+        "--pp-sidebar-border": brandSkin.colors.sidebarBorder,
+        "--pp-action-primary": brandSkin.colors.actionPrimary,
+        "--pp-action-primary-strong": brandSkin.colors.actionPrimaryStrong,
+        "--pp-accent": brandSkin.colors.accent,
+      });
+    }
   });
 });

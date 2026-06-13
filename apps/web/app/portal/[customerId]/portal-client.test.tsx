@@ -113,6 +113,7 @@ describe("CustomerPortalClient", () => {
   const requestUpgrade = vi.fn();
 
   beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_BRAND_KEY;
     vi.mocked(useCustomerPortalBilling).mockReturnValue({
       error: null,
       invoices: [invoice],
@@ -153,7 +154,7 @@ describe("CustomerPortalClient", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Customer-facing records provided by Pest Patrol"),
+      screen.getByText("Secure service portal for Pest Patrol customers."),
     ).toBeInTheDocument();
     expect(screen.getByText("Quarterly service invoice")).toBeInTheDocument();
     expect(screen.getByText("Quarterly service")).toBeInTheDocument();
@@ -214,6 +215,27 @@ describe("CustomerPortalClient", () => {
         "Request received. Our office will follow up before anything recurring is scheduled or billed.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("renders the active demo brand identity without hardcoded Pest Patrol portal copy", () => {
+    process.env.NEXT_PUBLIC_BRAND_KEY = "demo_pest";
+
+    render(<CustomerPortalClient customerId="customer-1" />);
+
+    expect(
+      screen.getByText(
+        "Secure service portal for Coastal Shield Pest customers.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Ask Coastal Shield Pest about routine service"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Customer-facing records provided by Pest Patrol"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Ask Pest Patrol about routine service"),
+    ).not.toBeInTheDocument();
   });
 
   it("offers print/save actions for customer records", async () => {
