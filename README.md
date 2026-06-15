@@ -45,7 +45,7 @@ corepack pnpm demo:reset -- --target local --confirm seed-demo-data
 
 `demo:smoke` is read-only: it checks required environment variable names, reports blockers, prints the safe next commands, and never calls Supabase or prints secret values. Seed local or protected preview demo data from the dashboard's Demo data panel, or from an operator shell after the preflight is ready.
 
-The seed creates the easy admin demo login `demo@email.com` / `password` plus the synthetic ops story, including 16 technicians, 100 customers, 108 locations, 180 current-week San Diego demo jobs, 14 realistic synthetic inventory items, proof-ready closeout data, and synthetic service-photo/signature media. When the demo admin account signs in, the app automatically refreshes demo-owned operational records while preserving the signed-in demo admin session. Local development sign-in also shows a one-click demo login button; when Supabase env values are absent, it opens the no-auth local fixture demo instead of calling authenticated seed routes, so a manual local seed step is optional. Use `--target preview` only from an operator shell with the approved preview Supabase URL and `SUPABASE_SERVICE_ROLE_KEY` already loaded. Optional technician login demos can pass `--tech-password-env DEMO_TECH_PASSWORD`; that technician password value stays in the operator environment and is never written to the repo. The dashboard action uses the same server-side guardrails and replaces existing demo-owned records before reseeding.
+The seed creates the easy admin demo login `demo@email.com` / `password` plus the synthetic ops story, including 16 technicians, 100 customers, 108 locations, 180 current-week San Diego demo jobs, 14 realistic synthetic inventory items, proof-ready closeout data, and synthetic service-photo/signature media. When the demo admin account signs in, the app automatically refreshes demo-owned operational records while preserving the signed-in demo admin session. Local development sign-in also shows a one-click demo login button; when Supabase env values are absent, it opens the no-auth local fixture demo instead of calling authenticated seed routes, so a manual local seed step is optional. Set `NEXT_PUBLIC_SHOW_DEMO_LOGIN=true` only on an intended demo deployment to show the same button in production-mode builds; deployed builds use the seeded demo credentials directly and still rely on the normal auth path. Use `--target preview` only from an operator shell with the approved preview Supabase URL and `SUPABASE_SERVICE_ROLE_KEY` already loaded. Optional technician login demos can pass `--tech-password-env DEMO_TECH_PASSWORD`; that technician password value stays in the operator environment and is never written to the repo. The dashboard action uses the same server-side guardrails and replaces existing demo-owned records before reseeding.
 
 The current fixture-ready admin polish also surfaces dashboard BI cards,
 technician performance, denser dispatch proof cards, inventory usage recency,
@@ -63,6 +63,7 @@ Copy `.env.example` to the app-specific env file you need, then provide Supabase
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SHOW_DEMO_LOGIN=false
 SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=

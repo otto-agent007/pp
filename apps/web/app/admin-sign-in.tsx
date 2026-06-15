@@ -15,7 +15,16 @@ import { usePrepareLocalDemoLogin } from "../hooks/useDemoSeed";
 import { useAdminAuth } from "./admin-auth-context";
 import { BrandWordmark, useActiveBrandSkin } from "./brand";
 
-const showLocalDemoShortcut = process.env.NODE_ENV !== "production";
+export function shouldShowDemoLoginShortcut() {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === "true"
+  );
+}
+
+function shouldPrepareLocalDemoLogin() {
+  return process.env.NODE_ENV !== "production";
+}
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -49,6 +58,11 @@ export function AdminSignIn() {
     setEmail(DEMO_SEED_ADMIN_EMAIL);
     setPassword(DEMO_SEED_ADMIN_PASSWORD);
     setFormError(null);
+
+    if (!shouldPrepareLocalDemoLogin()) {
+      await signIn(DEMO_SEED_ADMIN_EMAIL, DEMO_SEED_ADMIN_PASSWORD);
+      return;
+    }
 
     try {
       const prepared = await prepareDemoLogin.mutateAsync();
@@ -124,7 +138,7 @@ export function AdminSignIn() {
               </p>
             ) : null}
 
-            {showLocalDemoShortcut ? (
+            {shouldShowDemoLoginShortcut() ? (
               <div className="border-t border-theme-border-subtle pt-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
                   Local demo login

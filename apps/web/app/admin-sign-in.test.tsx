@@ -1,9 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AdminSignIn } from "./admin-sign-in";
+import { AdminSignIn, shouldShowDemoLoginShortcut } from "./admin-sign-in";
 
 const signIn = vi.fn();
 const signInLocalDemo = vi.fn();
@@ -28,8 +28,13 @@ vi.mock("../hooks/useDemoSeed", () => ({
 }));
 
 describe("AdminSignIn", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     delete process.env.NEXT_PUBLIC_BRAND_KEY;
+    delete process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN;
     authError = null;
     authStatus = "signed_out";
     prepareLocalDemoLogin.mockReset();
@@ -110,6 +115,27 @@ describe("AdminSignIn", () => {
     expect(screen.getByLabelText("Email")).toHaveValue("demo@email.com");
     expect(screen.getByLabelText("Password")).toHaveValue("password");
     expect(prepareLocalDemoLogin).toHaveBeenCalledTimes(1);
+    expect(signIn).toHaveBeenCalledWith("demo@email.com", "password");
+  });
+
+  it("hides the demo shortcut in production unless explicitly enabled", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(shouldShowDemoLoginShortcut()).toBe(false);
+
+    vi.stubEnv("NEXT_PUBLIC_SHOW_DEMO_LOGIN", "true");
+    expect(shouldShowDemoLoginShortcut()).toBe(true);
+  });
+
+  it("uses seeded demo credentials directly when the production shortcut flag is enabled", async () => {
+    const user = userEvent.setup();
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SHOW_DEMO_LOGIN", "true");
+
+    render(<AdminSignIn />);
+
+    await user.click(screen.getByRole("button", { name: "Log in as demo" }));
+
+    expect(prepareLocalDemoLogin).not.toHaveBeenCalled();
     expect(signIn).toHaveBeenCalledWith("demo@email.com", "password");
   });
 
