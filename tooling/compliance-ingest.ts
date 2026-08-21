@@ -307,6 +307,10 @@ function hasParentTraversal(sourcePath: string) {
   return sourcePath.split(/[\\/]+/).includes("..");
 }
 
+function isAbsolutePath(sourcePath: string) {
+  return path.posix.isAbsolute(sourcePath) || path.win32.isAbsolute(sourcePath);
+}
+
 function isInsidePath(rootPath: string, candidatePath: string) {
   const relativePath = path.relative(rootPath, candidatePath);
 
@@ -321,7 +325,7 @@ function resolveComplianceSourceTextPath(
   sourceRoot: string,
   entry: ComplianceSourceManifestEntry,
 ) {
-  if (path.isAbsolute(entry.text_path)) {
+  if (isAbsolutePath(entry.text_path)) {
     throw new Error(
       `Compliance source text path must be relative for ${entry.id}: ${entry.text_path}`,
     );

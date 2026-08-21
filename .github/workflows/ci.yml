@@ -31,6 +31,9 @@ jobs:
       - name: Security baseline
         run: pnpm security:baseline
 
+      - name: Test
+        run: pnpm test
+
       - name: Lint
         run: pnpm lint
 
