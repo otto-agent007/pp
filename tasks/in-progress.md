@@ -8,7 +8,8 @@
   paths on every host before reading source files.
 - Run the existing root `pnpm test` command in CI so test failures cannot be
   hidden behind lint, typecheck, and build success.
-- Done when the focused regression and full repository gates pass and the
-  verified branch is pushed with a draft PR.
+- Draft PR: [#132](https://github.com/otto-agent007/pp/pull/132).
+- The focused regression, full repository gates, security baseline, and
+  whitespace checks pass locally; GitHub review and CI are pending.
 - No dependency upgrades, migrations, provider settings, environment changes,
   Supabase writes, preview mutations, or production mutations are in scope.
