@@ -10,6 +10,7 @@
   hidden behind lint, typecheck, and build success.
 - Draft PR: [#132](https://github.com/otto-agent007/pp/pull/132).
 - The focused regression, full repository gates, security baseline, and
-  whitespace checks pass locally; GitHub review and CI are pending.
+  whitespace checks pass locally; live CI and review status are tracked on the
+  draft PR.
 - No dependency upgrades, migrations, provider settings, environment changes,
   Supabase writes, preview mutations, or production mutations are in scope.
