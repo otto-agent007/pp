@@ -15,4 +15,5 @@
   separate follow-ups.
 - No application source, monorepo dependency graph, migration, environment,
   provider, preview, Supabase, or production mutation is in scope.
-- Draft PR publication and GitHub CI verification are pending.
+- Draft PR [#140](https://github.com/otto-agent007/pp/pull/140) contains the
+  verified repair; GitHub CI status is tracked on the PR.
