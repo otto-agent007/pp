@@ -1,25 +1,19 @@
 # In Progress
 
-## Expo 53 Dependency Security V1
+## GitHub MCP Node Server Security V1
 
-- Active branch: `codex/expo-53-dependency-security-v1`, started from the
-  latest `origin/main` after PR #132 merged.
-- Upgrade the mobile runtime from Expo SDK 52 to SDK 53 with the aligned React
-  19, React Native 0.79, Expo Router 5, and compatible native-module family.
-- Replace stale root dependency overrides with current parent-scoped patches;
-  the production audit now has no critical advisories and no fixable
-  high-severity advisories in the mobile graph.
-- The two remaining mobile high-severity advisories are the upstream no-fix
-  `image-size@1.2.1` findings. Four fixable high-severity findings newly enter
-  through the unrelated `apps/web` Next.js/Sharp graph and remain a separate
-  web security slice rather than expanding this Expo migration.
-- Expo dependency alignment, Expo Doctor (18/18), mobile and shared native UI
-  tests/typechecks, iOS/Android export, the security baseline, and all full
-  repository gates pass locally.
-- Draft PR [#133](https://github.com/otto-agent007/pp/pull/133) is open;
-  GitHub vulnerability alerts and automated security updates are enabled and
-  verified through the GitHub API. GitHub CI and preview status are tracked on
-  the draft PR.
-- No generated native projects, EAS/provider changes, migrations, environment
-  changes, Supabase writes, preview mutations, or production mutations are in
-  scope.
+- Active branch: `codex/github-mcp-node-server-security-v1`, started from
+  `origin/main` after Dependabot PRs #137, #134, and #136 merged.
+- Dependabot PR #135 claimed to update `@hono/node-server`, but its resolved
+  lock remained on vulnerable `1.19.14`; the recreate command was acknowledged
+  without publishing a corrected head.
+- Update only the standalone GitHub MCP tool lock to
+  `@hono/node-server@1.19.17`, preserving MCP SDK 1.29 and Hono 4.13.3.
+- The standalone production audit clears GHSA-frvp-7c67-39w9 and drops from
+  five vulnerable packages (two high, two moderate, one low) to four (two
+  high, one moderate, one low). Axios, form-data, qs, and body-parser remain
+  separate follow-ups.
+- No application source, monorepo dependency graph, migration, environment,
+  provider, preview, Supabase, or production mutation is in scope.
+- Draft PR [#140](https://github.com/otto-agent007/pp/pull/140) contains the
+  verified repair; GitHub CI status is tracked on the PR.
