@@ -1,5 +1,23 @@
 # Done
 
+## Expo 53 Dependency Security V1
+
+- Merged PR [#133](https://github.com/otto-agent007/pp/pull/133), upgrading the
+  mobile runtime from Expo SDK 52 to SDK 53 with aligned React 19, React Native
+  0.79, Expo Router 5, and compatible native modules.
+- Replaced stale root dependency overrides with parent-scoped patched
+  transitive overrides; the mobile production graph has no critical or fixable
+  high-severity advisories.
+- Recorded the two upstream no-fix `image-size@1.2.1` mobile findings and kept
+  unrelated web Next.js/Sharp findings in a separate follow-up scope.
+- Verified Expo dependency alignment, Expo Doctor (18/18), mobile and shared
+  native UI checks, iOS/Android export, security baseline, full repository
+  gates, PR CI, and Vercel.
+- Enabled and API-verified GitHub vulnerability alerts and automated security
+  updates. No native projects, EAS/provider changes, migrations, environment
+  changes, Supabase writes, preview mutations, or production mutations were
+  included.
+
 ## Sidebar Brand Skin V1
 
 - Added a shared brand-skin configuration in `@pest-patrol/ui-tokens` with Pest
