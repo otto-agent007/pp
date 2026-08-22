@@ -1,5 +1,24 @@
 # Done
 
+## GitHub MCP Dependency Security Follow-ups
+
+- Merged Dependabot PRs [#137](https://github.com/otto-agent007/pp/pull/137),
+  [#134](https://github.com/otto-agent007/pp/pull/134), and
+  [#136](https://github.com/otto-agent007/pp/pull/136) for `fast-uri`,
+  `ip-address`, and Hono updates in the standalone GitHub MCP tool.
+- Closed stale Dependabot PR
+  [#135](https://github.com/otto-agent007/pp/pull/135), whose lock still
+  resolved vulnerable `@hono/node-server@1.19.14`, and merged the focused
+  `@hono/node-server@1.19.17` repair in
+  [#140](https://github.com/otto-agent007/pp/pull/140).
+- Merged Dependabot PR [#138](https://github.com/otto-agent007/pp/pull/138),
+  resolving `body-parser@2.3.0` and `qs@6.15.3`, and PR
+  [#139](https://github.com/otto-agent007/pp/pull/139), resolving
+  `axios@1.18.0`.
+- Verified each merge against the current lock tree and kept application code,
+  the monorepo dependency graph, migrations, environments, providers,
+  Supabase, previews, and production state unchanged.
+
 ## Expo 53 Dependency Security V1
 
 - Merged PR [#133](https://github.com/otto-agent007/pp/pull/133), upgrading the
