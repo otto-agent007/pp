@@ -15,6 +15,12 @@
   resolving `body-parser@2.3.0` and `qs@6.15.3`, and PR
   [#139](https://github.com/otto-agent007/pp/pull/139), resolving
   `axios@1.18.0`.
+- Merged focused PR [#143](https://github.com/otto-agent007/pp/pull/143),
+  resolving the remaining `form-data` advisory with `form-data@4.0.6` and
+  `hasown@2.0.4` while preserving the approved Axios update.
+- Merged Dependabot PR [#142](https://github.com/otto-agent007/pp/pull/142),
+  updating `esbuild` to 0.28.2 and `tsx` to 4.23.12. Its exact merged standalone
+  graph passes a clean install, production and development audits, and build.
 - Verified each merge against the current lock tree and kept application code,
   the monorepo dependency graph, migrations, environments, providers,
   Supabase, previews, and production state unchanged.
