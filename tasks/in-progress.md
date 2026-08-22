@@ -12,5 +12,6 @@
   clean install, resolved dependency-tree check, and TypeScript build pass.
 - No application source, monorepo dependency graph, migration, environment,
   provider, preview, Supabase, or production mutation is in scope.
-- Full repository tests, typecheck, lint, build, and security baseline pass;
-  draft PR publication is pending.
+- Full repository tests, typecheck, lint, build, and security baseline pass.
+  Draft PR [#143](https://github.com/otto-agent007/pp/pull/143) contains the
+  verified repair; GitHub CI status is tracked on the PR.
