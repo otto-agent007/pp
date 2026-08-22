@@ -16,8 +16,9 @@
 - Expo dependency alignment, Expo Doctor (18/18), mobile and shared native UI
   tests/typechecks, iOS/Android export, the security baseline, and all full
   repository gates pass locally.
-- Draft PR and GitHub vulnerability-alert/automated-security-update verification
-  are pending publication.
+- Draft PR [#133](https://github.com/otto-agent007/pp/pull/133) is open;
+  GitHub vulnerability alerts and automated security updates are enabled and
+  verified through the GitHub API. The final CI `verify` job is in progress.
 - No generated native projects, EAS/provider changes, migrations, environment
   changes, Supabase writes, preview mutations, or production mutations are in
   scope.
