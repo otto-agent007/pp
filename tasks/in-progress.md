@@ -18,7 +18,8 @@
   repository gates pass locally.
 - Draft PR [#133](https://github.com/otto-agent007/pp/pull/133) is open;
   GitHub vulnerability alerts and automated security updates are enabled and
-  verified through the GitHub API. The final CI `verify` job is in progress.
+  verified through the GitHub API. GitHub CI and preview status are tracked on
+  the draft PR.
 - No generated native projects, EAS/provider changes, migrations, environment
   changes, Supabase writes, preview mutations, or production mutations are in
   scope.
