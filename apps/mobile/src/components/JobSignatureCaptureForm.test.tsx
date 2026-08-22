@@ -2,6 +2,7 @@ import React from "react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { TestElement } from "../test-utils/reactElement";
 import { JobSignatureCaptureForm } from "./JobSignatureCaptureForm";
 
 const signatureDraft = vi.hoisted(() => ({
@@ -143,7 +144,7 @@ describe("JobSignatureCaptureForm", () => {
 function collectElementsByType(
   node: ReactNode,
   type: string,
-): React.ReactElement[] {
+): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -157,7 +158,7 @@ function collectElementsByType(
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     if (typeof element.type === "function") {
       return collectElementsByType(
         (element.type as (props: typeof element.props) => ReactNode)(

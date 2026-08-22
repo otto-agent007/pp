@@ -2,6 +2,7 @@ import React from "react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { TestElement } from "../test-utils/reactElement";
 import { JobChemicalLogForm } from "./JobChemicalLogForm";
 
 const language = vi.hoisted(() => ({
@@ -173,7 +174,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
 
     if (typeof element.type === "function") {
       return collectText(
@@ -189,7 +190,7 @@ function collectText(node: ReactNode): string[] {
   return [];
 }
 
-function collectButtons(node: ReactNode): React.ReactElement[] {
+function collectButtons(node: ReactNode): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -203,7 +204,7 @@ function collectButtons(node: ReactNode): React.ReactElement[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectButtons(
@@ -300,7 +301,7 @@ describe("JobChemicalLogForm", () => {
     expect(text).toContain("Saved offline");
     expect(buttons.at(-1)?.props.disabled).toBe(false);
 
-    buttons.at(-1)?.props.onPress();
+    buttons.at(-1)?.props.onPress!();
 
     expect(queueLog).toHaveBeenCalledWith("job-1");
   });

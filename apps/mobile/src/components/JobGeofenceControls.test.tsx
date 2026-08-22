@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Job } from "@pest-patrol/types";
 
+import type { TestElement } from "../test-utils/reactElement";
 import { JobGeofenceControls } from "./JobGeofenceControls";
 
 const secureStore = vi.hoisted(() => ({
@@ -319,7 +320,7 @@ describe("JobGeofenceControls", () => {
   });
 });
 
-async function triggerPress(element?: React.ReactElement) {
+async function triggerPress(element?: TestElement) {
   if (!element?.props.onPress) {
     throw new Error("Button press handler is missing");
   }
@@ -332,7 +333,7 @@ async function triggerPress(element?: React.ReactElement) {
 function findButton(
   node: ReactNode,
   label: string,
-): React.ReactElement | undefined {
+): TestElement | undefined {
   return collectElementsByType(node, "CaptureButton").find((button) =>
     collectText(button.props.children).includes(label),
   );
@@ -352,7 +353,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
 
     if (typeof element.type === "function") {
       return collectText(
@@ -371,7 +372,7 @@ function collectText(node: ReactNode): string[] {
 function collectElementsByType(
   node: ReactNode,
   type: string,
-): React.ReactElement[] {
+): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -385,7 +386,7 @@ function collectElementsByType(
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectElementsByType(
