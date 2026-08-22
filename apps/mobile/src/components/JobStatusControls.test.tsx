@@ -9,6 +9,7 @@ import {
   mobileRouteShellPalette,
   mobileRouteShellTone,
 } from "../styles/routeShellStyles";
+import type { TestElement } from "../test-utils/reactElement";
 import { JobStatusControls } from "./JobStatusControls";
 
 const queueStatusUpdate = vi.hoisted(() => vi.fn());
@@ -146,7 +147,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
 
     if (typeof element.type === "function") {
       const Component = element.type as (props: typeof element.props) => ReactNode;
@@ -160,7 +161,7 @@ function collectText(node: ReactNode): string[] {
   return [];
 }
 
-function collectPressables(node: ReactNode): React.ReactElement[] {
+function collectPressables(node: ReactNode): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -174,7 +175,7 @@ function collectPressables(node: ReactNode): React.ReactElement[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectPressables(
@@ -194,7 +195,7 @@ function collectPressables(node: ReactNode): React.ReactElement[] {
   return [];
 }
 
-function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+function collectElementsByType(node: ReactNode, type: string): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -208,7 +209,7 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectElementsByType(
@@ -263,7 +264,7 @@ describe("JobStatusControls", () => {
     expect(collectText(element)).toContain("Complete anyway");
 
     const completeAnyway = collectPressables(element).at(-1);
-    completeAnyway?.props.onPress();
+    completeAnyway?.props.onPress!();
 
     expect(queueStatusUpdate).toHaveBeenCalledWith("job-1", "completed");
   });
@@ -274,7 +275,7 @@ describe("JobStatusControls", () => {
 
     const element = <JobStatusControls job={job} />;
     const guardedCompleted = collectPressables(element).at(3);
-    guardedCompleted?.props.onPress();
+    guardedCompleted?.props.onPress!();
 
     expect(queueStatusUpdate).not.toHaveBeenCalled();
   });
@@ -294,7 +295,7 @@ describe("JobStatusControls", () => {
     expect(collectText(element)).not.toContain("Review before completing");
 
     const completed = collectPressables(element).at(3);
-    completed?.props.onPress();
+    completed?.props.onPress!();
 
     expect(queueStatusUpdate).toHaveBeenCalledWith("job-1", "completed");
   });

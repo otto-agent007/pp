@@ -24,6 +24,14 @@ import {
   SyncBadge,
 } from "./index";
 
+interface TestElementProps {
+  children?: ReactNode;
+  disabled?: boolean;
+  style?: unknown;
+}
+
+type TestElement = React.ReactElement<TestElementProps>;
+
 vi.mock("react-native", async () => {
   const ReactModule = await import("react");
 
@@ -59,7 +67,7 @@ vi.mock("react-native", async () => {
   };
 });
 
-function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+function collectElementsByType(node: ReactNode, type: string): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -73,7 +81,7 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectElementsByType(
@@ -108,7 +116,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectText(
@@ -141,7 +149,7 @@ function flattenStyles(style: unknown): Record<string, unknown>[] {
 }
 
 function pressableStyles(
-  element: React.ReactElement,
+  element: TestElement,
   pressed = false,
 ): Record<string, unknown>[] {
   const style = element.props.style;

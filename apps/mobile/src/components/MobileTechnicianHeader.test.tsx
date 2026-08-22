@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mobileRouteShellPalette } from "../styles/routeShellStyles";
+import type { TestElement } from "../test-utils/reactElement";
 import { MobileTechnicianHeader } from "./MobileTechnicianHeader";
 
 vi.mock("react", async () => {
@@ -12,6 +13,20 @@ vi.mock("react", async () => {
     ...actual,
     default: actual,
     useMemo: <T,>(factory: () => T) => factory(),
+  };
+});
+
+vi.mock("@pest-patrol/ui-native", async () => {
+  const ReactModule = await import("react");
+
+  return {
+    Button: ({
+      children,
+      onPress,
+    }: {
+      children?: ReactNode;
+      onPress?: () => void;
+    }) => ReactModule.createElement("Pressable", { onPress }, children),
   };
 });
 
@@ -60,7 +75,7 @@ vi.mock("react-native", async () => {
   };
 });
 
-function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+function collectElementsByType(node: ReactNode, type: string): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -74,7 +89,7 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectElementsByType(
@@ -109,7 +124,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectText(
@@ -215,7 +230,7 @@ describe("MobileTechnicianHeader", () => {
       (item) => collectText(item).includes("Español"),
     );
 
-    languageButton?.props.onPress();
+    languageButton?.props.onPress!();
 
     expect(language.toggleLanguage).toHaveBeenCalledTimes(1);
   });

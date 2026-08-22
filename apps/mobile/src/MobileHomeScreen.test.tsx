@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import MobileHomeScreen from "../app/index";
+import type { TestElement } from "./test-utils/reactElement";
 
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof import("react")>("react");
@@ -212,7 +213,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectText(
@@ -228,7 +229,7 @@ function collectText(node: ReactNode): string[] {
   return [];
 }
 
-function collectPressables(node: ReactNode): React.ReactElement[] {
+function collectPressables(node: ReactNode): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -242,7 +243,7 @@ function collectPressables(node: ReactNode): React.ReactElement[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectPressables(
@@ -274,7 +275,7 @@ describe("MobileHomeScreen", () => {
     expect(text).toContain("Network failed");
     expect(text).toContain("Retry");
 
-    retry?.props.onPress();
+    retry?.props.onPress!();
 
     expect(assignedJobsState.load).toHaveBeenCalled();
   });

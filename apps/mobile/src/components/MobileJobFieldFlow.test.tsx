@@ -4,6 +4,7 @@ import type { Job } from "@pest-patrol/types";
 import { describe, expect, it, vi } from "vitest";
 
 import { mobileRouteShellTone } from "../styles/routeShellStyles";
+import type { TestElement } from "../test-utils/reactElement";
 import { MobileJobFieldFlow } from "./MobileJobFieldFlow";
 
 vi.mock("../store/useLanguage", async () => {
@@ -48,7 +49,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
 
     if (typeof element.type === "function") {
       const Component = element.type as (props: typeof element.props) => ReactNode;
@@ -62,7 +63,7 @@ function collectText(node: ReactNode): string[] {
   return [];
 }
 
-function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+function collectElementsByType(node: ReactNode, type: string): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -76,7 +77,7 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectElementsByType(

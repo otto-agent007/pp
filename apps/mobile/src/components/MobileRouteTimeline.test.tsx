@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { MobileDailyRouteTimeline } from "@pest-patrol/domain";
 
 import { mobileRouteShellPalette } from "../styles/routeShellStyles";
+import type { TestElement } from "../test-utils/reactElement";
 import { MobileRouteTimeline } from "./MobileRouteTimeline";
 
 vi.mock("../store/useLanguage", async () => {
@@ -97,7 +98,7 @@ function collectText(node: ReactNode): string[] {
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
 
     if (typeof element.type === "function") {
       const Component = element.type as (props: typeof element.props) => ReactNode;
@@ -111,7 +112,7 @@ function collectText(node: ReactNode): string[] {
   return [];
 }
 
-function collectElementsByType(node: ReactNode, type: string): React.ReactElement[] {
+function collectElementsByType(node: ReactNode, type: string): TestElement[] {
   if (node === null || node === undefined || typeof node === "boolean") {
     return [];
   }
@@ -125,7 +126,7 @@ function collectElementsByType(node: ReactNode, type: string): React.ReactElemen
   }
 
   if (React.isValidElement(node)) {
-    const element = node as React.ReactElement;
+    const element = node as TestElement;
     const rendered =
       typeof element.type === "function"
         ? collectElementsByType(
@@ -473,7 +474,7 @@ describe("MobileRouteTimeline", () => {
     );
     const pressables = collectElementsByType(element, "Pressable");
 
-    pressables[0].props.onPress();
+    pressables[0].props.onPress!();
 
     expect(onFocusJob).toHaveBeenCalledWith("job-later");
   });

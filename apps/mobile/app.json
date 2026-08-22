@@ -19,7 +19,9 @@
         {
           "locationWhenInUsePermission": "Allow Pest Patrol OS to capture arrival and departure context for assigned jobs."
         }
-      ]
+      ],
+      "expo-router",
+      "expo-secure-store"
     ],
     "newArchEnabled": true
   }
