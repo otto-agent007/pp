@@ -18,4 +18,6 @@
   or production mutation is in scope.
 - The focused web tests, typecheck, lint, and production build pass. The frozen
   install, full repository tests, typecheck, lint, build, security baseline,
-  and diff check also pass; draft PR publication is pending.
+  and diff check also pass. Draft PR
+  [#145](https://github.com/otto-agent007/pp/pull/145) contains the verified
+  patch; GitHub CI status is tracked on the PR.
