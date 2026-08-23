@@ -17,10 +17,14 @@ branches, GitHub, providers, environments, preview data, or production.
    worktree status.
 2. Run a fresh deterministic graph check before selection. Resolve the
    package manager and version from the repository's `packageManager` field;
-   use that declared route through Corepack, a matching installed or cached
-   executable, or an exact-version runner. A `pnpm` PATH miss alone does not
-   prove the declared tool is unavailable. Record the exact command, exit
-   code, and result. Stop selection when validation fails.
+   try Corepack or a matching installed executable first. Before using a
+   registry-dependent runner, obtain the npm cache root with
+   `npm config get cache`; inspect
+   `<cache>/_npx/*/node_modules/pnpm/package.json` in lexical order, verify its
+   `version` exactly matches the declared version, then invoke that entry's
+   sibling `<cache>/_npx/<entry>/node_modules/.bin/pnpm`. A PATH miss alone
+   does not prove the declared tool is unavailable. Record the exact command,
+   exit code, and result. Stop selection when validation fails.
 3. Reconcile at most one node. An unresolved `running` node takes precedence.
    When PR or merge state matters, query GitHub read-only and label that
    evidence as live. Label local branch, ref, and commit evidence as local;
