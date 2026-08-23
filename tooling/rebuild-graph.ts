@@ -4,6 +4,13 @@ import { fileURLToPath } from "node:url";
 
 const KINDS = new Set(["slice", "task", "gate"]);
 const STATUSES = new Set(["planned", "ready", "running", "blocked", "done"]);
+const FROZEN_TARGET_MATRIX = {
+  node: "Node 24 LTS",
+  pnpm: "latest stable pnpm 11 patch",
+  next: "Next.js 16 stable",
+  expoPolicy:
+    "SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
+} as const;
 const REQUIRED_NODE_FIELDS = [
   "id",
   "kind",
@@ -135,6 +142,16 @@ function validateTopLevelGraphFields(
       errors.push(`targetMatrix.${field} must be a non-empty string`);
     }
   }
+  for (const field of ["node", "pnpm", "next"] as const) {
+    if (
+      typeof graph.targetMatrix[field] === "string" &&
+      graph.targetMatrix[field] !== FROZEN_TARGET_MATRIX[field]
+    ) {
+      errors.push(
+        `targetMatrix.${field} must equal ${FROZEN_TARGET_MATRIX[field]}`,
+      );
+    }
+  }
   if (graph.targetMatrix.prereleases !== "forbidden") {
     errors.push("targetMatrix.prereleases must be forbidden");
   }
@@ -146,6 +163,10 @@ function validateTopLevelGraphFields(
   }
   if (typeof expo.policy !== "string" || expo.policy.trim().length === 0) {
     errors.push("targetMatrix.expo.policy must be a non-empty string");
+  } else if (expo.policy !== FROZEN_TARGET_MATRIX.expoPolicy) {
+    errors.push(
+      `targetMatrix.expo.policy must equal ${FROZEN_TARGET_MATRIX.expoPolicy}`,
+    );
   }
 
   const expectedExpoSlices = [
@@ -239,7 +260,8 @@ export function validateRebuildGraph(value: unknown): string[] {
 
   if (!Array.isArray(value.nodes) || value.nodes.length === 0) {
     errors.push("nodes must be a non-empty array");
-    return errors.sort();
+    validateTopLevelGraphFields(value, [], errors);
+    return [...new Set(errors)].sort();
   }
 
   const validNodes: GraphNode[] = [];

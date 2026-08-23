@@ -197,6 +197,56 @@ describe("controlled rebuild graph validator", () => {
     );
   });
 
+  it("requires the frozen target matrix policy values exactly", () => {
+    expect(
+      errorsFor(
+        graphWith({ targetMatrix: { ...targetMatrix, node: "Node 25 LTS" } }),
+      ),
+    ).toContain("targetMatrix.node must equal Node 24 LTS");
+    expect(
+      errorsFor(
+        graphWith({
+          targetMatrix: { ...targetMatrix, pnpm: "pnpm 11" },
+        }),
+      ),
+    ).toContain("targetMatrix.pnpm must equal latest stable pnpm 11 patch");
+    expect(
+      errorsFor(
+        graphWith({
+          targetMatrix: { ...targetMatrix, next: "Next.js 17 stable" },
+        }),
+      ),
+    ).toContain("targetMatrix.next must equal Next.js 16 stable");
+    expect(
+      errorsFor(
+        graphWith({
+          targetMatrix: {
+            ...targetMatrix,
+            expo: { ...targetMatrix.expo, policy: "one migration" },
+          },
+        }),
+      ),
+    ).toContain(
+      "targetMatrix.expo.policy must equal SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
+    );
+  });
+
+  it("collects sorted top-level errors even when nodes is empty", () => {
+    expect(
+      validateRebuildGraph({
+        schemaVersion: 2,
+        preferredPrOrder: {},
+        targetMatrix: null,
+        nodes: [],
+      }),
+    ).toEqual([
+      "nodes must be a non-empty array",
+      "preferredPrOrder must be an array of CR node IDs",
+      "schemaVersion must be 1",
+      "targetMatrix must be an object",
+    ]);
+  });
+
   it("requires each Expo target mapping to name an existing slice node", () => {
     const graph = graphWith();
     expect(
