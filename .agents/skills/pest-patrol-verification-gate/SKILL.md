@@ -25,6 +25,13 @@ timestamps, pre/post `HEAD` and `HEAD^{tree}`, clean status, and pre/post
 consumed-ignored-input version/content digests. Relevant changes invalidate
 affected evidence.
 
+Any consumed ignored directory's evidence identity requires matching
+deterministic pre/post digests of its full sorted tree: relative file/symlink
+paths plus file contents/symlink targets. A
+lockfile, package manifest, runtime version, selected files, metadata-only
+listing, or other subset is not the directory digest. No gate may reference
+that evidence set as `PASS` until those full directory digests match.
+
 Apply the union of changed-path rules:
 
 - source/test/executable: nearest owning package's declared focused test command, or `MISSING`;
