@@ -23,6 +23,7 @@
     "test": "vitest run tooling/compliance-ingest.test.ts tooling/security-baseline-check.test.ts && turbo test",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
+    "rebuild:graph:check": "node --import tsx tooling/rebuild-graph.ts",
     "security:audit": "pnpm audit",
     "security:baseline": "tsx tooling/security-baseline-check.ts"
   },
