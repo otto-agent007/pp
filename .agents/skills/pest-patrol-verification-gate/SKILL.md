@@ -25,12 +25,11 @@ timestamps, pre/post `HEAD` and `HEAD^{tree}`, clean status, and pre/post
 consumed-ignored-input version/content digests. Relevant changes invalidate
 affected evidence.
 
-Any consumed ignored directory's evidence identity requires matching
-deterministic pre/post digests of its full sorted tree: relative file/symlink
-paths plus file contents/symlink targets. A
-lockfile, package manifest, runtime version, selected files, metadata-only
-listing, or other subset is not the directory digest. No gate may reference
-that evidence set as `PASS` until those full directory digests match.
+Consumed ignored directories require matching deterministic pre/post digests of
+the full sorted tree: relative file/symlink paths and file contents/symlink
+targets. Lockfiles, manifests, runtime versions, selected files, metadata-only
+listings, or other subsets are not directory digests; no referencing gate can
+`PASS`.
 
 Apply the union of changed-path rules:
 
@@ -57,8 +56,11 @@ evidence set.
 
 Classify in this order:
 
-1. Incomplete required provenance: `MISSING`, regardless of claimed exit/result.
-2. Proven older/different identity: `STALE`.
+1. Incomplete provenance: `MISSING`, regardless of claimed result. “Before/after
+   commits” proves only age; without a complete historical evidence set it is
+   `MISSING`, not `STALE`.
+2. `STALE` only when complete historical provenance exists and identity
+   comparison proves older/different.
 3. Complete current provenance; process cannot launch; bounded independent control isolates tooling/infrastructure: `BLOCKED`.
 4. Complete current provenance; project process started; nonzero exit: `FAIL` (precedence).
 5. Complete current provenance and exit 0: `PASS`.
