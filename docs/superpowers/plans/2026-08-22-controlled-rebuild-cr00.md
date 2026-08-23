@@ -175,3 +175,49 @@ and GitHub authority.
 4. Commit the reviewed slice, push the branch, and open a draft PR against
    `main`. Do not merge it.
 
+## Paused Execution Checkpoint — 2026-08-22
+
+The user explicitly paused execution before publication. Resume from branch
+`codex/rebuild-cr00-control-plane-v1`, based on `origin/main` commit `a95be1e`.
+No push or draft PR has been created for this slice.
+
+Completed and independently reviewed:
+
+- Tasks 1–3: graph validator/tests, versioned CR00–CR18 graph/runbook, and four
+  bounded project-scoped agent profiles under the canonical three-thread cap.
+- Task 4a: `pest-patrol-rebuild-orchestrator`, including behavioral fixes for
+  exact cached package-manager discovery, bounded live reconciliation, and
+  first-eligible `preferredPrOrder` selection.
+- Task 4b: `pest-patrol-architecture-guard`, with clean baseline/forward
+  behavioral evidence and independent review.
+
+Tracked commits after the base, in order:
+
+```text
+4ab22eb docs: add CR00 controlled rebuild plan
+4f5f439 feat: validate controlled rebuild graph
+decb9d1 test: include rebuild graph validator
+d5ad9ac docs: add controlled rebuild graph runbook
+c8c75dc chore: add controlled rebuild agent profiles
+70b2602 fix: use canonical agent concurrency key
+6a9f07a docs: add rebuild orchestrator skill
+a3f609d docs: resolve cached pnpm for rebuild skill
+4265290 docs: bound rebuild reconciliation checks
+01f5622 docs: make rebuild node selection deterministic
+1e2351f docs: add Pest Patrol architecture guard skill
+```
+
+Resume at Task 4c. No tracked verification-gate skill exists yet. Two bounded
+no-skill baseline attempts were interrupted without producing tracked changes;
+start a fresh, finite baseline scenario, then author, structurally validate,
+forward-test, and independently review
+`pest-patrol-verification-gate`. Continue with Task 5 documentation, then Task
+6 focused/full verification and broad branch review. Only after all required
+gates pass should the branch be pushed and a draft PR opened.
+
+Environment note: this checkout declared `pnpm@9.15.4`; ordinary `pnpm` and
+Corepack were absent from `PATH`. Resolve an exact matching executable using
+the orchestrator skill's npm-cache discovery procedure. Lint and full builds
+previously needed the approved unsandboxed path because sandbox IPC/framework
+workers failed before repository execution. Re-establish fresh evidence rather
+than relying on those earlier baseline results.
