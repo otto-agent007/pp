@@ -5,48 +5,53 @@ description: Use when deciding whether a Pest Patrol slice may claim verificatio
 
 # Pest Patrol Verification Gate
 
-Verify read-only. Report evidence and a verdict; never fix failures, grant an
-exception, or create authority.
+Verify read-only: report evidence and a verdict; never fix failures or create
+authority.
 
-## Establish the gate set
+## Select the gates
 
-1. Identify the exact tested state: worktree, `HEAD` (or other tree identity),
-   relevant dirty paths, and evidence timestamp. Resolve the repository-declared
-   package manager and exact version. If it cannot be executed, record the
-   isolation evidence and mark the affected gate `BLOCKED`; do not substitute a
-   different tool or waive it.
-2. Select focused checks plus every repository-required command from the
-   applicable plan and project policy. An explicitly required command remains
-   required even if the diff appears docs-only or dependencies appear unchanged.
+For completion or PR readiness, require a clean relevant worktree. Record
+`HEAD` and `HEAD^{tree}` before and after the gate set. If relevant tracked or
+untracked paths are dirty, final-tree evidence is `MISSING` and no completion or
+PR `PASS` is possible until a clean final tree exists.
 
-## Execute and record
+Inventory changed paths from merge-base/base-to-`HEAD`; apply the union of all
+matching rules:
 
-For every applicable gate, record its exact command, exit code, result,
-evidence timestamp, tested-tree identity, and one status:
+- executable, source, or test path: owning-package focused tests;
+- package manifest or lockfile: frozen install and applicable dependency/security checks;
+- rebuild graph or validator: graph unit test and CLI check;
+- changed skill: official `quick_validate.py` for each skill;
+- TOML: parser/schema assertions; and
+- docs or config: diff, link, schema, or static checks.
+
+If a path has no direct mapped check, record the gap `MISSING` and refuse `PASS`
+until the applicable plan or controller supplies one. Add every required
+plan/project command; an explicitly named gate remains applicable regardless of
+the diff. Neither the verifier nor an ad hoc external exception/exemption can
+waive it: it remains required until the authoritative plan/policy is amended.
+
+## Execute and classify
+
+Resolve the repository-declared package manager/version or mark affected gates
+`BLOCKED` with isolation evidence. For every gate, record exact command, exit
+code, result, timestamp, and tested worktree plus `HEAD`/`HEAD^{tree}`.
 
 | Status | Meaning |
 |---|---|
-| `PASS` | Executed with exit 0 on the tested tree. |
-| `FAIL` | Executed and exited nonzero. |
-| `BLOCKED` | Could not execute because evidence isolates an infrastructure or environment cause. |
-| `MISSING` | Required but not run. |
-| `STALE` | Evidence is older than, or from a different relevant tree/worktree state. |
+| `PASS` | Exit 0 on the recorded tested tree. |
+| `FAIL` | The project check started and returned nonzero. |
+| `BLOCKED` | It could not execute due to isolated tooling/infrastructure. A nonzero shell result is `BLOCKED` only when evidence proves the project check never started or reached assertions and a bounded independent control isolates that cause; otherwise `FAIL`. |
+| `MISSING` | Required command was not run, or a claimed run lacks any required provenance field. |
+| `STALE` | Provenance proves an older or different relevant tree/worktree. |
 
-After a relevant code, configuration, dependency, generated-output, or
-worktree-state change, invalidate affected evidence and mark it `STALE` until
-rerun. A claimed pass without the recorded command, exit code, timestamp, and
-tree identity is not fresh evidence.
+Relevant changes invalidate affected evidence. Do not call an environmental
+failure `PASS` or invent a waiver.
 
-Classify an environmental failure as `BLOCKED` only after logs or a bounded,
-independent reproduction isolates the environment from the project. It is never
-`PASS`, and the verifier cannot create a waiver or exception.
+## Verdict
 
-## Verdict and claims
-
-Emit `PASS` only when every applicable required gate is a fresh `PASS` on the
-tested tree. Emit `FAIL` when any required gate is `FAIL`, `MISSING`, or
-`STALE`; otherwise emit `BLOCKED` when a required gate is `BLOCKED`.
-
-Only an overall `PASS` permits a verification, completion, or PR-readiness
-claim. For `FAIL` or `BLOCKED`, list the blocking gates and required next
-evidence; for `MISSING` or `STALE`, refuse the claim and state the rerun needed.
+Emit `PASS` only when the worktree is clean, pre/post `HEAD` and tree identities
+match, and every applicable required gate is fresh `PASS`. Emit `FAIL` for any
+required `FAIL`, `MISSING`, or `STALE`; otherwise emit `BLOCKED` for required
+`BLOCKED`. Any non-`PASS` blocks verification, completion, and PR-readiness:
+list each blocker and the required next evidence, without suggesting a waiver.
