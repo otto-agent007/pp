@@ -17,6 +17,9 @@
 - Explicit exclusions: no application behavior change; the `package.json`
   change adds scripts only, while dependencies and the lockfile are unchanged;
   no migration; and no provider, environment, preview, or production mutation.
-- Publication is pending until the final-review fixes, re-review, and fresh
-  verification all pass. CR00 has no draft PR yet, and final verification has
-  not yet been claimed.
+- Draft PR [#146](https://github.com/otto-agent007/pp/pull/146) is active.
+  Pre-publication verification passed with complete dependency-input
+  provenance, and final GPT-5.6 Sol review reported no Critical, Important, or
+  Minor findings.
+- CR00 remains `running` until the draft PR is reviewed and merged. Do not
+  start CR01 implementation or open a second controlled-rebuild draft PR.

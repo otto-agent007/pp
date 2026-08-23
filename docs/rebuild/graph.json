@@ -115,9 +115,13 @@
       "approvals": [
         "Controller approval before publication"
       ],
-      "evidence": [],
+      "evidence": [
+        "Pre-publication CR00 verification passed with complete dependency-input provenance.",
+        "Final GPT-5.6 Sol review reported no Critical, Important, or Minor findings.",
+        "Draft PR https://github.com/otto-agent007/pp/pull/146 opened."
+      ],
       "branch": "codex/rebuild-cr00-control-plane-v1",
-      "pr": "",
+      "pr": "https://github.com/otto-agent007/pp/pull/146",
       "mergeSha": ""
     },
     {
