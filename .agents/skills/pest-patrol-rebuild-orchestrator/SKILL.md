@@ -27,9 +27,12 @@ branches, GitHub, providers, environments, preview data, or production.
    exit code, and result. Stop selection when validation fails.
 3. Reconcile at most one node. An unresolved `running` node takes precedence.
    When PR or merge state matters, query GitHub read-only and label that
-   evidence as live. Label local branch, ref, and commit evidence as local;
-   never infer a live merge, review, or PR state from it. If live evidence is
-   unavailable, say so and do not promote the node.
+   evidence as live. Give every live reconciliation command an explicit,
+   finite completion deadline supported by the environment; never wait or
+   retry indefinitely. If a bounded attempt fails or times out, record the
+   attempt and mark live evidence unavailable. Label local branch, ref, and
+   commit evidence as local; never infer a live merge, review, or PR state
+   from it. Without required live evidence, do not promote the node.
 4. If no node is running, select at most one candidate in
    `preferredPrOrder` whose dependencies are `done`, conflicts are clear, and
    graph status permits the transition. Do not silently edit state or start a
