@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "preferredPrOrder": [
+    "CR00",
+    "CR01",
+    "CR02",
+    "CR03",
+    "CR04",
+    "CR05",
+    "CR06",
+    "CR07",
+    "CR08",
+    "CR09",
+    "CR10",
+    "CR11",
+    "CR12",
+    "CR13",
+    "CR14",
+    "CR15",
+    "CR16",
+    "CR17",
+    "CR18"
+  ],
+  "targetMatrix": {
+    "node": "Node 24 LTS",
+    "pnpm": "latest stable pnpm 11 patch",
+    "next": "Next.js 16 stable",
+    "expo": {
+      "policy": "SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
+      "slices": [
+        {
+          "id": "CR13",
+          "sdk": 54
+        },
+        {
+          "id": "CR14",
+          "sdk": 55
+        },
+        {
+          "id": "CR15",
+          "sdk": 56
+        },
+        {
+          "id": "CR16",
+          "sdk": 57
+        }
+      ]
+    },
+    "prereleases": "forbidden"
+  },
+  "nodes": [
+    {
+      "id": "CR00",
+      "kind": "slice",
+      "status": "running",
+      "parent": null,
+      "dependencies": [],
+      "conflicts": [
+        "CR01",
+        "CR02",
+        "CR03",
+        "CR04",
+        "CR05",
+        "CR06",
+        "CR07",
+        "CR08",
+        "CR09",
+        "CR10",
+        "CR11",
+        "CR12",
+        "CR13",
+        "CR14",
+        "CR15",
+        "CR16",
+        "CR17",
+        "CR18"
+      ],
+      "ownership": [
+        "docs/rebuild/graph.json",
+        "docs/rebuild/README.md"
+      ],
+      "deliverables": [
+        "Versioned controlled-rebuild dependency graph",
+        "Machine-validating rebuild graph command",
+        "Operator runbook and scoped execution roles"
+      ],
+      "checks": [
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts",
+        "pnpm rebuild:graph:check",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval before publication"
+      ],
+      "evidence": [],
+      "branch": "codex/rebuild-cr00-control-plane-v1",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR01",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR00"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Controlled rebuild foundation slice"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR02",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR01"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/types"
+      ],
+      "deliverables": [
+        "Bounded-context shared types with compatibility exports"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR03",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR01"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/domain"
+      ],
+      "deliverables": [
+        "Pure domain package"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR04",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR03"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/application"
+      ],
+      "deliverables": [
+        "Application ports and use cases"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR05",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR04"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/api-client"
+      ],
+      "deliverables": [
+        "API-client demo and Supabase adapters"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR06",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR05"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/sync"
+      ],
+      "deliverables": [
+        "Durable offline mutation queue"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR07",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR02",
+        "CR06"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Type and offline-sync integration boundary"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR08",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR07"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Application composition preparation"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR09",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR08"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "apps"
+      ],
+      "deliverables": [
+        "Applications as composition and UI boundary"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR10",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR09"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Node 24 LTS migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR11",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR09"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Latest stable pnpm 11 patch migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR12",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR10",
+        "CR11"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Next.js 16 stable migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR13",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR12"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 54 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR14",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR12",
+        "CR13"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 55 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR15",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR11",
+        "CR14"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 56 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR16",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR12",
+        "CR15"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 57 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR17",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR11",
+        "CR12",
+        "CR14"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Cross-runtime compatibility reconciliation"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    },
+    {
+      "id": "CR18",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR10",
+        "CR11",
+        "CR12",
+        "CR13",
+        "CR14",
+        "CR15",
+        "CR16",
+        "CR17"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Controlled rebuild completion and final reconciliation"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": ""
+    }
+  ]
+}
