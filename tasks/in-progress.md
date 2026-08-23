@@ -5,8 +5,8 @@
 - Active branch: `codex/rebuild-cr00-control-plane-v1`, based on
   `origin/main` at `a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03`.
 - PR [#145](https://github.com/otto-agent007/pp/pull/145) is merged. Its merge
-  commit is `a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03`, which is the current
-  `refs/heads/main`.
+  commit is `a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03`, which was
+  `refs/remotes/origin/main` when CR00 started.
 - CR00 establishes only the controlled-rebuild control plane: the versioned
   graph and validator, controlled-rebuild runbook, bounded agent/skill
   guidance, and reconciled operating/task documentation.
