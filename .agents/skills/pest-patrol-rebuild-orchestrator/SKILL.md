@@ -33,10 +33,11 @@ branches, GitHub, providers, environments, preview data, or production.
    attempt and mark live evidence unavailable. Label local branch, ref, and
    commit evidence as local; never infer a live merge, review, or PR state
    from it. Without required live evidence, do not promote the node.
-4. If no node is running, select at most one candidate in
-   `preferredPrOrder` whose dependencies are `done`, conflicts are clear, and
-   graph status permits the transition. Do not silently edit state or start a
-   second slice.
+4. If no node is running, scan the `preferredPrOrder` array in order and
+   select exactly its first candidate whose dependencies are `done`, conflicts
+   are clear, and graph status permits the transition. Select none when no
+   candidate is eligible; never choose a later eligible candidate. Do not
+   silently edit state or start a second slice.
 5. Copy ownership, deliverables, checks, approvals, evidence, branch, and PR
    values from verified sources. Never invent values for empty fields. Report
    each missing field as an explicit scope gap; an incomplete candidate gets
