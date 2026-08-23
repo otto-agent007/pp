@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { posix, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const KINDS = new Set(["slice", "task", "gate"]);
@@ -61,20 +61,125 @@ function hasNonEmptyEvidence(evidence: unknown) {
 }
 
 function isPrUrl(value: unknown) {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return false;
-  }
-
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
+  return (
+    typeof value === "string" &&
+    /^https:\/\/github\.com\/otto-agent007\/pp\/pull\/[1-9][0-9]*$/.test(value)
+  );
 }
 
 function isMergeSha(value: unknown) {
-  return typeof value === "string" && /^[0-9a-f]{7,64}$/i.test(value);
+  return typeof value === "string" && /^[0-9a-f]{40}$/i.test(value);
+}
+
+function isRepositoryRelativePath(value: string) {
+  return (
+    value.length > 0 &&
+    !value.includes("\\") &&
+    !posix.isAbsolute(value) &&
+    !win32.isAbsolute(value) &&
+    win32.parse(value).root.length === 0 &&
+    value === posix.normalize(value) &&
+    !value
+      .split("/")
+      .some((part) => part.length === 0 || part === "." || part === "..")
+  );
+}
+
+function ownershipPathsOverlap(left: string, right: string) {
+  return (
+    left === right ||
+    left.startsWith(`${right}/`) ||
+    right.startsWith(`${left}/`)
+  );
+}
+
+function validateTopLevelGraphFields(
+  graph: Record<string, unknown>,
+  nodes: readonly GraphNode[],
+  errors: string[],
+) {
+  const order = graph.preferredPrOrder;
+  if (!isStringArray(order)) {
+    errors.push("preferredPrOrder must be an array of CR node IDs");
+  } else {
+    const numericOrder = order.every((id) => /^CR\d+$/.test(id));
+    const isAscending = order.every(
+      (id, index) =>
+        index === 0 || Number(id.slice(2)) > Number(order[index - 1].slice(2)),
+    );
+    if (!numericOrder || !isAscending) {
+      errors.push("preferredPrOrder must be in numeric CR order");
+    }
+
+    const nodeIds = new Set(nodes.map((node) => node.id));
+    const orderIds = new Set(order);
+    if (
+      orderIds.size !== order.length ||
+      orderIds.size !== nodeIds.size ||
+      [...orderIds].some((id) => !nodeIds.has(id))
+    ) {
+      errors.push("preferredPrOrder must contain each node exactly once");
+    }
+  }
+
+  if (!isRecord(graph.targetMatrix)) {
+    errors.push("targetMatrix must be an object");
+    return;
+  }
+
+  for (const field of ["node", "pnpm", "next", "prereleases"] as const) {
+    if (
+      typeof graph.targetMatrix[field] !== "string" ||
+      graph.targetMatrix[field].trim().length === 0
+    ) {
+      errors.push(`targetMatrix.${field} must be a non-empty string`);
+    }
+  }
+  if (graph.targetMatrix.prereleases !== "forbidden") {
+    errors.push("targetMatrix.prereleases must be forbidden");
+  }
+
+  const expo = graph.targetMatrix.expo;
+  if (!isRecord(expo)) {
+    errors.push("targetMatrix.expo must be an object");
+    return;
+  }
+  if (typeof expo.policy !== "string" || expo.policy.trim().length === 0) {
+    errors.push("targetMatrix.expo.policy must be a non-empty string");
+  }
+
+  const expectedExpoSlices = [
+    ["CR13", 54],
+    ["CR14", 55],
+    ["CR15", 56],
+    ["CR16", 57],
+  ] as const;
+  if (
+    !Array.isArray(expo.slices) ||
+    expo.slices.length !== expectedExpoSlices.length ||
+    !expo.slices.every(
+      (slice, index) =>
+        isRecord(slice) &&
+        slice.id === expectedExpoSlices[index][0] &&
+        slice.sdk === expectedExpoSlices[index][1],
+    )
+  ) {
+    errors.push(
+      "targetMatrix.expo.slices must map CR13=54, CR14=55, CR15=56, and CR16=57",
+    );
+  }
+
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+  for (const [id] of expectedExpoSlices) {
+    const node = nodesById.get(id);
+    if (!node) {
+      errors.push(
+        `targetMatrix.expo.slices references missing slice node ${id}`,
+      );
+    } else if (node.kind !== "slice") {
+      errors.push(`targetMatrix.expo.slices node ${id} must have kind slice`);
+    }
+  }
 }
 
 function findDependencyCycles(nodes: readonly GraphNode[]) {
@@ -222,6 +327,7 @@ export function validateRebuildGraph(value: unknown): string[] {
   });
 
   const nodesById = new Map(validNodes.map((node) => [node.id, node]));
+  validateTopLevelGraphFields(value, validNodes, errors);
   for (const node of validNodes) {
     if (node.parent === node.id) {
       errors.push(`node ${node.id} cannot parent itself`);
@@ -245,6 +351,13 @@ export function validateRebuildGraph(value: unknown): string[] {
         errors.push(`node ${node.id} references missing conflict ${conflict}`);
       }
     }
+    for (const ownershipPath of node.ownership) {
+      if (!isRepositoryRelativePath(ownershipPath)) {
+        errors.push(
+          `node ${node.id} ownership path must be a normalized repository-relative path: ${JSON.stringify(ownershipPath)}`,
+        );
+      }
+    }
   }
 
   for (const cycle of findDependencyCycles(validNodes)) {
@@ -259,6 +372,23 @@ export function validateRebuildGraph(value: unknown): string[] {
     errors.push(
       `only one slice may be running; found ${runningSlices.join(", ")}`,
     );
+  }
+
+  const activeConflicts = new Set<string>();
+  for (const node of [...validNodes]
+    .filter((candidate) => candidate.status === "running")
+    .sort((left, right) => left.id.localeCompare(right.id))) {
+    for (const conflict of [...node.conflicts].sort()) {
+      const conflictNode = nodesById.get(conflict);
+      if (conflict !== node.id && conflictNode?.status === "running") {
+        const [left, right] = [node.id, conflict].sort();
+        activeConflicts.add(`${left}\u0000${right}`);
+      }
+    }
+  }
+  for (const conflict of [...activeConflicts].sort()) {
+    const [left, right] = conflict.split("\u0000");
+    errors.push(`running nodes ${left} and ${right} have an active conflict`);
   }
 
   const runningWriteTasks = validNodes
@@ -278,22 +408,26 @@ export function validateRebuildGraph(value: unknown): string[] {
       const task = runningWriteTasks[index];
       const otherTask = runningWriteTasks[otherIndex];
       for (const path of [...task.ownership].sort()) {
-        if (otherTask.ownership.includes(path)) {
-          errors.push(
-            `running write tasks ${task.id} and ${otherTask.id} overlap on ownership ${path}`,
-          );
+        for (const otherPath of [...otherTask.ownership].sort()) {
+          if (ownershipPathsOverlap(path, otherPath)) {
+            const overlap =
+              path === otherPath ? path : `${path} and ${otherPath}`;
+            errors.push(
+              `running write tasks ${task.id} and ${otherTask.id} overlap on ownership ${overlap}`,
+            );
+          }
         }
       }
     }
   }
 
   for (const node of validNodes) {
-    if (node.status === "ready") {
+    if (node.status === "ready" || node.status === "running") {
       for (const dependency of node.dependencies) {
         const dependencyNode = nodesById.get(dependency);
         if (dependencyNode && dependencyNode.status !== "done") {
           errors.push(
-            `ready node ${node.id} depends on ${dependency} with status ${dependencyNode.status}, not done`,
+            `${node.status} node ${node.id} depends on ${dependency} with status ${dependencyNode.status}, not done`,
           );
         }
       }
@@ -304,10 +438,14 @@ export function validateRebuildGraph(value: unknown): string[] {
     }
     if (node.kind === "slice" && node.status === "done") {
       if (!isPrUrl(node.pr)) {
-        errors.push(`done slice ${node.id} must include a PR URL`);
+        errors.push(
+          `done slice ${node.id} must include the canonical GitHub pull request URL`,
+        );
       }
       if (!isMergeSha(node.mergeSha)) {
-        errors.push(`done slice ${node.id} must include a merge SHA`);
+        errors.push(
+          `done slice ${node.id} must include a 40-character hexadecimal merge SHA`,
+        );
       }
     }
   }

@@ -7,9 +7,46 @@ import { runRebuildGraphCli, validateRebuildGraph } from "./rebuild-graph";
 
 const temporaryDirectories: string[] = [];
 
+const preferredPrOrder = ["CR00", "CR13", "CR14", "CR15", "CR16"];
+const targetMatrix = {
+  node: "Node 24 LTS",
+  pnpm: "latest stable pnpm 11 patch",
+  next: "Next.js 16 stable",
+  prereleases: "forbidden",
+  expo: {
+    policy:
+      "SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
+    slices: [
+      { id: "CR13", sdk: 54 },
+      { id: "CR14", sdk: 55 },
+      { id: "CR15", sdk: 56 },
+      { id: "CR16", sdk: 57 },
+    ],
+  },
+};
+
+const targetMatrixSliceNodes = targetMatrix.expo.slices.map(({ id }) => ({
+  id,
+  kind: "slice",
+  status: "planned",
+  parent: "CR00",
+  dependencies: [],
+  conflicts: [],
+  ownership: [],
+  deliverables: ["target migration"],
+  checks: ["vitest"],
+  approvals: [],
+  evidence: [],
+  branch: "",
+  pr: "",
+  mergeSha: "",
+}));
+
 function graphWith(overrides: Record<string, unknown> = {}) {
   return {
     schemaVersion: 1,
+    preferredPrOrder,
+    targetMatrix,
     nodes: [
       {
         id: "CR00",
@@ -27,6 +64,7 @@ function graphWith(overrides: Record<string, unknown> = {}) {
         pr: "",
         mergeSha: "",
       },
+      ...targetMatrixSliceNodes.map((node) => ({ ...node })),
     ],
     ...overrides,
   };
@@ -87,6 +125,95 @@ describe("controlled rebuild graph validator", () => {
     expect(
       errorsFor(graphWith({ nodes: [nodeWith({ id: "CR01" }), nodeWith()] })),
     ).toContain("node ID CR01 is duplicated");
+  });
+
+  it("requires a unique, exhaustive numeric CR preferred PR order", () => {
+    expect(
+      errorsFor(
+        graphWith({
+          nodes: [
+            graphWith().nodes[0],
+            nodeWith({ id: "CR01", parent: "CR00" }),
+          ],
+          preferredPrOrder: ["CR01", "CR00"],
+        }),
+      ),
+    ).toContain("preferredPrOrder must be in numeric CR order");
+    expect(
+      errorsFor(graphWith({ preferredPrOrder: ["CR00", "CR00"] })),
+    ).toContain("preferredPrOrder must contain each node exactly once");
+    expect(errorsFor(graphWith({ preferredPrOrder: ["CR01"] }))).toContain(
+      "preferredPrOrder must contain each node exactly once",
+    );
+  });
+
+  it("requires the frozen target matrix strings, prerelease policy, and Expo mapping", () => {
+    expect(
+      errorsFor(
+        graphWith({
+          targetMatrix: {
+            ...targetMatrix,
+            node: 24,
+            prereleases: "allowed",
+            expo: {
+              ...targetMatrix.expo,
+              slices: [{ id: "CR13", sdk: 55 }],
+            },
+          },
+        }),
+      ),
+    ).toContain("targetMatrix.node must be a non-empty string");
+    expect(
+      errorsFor(
+        graphWith({
+          targetMatrix: {
+            ...targetMatrix,
+            node: 24,
+            prereleases: "allowed",
+            expo: {
+              ...targetMatrix.expo,
+              slices: [{ id: "CR13", sdk: 55 }],
+            },
+          },
+        }),
+      ),
+    ).toContain("targetMatrix.prereleases must be forbidden");
+    expect(
+      errorsFor(
+        graphWith({
+          targetMatrix: {
+            ...targetMatrix,
+            node: 24,
+            prereleases: "allowed",
+            expo: {
+              ...targetMatrix.expo,
+              slices: [{ id: "CR13", sdk: 55 }],
+            },
+          },
+        }),
+      ),
+    ).toContain(
+      "targetMatrix.expo.slices must map CR13=54, CR14=55, CR15=56, and CR16=57",
+    );
+  });
+
+  it("requires each Expo target mapping to name an existing slice node", () => {
+    const graph = graphWith();
+    expect(
+      errorsFor({
+        ...graph,
+        nodes: graph.nodes.filter((node) => node.id !== "CR13"),
+        preferredPrOrder: ["CR00", "CR14", "CR15", "CR16"],
+      }),
+    ).toContain("targetMatrix.expo.slices references missing slice node CR13");
+    expect(
+      errorsFor({
+        ...graph,
+        nodes: graph.nodes.map((node) =>
+          node.id === "CR13" ? { ...node, kind: "task" } : node,
+        ),
+      }),
+    ).toContain("targetMatrix.expo.slices node CR13 must have kind slice");
   });
 
   it("rejects unsupported node kinds and statuses", () => {
@@ -212,18 +339,104 @@ describe("controlled rebuild graph validator", () => {
     ).toContain("only one slice may be running; found CR00, CR01");
   });
 
-  it("rejects overlapping ownership between running write tasks", () => {
+  it("rejects a deduplicated active conflict between running nodes", () => {
+    const activeConflictErrors = validateRebuildGraph(
+      graphWith({
+        nodes: [
+          nodeWith({
+            conflicts: ["CR02"],
+            id: "CR01",
+            parent: null,
+            status: "running",
+          }),
+          nodeWith({
+            conflicts: ["CR01"],
+            id: "CR02",
+            parent: null,
+            status: "running",
+          }),
+        ],
+      }),
+    ).filter((error) => error.includes("active conflict"));
+
+    expect(activeConflictErrors).toEqual([
+      "running nodes CR01 and CR02 have an active conflict",
+    ]);
+  });
+
+  it("rejects unsafe ownership and overlapping running write paths", () => {
+    const unsafeOwnershipErrors = errorsFor(
+      graphWith({
+        nodes: [
+          nodeWith({
+            id: "CR01",
+            parent: null,
+            ownership: [
+              "",
+              "/tmp/graph.ts",
+              "C:\\\\graph.ts",
+              "C:graph.ts",
+              "../graph.ts",
+              "tooling/../graph.ts",
+            ],
+            status: "running",
+          }),
+          nodeWith({
+            id: "CR02",
+            parent: null,
+            ownership: ["tooling", "tooling/rebuild-graph.ts"],
+            status: "running",
+          }),
+        ],
+      }),
+    );
+    for (const path of [
+      "",
+      "/tmp/graph.ts",
+      "C:\\\\graph.ts",
+      "C:graph.ts",
+      "../graph.ts",
+      "tooling/../graph.ts",
+    ]) {
+      expect(unsafeOwnershipErrors).toContain(
+        `node CR01 ownership path must be a normalized repository-relative path: ${JSON.stringify(path)}`,
+      );
+    }
     expect(
       errorsFor(
         graphWith({
           nodes: [
             nodeWith({
               id: "CR01",
+              parent: null,
+              ownership: ["tooling"],
+              status: "running",
+            }),
+            nodeWith({
+              id: "CR02",
+              parent: null,
+              ownership: ["tooling/rebuild-graph.ts"],
+              status: "running",
+            }),
+          ],
+        }),
+      ),
+    ).toContain(
+      "running write tasks CR01 and CR02 overlap on ownership tooling and tooling/rebuild-graph.ts",
+    );
+    expect(
+      errorsFor(
+        graphWith({
+          nodes: [
+            nodeWith({
+              id: "CR01",
+              parent: null,
               ownership: ["tooling/rebuild-graph.ts"],
               status: "running",
             }),
             nodeWith({
               id: "CR02",
+              parent: null,
               ownership: ["tooling/rebuild-graph.ts"],
               status: "running",
             }),
@@ -235,18 +448,40 @@ describe("controlled rebuild graph validator", () => {
     );
   });
 
-  it("allows ready nodes only when every dependency is done", () => {
+  it("allows ready and running nodes only when every dependency is done", () => {
     expect(
       errorsFor(
         graphWith({
           nodes: [
-            nodeWith({ id: "CR00", kind: "slice", status: "running" }),
+            nodeWith({
+              id: "CR00",
+              kind: "slice",
+              parent: null,
+              status: "running",
+            }),
             nodeWith({ dependencies: ["CR00"], status: "ready" }),
           ],
         }),
       ),
     ).toContain(
       "ready node CR01 depends on CR00 with status running, not done",
+    );
+    expect(
+      errorsFor(
+        graphWith({
+          nodes: [
+            nodeWith({
+              id: "CR00",
+              kind: "slice",
+              parent: null,
+              status: "running",
+            }),
+            nodeWith({ dependencies: ["CR00"], status: "running" }),
+          ],
+        }),
+      ),
+    ).toContain(
+      "running node CR01 depends on CR00 with status running, not done",
     );
   });
 
@@ -256,7 +491,7 @@ describe("controlled rebuild graph validator", () => {
     ).toContain("done node CR01 must include non-empty evidence");
   });
 
-  it("requires a PR URL and merge SHA for done slices", () => {
+  it("requires canonical GitHub PR metadata and a full merge SHA for done slices", () => {
     expect(
       errorsFor(
         graphWith({
@@ -264,12 +499,17 @@ describe("controlled rebuild graph validator", () => {
             nodeWith({
               evidence: ["test output"],
               kind: "slice",
+              mergeSha: "0123456",
+              parent: null,
+              pr: "http://github.com/otto-agent007/pp/pull/145",
               status: "done",
             }),
           ],
         }),
       ),
-    ).toContain("done slice CR01 must include a PR URL");
+    ).toContain(
+      "done slice CR01 must include the canonical GitHub pull request URL",
+    );
     expect(
       errorsFor(
         graphWith({
@@ -277,12 +517,35 @@ describe("controlled rebuild graph validator", () => {
             nodeWith({
               evidence: ["test output"],
               kind: "slice",
+              mergeSha: "0123456",
+              parent: null,
+              pr: "http://github.com/otto-agent007/pp/pull/145",
               status: "done",
             }),
           ],
         }),
       ),
-    ).toContain("done slice CR01 must include a merge SHA");
+    ).toContain(
+      "done slice CR01 must include a 40-character hexadecimal merge SHA",
+    );
+    const validDoneSliceGraph = graphWith();
+    expect(
+      validateRebuildGraph({
+        ...validDoneSliceGraph,
+        nodes: [
+          ...validDoneSliceGraph.nodes,
+          nodeWith({
+            evidence: ["test output"],
+            kind: "slice",
+            mergeSha: "0123456789abcdef0123456789abcdef01234567",
+            parent: null,
+            pr: "https://github.com/otto-agent007/pp/pull/145",
+            status: "done",
+          }),
+        ],
+        preferredPrOrder: ["CR00", "CR01", "CR13", "CR14", "CR15", "CR16"],
+      }),
+    ).toEqual([]);
   });
 
   it("uses an optional path and prints every validation error from the CLI", () => {

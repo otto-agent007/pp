@@ -14,9 +14,9 @@
   `pnpm build`, `pnpm security:baseline`, graph validation via
   `pnpm rebuild:graph:check`, all three repo-local skill validations, TOML
   parsing, and `git diff --check`.
-- Explicit exclusions: no application behavior change; no dependency or
-  lockfile change beyond the graph-script `package.json` edit already in this
-  slice; no migration; and no provider, environment, preview, or production
-  mutation.
-- Publication is pending. CR00 has no draft PR yet, and final verification has
+- Explicit exclusions: no application behavior change; the `package.json`
+  change adds scripts only, while dependencies and the lockfile are unchanged;
+  no migration; and no provider, environment, preview, or production mutation.
+- Publication is pending until the final-review fixes, re-review, and fresh
+  verification all pass. CR00 has no draft PR yet, and final verification has
   not yet been claimed.

@@ -36,7 +36,7 @@ Apply the union of changed-path rules:
 - source/test/executable: nearest owning package's declared focused test command, or `MISSING`;
 - manifest/lockfile: fresh controller/provisioner frozen-install evidence and exact active-plan security commands; do not install;
 - graph/validator: `$PNPM exec vitest run tooling/rebuild-graph.test.ts` and `$PNPM rebuild:graph:check`;
-- changed skill: `git diff --name-only "$base...HEAD" -- '.agents/skills/*/SKILL.md' | sort | xargs -r -n1 dirname | xargs -r -n1 python3 /home/user1/.codex/skills/.system/skill-creator/scripts/quick_validate.py`;
+- changed skill: `CODEX_SKILL_VALIDATOR="${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py"; test -f "$CODEX_SKILL_VALIDATOR" && git diff --name-only "$base...HEAD" -- '.agents/skills/*/SKILL.md' | sort | xargs -r -n1 dirname | sort -u | xargs -r -n1 python3 "$CODEX_SKILL_VALIDATOR"`; the resolved official validator must exist before changed-skill validation;
 - TOML: `git diff --name-only "$base...HEAD" -- '*.toml' | sort | xargs -r -n1 python3 -c 'import sys,tomllib; tomllib.load(open(sys.argv[1],"rb"))'`, plus task-plan-named assertions only;
 - docs/config: `git diff --check "$base...HEAD"`, plus exact active-plan/package-script commands only.
 

@@ -39,6 +39,13 @@ must not change tracked files, claim `running`, create a branch, or open a PR.
 The controller must resolve a running node before another implementation slice
 starts.
 
+Graph conflicts are active only when both referenced nodes would be `running`
+implementation work. They prohibit that concurrent run; a conflict involving a
+`planned`, `ready`, `blocked`, or `done` node is scheduling context, not an
+active conflict claim. In particular, `ready` is read-only preparation rather
+than an implementation claim, so it cannot activate a conflict. Dependencies
+still control promotion to `ready`.
+
 ## Branch, approval, and evidence rules
 
 Start each implementation slice from its intended base on a fresh, correctly

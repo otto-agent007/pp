@@ -76,8 +76,23 @@
         "CR18"
       ],
       "ownership": [
+        ".agents/skills/pest-patrol-architecture-guard/SKILL.md",
+        ".agents/skills/pest-patrol-rebuild-orchestrator/SKILL.md",
+        ".agents/skills/pest-patrol-verification-gate/SKILL.md",
+        ".codex/agents/pp-rebuild-explorer.toml",
+        ".codex/agents/pp-rebuild-reviewer.toml",
+        ".codex/agents/pp-rebuild-verifier.toml",
+        ".codex/agents/pp-rebuild-worker.toml",
+        ".codex/config.toml",
+        "docs/AGENTS.md",
+        "docs/CODEX_OPERATING_PLAN.md",
         "docs/rebuild/graph.json",
-        "docs/rebuild/README.md"
+        "docs/rebuild/README.md",
+        "docs/superpowers/plans/2026-08-22-controlled-rebuild-cr00.md",
+        "package.json",
+        "tasks/in-progress.md",
+        "tooling/rebuild-graph.test.ts",
+        "tooling/rebuild-graph.ts"
       ],
       "deliverables": [
         "Versioned controlled-rebuild dependency graph",
@@ -87,6 +102,14 @@
       "checks": [
         "pnpm exec vitest run tooling/rebuild-graph.test.ts",
         "pnpm rebuild:graph:check",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "all three repo-local skill validations via the resolved official quick_validate.py",
+        "Python tomllib parsing and Task 3 exact profile assertions",
+        "codex agents --help and a configured-agent listing only when that CLI exposes one",
         "git diff --check"
       ],
       "approvals": [

@@ -115,8 +115,13 @@ and GitHub authority.
    provider, production, integration, push, and PR authority to the controller.
 
 **Verification:**
-- Parse every TOML file with Python `tomllib`.
-- Confirm Codex lists the configured agent files without changing user config.
+- Confirm the [official project-scoped convention](https://learn.chatgpt.com/docs/agent-configuration/subagents):
+  Codex loads one custom-agent TOML file per `.codex/agents/*.toml` file. Parse
+  every TOML file with Python `tomllib` and run exact structural/profile
+  assertions. Run `codex agents --help`; require a runtime configured-agent
+  listing only if this installed CLI exposes one, otherwise record the help
+  evidence and the official-schema and structural evidence instead. Do not
+  change user config.
 
 ### Task 4: Repo-local controlled rebuild skills
 
