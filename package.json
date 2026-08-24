@@ -25,6 +25,7 @@
     "format": "prettier --write .",
     "rebuild:graph:check": "node --import tsx tooling/rebuild-graph.ts",
     "rebuild:graph:reconcile": "node --import tsx tooling/rebuild-graph-reconcile.ts",
+    "rebuild:verify": "node --import tsx tooling/rebuild-verification.ts",
     "security:audit": "pnpm audit",
     "security:baseline": "tsx tooling/security-baseline-check.ts"
   },

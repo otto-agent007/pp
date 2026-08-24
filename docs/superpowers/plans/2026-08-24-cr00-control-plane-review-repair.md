@@ -630,32 +630,32 @@ export function resolvePackageManager(
 ): string | null;
 ```
 
-- [ ] **Step 1: Add gate-selection and package-manager RED tests**
+- [x] **Step 1: Add gate-selection and package-manager RED tests**
 
 Test the union of graph/validator, reconciliation, skill, TOML, source/test,
 manifest/security, docs/config, and declared-node gates. Test exact version
 matching and deterministic candidate ordering for `pnpm@9.15.4`.
 
-- [ ] **Step 2: Run the tests and observe RED**
+- [x] **Step 2: Run the tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-verification.test.ts -t "selects|package manager"`
 
 Expected: FAIL because the module does not exist.
 
-- [ ] **Step 3: Implement gate selection and package-manager resolution**
+- [x] **Step 3: Implement gate selection and package-manager resolution**
 
 Use normalized repository paths, stable IDs, deduplication by exact command,
 and lexical ordering. Reject a candidate unless its reported version exactly
 matches the package declaration.
 
-- [ ] **Step 4: Add deterministic digest RED tests**
+- [x] **Step 4: Add deterministic digest RED tests**
 
 Create temporary trees containing files, nested directories, empty files, and
 symlinks. Assert a literal digest fixture, stable results across creation order,
 and changed results when file bytes or symlink targets change.
 
-- [ ] **Step 5: Run digest tests and observe RED, then implement GREEN**
+- [x] **Step 5: Run digest tests and observe RED, then implement GREEN**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-verification.test.ts -t "digest"`
@@ -664,21 +664,21 @@ Expected before implementation: FAIL. Implement SHA-256 over sorted entries
 containing entry type, normalized relative path, byte length, and bytes or
 symlink target; rerun and expect PASS.
 
-- [ ] **Step 6: Add classification precedence RED tests**
+- [x] **Step 6: Add classification precedence RED tests**
 
 Use one literal case for each status and prove precedence:
 incomplete provenance -> MISSING; complete but different identity -> STALE;
 isolated launch failure -> BLOCKED; launched nonzero -> FAIL; complete exit zero
 -> PASS.
 
-- [ ] **Step 7: Implement classification and CLI evidence-set execution**
+- [x] **Step 7: Implement classification and CLI evidence-set execution**
 
 Capture pre/post commit, tree, status, UTC timestamps, declared ignored-input
 digests, commands, exits, and classifications. Emit deterministic JSON plus a
 short human summary. Refuse PASS when identities change or a required gate is
 not PASS. Do not install or mutate external state.
 
-- [ ] **Step 8: Reduce the verification skill and commit**
+- [x] **Step 8: Reduce the verification skill and commit**
 
 Replace prose algorithms with: run `pnpm rebuild:verify`, report its exact JSON
 result, never waive a non-PASS result, and never fix failures from the verifier
