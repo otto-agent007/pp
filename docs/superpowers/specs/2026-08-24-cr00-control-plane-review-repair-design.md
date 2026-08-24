@@ -117,8 +117,8 @@ Nodes in `ready`, `running`, or `done` require:
 
 Done nodes additionally require structured verification evidence. Done slices
 require a canonical PR URL and full merge SHA. These are structural claims in
-the pure validator; repository reconciliation proves whether the claims are
-true.
+the pure validator; repository reconciliation proves whether the claims and
+their referenced commits are true.
 
 ### Structured evidence
 
@@ -145,8 +145,10 @@ type ClaimEvidence = {
 
 Timestamps must be valid UTC ISO-8601 strings and commit SHAs must be full
 hexadecimal identifiers. A done node requires at least one successful command
-record for its current commit. Version targets require an approval record for
-the current commit before promotion.
+record with a full commit SHA. Version targets require an approval record with
+a full commit SHA before promotion. The pure validator checks shape;
+reconciliation proves that evidence commits exist and are ancestors of the
+relevant branch head or done-slice merge commit.
 
 ## Repository reconciliation
 
