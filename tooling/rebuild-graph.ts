@@ -160,7 +160,6 @@ function validateTopLevelGraphFields(
     ) {
       errors.push("preferredPrOrder must contain each node exactly once");
     }
-
   }
 
   if (!isRecord(graph.repository)) {
@@ -176,9 +175,7 @@ function validateTopLevelGraphFields(
       typeof graph.repository.defaultBranch !== "string" ||
       graph.repository.defaultBranch.trim().length === 0
     ) {
-      errors.push(
-        "repository.defaultBranch must be a non-empty branch name",
-      );
+      errors.push("repository.defaultBranch must be a non-empty branch name");
     }
   }
 
@@ -281,7 +278,9 @@ function validatePreferredOrder(
   for (const node of [...nodes].sort((left, right) =>
     left.id.localeCompare(right.id),
   )) {
-    for (const dependency of [...resolvedDependencyIds(node, nodesById)].sort()) {
+    for (const dependency of [
+      ...resolvedDependencyIds(node, nodesById),
+    ].sort()) {
       const nodeIndex = orderIndex.get(node.id);
       const dependencyIndex = orderIndex.get(dependency);
       if (
@@ -379,9 +378,7 @@ export function validateRebuildGraph(value: unknown): string[] {
       rawNode.evidence.forEach((entry, evidenceIndex) => {
         const evidenceLabel = `${label} evidence entry ${evidenceIndex}`;
         if (!isRecord(entry)) {
-          errors.push(
-            `${evidenceLabel} must be a structured evidence record`,
-          );
+          errors.push(`${evidenceLabel} must be a structured evidence record`);
           return;
         }
         if (
@@ -554,12 +551,7 @@ export function validateRebuildGraph(value: unknown): string[] {
   )) {
     errors.push(`replacement graph contains a cycle: ${cycle}`);
   }
-  validatePreferredOrder(
-    value.preferredPrOrder,
-    validNodes,
-    nodesById,
-    errors,
-  );
+  validatePreferredOrder(value.preferredPrOrder, validNodes, nodesById, errors);
 
   const runningSlices = validNodes
     .filter((node) => node.kind === "slice" && node.status === "running")
@@ -631,10 +623,7 @@ export function validateRebuildGraph(value: unknown): string[] {
             `${node.status} node ${node.id} depends on abandoned node ${dependency}`,
           );
         } else if (dependencyNode?.status === "superseded") {
-          const replacement = resolveSupersededNode(
-            dependencyNode,
-            nodesById,
-          );
+          const replacement = resolveSupersededNode(dependencyNode, nodesById);
           if (replacement && replacement.status !== "done") {
             errors.push(
               `${node.status} node ${node.id} resolves superseded dependency ${dependency} to ${replacement.id} with status ${replacement.status}, not done`,
@@ -695,7 +684,10 @@ export function validateRebuildGraph(value: unknown): string[] {
       errors.push(`${node.status} node ${node.id} must include evidence`);
     }
 
-    if (node.status === "done" && !hasSuccessfulCommandEvidence(node.evidence)) {
+    if (
+      node.status === "done" &&
+      !hasSuccessfulCommandEvidence(node.evidence)
+    ) {
       errors.push(
         `done node ${node.id} must include successful command evidence`,
       );

@@ -1,6 +1,6 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { runRebuildGraphCli, validateRebuildGraph } from "./rebuild-graph";
@@ -171,6 +171,13 @@ afterEach(() => {
 });
 
 describe("controlled rebuild graph validator", () => {
+  it("accepts the checked-in rebuild graph", () => {
+    const graph = JSON.parse(
+      readFileSync(resolve(process.cwd(), "docs/rebuild/graph.json"), "utf8"),
+    );
+    expect(validateRebuildGraph(graph)).toEqual([]);
+  });
+
   it("accepts a graph whose declared control-plane invariants are satisfied", () => {
     expect(validateRebuildGraph(graphWith())).toEqual([]);
   });
@@ -281,7 +288,9 @@ describe("controlled rebuild graph validator", () => {
         ],
         preferredPrOrder: ["CR01"],
       }),
-    ).toContain("done slice CR01 must include a pull request URL for example/fork");
+    ).toContain(
+      "done slice CR01 must include a pull request URL for example/fork",
+    );
   });
 
   it("accepts node-local targets without hardcoded slice IDs or versions", () => {
@@ -618,9 +627,7 @@ describe("controlled rebuild graph validator", () => {
           ],
         }),
       ),
-    ).toContain(
-      "done node CR01 depends on CR00 with status planned, not done",
-    );
+    ).toContain("done node CR01 depends on CR00 with status planned, not done");
   });
 
   it("requires non-empty evidence for done nodes", () => {
@@ -631,9 +638,7 @@ describe("controlled rebuild graph validator", () => {
 
   it("rejects free-form evidence on done nodes", () => {
     expect(
-      errorsFor(
-        graphWith({ nodes: [doneNodeWith({ evidence: ["x"] })] }),
-      ),
+      errorsFor(graphWith({ nodes: [doneNodeWith({ evidence: ["x"] })] })),
     ).toContain(
       "node CR01 evidence entry 0 must be a structured evidence record",
     );
@@ -679,12 +684,24 @@ describe("controlled rebuild graph validator", () => {
       }),
     );
 
-    expect(errors).toContain("node CR01 evidence entry 0 summary must be non-empty");
-    expect(errors).toContain("node CR01 evidence entry 0 command must be non-empty");
-    expect(errors).toContain("node CR01 evidence entry 0 exitCode must be an integer");
-    expect(errors).toContain("node CR01 evidence entry 0 commitSha must be a full commit SHA");
-    expect(errors).toContain("node CR01 evidence entry 0 recordedAt must be a UTC timestamp");
-    expect(errors).toContain("node CR01 evidence entry 0 url must be an HTTPS URL");
+    expect(errors).toContain(
+      "node CR01 evidence entry 0 summary must be non-empty",
+    );
+    expect(errors).toContain(
+      "node CR01 evidence entry 0 command must be non-empty",
+    );
+    expect(errors).toContain(
+      "node CR01 evidence entry 0 exitCode must be an integer",
+    );
+    expect(errors).toContain(
+      "node CR01 evidence entry 0 commitSha must be a full commit SHA",
+    );
+    expect(errors).toContain(
+      "node CR01 evidence entry 0 recordedAt must be a UTC timestamp",
+    );
+    expect(errors).toContain(
+      "node CR01 evidence entry 0 url must be an HTTPS URL",
+    );
   });
 
   it("rejects unsupported structured evidence kinds", () => {

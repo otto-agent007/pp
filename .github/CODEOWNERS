@@ -1,0 +1,9 @@
+/docs/rebuild/ @otto-agent007
+/tooling/rebuild-graph.ts @otto-agent007
+/tooling/rebuild-graph.test.ts @otto-agent007
+/tooling/rebuild-graph-reconcile.ts @otto-agent007
+/tooling/rebuild-graph-reconcile.test.ts @otto-agent007
+/tooling/rebuild-verification.ts @otto-agent007
+/tooling/rebuild-verification.test.ts @otto-agent007
+/.github/workflows/ci.yml @otto-agent007
+/.github/CODEOWNERS @otto-agent007

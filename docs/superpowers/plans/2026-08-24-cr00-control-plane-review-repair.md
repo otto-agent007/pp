@@ -720,7 +720,7 @@ git commit -m "feat: automate rebuild verification gates"
 - CI supplies full Git history and read-only `GITHUB_TOKEN` to reconciliation.
 - CODEOWNERS assigns `@otto-agent007` to control-plane paths.
 
-- [ ] **Step 1: Add a real checked-in graph test**
+- [x] **Step 1: Add a real checked-in graph test**
 
 ```ts
 it("accepts the checked-in rebuild graph", () => {
@@ -731,13 +731,13 @@ it("accepts the checked-in rebuild graph", () => {
 });
 ```
 
-- [ ] **Step 2: Temporarily corrupt a copied graph and observe RED through the CLI**
+- [x] **Step 2: Temporarily corrupt a copied graph and observe RED through the CLI**
 
 Write an invalid graph to a Vitest temporary directory, invoke
 `runRebuildGraphCli([path])`, and assert exit `1`. Then retain only the
 checked-in valid-graph regression in permanent tests.
 
-- [ ] **Step 3: Update root tests and CI**
+- [x] **Step 3: Update root tests and CI**
 
 Add reconciliation and verification test files to the root `test` script.
 Configure checkout with `fetch-depth: 0`. After install and before general
@@ -745,7 +745,7 @@ tests, add explicit `pnpm rebuild:graph:check` and
 `pnpm rebuild:graph:reconcile` steps. Give the reconciliation step
 `contents: read` and `pull-requests: read` permissions via the job token.
 
-- [ ] **Step 4: Add CODEOWNERS**
+- [x] **Step 4: Add CODEOWNERS**
 
 ```text
 /docs/rebuild/ @otto-agent007

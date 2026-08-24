@@ -20,7 +20,7 @@
     "demo:smoke": "tsx tooling/demo-smoke-preflight.ts",
     "lint": "tsx tooling/no-hardcoded-hex.ts && turbo lint",
     "tokens:no-hardcoded-hex": "tsx tooling/no-hardcoded-hex.ts",
-    "test": "vitest run tooling/compliance-ingest.test.ts tooling/security-baseline-check.test.ts tooling/rebuild-graph.test.ts && turbo test",
+    "test": "vitest run tooling/compliance-ingest.test.ts tooling/security-baseline-check.test.ts tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts && turbo test",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
     "rebuild:graph:check": "node --import tsx tooling/rebuild-graph.ts",
