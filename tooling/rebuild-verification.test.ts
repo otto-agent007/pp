@@ -81,6 +81,14 @@ describe("controlled rebuild verification gate selection", () => {
       }),
     ]);
   });
+
+  it("maps task records to the docs/config gate", () => {
+    expect(
+      selectVerificationGates(["tasks/in-progress.md"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check"]);
+  });
 });
 
 describe("controlled rebuild package manager resolution", () => {

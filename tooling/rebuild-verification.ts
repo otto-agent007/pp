@@ -107,6 +107,7 @@ export function selectVerificationGates(
     }
     if (
       path.startsWith("docs/") ||
+      path.startsWith("tasks/") ||
       path.startsWith(".github/") ||
       path.startsWith(".codex/") ||
       path === "AGENTS.md" ||
