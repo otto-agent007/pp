@@ -68,6 +68,10 @@ function isStringArray(value: unknown): value is string[] {
   );
 }
 
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
 function nodeLabel(node: Record<string, unknown>, index: number) {
   return typeof node.id === "string" && node.id.length > 0
     ? `node ${node.id}`
@@ -449,12 +453,13 @@ export function validateRebuildGraph(value: unknown): string[] {
       }
     }
 
+    const parent = rawNode.parent;
+    const supersededBy = rawNode.supersededBy;
     if (
       typeof rawNode.kind === "string" &&
       typeof rawNode.status === "string" &&
-      (rawNode.parent === null || typeof rawNode.parent === "string") &&
-      (rawNode.supersededBy === null ||
-        typeof rawNode.supersededBy === "string") &&
+      isNullableString(parent) &&
+      isNullableString(supersededBy) &&
       isStringArray(rawNode.dependencies) &&
       isStringArray(rawNode.conflicts) &&
       isStringArray(rawNode.ownership)
@@ -464,7 +469,7 @@ export function validateRebuildGraph(value: unknown): string[] {
         id: rawNode.id,
         kind: rawNode.kind,
         status: rawNode.status,
-        parent: rawNode.parent,
+        parent,
         dependencies: rawNode.dependencies,
         conflicts: rawNode.conflicts,
         ownership: rawNode.ownership,
@@ -475,7 +480,7 @@ export function validateRebuildGraph(value: unknown): string[] {
         branch: rawNode.branch,
         pr: rawNode.pr,
         mergeSha: rawNode.mergeSha,
-        supersededBy: rawNode.supersededBy,
+        supersededBy,
         target: rawNode.target,
       });
     }

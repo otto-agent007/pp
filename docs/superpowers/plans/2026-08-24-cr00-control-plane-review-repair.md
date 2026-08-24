@@ -861,7 +861,7 @@ git commit -m "docs: reconcile CR00 operating contract"
 - Consumes every command and invariant above.
 - Produces a verified pushed head on existing draft PR #146; does not merge.
 
-- [ ] **Step 1: Resolve the exact pnpm launcher and capture pre-identities**
+- [x] **Step 1: Resolve the exact pnpm launcher and capture pre-identities**
 
 Use the declared `pnpm@9.15.4`, record the absolute launcher, `HEAD`,
 `HEAD^{tree}`, worktree status, and ignored-input identities required by
@@ -878,7 +878,7 @@ pnpm rebuild:verify
 
 Expected: all PASS.
 
-- [ ] **Step 3: Run repository-wide gates**
+- [x] **Step 3: Run repository-wide gates**
 
 ```bash
 pnpm test
@@ -892,12 +892,12 @@ git diff --check
 Expected: all exit 0. Existing unrelated warnings are reported separately and
 are not rewritten without a failing CR00 gate.
 
-- [ ] **Step 4: Validate skills and agent profiles**
+- [x] **Step 4: Validate skills and agent profiles**
 
 Run all three `quick_validate.py` commands. Parse every `.toml` with Python
 `tomllib` and rerun the exact profile assertions from the original CR00 plan.
 
-- [ ] **Step 5: Review the complete diff**
+- [x] **Step 5: Review the complete diff**
 
 Check pure/side-effect boundaries, deterministic ordering, token redaction,
 path normalization, lifecycle cycles, shallow-clone assumptions, CI
@@ -905,7 +905,7 @@ permissions, CODEOWNERS coverage, rule duplication, and application-scope
 exclusions. Resolve all Critical and Important findings through a fresh RED /
 GREEN cycle.
 
-- [ ] **Step 6: Commit final evidence-only reconciliation if needed**
+- [x] **Step 6: Commit final evidence-only reconciliation if needed**
 
 Only add evidence that has exact command, exit, SHA, and UTC timestamp. Do not
 mark CR00 done or supply a merge SHA while PR #146 remains open.

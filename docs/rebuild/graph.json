@@ -116,6 +116,14 @@
           "commitSha": "600419a473cb57635192d25d83d48f98e989c2d0",
           "recordedAt": "2026-08-23T05:58:24Z",
           "url": "https://github.com/otto-agent007/pp/pull/146"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 22 selected gates with evidence set 26dd71c8bacb916fe34fe5686988dc848dae9b26abe5071b7566de430b7a185b.",
+          "command": "pnpm rebuild:verify -- --package-manager /tmp/pp-pnpm-tool/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "d7b6f50fdcf6dfd67154d34e5a298527fadaa6c8",
+          "recordedAt": "2026-08-24T21:13:29.675Z"
         }
       ],
       "branch": "codex/rebuild-cr00-control-plane-v1",
