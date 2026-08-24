@@ -13,6 +13,7 @@ import {
   aggregateGateStatus,
   classifyGate,
   digestInputTree,
+  readPackageManagerVersion,
   resolvePackageManager,
   resolveVerificationCommand,
   selectVerificationGates,
@@ -113,6 +114,24 @@ describe("controlled rebuild package manager resolution", () => {
         { path: "/usr/bin/npm", version: "11.0.0" },
       ]),
     ).toBeNull();
+  });
+
+  it("reads exact pnpm package metadata when a launcher emits no version", () => {
+    const root = mkdtempSync(join(tmpdir(), "pp-pnpm-launcher-"));
+    temporaryDirectories.push(root);
+    const packageRoot = join(root, "node_modules", "pnpm");
+    mkdirSync(join(packageRoot, "bin"), { recursive: true });
+    mkdirSync(join(root, "node_modules", ".bin"), { recursive: true });
+    writeFileSync(
+      join(packageRoot, "package.json"),
+      JSON.stringify({ name: "pnpm", version: "9.15.4" }),
+    );
+    writeFileSync(join(packageRoot, "bin", "pnpm.cjs"), "// fixture");
+    const launcher = join(root, "node_modules", ".bin", "pnpm");
+    symlinkSync("../pnpm/bin/pnpm.cjs", launcher);
+
+    expect(readPackageManagerVersion(launcher, "")).toBe("9.15.4");
+    expect(readPackageManagerVersion(launcher, "10.0.0")).toBe("10.0.0");
   });
 });
 

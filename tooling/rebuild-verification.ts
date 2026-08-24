@@ -6,8 +6,9 @@ import {
   readFileSync,
   readdirSync,
   readlinkSync,
+  realpathSync,
 } from "node:fs";
-import { delimiter, join, posix, resolve, win32 } from "node:path";
+import { delimiter, dirname, join, posix, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type GateStatus = "MISSING" | "STALE" | "BLOCKED" | "FAIL" | "PASS";
@@ -303,6 +304,38 @@ function executablePaths(name: string, environment: NodeJS.ProcessEnv) {
   return [...new Set(candidates)].sort();
 }
 
+export function readPackageManagerVersion(
+  launcherPath: string,
+  reportedVersion: string,
+) {
+  if (reportedVersion.trim().length > 0) {
+    return reportedVersion.trim();
+  }
+  try {
+    let directory = dirname(realpathSync(launcherPath));
+    for (let depth = 0; depth < 4; depth += 1) {
+      const manifestPath = join(directory, "package.json");
+      if (existsSync(manifestPath)) {
+        const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+          name?: unknown;
+          version?: unknown;
+        };
+        if (manifest.name === "pnpm" && typeof manifest.version === "string") {
+          return manifest.version;
+        }
+      }
+      const parent = dirname(directory);
+      if (parent === directory) {
+        break;
+      }
+      directory = parent;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
 function discoverPackageManagerCandidates(
   explicitPath: string | null,
   environment: NodeJS.ProcessEnv,
@@ -357,7 +390,10 @@ function discoverPackageManagerCandidates(
     });
     return {
       path: probe.display,
-      version: result.status === 0 ? result.stdout.trim() : "",
+      version:
+        result.status === 0
+          ? readPackageManagerVersion(probe.command, result.stdout)
+          : "",
     };
   });
 }
