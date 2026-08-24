@@ -8,18 +8,22 @@
   commit is `a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03`, which was
   `refs/remotes/origin/main` when CR00 started.
 - CR00 establishes only the controlled-rebuild control plane: the versioned
-  graph and validator, controlled-rebuild runbook, bounded agent/skill
-  guidance, and reconciled operating/task documentation.
-- Required final checks are `pnpm test`, `pnpm typecheck`, `pnpm lint`,
-  `pnpm build`, `pnpm security:baseline`, graph validation via
-  `pnpm rebuild:graph:check`, all three repo-local skill validations, TOML
-  parsing, and `git diff --check`.
+  graph and pure validator, repository-fact reconciliation, mechanical
+  verification, CI enforcement, CODEOWNERS, canonical runbook, bounded
+  agent/skill guidance, and reconciled operating/task documentation.
+- Required final checks include `pnpm rebuild:graph:check`, live
+  `pnpm rebuild:graph:reconcile`, `pnpm rebuild:verify`, the three focused
+  control-plane test files, `pnpm test`, `pnpm typecheck`, `pnpm lint`,
+  `pnpm build`, `pnpm security:baseline`, all three repo-local skill
+  validations, TOML/profile assertions, and `git diff --check`.
 - Explicit exclusions: no application behavior change; the `package.json`
   change adds scripts only, while dependencies and the lockfile are unchanged;
   no migration; and no provider, environment, preview, or production mutation.
 - Draft PR [#146](https://github.com/otto-agent007/pp/pull/146) is active.
-  Pre-publication verification passed with complete dependency-input
-  provenance, and final GPT-5.6 Sol review reported no Critical, Important, or
-  Minor findings.
+  Review repair is in progress on the same branch and PR; CR00 has not claimed
+  final post-repair verification or completion.
+- CODEOWNERS is tracked, but PR #146 must not merge until a separately
+  authorized branch rule or ruleset requires human and code-owner approval and
+  dismisses stale approvals after new pushes.
 - CR00 remains `running` until the draft PR is reviewed and merged. Do not
   start CR01 implementation or open a second controlled-rebuild draft PR.

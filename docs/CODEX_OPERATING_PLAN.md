@@ -6,12 +6,9 @@ For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WO
 
 For controlled-rebuild work, `docs/rebuild/graph.json` is the authoritative
 multi-slice scheduler and `docs/rebuild/README.md` is its operating contract.
-Run `pnpm rebuild:graph:check` before relying on a graph edit. Live GitHub
-reconciliation wins over stale tracked status: one implementation slice and one
-draft PR may be active, while preparation for a dependency-ready future node is
-read-only only. The first commit of a new slice records reconciliation of its
-predecessor. These scheduling rules do not grant security, migration, provider,
-environment, preview, production, push, or PR authority.
+This plan does not duplicate that runbook's scheduling, lifecycle, evidence,
+or reconciliation algorithms. Those rules do not grant security, migration,
+provider, environment, preview, production, push, or PR authority.
 
 ## Default Mode
 
@@ -33,10 +30,7 @@ environment, preview, production, push, or PR authority.
 1. Recon:
    - Read `docs/AGENTS.md`, relevant `docs/` files, `tasks/in-progress.md`, and `git status --short --branch`.
    - Identify dirty worktree risks before editing.
-   - For controlled rebuilds, read and validate `docs/rebuild/graph.json`, use
-     its approved ownership and checks, and reconcile the relevant predecessor
-     against live GitHub evidence before implementation. A stale graph never
-     overrides live GitHub state.
+   - For controlled rebuilds, follow `docs/rebuild/README.md`.
    - Spawn explorer agents for independent read-only subsystem mapping when it will reduce uncertainty.
 2. Plan:
    - State the slice goal, likely files/packages, data flow, tests, risks, and rollback or follow-up notes.
@@ -53,9 +47,8 @@ environment, preview, production, push, or PR authority.
    - Run focused tests first.
    - For code batches, run `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build` unless the change scope or environment makes a check impractical.
    - For docs-only changes, run at least `git diff --check`.
-   - For controlled-rebuild graph changes, run `pnpm rebuild:graph:check` and
-     apply `pest-patrol-verification-gate`; a failed, missing, or stale gate
-     blocks completion and PR-readiness claims.
+   - For controlled-rebuild work, run the canonical runbook's graph,
+     reconciliation, and verification commands.
 6. Ship:
    - Commit grouped changes, push the verified branch, open a draft PR,
      summarize verification, update task docs, and name the next recommended
@@ -87,11 +80,9 @@ environment, preview, production, push, or PR authority.
 - Expo: mobile, offline, native, and deployment workflow planning and verification.
 - Stripe: payment design, webhook, and test-mode readiness work.
 - GitHub and Vercel: PR readiness, CI/deployment checks, environment variable name checks, and release flow.
-- Controlled rebuild: `docs/rebuild/graph.json` schedules the work; its
-  runbook permits only read-only future-slice preparation and requires the
-  first commit of a new slice to reconcile its predecessor. GitHub, provider,
-  environment, preview, production, push, and PR decisions remain
-  controller-approved.
+- Controlled rebuild: `docs/rebuild/README.md` is the sole detailed operating
+  contract. GitHub, provider, environment, preview, production, push, and PR
+  decisions remain controller-approved.
 
 ## Production Boundaries
 

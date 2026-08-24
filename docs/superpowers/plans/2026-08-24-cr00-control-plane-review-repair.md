@@ -759,7 +759,7 @@ tests, add explicit `pnpm rebuild:graph:check` and
 /.github/CODEOWNERS @otto-agent007
 ```
 
-- [ ] **Step 5: Prove every changed path is owned**
+- [x] **Step 5: Prove every changed path is owned**
 
 Run:
 `node --import tsx tooling/rebuild-graph-reconcile.ts -- --offline`
@@ -767,7 +767,7 @@ Run:
 Expected: PASS with no undeclared changed paths, including CODEOWNERS, CI, the
 spec, and this plan.
 
-- [ ] **Step 6: Run focused integration checks and commit**
+- [x] **Step 6: Run focused integration checks and commit**
 
 Run:
 
@@ -805,27 +805,27 @@ git commit -m "ci: enforce controlled rebuild graph"
 - Entry documents link to the runbook and retain only launch and authority
   boundaries.
 
-- [ ] **Step 1: Update the canonical runbook**
+- [x] **Step 1: Update the canonical runbook**
 
 Document the pure/reconciliation split, true topological preference,
 promotion readiness, structured evidence, node-local target refresh, terminal
 lifecycle semantics, closed-unmerged -> blocked flow, ownership enforcement,
 CI fact checks, and protection-before-merge requirement.
 
-- [ ] **Step 2: Remove duplicated scheduling algorithms**
+- [x] **Step 2: Remove duplicated scheduling algorithms**
 
 Reduce `docs/AGENTS.md`, `docs/CODEX_OPERATING_PLAN.md`, and the orchestrator
 skill to links plus non-negotiable authority boundaries. The orchestrator runs
 the graph check and reconciliation commands instead of reinterpreting their
 algorithms.
 
-- [ ] **Step 3: Record the review-repair state**
+- [x] **Step 3: Record the review-repair state**
 
 Update `tasks/in-progress.md`, CR00 deliverables/checks/evidence, and the graph
 ownership list to match the actual final paths and commands. Do not mark CR00
 done or invent merge evidence.
 
-- [ ] **Step 4: Validate docs, graph, and skills and commit**
+- [x] **Step 4: Validate docs, graph, and skills and commit**
 
 Run:
 

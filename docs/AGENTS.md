@@ -17,7 +17,7 @@ Pest Patrol OS — pest control operations platform replacing PestPac.
 - Use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for Codex-Claude-GitHub handoffs, draft PR stewardship, CI follow-up, and design relay work.
 - For the controlled rebuild, treat `docs/rebuild/graph.json` as the authoritative
   multi-slice scheduler and `docs/rebuild/README.md` as its operating contract.
-  Run `pnpm rebuild:graph:check` before relying on a graph edit.
+  Do not restate its scheduling or lifecycle algorithms here.
 - Keep task prompts grounded in goal, context, constraints, and done-when criteria.
 
 ## Branch And PR Rules
@@ -83,11 +83,11 @@ Pest Patrol OS — pest control operations platform replacing PestPac.
 1. Read `docs/AGENTS.md`, relevant `docs/`, `tasks/in-progress.md`, and `git status --short --branch`.
 2. Identify dirty worktree risk before editing; never overwrite, clean, stash, revert, or stage unrelated user or prior-agent work.
 3. Before editing a new slice, create or switch to a fresh correctly named `codex/*` branch from the intended base.
-4. For ambiguous, multi-slice, agentic, security-sensitive, migration, provider, or production-touching work, use Plan Mode and follow `docs/CODEX_OPERATING_PLAN.md`. Controlled-rebuild work also reconciles live GitHub state against `docs/rebuild/graph.json` before implementation; live GitHub state wins over stale tracked status.
+4. For ambiguous, multi-slice, agentic, security-sensitive, migration, provider, or production-touching work, use Plan Mode and follow `docs/CODEX_OPERATING_PLAN.md`. Controlled-rebuild work follows `docs/rebuild/README.md`.
 5. Before implementation, state the goal, files or packages likely to change, data flow, tests, and boundary risks.
 6. Implement step-by-step inside the approved scope.
 7. Verify according to scope: code changes require focused checks when useful plus `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm build`, and `git diff --check`; docs-only changes require at least `git diff --check`.
-8. Commit and push the verified branch, then open a draft PR before calling an implementation slice done unless the user explicitly requested otherwise. For the controlled rebuild, only one implementation slice and one draft PR may be active; read-only preparation for a dependency-ready future node may not create a branch, PR, tracked change, or `running` claim. The first commit of a new slice records reconciliation of its predecessor.
+8. Commit and push the verified branch, then open a draft PR before calling an implementation slice done unless the user explicitly requested otherwise. Controlled-rebuild shipping and predecessor reconciliation follow the canonical runbook.
 9. Update task docs only when the current slice status actually changes.
 
 ## Output Rules

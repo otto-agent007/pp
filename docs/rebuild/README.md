@@ -1,75 +1,130 @@
 # Controlled rebuild operator runbook
 
-`graph.json` is the versioned, machine-validated source of truth for the
-Pest Patrol OS controlled-rebuild schedule. Run
-`pnpm rebuild:graph:check` before treating a graph edit as valid.
+`docs/rebuild/graph.json` is the versioned state machine and provisional
+roadmap for the Pest Patrol controlled rebuild. Planned nodes may remain
+incomplete; promotion, not initial authoring, requires execution-ready detail.
 
-## Scope and current target matrix
+Run these commands before relying on graph state:
 
-CR00 is the active control-plane slice. It establishes the schedule and
-operator rules; it does not implement the application destination, migrate a
-runtime, change an app, modify a dependency, or mutate a provider,
-environment, preview, or production state.
+```bash
+pnpm rebuild:graph:check
+pnpm rebuild:graph:reconcile -- --offline
+```
 
-The target matrix is refreshed at the start of the applicable version slice
-and then frozen for that slice's implementation and review:
+The first command is pure structural validation. The second checks local Git
+ancestry and the running slice's changed paths against its ownership. CI runs
+live reconciliation with full history and a read-only GitHub token. Live
+GitHub state wins over stale tracked state.
 
-- Node 24 LTS.
-- The latest stable patch in pnpm 11.
-- Next.js 16 stable.
-- Expo SDK 54, 55, 56, and 57, each in its own one-SDK migration slice.
+## Scheduling model
 
-Prereleases are not eligible targets. A refresh records the current released
-stable target and its evidence before any implementation. Once the controller
-approves that selection, the branch, PR, lockfile, and verification evidence
-use that exact version; the target is not refreshed again during the slice.
+Only one implementation slice and one draft PR may be active. Read-only
+preparation for a future node may not edit tracked files, create a branch or
+PR, or claim `running`. The controller resolves the running node before another
+slice begins.
 
-## Scheduling and state transitions
+`preferredPrOrder` contains every node once and is a valid topological order of
+the resolved dependency graph. It is a deterministic tie breaker between
+otherwise eligible nodes, not numeric restatement. `parent` is an acyclic
+containment relation only; it neither satisfies dependencies nor changes
+state. Conflicts prohibit nodes from running together.
 
-Use `planned` for an unstarted node, `ready` only after every dependency is
-`done`, `running` for the one active implementation slice, `blocked` when an
-external decision or failed gate prevents progress, and `done` only after the
-node's evidence is recorded. A done slice must also record its merged PR URL
-and merge SHA. Dependencies, conflicts, and the preferred numeric PR order in
-the graph govern promotion; the preferred order is CR00 through CR18.
+The lifecycle states are:
 
-Only one implementation slice and one draft PR may be active at a time.
-Read-only preparation is allowed for a dependency-ready future node, but it
-must not change tracked files, claim `running`, create a branch, or open a PR.
-The controller must resolve a running node before another implementation slice
-starts.
+- `planned`: provisional roadmap entry;
+- `ready`: execution-ready, with every resolved dependency done;
+- `running`: the one active implementation slice;
+- `blocked`: progress requires a decision or failed/missing gate resolution;
+- `done`: verified and, for a slice, merged with canonical PR and merge SHA;
+- `abandoned`: terminal, evidenced, and never dependency-satisfying;
+- `superseded`: terminal and evidenced, with an existing non-self replacement.
 
-Graph conflicts are active only when both referenced nodes would be `running`
-implementation work. They prohibit that concurrent run; a conflict involving a
-`planned`, `ready`, `blocked`, or `done` node is scheduling context, not an
-active conflict claim. In particular, `ready` is read-only preparation rather
-than an implementation claim, so it cannot activate a conflict. Dependencies
-still control promotion to `ready`.
+Replacement chains must be acyclic. A promoted dependent resolves a
+superseded dependency through that chain and requires the terminal replacement
+to be `done`. Nothing else—ownership, checks, evidence, targets, or dependent
+lists—is inherited or rewritten.
 
-## Branch, approval, and evidence rules
+If a running slice's PR closes unmerged, record the live GitHub fact and move
+the slice to `blocked`. The controller then decides whether to reopen it or
+transition it, with evidence, to `abandoned` or `superseded`. A superseded
+transition must name its replacement. Do not perform an automatic graph
+rewrite.
 
-Start each implementation slice from its intended base on a fresh, correctly
-named `codex/*` branch. Do not reuse a merged, unrelated, or mismatched
-branch. Keep each branch inside the graph node's approved ownership and record
-the branch and draft PR in the graph as soon as they exist.
+## Promotion and targets
 
-Before promoting a node, record fresh command output, review findings, and
-any required approval in its evidence. Never record credentials, tokens,
-provider values, raw portal links, or other secrets. Security, migration,
-provider, environment, preview, production, push, and PR decisions remain
-controller-approved boundaries.
+Before `ready`, `running`, or `done`, a node requires non-empty ownership,
+deliverables, exact check commands, and a full `baseSha`. A running or done
+slice also requires a correctly named `codex/*` branch. Every resolved
+dependency must be done.
 
-Live GitHub state wins over stale tracked graph status. Before a new slice
-starts, reconcile its predecessor against live GitHub evidence. The first
-commit of the new slice must record that reconciliation of the previous node;
-do not defer it to the end of the new slice.
+Version policy lives on the applicable node rather than in validator code.
+CR10 targets Node 24 LTS, CR11 pnpm 11 stable, CR12 Next.js 16 stable, and
+CR13–CR16 one Expo SDK each from 54 through 57. At slice start, resolve the
+node's declared constraint to a released stable version, record controller
+approval evidence, and freeze that exact version for the slice. Prereleases
+are forbidden.
+
+## Evidence and repository facts
+
+Evidence is structured and commit-bound:
+
+```ts
+type CommandEvidence = {
+  kind: "command";
+  summary: string;
+  command: string;
+  exitCode: number;
+  commitSha: string;
+  recordedAt: string;
+};
+
+type ClaimEvidence = {
+  kind: "review" | "approval" | "github";
+  summary: string;
+  commitSha: string;
+  recordedAt: string;
+  url?: string;
+};
+```
+
+Use full commit SHAs and UTC timestamps. A done node needs successful command
+evidence. Shape validation is deliberately pure; reconciliation separately
+proves commits, ancestry, merged PR state, merge-SHA agreement, running-base
+ancestry, and ownership coverage. Missing history, credentials, provider data,
+or network evidence fails live reconciliation.
+
+Run `pnpm rebuild:verify` for completion or PR-readiness evidence. It selects
+the union of path-driven and node-declared gates, resolves the exact declared
+package manager without installing it, digests declared ignored inputs, binds
+results to pre/post commit, tree, and worktree identities, and emits one JSON
+evidence set. `MISSING`, `STALE`, `BLOCKED`, or `FAIL` is never a waiver.
+
+## Ownership and governance
+
+Every changed path from the running slice's `baseSha` through `HEAD` must equal
+an ownership path or descend from an owned directory. Prefix lookalikes do not
+count. CR00 owns its graph, tests, reconciliation and verification tooling,
+workflow, CODEOWNERS, skills, profiles, scripts, and operating documents.
+
+CODEOWNERS requests human review for the control plane, but the file does not
+enforce that review by itself. Because target policy now lives in graph data,
+PR #146 must not merge until a separately authorized branch rule or ruleset
+requires pull requests, human approval, code-owner approval, and dismissal of
+stale approvals after new pushes. Local implementation does not grant provider
+mutation authority.
+
+Start every slice from its intended base on a fresh correctly named `codex/*`
+branch. The first commit of a new slice reconciles its predecessor. Security,
+migration, provider, environment, preview, production, push, and PR decisions
+remain controller-approved boundaries. Never record secrets or privileged
+provider values as evidence.
 
 ## Architecture destination
 
-The controlled rebuild is headed toward bounded-context types and compatibility
-exports in `packages/types`; pure business rules in `packages/domain`; ports
-and use cases in `packages/application`; demo and Supabase adapters in
-`packages/api-client`; a durable offline queue in `packages/sync`; and apps
-that compose those packages into UI. UI components do not access Supabase
-directly, and mobile writes remain queue-first. This is a destination for the
-future dependency-ready slices, not work implemented by CR00.
+The roadmap moves toward bounded-context types in `packages/types`, pure rules
+in `packages/domain`, ports and use cases in `packages/application`, adapters in
+`packages/api-client`, a durable offline queue in `packages/sync`, and apps as
+composition roots. UI never accesses Supabase directly, and mobile writes stay
+queue-first. CR00 builds only the control plane; it does not implement that
+destination or change application, dependency, migration, provider, preview,
+environment, or production state.

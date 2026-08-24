@@ -85,13 +85,13 @@
         "tooling/rebuild-verification.ts"
       ],
       "deliverables": [
-        "Versioned controlled-rebuild dependency graph",
-        "Machine-validating rebuild graph command",
-        "Operator runbook and scoped execution roles"
+        "Versioned controlled-rebuild state machine and provisional roadmap",
+        "Pure structural validation and repository-fact reconciliation",
+        "Mechanical verification evidence-set tooling",
+        "CI enforcement, human CODEOWNERS, and canonical operator runbook"
       ],
       "checks": [
-        "pnpm exec vitest run tooling/rebuild-graph.test.ts",
-        "pnpm exec vitest run tooling/rebuild-verification.test.ts",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
         "pnpm rebuild:graph:check",
         "pnpm rebuild:graph:reconcile -- --offline",
         "pnpm test",
@@ -99,9 +99,11 @@
         "pnpm lint",
         "pnpm build",
         "pnpm security:baseline",
-        "all three repo-local skill validations via the resolved official quick_validate.py",
-        "Python tomllib parsing and Task 3 exact profile assertions",
-        "codex agents --help and a configured-agent listing only when that CLI exposes one",
+        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-rebuild-orchestrator",
+        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-architecture-guard",
+        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-verification-gate",
+        "python3 -c \"import pathlib,tomllib; [tomllib.loads(path.read_text()) for path in pathlib.Path('.codex').rglob('*.toml')]\"",
+        "codex agents --help",
         "git diff --check"
       ],
       "approvals": [
