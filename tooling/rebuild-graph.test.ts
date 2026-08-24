@@ -7,25 +7,24 @@ import { runRebuildGraphCli, validateRebuildGraph } from "./rebuild-graph";
 
 const temporaryDirectories: string[] = [];
 
+const FULL_SHA = "0123456789abcdef0123456789abcdef01234567";
 const preferredPrOrder = ["CR00", "CR13", "CR14", "CR15", "CR16"];
-const targetMatrix = {
-  node: "Node 24 LTS",
-  pnpm: "latest stable pnpm 11 patch",
-  next: "Next.js 16 stable",
+const repository = {
+  slug: "otto-agent007/pp",
+  defaultBranch: "main",
+};
+const targetPolicy = {
   prereleases: "forbidden",
-  expo: {
-    policy:
-      "SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
-    slices: [
-      { id: "CR13", sdk: 54 },
-      { id: "CR14", sdk: 55 },
-      { id: "CR15", sdk: 56 },
-      { id: "CR16", sdk: 57 },
-    ],
-  },
+  refreshAt: "slice-start",
 };
 
-const targetMatrixSliceNodes = targetMatrix.expo.slices.map(({ id }) => ({
+const targetSliceNodes = [
+  { constraint: "54", id: "CR13" },
+  { constraint: "55", id: "CR14" },
+  { constraint: "56", id: "CR15" },
+  { constraint: "57", id: "CR16" },
+].map(({ constraint, id }) => ({
+  baseSha: "",
   id,
   kind: "slice",
   status: "planned",
@@ -40,15 +39,24 @@ const targetMatrixSliceNodes = targetMatrix.expo.slices.map(({ id }) => ({
   branch: "",
   pr: "",
   mergeSha: "",
+  supersededBy: null,
+  target: {
+    product: "expo",
+    constraint,
+    selection: "exact-sdk-major",
+    resolvedVersion: "",
+  },
 }));
 
 function graphWith(overrides: Record<string, unknown> = {}) {
   return {
     schemaVersion: 1,
     preferredPrOrder,
-    targetMatrix,
+    repository,
+    targetPolicy,
     nodes: [
       {
+        baseSha: FULL_SHA,
         id: "CR00",
         kind: "slice",
         status: "running",
@@ -63,8 +71,10 @@ function graphWith(overrides: Record<string, unknown> = {}) {
         branch: "codex/rebuild-cr00-control-plane-v1",
         pr: "",
         mergeSha: "",
+        supersededBy: null,
+        target: null,
       },
-      ...targetMatrixSliceNodes.map((node) => ({ ...node })),
+      ...targetSliceNodes.map((node) => ({ ...node })),
     ],
     ...overrides,
   };
@@ -72,6 +82,7 @@ function graphWith(overrides: Record<string, unknown> = {}) {
 
 function nodeWith(overrides: Record<string, unknown> = {}) {
   return {
+    baseSha: "",
     id: "CR01",
     kind: "task",
     status: "planned",
@@ -86,8 +97,26 @@ function nodeWith(overrides: Record<string, unknown> = {}) {
     branch: "",
     pr: "",
     mergeSha: "",
+    supersededBy: null,
+    target: null,
     ...overrides,
   };
+}
+
+function doneSliceWith(overrides: Record<string, unknown> = {}) {
+  return nodeWith({
+    baseSha: FULL_SHA,
+    branch: "codex/rebuild-test-v1",
+    checks: ["pnpm test"],
+    evidence: ["verified"],
+    kind: "slice",
+    mergeSha: FULL_SHA,
+    ownership: ["tooling"],
+    parent: null,
+    pr: "https://github.com/otto-agent007/pp/pull/7",
+    status: "done",
+    ...overrides,
+  });
 }
 
 function errorsFor(value: unknown) {
@@ -147,123 +176,95 @@ describe("controlled rebuild graph validator", () => {
     );
   });
 
-  it("requires the frozen target matrix strings, prerelease policy, and Expo mapping", () => {
+  it("requires repository identity and the target policy", () => {
     expect(
       errorsFor(
         graphWith({
-          targetMatrix: {
-            ...targetMatrix,
-            node: 24,
-            prereleases: "allowed",
-            expo: {
-              ...targetMatrix.expo,
-              slices: [{ id: "CR13", sdk: 55 }],
-            },
-          },
+          repository: { slug: "not-a-slug", defaultBranch: "" },
+          targetPolicy: { prereleases: "allowed", refreshAt: "whenever" },
         }),
       ),
-    ).toContain("targetMatrix.node must be a non-empty string");
+    ).toContain("repository.slug must be an owner/name GitHub slug");
     expect(
       errorsFor(
         graphWith({
-          targetMatrix: {
-            ...targetMatrix,
-            node: 24,
-            prereleases: "allowed",
-            expo: {
-              ...targetMatrix.expo,
-              slices: [{ id: "CR13", sdk: 55 }],
-            },
-          },
+          repository: { slug: "not-a-slug", defaultBranch: "" },
+          targetPolicy: { prereleases: "allowed", refreshAt: "whenever" },
         }),
       ),
-    ).toContain("targetMatrix.prereleases must be forbidden");
+    ).toContain("repository.defaultBranch must be a non-empty branch name");
     expect(
       errorsFor(
         graphWith({
-          targetMatrix: {
-            ...targetMatrix,
-            node: 24,
-            prereleases: "allowed",
-            expo: {
-              ...targetMatrix.expo,
-              slices: [{ id: "CR13", sdk: 55 }],
-            },
-          },
+          repository: { slug: "not-a-slug", defaultBranch: "" },
+          targetPolicy: { prereleases: "allowed", refreshAt: "whenever" },
         }),
       ),
-    ).toContain(
-      "targetMatrix.expo.slices must map CR13=54, CR14=55, CR15=56, and CR16=57",
-    );
-  });
-
-  it("requires the frozen target matrix policy values exactly", () => {
-    expect(
-      errorsFor(
-        graphWith({ targetMatrix: { ...targetMatrix, node: "Node 25 LTS" } }),
-      ),
-    ).toContain("targetMatrix.node must equal Node 24 LTS");
+    ).toContain("targetPolicy.prereleases must be forbidden");
     expect(
       errorsFor(
         graphWith({
-          targetMatrix: { ...targetMatrix, pnpm: "pnpm 11" },
+          repository: { slug: "not-a-slug", defaultBranch: "" },
+          targetPolicy: { prereleases: "allowed", refreshAt: "whenever" },
         }),
       ),
-    ).toContain("targetMatrix.pnpm must equal latest stable pnpm 11 patch");
-    expect(
-      errorsFor(
-        graphWith({
-          targetMatrix: { ...targetMatrix, next: "Next.js 17 stable" },
-        }),
-      ),
-    ).toContain("targetMatrix.next must equal Next.js 16 stable");
-    expect(
-      errorsFor(
-        graphWith({
-          targetMatrix: {
-            ...targetMatrix,
-            expo: { ...targetMatrix.expo, policy: "one migration" },
-          },
-        }),
-      ),
-    ).toContain(
-      "targetMatrix.expo.policy must equal SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
-    );
+    ).toContain("targetPolicy.refreshAt must be slice-start");
   });
 
   it("collects sorted top-level errors even when nodes is empty", () => {
     expect(
       validateRebuildGraph({
+        repository: null,
         schemaVersion: 2,
         preferredPrOrder: {},
-        targetMatrix: null,
+        targetPolicy: null,
         nodes: [],
       }),
     ).toEqual([
       "nodes must be a non-empty array",
       "preferredPrOrder must be an array of CR node IDs",
+      "repository must be an object",
       "schemaVersion must be 1",
-      "targetMatrix must be an object",
+      "targetPolicy must be an object",
     ]);
   });
 
-  it("requires each Expo target mapping to name an existing slice node", () => {
-    const graph = graphWith();
+  it("derives canonical PR URLs from graph repository data", () => {
     expect(
       errorsFor({
-        ...graph,
-        nodes: graph.nodes.filter((node) => node.id !== "CR13"),
-        preferredPrOrder: ["CR00", "CR14", "CR15", "CR16"],
+        ...graphWith(),
+        repository: { slug: "example/fork", defaultBranch: "trunk" },
+        nodes: [
+          doneSliceWith({
+            pr: "https://github.com/otto-agent007/pp/pull/7",
+          }),
+        ],
+        preferredPrOrder: ["CR01"],
       }),
-    ).toContain("targetMatrix.expo.slices references missing slice node CR13");
+    ).toContain("done slice CR01 must include a pull request URL for example/fork");
+  });
+
+  it("accepts node-local targets without hardcoded slice IDs or versions", () => {
     expect(
-      errorsFor({
-        ...graph,
-        nodes: graph.nodes.map((node) =>
-          node.id === "CR13" ? { ...node, kind: "task" } : node,
-        ),
-      }),
-    ).toContain("targetMatrix.expo.slices node CR13 must have kind slice");
+      validateRebuildGraph(
+        graphWith({
+          nodes: [
+            nodeWith({
+              id: "MOBILE-A",
+              kind: "slice",
+              parent: null,
+              target: {
+                product: "expo",
+                constraint: "58",
+                selection: "exact-sdk-major",
+                resolvedVersion: "",
+              },
+            }),
+          ],
+          preferredPrOrder: ["MOBILE-A"],
+        }),
+      ),
+    ).toEqual([]);
   });
 
   it("rejects unsupported node kinds and statuses", () => {
@@ -605,7 +606,7 @@ describe("controlled rebuild graph validator", () => {
         }),
       ),
     ).toContain(
-      "done slice CR01 must include the canonical GitHub pull request URL",
+      "done slice CR01 must include a pull request URL for otto-agent007/pp",
     );
     expect(
       errorsFor(

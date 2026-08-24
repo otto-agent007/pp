@@ -21,35 +21,17 @@
     "CR17",
     "CR18"
   ],
-  "targetMatrix": {
-    "node": "Node 24 LTS",
-    "pnpm": "latest stable pnpm 11 patch",
-    "next": "Next.js 16 stable",
-    "expo": {
-      "policy": "SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
-      "slices": [
-        {
-          "id": "CR13",
-          "sdk": 54
-        },
-        {
-          "id": "CR14",
-          "sdk": 55
-        },
-        {
-          "id": "CR15",
-          "sdk": 56
-        },
-        {
-          "id": "CR16",
-          "sdk": 57
-        }
-      ]
-    },
-    "prereleases": "forbidden"
+  "repository": {
+    "slug": "otto-agent007/pp",
+    "defaultBranch": "main"
+  },
+  "targetPolicy": {
+    "prereleases": "forbidden",
+    "refreshAt": "slice-start"
   },
   "nodes": [
     {
+      "baseSha": "a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03",
       "id": "CR00",
       "kind": "slice",
       "status": "running",
@@ -130,9 +112,12 @@
       ],
       "branch": "codex/rebuild-cr00-control-plane-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/146",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR01",
       "kind": "slice",
       "status": "planned",
@@ -152,9 +137,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR02",
       "kind": "slice",
       "status": "planned",
@@ -176,9 +164,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR03",
       "kind": "slice",
       "status": "planned",
@@ -200,9 +191,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR04",
       "kind": "slice",
       "status": "planned",
@@ -224,9 +218,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR05",
       "kind": "slice",
       "status": "planned",
@@ -248,9 +245,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR06",
       "kind": "slice",
       "status": "planned",
@@ -272,9 +272,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR07",
       "kind": "slice",
       "status": "planned",
@@ -295,9 +298,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR08",
       "kind": "slice",
       "status": "planned",
@@ -317,9 +323,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR09",
       "kind": "slice",
       "status": "planned",
@@ -341,9 +350,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR10",
       "kind": "slice",
       "status": "planned",
@@ -363,9 +375,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "node",
+        "constraint": "24",
+        "selection": "lts-major",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR11",
       "kind": "slice",
       "status": "planned",
@@ -385,9 +405,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "pnpm",
+        "constraint": "11",
+        "selection": "latest-stable-patch",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR12",
       "kind": "slice",
       "status": "planned",
@@ -408,9 +436,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "next",
+        "constraint": "16",
+        "selection": "stable-major",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR13",
       "kind": "slice",
       "status": "planned",
@@ -430,9 +466,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "54",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR14",
       "kind": "slice",
       "status": "planned",
@@ -453,9 +497,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "55",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR15",
       "kind": "slice",
       "status": "planned",
@@ -476,9 +528,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "56",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR16",
       "kind": "slice",
       "status": "planned",
@@ -499,9 +559,17 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "57",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
     },
     {
+      "baseSha": "",
       "id": "CR17",
       "kind": "slice",
       "status": "planned",
@@ -523,9 +591,12 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     },
     {
+      "baseSha": "",
       "id": "CR18",
       "kind": "slice",
       "status": "planned",
@@ -552,7 +623,9 @@
       "evidence": [],
       "branch": "",
       "pr": "",
-      "mergeSha": ""
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
     }
   ]
 }

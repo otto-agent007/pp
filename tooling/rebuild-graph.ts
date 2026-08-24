@@ -4,14 +4,14 @@ import { fileURLToPath } from "node:url";
 
 const KINDS = new Set(["slice", "task", "gate"]);
 const STATUSES = new Set(["planned", "ready", "running", "blocked", "done"]);
-const FROZEN_TARGET_MATRIX = {
-  node: "Node 24 LTS",
-  pnpm: "latest stable pnpm 11 patch",
-  next: "Next.js 16 stable",
-  expoPolicy:
-    "SDK 54, SDK 55, SDK 56, and SDK 57 are separate one-SDK migration slices",
-} as const;
+const TARGET_SELECTIONS = new Set([
+  "lts-major",
+  "latest-stable-patch",
+  "stable-major",
+  "exact-sdk-major",
+]);
 const REQUIRED_NODE_FIELDS = [
+  "baseSha",
   "id",
   "kind",
   "status",
@@ -26,9 +26,12 @@ const REQUIRED_NODE_FIELDS = [
   "branch",
   "pr",
   "mergeSha",
+  "supersededBy",
+  "target",
 ] as const;
 
 type GraphNode = {
+  baseSha: unknown;
   id: string;
   kind: string;
   status: string;
@@ -43,6 +46,8 @@ type GraphNode = {
   branch: unknown;
   pr: unknown;
   mergeSha: unknown;
+  supersededBy: unknown;
+  target: unknown;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -67,10 +72,12 @@ function hasNonEmptyEvidence(evidence: unknown) {
   );
 }
 
-function isPrUrl(value: unknown) {
+function isPrUrl(value: unknown, repositorySlug: string) {
   return (
     typeof value === "string" &&
-    /^https:\/\/github\.com\/otto-agent007\/pp\/pull\/[1-9][0-9]*$/.test(value)
+    new RegExp(
+      `^https://github\\.com/${repositorySlug.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}/pull/[1-9][0-9]*$`,
+    ).test(value)
   );
 }
 
@@ -139,76 +146,33 @@ function validateTopLevelGraphFields(
     }
   }
 
-  if (!isRecord(graph.targetMatrix)) {
-    errors.push("targetMatrix must be an object");
-    return;
-  }
-
-  for (const field of ["node", "pnpm", "next", "prereleases"] as const) {
+  if (!isRecord(graph.repository)) {
+    errors.push("repository must be an object");
+  } else {
     if (
-      typeof graph.targetMatrix[field] !== "string" ||
-      graph.targetMatrix[field].trim().length === 0
+      typeof graph.repository.slug !== "string" ||
+      !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(graph.repository.slug)
     ) {
-      errors.push(`targetMatrix.${field} must be a non-empty string`);
+      errors.push("repository.slug must be an owner/name GitHub slug");
     }
-  }
-  for (const field of ["node", "pnpm", "next"] as const) {
     if (
-      typeof graph.targetMatrix[field] === "string" &&
-      graph.targetMatrix[field] !== FROZEN_TARGET_MATRIX[field]
+      typeof graph.repository.defaultBranch !== "string" ||
+      graph.repository.defaultBranch.trim().length === 0
     ) {
       errors.push(
-        `targetMatrix.${field} must equal ${FROZEN_TARGET_MATRIX[field]}`,
+        "repository.defaultBranch must be a non-empty branch name",
       );
     }
   }
-  if (graph.targetMatrix.prereleases !== "forbidden") {
-    errors.push("targetMatrix.prereleases must be forbidden");
-  }
 
-  const expo = graph.targetMatrix.expo;
-  if (!isRecord(expo)) {
-    errors.push("targetMatrix.expo must be an object");
-    return;
-  }
-  if (typeof expo.policy !== "string" || expo.policy.trim().length === 0) {
-    errors.push("targetMatrix.expo.policy must be a non-empty string");
-  } else if (expo.policy !== FROZEN_TARGET_MATRIX.expoPolicy) {
-    errors.push(
-      `targetMatrix.expo.policy must equal ${FROZEN_TARGET_MATRIX.expoPolicy}`,
-    );
-  }
-
-  const expectedExpoSlices = [
-    ["CR13", 54],
-    ["CR14", 55],
-    ["CR15", 56],
-    ["CR16", 57],
-  ] as const;
-  if (
-    !Array.isArray(expo.slices) ||
-    expo.slices.length !== expectedExpoSlices.length ||
-    !expo.slices.every(
-      (slice, index) =>
-        isRecord(slice) &&
-        slice.id === expectedExpoSlices[index][0] &&
-        slice.sdk === expectedExpoSlices[index][1],
-    )
-  ) {
-    errors.push(
-      "targetMatrix.expo.slices must map CR13=54, CR14=55, CR15=56, and CR16=57",
-    );
-  }
-
-  const nodesById = new Map(nodes.map((node) => [node.id, node]));
-  for (const [id] of expectedExpoSlices) {
-    const node = nodesById.get(id);
-    if (!node) {
-      errors.push(
-        `targetMatrix.expo.slices references missing slice node ${id}`,
-      );
-    } else if (node.kind !== "slice") {
-      errors.push(`targetMatrix.expo.slices node ${id} must have kind slice`);
+  if (!isRecord(graph.targetPolicy)) {
+    errors.push("targetPolicy must be an object");
+  } else {
+    if (graph.targetPolicy.prereleases !== "forbidden") {
+      errors.push("targetPolicy.prereleases must be forbidden");
+    }
+    if (graph.targetPolicy.refreshAt !== "slice-start") {
+      errors.push("targetPolicy.refreshAt must be slice-start");
     }
   }
 }
@@ -312,6 +276,12 @@ export function validateRebuildGraph(value: unknown): string[] {
     if (rawNode.parent !== null && typeof rawNode.parent !== "string") {
       errors.push(`${label} parent must be a node ID or null`);
     }
+    if (
+      rawNode.supersededBy !== null &&
+      typeof rawNode.supersededBy !== "string"
+    ) {
+      errors.push(`${label} supersededBy must be a node ID or null`);
+    }
 
     for (const field of ["dependencies", "conflicts", "ownership"] as const) {
       if (!isStringArray(rawNode[field])) {
@@ -328,9 +298,27 @@ export function validateRebuildGraph(value: unknown): string[] {
         errors.push(`${label} ${field} must be an array`);
       }
     }
-    for (const field of ["branch", "pr", "mergeSha"] as const) {
+    for (const field of ["baseSha", "branch", "pr", "mergeSha"] as const) {
       if (typeof rawNode[field] !== "string") {
         errors.push(`${label} ${field} must be a string`);
+      }
+    }
+    if (rawNode.target !== null) {
+      if (!isRecord(rawNode.target)) {
+        errors.push(`${label} target must be an object or null`);
+      } else {
+        for (const field of [
+          "product",
+          "constraint",
+          "resolvedVersion",
+        ] as const) {
+          if (typeof rawNode.target[field] !== "string") {
+            errors.push(`${label} target.${field} must be a string`);
+          }
+        }
+        if (!TARGET_SELECTIONS.has(rawNode.target.selection as string)) {
+          errors.push(`${label} target.selection is unsupported`);
+        }
       }
     }
 
@@ -343,6 +331,7 @@ export function validateRebuildGraph(value: unknown): string[] {
       isStringArray(rawNode.ownership)
     ) {
       validNodes.push({
+        baseSha: rawNode.baseSha,
         id: rawNode.id,
         kind: rawNode.kind,
         status: rawNode.status,
@@ -357,11 +346,17 @@ export function validateRebuildGraph(value: unknown): string[] {
         branch: rawNode.branch,
         pr: rawNode.pr,
         mergeSha: rawNode.mergeSha,
+        supersededBy: rawNode.supersededBy,
+        target: rawNode.target,
       });
     }
   });
 
   const nodesById = new Map(validNodes.map((node) => [node.id, node]));
+  const repositorySlug =
+    isRecord(value.repository) && typeof value.repository.slug === "string"
+      ? value.repository.slug
+      : "invalid/invalid";
   validateTopLevelGraphFields(value, validNodes, errors);
   for (const node of validNodes) {
     if (node.parent === node.id) {
@@ -481,9 +476,9 @@ export function validateRebuildGraph(value: unknown): string[] {
       errors.push(`done node ${node.id} must include non-empty evidence`);
     }
     if (node.kind === "slice" && node.status === "done") {
-      if (!isPrUrl(node.pr)) {
+      if (!isPrUrl(node.pr, repositorySlug)) {
         errors.push(
-          `done slice ${node.id} must include the canonical GitHub pull request URL`,
+          `done slice ${node.id} must include a pull request URL for ${repositorySlug}`,
         );
       }
       if (!isMergeSha(node.mergeSha)) {

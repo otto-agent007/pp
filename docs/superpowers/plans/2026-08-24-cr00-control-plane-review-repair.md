@@ -168,7 +168,7 @@ git commit -m "fix: enforce rebuild graph ordering"
   "exact-sdk-major"; resolvedVersion: string }`.
 - Removes `FROZEN_TARGET_MATRIX` and top-level `targetMatrix`.
 
-- [ ] **Step 1: Add a fixture using repository data and node-local targets**
+- [x] **Step 1: Add a fixture using repository data and node-local targets**
 
 Update `graphWith()` and `nodeWith()` with literal valid repository,
 target-policy, `baseSha`, `supersededBy`, and `target` fields. Add this helper
@@ -195,7 +195,7 @@ function doneSliceWith(overrides: Record<string, unknown> = {}) {
 }
 ```
 
-- [ ] **Step 2: Add repository and target regressions**
+- [x] **Step 2: Add repository and target regressions**
 
 ```ts
 it("derives canonical PR URLs from graph repository data", () => {
@@ -234,7 +234,7 @@ it("accepts node-local targets without hardcoded slice IDs or versions", () => {
 });
 ```
 
-- [ ] **Step 3: Run the two tests and observe RED**
+- [x] **Step 3: Run the two tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts -t "derives canonical PR URLs|accepts node-local targets"`
@@ -242,14 +242,14 @@ Run:
 Expected: FAIL because the validator hardcodes the repository and frozen target
 matrix.
 
-- [ ] **Step 4: Implement generic repository, target policy, and target shape validation**
+- [x] **Step 4: Implement generic repository, target policy, and target shape validation**
 
 Delete `FROZEN_TARGET_MATRIX`. Validate the repository slug with
 `^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`, require a non-empty default branch,
 require the two exact target-policy values, validate target objects generically,
 and derive the done-slice PR URL prefix from `repository.slug`.
 
-- [ ] **Step 5: Migrate the checked-in graph data**
+- [x] **Step 5: Migrate the checked-in graph data**
 
 Replace `targetMatrix` with `repository` and `targetPolicy`. Add `target`,
 `baseSha`, and `supersededBy` to all nodes. Set CR00 `baseSha` to
@@ -257,7 +257,7 @@ Replace `targetMatrix` with `repository` and `targetPolicy`. Add `target`,
 empty strings. Put Node, pnpm, Next.js, and Expo target objects on CR10 through
 CR16 with the constraints and selection modes from the approved spec.
 
-- [ ] **Step 6: Run unit and real-graph checks and commit**
+- [x] **Step 6: Run unit and real-graph checks and commit**
 
 Run:
 
