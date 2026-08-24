@@ -52,7 +52,7 @@ GitHub Actions, JSON, Markdown.
   `preferredPrOrder`; dependency completion applies to `done` as well as
   `ready` and `running`.
 
-- [ ] **Step 1: Add the done-with-undone-dependency regression**
+- [x] **Step 1: Add the done-with-undone-dependency regression**
 
 ```ts
 it("rejects a done node whose dependency is not done", () => {
@@ -73,7 +73,7 @@ it("rejects a done node whose dependency is not done", () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and observe RED**
+- [x] **Step 2: Run the focused test and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts -t "rejects a done node whose dependency is not done"`
@@ -81,16 +81,16 @@ Run:
 Expected: FAIL because the current validator returns no dependency error for a
 done node.
 
-- [ ] **Step 3: Apply dependency completion to executable terminal claims**
+- [x] **Step 3: Apply dependency completion to executable terminal claims**
 
 Change the dependency-status condition from `ready || running` to
 `ready || running || done`, keeping the existing deterministic error format.
 
-- [ ] **Step 4: Run the focused test and observe GREEN**
+- [x] **Step 4: Run the focused test and observe GREEN**
 
 Run the Step 2 command. Expected: PASS.
 
-- [ ] **Step 5: Add parent-cycle and dependency-invalid-order regressions**
+- [x] **Step 5: Add parent-cycle and dependency-invalid-order regressions**
 
 ```ts
 it("rejects parent cycles", () => {
@@ -122,7 +122,7 @@ it("rejects a preferred PR order that places a node before its dependency", () =
 });
 ```
 
-- [ ] **Step 6: Run both tests and observe RED**
+- [x] **Step 6: Run both tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts -t "rejects parent cycles|rejects a preferred PR order"`
@@ -130,14 +130,14 @@ Run:
 Expected: both FAIL because only dependency cycles are detected and numeric
 order is currently the only order constraint.
 
-- [ ] **Step 7: Implement generic cycle and topological-order helpers**
+- [x] **Step 7: Implement generic cycle and topological-order helpers**
 
 Create an internal `findCycles(nodes, edgesForNode)` helper used for dependency,
 parent, and later replacement cycles. Drop the ascending-numeric check. Build
 an order-index map and emit one error for each dependency whose index is after
 its dependent.
 
-- [ ] **Step 8: Run the complete graph test file and commit**
+- [x] **Step 8: Run the complete graph test file and commit**
 
 Run: `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts`
 

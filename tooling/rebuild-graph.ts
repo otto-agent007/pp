@@ -109,15 +109,6 @@ function validateTopLevelGraphFields(
   if (!isStringArray(order)) {
     errors.push("preferredPrOrder must be an array of CR node IDs");
   } else {
-    const numericOrder = order.every((id) => /^CR\d+$/.test(id));
-    const isAscending = order.every(
-      (id, index) =>
-        index === 0 || Number(id.slice(2)) > Number(order[index - 1].slice(2)),
-    );
-    if (!numericOrder || !isAscending) {
-      errors.push("preferredPrOrder must be in numeric CR order");
-    }
-
     const nodeIds = new Set(nodes.map((node) => node.id));
     const orderIds = new Set(order);
     if (
@@ -126,6 +117,25 @@ function validateTopLevelGraphFields(
       [...orderIds].some((id) => !nodeIds.has(id))
     ) {
       errors.push("preferredPrOrder must contain each node exactly once");
+    }
+
+    const orderIndex = new Map(order.map((id, index) => [id, index]));
+    for (const node of [...nodes].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    )) {
+      for (const dependency of [...node.dependencies].sort()) {
+        const nodeIndex = orderIndex.get(node.id);
+        const dependencyIndex = orderIndex.get(dependency);
+        if (
+          nodeIndex !== undefined &&
+          dependencyIndex !== undefined &&
+          nodeIndex < dependencyIndex
+        ) {
+          errors.push(
+            `preferredPrOrder places ${node.id} before dependency ${dependency}`,
+          );
+        }
+      }
     }
   }
 
@@ -203,7 +213,10 @@ function validateTopLevelGraphFields(
   }
 }
 
-function findDependencyCycles(nodes: readonly GraphNode[]) {
+function findCycles(
+  nodes: readonly GraphNode[],
+  edgesForNode: (node: GraphNode) => readonly string[],
+) {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const visited = new Set<string>();
   const visiting = new Set<string>();
@@ -225,9 +238,9 @@ function findDependencyCycles(nodes: readonly GraphNode[]) {
     }
 
     visiting.add(id);
-    for (const dependency of [...node.dependencies].sort()) {
-      if (nodesById.has(dependency)) {
-        visit(dependency, [...trail, id]);
+    for (const edge of [...edgesForNode(node)].sort()) {
+      if (nodesById.has(edge)) {
+        visit(edge, [...trail, id]);
       }
     }
     visiting.delete(id);
@@ -382,8 +395,13 @@ export function validateRebuildGraph(value: unknown): string[] {
     }
   }
 
-  for (const cycle of findDependencyCycles(validNodes)) {
+  for (const cycle of findCycles(validNodes, (node) => node.dependencies)) {
     errors.push(`dependency graph contains a cycle: ${cycle}`);
+  }
+  for (const cycle of findCycles(validNodes, (node) =>
+    node.parent === null ? [] : [node.parent],
+  )) {
+    errors.push(`parent graph contains a cycle: ${cycle}`);
   }
 
   const runningSlices = validNodes
@@ -444,7 +462,11 @@ export function validateRebuildGraph(value: unknown): string[] {
   }
 
   for (const node of validNodes) {
-    if (node.status === "ready" || node.status === "running") {
+    if (
+      node.status === "ready" ||
+      node.status === "running" ||
+      node.status === "done"
+    ) {
       for (const dependency of node.dependencies) {
         const dependencyNode = nodesById.get(dependency);
         if (dependencyNode && dependencyNode.status !== "done") {

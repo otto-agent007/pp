@@ -127,9 +127,9 @@ describe("controlled rebuild graph validator", () => {
     ).toContain("node ID CR01 is duplicated");
   });
 
-  it("requires a unique, exhaustive numeric CR preferred PR order", () => {
+  it("requires a unique, exhaustive preferred PR order", () => {
     expect(
-      errorsFor(
+      validateRebuildGraph(
         graphWith({
           nodes: [
             graphWith().nodes[0],
@@ -138,7 +138,7 @@ describe("controlled rebuild graph validator", () => {
           preferredPrOrder: ["CR01", "CR00"],
         }),
       ),
-    ).toContain("preferredPrOrder must be in numeric CR order");
+    ).not.toContain("preferredPrOrder must be in numeric CR order");
     expect(
       errorsFor(graphWith({ preferredPrOrder: ["CR00", "CR00"] })),
     ).toContain("preferredPrOrder must contain each node exactly once");
@@ -376,6 +376,34 @@ describe("controlled rebuild graph validator", () => {
     ).toContain("dependency graph contains a cycle: CR01 -> CR02 -> CR01");
   });
 
+  it("rejects parent cycles", () => {
+    expect(
+      errorsFor(
+        graphWith({
+          nodes: [
+            nodeWith({ id: "CR01", parent: "CR02" }),
+            nodeWith({ id: "CR02", parent: "CR01" }),
+          ],
+          preferredPrOrder: ["CR01", "CR02"],
+        }),
+      ),
+    ).toContain("parent graph contains a cycle: CR01 -> CR02 -> CR01");
+  });
+
+  it("rejects a preferred PR order that places a node before its dependency", () => {
+    expect(
+      errorsFor(
+        graphWith({
+          nodes: [
+            nodeWith({ id: "CR01", dependencies: ["CR02"] }),
+            nodeWith({ id: "CR02" }),
+          ],
+          preferredPrOrder: ["CR01", "CR02"],
+        }),
+      ),
+    ).toContain("preferredPrOrder places CR01 before dependency CR02");
+  });
+
   it("allows no more than one running slice", () => {
     expect(
       errorsFor(
@@ -532,6 +560,25 @@ describe("controlled rebuild graph validator", () => {
       ),
     ).toContain(
       "running node CR01 depends on CR00 with status running, not done",
+    );
+  });
+
+  it("rejects a done node whose dependency is not done", () => {
+    expect(
+      errorsFor(
+        graphWith({
+          nodes: [
+            nodeWith({ id: "CR00", kind: "slice", parent: null }),
+            nodeWith({
+              dependencies: ["CR00"],
+              evidence: ["verified"],
+              status: "done",
+            }),
+          ],
+        }),
+      ),
+    ).toContain(
+      "done node CR01 depends on CR00 with status planned, not done",
     );
   });
 
