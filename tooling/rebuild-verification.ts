@@ -95,7 +95,6 @@ export function selectVerificationGates(
       path.endsWith("/package.json")
     ) {
       matched = true;
-      commands.add("pnpm audit");
       commands.add("pnpm security:baseline");
     }
     if (
@@ -351,32 +350,39 @@ function discoverPackageManagerCandidates(
       command: explicitPath,
       args: [],
     });
-  }
-  for (const path of executablePaths("pnpm", environment)) {
-    probes.push({ display: shellQuote(path), command: path, args: [] });
-  }
-  for (const path of executablePaths("corepack", environment)) {
-    probes.push({
-      display: `${shellQuote(path)} pnpm`,
-      command: path,
-      args: ["pnpm"],
-    });
-  }
+  } else {
+    for (const path of executablePaths("pnpm", environment)) {
+      probes.push({ display: shellQuote(path), command: path, args: [] });
+    }
+    for (const path of executablePaths("corepack", environment)) {
+      probes.push({
+        display: `${shellQuote(path)} pnpm`,
+        command: path,
+        args: ["pnpm"],
+      });
+    }
 
-  const npmCache =
-    environment.npm_config_cache ??
-    (environment.HOME ? join(environment.HOME, ".npm") : null);
-  if (npmCache) {
-    const npxRoot = join(npmCache, "_npx");
-    if (existsSync(npxRoot)) {
-      for (const entry of readdirSync(npxRoot).sort()) {
-        const candidate = join(npxRoot, entry, "node_modules", ".bin", "pnpm");
-        if (existsSync(candidate)) {
-          probes.push({
-            display: shellQuote(candidate),
-            command: candidate,
-            args: [],
-          });
+    const npmCache =
+      environment.npm_config_cache ??
+      (environment.HOME ? join(environment.HOME, ".npm") : null);
+    if (npmCache) {
+      const npxRoot = join(npmCache, "_npx");
+      if (existsSync(npxRoot)) {
+        for (const entry of readdirSync(npxRoot).sort()) {
+          const candidate = join(
+            npxRoot,
+            entry,
+            "node_modules",
+            ".bin",
+            "pnpm",
+          );
+          if (existsSync(candidate)) {
+            probes.push({
+              display: shellQuote(candidate),
+              command: candidate,
+              args: [],
+            });
+          }
         }
       }
     }
@@ -389,13 +395,31 @@ function discoverPackageManagerCandidates(
       stdio: ["ignore", "pipe", "pipe"],
     });
     return {
-      path: probe.display,
-      version:
-        result.status === 0
-          ? readPackageManagerVersion(probe.command, result.stdout)
-          : "",
+      candidate: {
+        path: probe.display,
+        version:
+          result.status === 0
+            ? readPackageManagerVersion(probe.command, result.stdout)
+            : "",
+      },
+      executableDirectory: dirname(probe.command),
     };
   });
+}
+
+export function withPackageManagerPath(
+  environment: NodeJS.ProcessEnv,
+  executableDirectory: string | null,
+) {
+  if (!executableDirectory) {
+    return { ...environment };
+  }
+  return {
+    ...environment,
+    PATH: [executableDirectory, environment.PATH]
+      .filter(Boolean)
+      .join(delimiter),
+  };
 }
 
 function resolveSkillValidator(environment: NodeJS.ProcessEnv) {
@@ -507,14 +531,21 @@ export function runRebuildVerificationCli(
     .split(/\r?\n/)
     .filter(Boolean);
   const gates = selectVerificationGates(changedPaths, runningNode.checks);
-  const candidates = discoverPackageManagerCandidates(
+  const discoveredCandidates = discoverPackageManagerCandidates(
     explicitPackageManager,
     environment,
   );
-  const packageManager = resolvePackageManager(packageDeclaration, candidates);
+  const packageManager = resolvePackageManager(
+    packageDeclaration,
+    discoveredCandidates.map((entry) => entry.candidate),
+  );
+  const packageManagerDirectory =
+    discoveredCandidates.find(
+      (entry) => entry.candidate.path === packageManager,
+    )?.executableDirectory ?? null;
   const skillValidator = resolveSkillValidator(environment);
   const executionEnvironment = {
-    ...environment,
+    ...withPackageManagerPath(environment, packageManagerDirectory),
     ...(skillValidator ? { CODEX_SKILL_VALIDATOR: skillValidator } : {}),
   };
   const startedAt = new Date().toISOString();

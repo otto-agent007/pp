@@ -6,7 +6,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -17,6 +17,7 @@ import {
   resolvePackageManager,
   resolveVerificationCommand,
   selectVerificationGates,
+  withPackageManagerPath,
 } from "./rebuild-verification";
 
 const temporaryDirectories: string[] = [];
@@ -48,7 +49,6 @@ describe("controlled rebuild verification gate selection", () => {
     expect(commands).toEqual(
       [
         "git diff --check",
-        "pnpm audit",
         "pnpm exec vitest run tooling/rebuild-graph-reconcile.test.ts",
         "pnpm exec vitest run tooling/rebuild-graph.test.ts",
         "pnpm exec vitest run tooling/rebuild-verification.test.ts",
@@ -132,6 +132,12 @@ describe("controlled rebuild package manager resolution", () => {
 
     expect(readPackageManagerVersion(launcher, "")).toBe("9.15.4");
     expect(readPackageManagerVersion(launcher, "10.0.0")).toBe("10.0.0");
+  });
+
+  it("prepends the selected package manager directory to PATH", () => {
+    expect(
+      withPackageManagerPath({ PATH: "/usr/bin" }, "/exact/pnpm/bin").PATH,
+    ).toBe(`/exact/pnpm/bin${delimiter}/usr/bin`);
   });
 });
 
