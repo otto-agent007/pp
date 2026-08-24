@@ -290,7 +290,7 @@ git commit -m "refactor: move rebuild targets into graph data"
   `supersededBy: string | null`.
 - Resolves superseded dependency chains without rewriting graph data.
 
-- [ ] **Step 1: Add literal evidence and execution-ready fixture helpers**
+- [x] **Step 1: Add literal evidence and execution-ready fixture helpers**
 
 ```ts
 function commandEvidence(overrides: Record<string, unknown> = {}) {
@@ -334,7 +334,7 @@ function doneNodeWith(overrides: Record<string, unknown> = {}) {
 }
 ```
 
-- [ ] **Step 2: Add the fabricated-evidence and incomplete-promotion regressions**
+- [x] **Step 2: Add the fabricated-evidence and incomplete-promotion regressions**
 
 ```ts
 it("rejects free-form evidence on done nodes", () => {
@@ -361,7 +361,7 @@ it("requires execution-ready fields before promotion", () => {
 });
 ```
 
-- [ ] **Step 3: Run the tests and observe RED**
+- [x] **Step 3: Run the tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts -t "rejects free-form evidence|requires execution-ready fields"`
@@ -369,7 +369,7 @@ Run:
 Expected: both FAIL because evidence is a string array and promotion fields are
 not enforced.
 
-- [ ] **Step 4: Implement evidence parsing and promotion checks**
+- [x] **Step 4: Implement evidence parsing and promotion checks**
 
 Validate evidence discriminants, required fields, full commit SHAs, UTC
 timestamps, command exits, and optional HTTPS URLs. Require ownership,
@@ -378,13 +378,13 @@ running/done slice branches to match `^codex/[a-z0-9][a-z0-9-]*$`. Require a
 successful command record with a full commit SHA for done nodes; repository
 ancestry remains Task 4's responsibility.
 
-- [ ] **Step 5: Run the complete graph tests and observe GREEN**
+- [x] **Step 5: Run the complete graph tests and observe GREEN**
 
 Run: `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts`
 
 Expected: all tests pass.
 
-- [ ] **Step 6: Add lifecycle regressions**
+- [x] **Step 6: Add lifecycle regressions**
 
 ```ts
 it("does not let abandoned dependencies satisfy promotion", () => {
@@ -404,7 +404,7 @@ it("requires acyclic superseded replacement chains ending in done", () => {
 });
 ```
 
-- [ ] **Step 7: Run lifecycle tests and observe RED**
+- [x] **Step 7: Run lifecycle tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph.test.ts -t "abandoned dependencies|superseded replacement chains"`
@@ -412,14 +412,14 @@ Run:
 Expected: FAIL because lifecycle statuses and replacement semantics do not
 exist.
 
-- [ ] **Step 8: Implement terminal lifecycle and replacement resolution**
+- [x] **Step 8: Implement terminal lifecycle and replacement resolution**
 
 Add statuses, require terminal-state evidence, require `supersededBy` only for
 superseded nodes, detect replacement cycles, resolve dependency chains, and run
 cycle/topological checks over resolved dependencies. Do not mutate dependency
 or ownership arrays.
 
-- [ ] **Step 9: Migrate CR00 evidence and commit**
+- [x] **Step 9: Migrate CR00 evidence and commit**
 
 Replace CR00's string evidence with structured records tied to real commits and
 timestamps already present in Git history; drop any historical claim whose

@@ -3,7 +3,15 @@ import { posix, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const KINDS = new Set(["slice", "task", "gate"]);
-const STATUSES = new Set(["planned", "ready", "running", "blocked", "done"]);
+const STATUSES = new Set([
+  "planned",
+  "ready",
+  "running",
+  "blocked",
+  "done",
+  "abandoned",
+  "superseded",
+]);
 const TARGET_SELECTIONS = new Set([
   "lts-major",
   "latest-stable-patch",
@@ -46,7 +54,7 @@ type GraphNode = {
   branch: unknown;
   pr: unknown;
   mergeSha: unknown;
-  supersededBy: unknown;
+  supersededBy: string | null;
   target: unknown;
 };
 
@@ -66,12 +74,6 @@ function nodeLabel(node: Record<string, unknown>, index: number) {
     : `node at index ${index}`;
 }
 
-function hasNonEmptyEvidence(evidence: unknown) {
-  return (
-    isStringArray(evidence) && evidence.some((entry) => entry.trim().length > 0)
-  );
-}
-
 function isPrUrl(value: unknown, repositorySlug: string) {
   return (
     typeof value === "string" &&
@@ -83,6 +85,39 @@ function isPrUrl(value: unknown, repositorySlug: string) {
 
 function isMergeSha(value: unknown) {
   return typeof value === "string" && /^[0-9a-f]{40}$/i.test(value);
+}
+
+function isUtcTimestamp(value: unknown) {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value) &&
+    !Number.isNaN(Date.parse(value))
+  );
+}
+
+function hasSuccessfulCommandEvidence(evidence: unknown) {
+  return (
+    Array.isArray(evidence) &&
+    evidence.some(
+      (entry) =>
+        isRecord(entry) &&
+        entry.kind === "command" &&
+        entry.exitCode === 0 &&
+        isMergeSha(entry.commitSha),
+    )
+  );
+}
+
+function hasApprovalEvidence(evidence: unknown) {
+  return (
+    Array.isArray(evidence) &&
+    evidence.some(
+      (entry) =>
+        isRecord(entry) &&
+        entry.kind === "approval" &&
+        isMergeSha(entry.commitSha),
+    )
+  );
 }
 
 function isRepositoryRelativePath(value: string) {
@@ -126,24 +161,6 @@ function validateTopLevelGraphFields(
       errors.push("preferredPrOrder must contain each node exactly once");
     }
 
-    const orderIndex = new Map(order.map((id, index) => [id, index]));
-    for (const node of [...nodes].sort((left, right) =>
-      left.id.localeCompare(right.id),
-    )) {
-      for (const dependency of [...node.dependencies].sort()) {
-        const nodeIndex = orderIndex.get(node.id);
-        const dependencyIndex = orderIndex.get(dependency);
-        if (
-          nodeIndex !== undefined &&
-          dependencyIndex !== undefined &&
-          nodeIndex < dependencyIndex
-        ) {
-          errors.push(
-            `preferredPrOrder places ${node.id} before dependency ${dependency}`,
-          );
-        }
-      }
-    }
   }
 
   if (!isRecord(graph.repository)) {
@@ -218,6 +235,66 @@ function findCycles(
   }
 
   return [...cycles].sort();
+}
+
+function resolveSupersededNode(
+  node: GraphNode,
+  nodesById: ReadonlyMap<string, GraphNode>,
+) {
+  const visited = new Set<string>();
+  let current: GraphNode | undefined = node;
+
+  while (current?.status === "superseded") {
+    if (visited.has(current.id) || current.supersededBy === null) {
+      return undefined;
+    }
+    visited.add(current.id);
+    current = nodesById.get(current.supersededBy);
+  }
+
+  return current;
+}
+
+function resolvedDependencyIds(
+  node: GraphNode,
+  nodesById: ReadonlyMap<string, GraphNode>,
+) {
+  return node.dependencies.map((dependency) => {
+    const dependencyNode = nodesById.get(dependency);
+    return dependencyNode
+      ? (resolveSupersededNode(dependencyNode, nodesById)?.id ?? dependency)
+      : dependency;
+  });
+}
+
+function validatePreferredOrder(
+  order: unknown,
+  nodes: readonly GraphNode[],
+  nodesById: ReadonlyMap<string, GraphNode>,
+  errors: string[],
+) {
+  if (!isStringArray(order)) {
+    return;
+  }
+
+  const orderIndex = new Map(order.map((id, index) => [id, index]));
+  for (const node of [...nodes].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  )) {
+    for (const dependency of [...resolvedDependencyIds(node, nodesById)].sort()) {
+      const nodeIndex = orderIndex.get(node.id);
+      const dependencyIndex = orderIndex.get(dependency);
+      if (
+        nodeIndex !== undefined &&
+        dependencyIndex !== undefined &&
+        nodeIndex < dependencyIndex
+      ) {
+        errors.push(
+          `preferredPrOrder places ${node.id} before dependency ${dependency}`,
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -298,6 +375,51 @@ export function validateRebuildGraph(value: unknown): string[] {
         errors.push(`${label} ${field} must be an array`);
       }
     }
+    if (Array.isArray(rawNode.evidence)) {
+      rawNode.evidence.forEach((entry, evidenceIndex) => {
+        const evidenceLabel = `${label} evidence entry ${evidenceIndex}`;
+        if (!isRecord(entry)) {
+          errors.push(
+            `${evidenceLabel} must be a structured evidence record`,
+          );
+          return;
+        }
+        if (
+          entry.kind !== "command" &&
+          entry.kind !== "review" &&
+          entry.kind !== "approval" &&
+          entry.kind !== "github"
+        ) {
+          errors.push(`${evidenceLabel} has unsupported kind`);
+        }
+        if (typeof entry.summary !== "string" || entry.summary.trim() === "") {
+          errors.push(`${evidenceLabel} summary must be non-empty`);
+        }
+        if (!isMergeSha(entry.commitSha)) {
+          errors.push(`${evidenceLabel} commitSha must be a full commit SHA`);
+        }
+        if (!isUtcTimestamp(entry.recordedAt)) {
+          errors.push(`${evidenceLabel} recordedAt must be a UTC timestamp`);
+        }
+        if (entry.kind === "command") {
+          if (
+            typeof entry.command !== "string" ||
+            entry.command.trim() === ""
+          ) {
+            errors.push(`${evidenceLabel} command must be non-empty`);
+          }
+          if (!Number.isInteger(entry.exitCode)) {
+            errors.push(`${evidenceLabel} exitCode must be an integer`);
+          }
+        }
+        if (
+          "url" in entry &&
+          (typeof entry.url !== "string" || !/^https:\/\//.test(entry.url))
+        ) {
+          errors.push(`${evidenceLabel} url must be an HTTPS URL`);
+        }
+      });
+    }
     for (const field of ["baseSha", "branch", "pr", "mergeSha"] as const) {
       if (typeof rawNode[field] !== "string") {
         errors.push(`${label} ${field} must be a string`);
@@ -316,6 +438,14 @@ export function validateRebuildGraph(value: unknown): string[] {
             errors.push(`${label} target.${field} must be a string`);
           }
         }
+        for (const field of ["product", "constraint"] as const) {
+          if (
+            typeof rawNode.target[field] === "string" &&
+            rawNode.target[field].trim() === ""
+          ) {
+            errors.push(`${label} target.${field} must be non-empty`);
+          }
+        }
         if (!TARGET_SELECTIONS.has(rawNode.target.selection as string)) {
           errors.push(`${label} target.selection is unsupported`);
         }
@@ -326,6 +456,8 @@ export function validateRebuildGraph(value: unknown): string[] {
       typeof rawNode.kind === "string" &&
       typeof rawNode.status === "string" &&
       (rawNode.parent === null || typeof rawNode.parent === "string") &&
+      (rawNode.supersededBy === null ||
+        typeof rawNode.supersededBy === "string") &&
       isStringArray(rawNode.dependencies) &&
       isStringArray(rawNode.conflicts) &&
       isStringArray(rawNode.ownership)
@@ -381,6 +513,21 @@ export function validateRebuildGraph(value: unknown): string[] {
         errors.push(`node ${node.id} references missing conflict ${conflict}`);
       }
     }
+    if (node.status === "superseded") {
+      if (node.supersededBy === null || node.supersededBy.length === 0) {
+        errors.push(`superseded node ${node.id} must name a replacement`);
+      } else if (node.supersededBy === node.id) {
+        errors.push(`node ${node.id} cannot supersede itself`);
+      } else if (!nodesById.has(node.supersededBy)) {
+        errors.push(
+          `node ${node.id} references missing replacement ${node.supersededBy}`,
+        );
+      }
+    } else if (node.supersededBy !== null) {
+      errors.push(
+        `node ${node.id} may name a replacement only when superseded`,
+      );
+    }
     for (const ownershipPath of node.ownership) {
       if (!isRepositoryRelativePath(ownershipPath)) {
         errors.push(
@@ -390,14 +537,29 @@ export function validateRebuildGraph(value: unknown): string[] {
     }
   }
 
-  for (const cycle of findCycles(validNodes, (node) => node.dependencies)) {
-    errors.push(`dependency graph contains a cycle: ${cycle}`);
+  for (const cycle of findCycles(validNodes, (node) =>
+    resolvedDependencyIds(node, nodesById),
+  )) {
+    errors.push(`resolved dependency graph contains a cycle: ${cycle}`);
   }
   for (const cycle of findCycles(validNodes, (node) =>
     node.parent === null ? [] : [node.parent],
   )) {
     errors.push(`parent graph contains a cycle: ${cycle}`);
   }
+  for (const cycle of findCycles(validNodes, (node) =>
+    node.status === "superseded" && node.supersededBy !== null
+      ? [node.supersededBy]
+      : [],
+  )) {
+    errors.push(`replacement graph contains a cycle: ${cycle}`);
+  }
+  validatePreferredOrder(
+    value.preferredPrOrder,
+    validNodes,
+    nodesById,
+    errors,
+  );
 
   const runningSlices = validNodes
     .filter((node) => node.kind === "slice" && node.status === "running")
@@ -464,7 +626,21 @@ export function validateRebuildGraph(value: unknown): string[] {
     ) {
       for (const dependency of node.dependencies) {
         const dependencyNode = nodesById.get(dependency);
-        if (dependencyNode && dependencyNode.status !== "done") {
+        if (dependencyNode?.status === "abandoned") {
+          errors.push(
+            `${node.status} node ${node.id} depends on abandoned node ${dependency}`,
+          );
+        } else if (dependencyNode?.status === "superseded") {
+          const replacement = resolveSupersededNode(
+            dependencyNode,
+            nodesById,
+          );
+          if (replacement && replacement.status !== "done") {
+            errors.push(
+              `${node.status} node ${node.id} resolves superseded dependency ${dependency} to ${replacement.id} with status ${replacement.status}, not done`,
+            );
+          }
+        } else if (dependencyNode && dependencyNode.status !== "done") {
           errors.push(
             `${node.status} node ${node.id} depends on ${dependency} with status ${dependencyNode.status}, not done`,
           );
@@ -472,10 +648,67 @@ export function validateRebuildGraph(value: unknown): string[] {
       }
     }
 
-    if (node.status === "done" && !hasNonEmptyEvidence(node.evidence)) {
-      errors.push(`done node ${node.id} must include non-empty evidence`);
+    if (
+      node.status === "ready" ||
+      node.status === "running" ||
+      node.status === "done"
+    ) {
+      if (node.ownership.length === 0) {
+        errors.push(`${node.status} node ${node.id} must include ownership`);
+      }
+      if (!isStringArray(node.deliverables) || node.deliverables.length === 0) {
+        errors.push(`${node.status} node ${node.id} must include deliverables`);
+      }
+      if (!isStringArray(node.checks) || node.checks.length === 0) {
+        errors.push(`${node.status} node ${node.id} must include checks`);
+      }
+      if (!isMergeSha(node.baseSha)) {
+        errors.push(
+          `${node.status} node ${node.id} must include a full base SHA`,
+        );
+      }
+      if (isRecord(node.target)) {
+        if (
+          typeof node.target.resolvedVersion !== "string" ||
+          node.target.resolvedVersion.trim() === ""
+        ) {
+          errors.push(
+            `${node.status} node ${node.id} target must include a resolved stable version`,
+          );
+        } else if (/-[0-9A-Za-z]/.test(node.target.resolvedVersion)) {
+          errors.push(
+            `${node.status} node ${node.id} target resolvedVersion must not be a prerelease`,
+          );
+        }
+        if (!hasApprovalEvidence(node.evidence)) {
+          errors.push(
+            `${node.status} node ${node.id} target must include approval evidence`,
+          );
+        }
+      }
+    }
+
+    if (
+      (node.status === "abandoned" || node.status === "superseded") &&
+      (!Array.isArray(node.evidence) || node.evidence.length === 0)
+    ) {
+      errors.push(`${node.status} node ${node.id} must include evidence`);
+    }
+
+    if (node.status === "done" && !hasSuccessfulCommandEvidence(node.evidence)) {
+      errors.push(
+        `done node ${node.id} must include successful command evidence`,
+      );
     }
     if (node.kind === "slice" && node.status === "done") {
+      if (
+        typeof node.branch !== "string" ||
+        !/^codex\/[a-z0-9][a-z0-9-]*$/.test(node.branch)
+      ) {
+        errors.push(
+          `done slice ${node.id} must include a correctly named codex branch`,
+        );
+      }
       if (!isPrUrl(node.pr, repositorySlug)) {
         errors.push(
           `done slice ${node.id} must include a pull request URL for ${repositorySlug}`,
@@ -484,6 +717,16 @@ export function validateRebuildGraph(value: unknown): string[] {
       if (!isMergeSha(node.mergeSha)) {
         errors.push(
           `done slice ${node.id} must include a 40-character hexadecimal merge SHA`,
+        );
+      }
+    }
+    if (node.kind === "slice" && node.status === "running") {
+      if (
+        typeof node.branch !== "string" ||
+        !/^codex\/[a-z0-9][a-z0-9-]*$/.test(node.branch)
+      ) {
+        errors.push(
+          `running slice ${node.id} must include a correctly named codex branch`,
         );
       }
     }

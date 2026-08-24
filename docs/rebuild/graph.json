@@ -106,9 +106,13 @@
         "Controller approval before publication"
       ],
       "evidence": [
-        "Pre-publication CR00 verification passed with complete dependency-input provenance.",
-        "Final GPT-5.6 Sol review reported no Critical, Important, or Minor findings.",
-        "Draft PR https://github.com/otto-agent007/pp/pull/146 opened."
+        {
+          "kind": "github",
+          "summary": "Draft PR #146 opened.",
+          "commitSha": "600419a473cb57635192d25d83d48f98e989c2d0",
+          "recordedAt": "2026-08-23T05:58:24Z",
+          "url": "https://github.com/otto-agent007/pp/pull/146"
+        }
       ],
       "branch": "codex/rebuild-cr00-control-plane-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/146",
