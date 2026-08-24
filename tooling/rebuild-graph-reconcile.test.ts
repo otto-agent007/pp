@@ -201,7 +201,7 @@ describe("rebuild graph repository claims", () => {
         { ancestor: BASE_SHA, descendant: "HEAD" },
         { ancestor: EVIDENCE_SHA, descendant: "HEAD" },
       ],
-      pullRequests: [],
+      pullRequests: [{ url: PR_URL, state: "OPEN", mergeSha: null }],
     });
     expect(validateRepositoryClaims(runningGraph(), facts)).toEqual([]);
 
@@ -212,7 +212,7 @@ describe("rebuild graph repository claims", () => {
           changedPaths: ["app/outside.ts"],
           existingCommits: [EVIDENCE_SHA],
           ancestorPairs: [{ ancestor: EVIDENCE_SHA, descendant: "HEAD" }],
-          pullRequests: [],
+          pullRequests: [{ url: PR_URL, state: "OPEN", mergeSha: null }],
         }),
       ),
     ).toEqual(
@@ -220,6 +220,62 @@ describe("rebuild graph repository claims", () => {
         "changed path app/outside.ts is outside running-node ownership",
         `running slice CR00 base SHA does not exist: ${BASE_SHA}`,
         `running slice CR00 base SHA ${BASE_SHA} is not an ancestor of HEAD`,
+      ]),
+    );
+  });
+
+  it("requires a running slice's declared PR to exist and remain open", () => {
+    const localFacts = matchingFacts({
+      existingCommits: [BASE_SHA, EVIDENCE_SHA],
+      ancestorPairs: [
+        { ancestor: BASE_SHA, descendant: "HEAD" },
+        { ancestor: EVIDENCE_SHA, descendant: "HEAD" },
+      ],
+      pullRequests: [],
+    });
+    expect(validateRepositoryClaims(runningGraph(), localFacts)).toContain(
+      `running slice CR00 pull request does not exist: ${PR_URL}`,
+    );
+    expect(
+      validateRepositoryClaims(runningGraph(), {
+        ...localFacts,
+        pullRequests: [{ url: PR_URL, state: "CLOSED", mergeSha: null }],
+      }),
+    ).toContain(
+      `running slice CR00 pull request is CLOSED, not OPEN: ${PR_URL}`,
+    );
+  });
+
+  it("validates terminal lifecycle evidence against HEAD", () => {
+    const graph = runningGraph();
+    graph.nodes = graph.nodes.map((node) => ({
+      ...node,
+      status: "abandoned",
+      supersededBy: null,
+    }));
+    expect(
+      validateRepositoryClaims(
+        graph,
+        matchingFacts({
+          existingCommits: [EVIDENCE_SHA],
+          ancestorPairs: [{ ancestor: EVIDENCE_SHA, descendant: "HEAD" }],
+          pullRequests: [],
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateRepositoryClaims(
+        graph,
+        matchingFacts({
+          existingCommits: [],
+          ancestorPairs: [],
+          pullRequests: [],
+        }),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        `node CR00 evidence commit does not exist: ${EVIDENCE_SHA}`,
+        `node CR00 evidence commit ${EVIDENCE_SHA} is not an ancestor of HEAD`,
       ]),
     );
   });

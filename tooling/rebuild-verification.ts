@@ -45,13 +45,16 @@ export function selectVerificationGates(
 
   for (const path of changedPaths) {
     if (!isRepositoryRelativePath(path)) {
+      commands.add(`UNMAPPED changed path: ${path}`);
       continue;
     }
+    let matched = false;
     if (
       path === "docs/rebuild/graph.json" ||
       path === "tooling/rebuild-graph.ts" ||
       path === "tooling/rebuild-graph.test.ts"
     ) {
+      matched = true;
       commands.add("pnpm exec vitest run tooling/rebuild-graph.test.ts");
       commands.add("pnpm rebuild:graph:check");
     }
@@ -59,6 +62,7 @@ export function selectVerificationGates(
       path === "tooling/rebuild-graph-reconcile.ts" ||
       path === "tooling/rebuild-graph-reconcile.test.ts"
     ) {
+      matched = true;
       commands.add(
         "pnpm exec vitest run tooling/rebuild-graph-reconcile.test.ts",
       );
@@ -68,15 +72,18 @@ export function selectVerificationGates(
       path === "tooling/rebuild-verification.ts" ||
       path === "tooling/rebuild-verification.test.ts"
     ) {
+      matched = true;
       commands.add("pnpm exec vitest run tooling/rebuild-verification.test.ts");
     }
     const skillMatch = path.match(/^\.agents\/skills\/([^/]+)\/SKILL\.md$/);
     if (skillMatch) {
+      matched = true;
       commands.add(
         `python3 $CODEX_SKILL_VALIDATOR .agents/skills/${skillMatch[1]}`,
       );
     }
     if (path.endsWith(".toml")) {
+      matched = true;
       commands.add(
         `python3 -c "import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))" ${path}`,
       );
@@ -86,6 +93,7 @@ export function selectVerificationGates(
       path === "pnpm-lock.yaml" ||
       path.endsWith("/package.json")
     ) {
+      matched = true;
       commands.add("pnpm audit");
       commands.add("pnpm security:baseline");
     }
@@ -94,6 +102,7 @@ export function selectVerificationGates(
       path.startsWith("packages/") ||
       path.startsWith("tooling/")
     ) {
+      matched = true;
       commands.add("pnpm test");
     }
     if (
@@ -104,13 +113,20 @@ export function selectVerificationGates(
       path === "package.json" ||
       path === "pnpm-lock.yaml"
     ) {
+      matched = true;
       commands.add("git diff --check");
+    }
+    if (!matched) {
+      commands.add(`UNMAPPED changed path: ${path}`);
     }
   }
 
-  return [...commands]
-    .sort()
-    .map((command) => ({ id: gateId(command), command }));
+  return [...commands].sort().map((command) => ({
+    id: command.startsWith("UNMAPPED ")
+      ? `missing-${gateId(command).slice("gate-".length)}`
+      : gateId(command),
+    command,
+  }));
 }
 
 export function resolvePackageManager(
@@ -363,20 +379,34 @@ function resolveSkillValidator(environment: NodeJS.ProcessEnv) {
   return existsSync(path) ? path : null;
 }
 
-function overallStatus(statuses: readonly GateStatus[]): GateStatus {
-  if (statuses.some((status) => status === "FAIL")) {
+export function aggregateGateStatus(
+  statuses: readonly GateStatus[],
+): GateStatus {
+  if (
+    statuses.some(
+      (status) =>
+        status === "FAIL" || status === "MISSING" || status === "STALE",
+    )
+  ) {
     return "FAIL";
-  }
-  if (statuses.some((status) => status === "MISSING")) {
-    return "MISSING";
-  }
-  if (statuses.some((status) => status === "STALE")) {
-    return "STALE";
   }
   if (statuses.some((status) => status === "BLOCKED")) {
     return "BLOCKED";
   }
   return statuses.length > 0 ? "PASS" : "MISSING";
+}
+
+export function resolveVerificationCommand(
+  command: string,
+  identities: { baseSha: string; packageManager: string | null },
+) {
+  if (command === "git diff --check") {
+    return `git diff --check ${identities.baseSha}...HEAD`;
+  }
+  if (/^pnpm(?:\s|$)/.test(command) && identities.packageManager) {
+    return command.replace(/^pnpm(?=\s|$)/, identities.packageManager);
+  }
+  return command;
 }
 
 export function runRebuildVerificationCli(
@@ -454,10 +484,19 @@ export function runRebuildVerificationCli(
   const pre = captureIdentity(cwd, ignoredInputs);
   const attempts = gates.map((gate) => {
     const needsPackageManager = /^pnpm(?:\s|$)/.test(gate.command);
-    const resolvedCommand =
-      needsPackageManager && packageManager
-        ? gate.command.replace(/^pnpm(?=\s|$)/, packageManager)
-        : gate.command;
+    const resolvedCommand = resolveVerificationCommand(gate.command, {
+      baseSha: runningNode.baseSha,
+      packageManager,
+    });
+    if (gate.id.startsWith("missing-")) {
+      return {
+        ...gate,
+        resolvedCommand,
+        launched: false,
+        isolatedInfrastructureFailure: false,
+        exitCode: null,
+      };
+    }
     if (needsPackageManager && !packageManager) {
       return {
         ...gate,
@@ -517,7 +556,7 @@ export function runRebuildVerificationCli(
       exitCode: attempt.exitCode,
     }),
   }));
-  const status = overallStatus(gateResults.map((gate) => gate.status));
+  const status = aggregateGateStatus(gateResults.map((gate) => gate.status));
   const identityPayload = JSON.stringify({
     baseSha: runningNode.baseSha,
     finishedAt,

@@ -10,9 +10,11 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  aggregateGateStatus,
   classifyGate,
   digestInputTree,
   resolvePackageManager,
+  resolveVerificationCommand,
   selectVerificationGates,
 } from "./rebuild-verification";
 
@@ -69,6 +71,15 @@ describe("controlled rebuild verification gate selection", () => {
       "pnpm typecheck",
     ]);
     expect(new Set(gates.map((gate) => gate.id)).size).toBe(gates.length);
+  });
+
+  it("turns an unmapped changed path into a required missing gate", () => {
+    expect(selectVerificationGates(["assets/unmapped.bin"], [])).toEqual([
+      expect.objectContaining({
+        id: expect.stringMatching(/^missing-/),
+        command: "UNMAPPED changed path: assets/unmapped.bin",
+      }),
+    ]);
   });
 });
 
@@ -199,4 +210,27 @@ describe("controlled rebuild gate classification", () => {
       expect(classifyGate(input)).toBe(expected);
     },
   );
+
+  it("collapses missing, stale, or failed gates to an overall failure", () => {
+    expect(aggregateGateStatus(["PASS", "MISSING"])).toBe("FAIL");
+    expect(aggregateGateStatus(["PASS", "STALE"])).toBe("FAIL");
+    expect(aggregateGateStatus(["PASS", "FAIL"])).toBe("FAIL");
+    expect(aggregateGateStatus(["PASS", "BLOCKED"])).toBe("BLOCKED");
+    expect(aggregateGateStatus(["PASS"])).toBe("PASS");
+  });
+
+  it("binds diff checks and pnpm commands to resolved identities", () => {
+    expect(
+      resolveVerificationCommand("git diff --check", {
+        baseSha: "1111111111111111111111111111111111111111",
+        packageManager: "'/opt/pnpm'",
+      }),
+    ).toBe("git diff --check 1111111111111111111111111111111111111111...HEAD");
+    expect(
+      resolveVerificationCommand("pnpm test", {
+        baseSha: "1111111111111111111111111111111111111111",
+        packageManager: "'/opt/pnpm'",
+      }),
+    ).toBe("'/opt/pnpm' test");
+  });
 });

@@ -143,6 +143,18 @@ function validateRepositoryClaimsWithOptions(
       }
     } else if (node.kind === "slice" && node.status === "running") {
       evidenceDescendant = "HEAD";
+      if (checkPullRequests && node.pr.length > 0) {
+        const pullRequest = pullRequests.get(node.pr);
+        if (!pullRequest) {
+          errors.push(
+            `running slice ${node.id} pull request does not exist: ${node.pr}`,
+          );
+        } else if (pullRequest.state !== "OPEN") {
+          errors.push(
+            `running slice ${node.id} pull request is ${pullRequest.state}, not OPEN: ${node.pr}`,
+          );
+        }
+      }
       if (!existingCommits.has(node.baseSha)) {
         errors.push(
           `running slice ${node.id} base SHA does not exist: ${node.baseSha}`,
@@ -156,6 +168,10 @@ function validateRepositoryClaimsWithOptions(
       errors.push(
         ...validateChangedPathOwnership(facts.changedPaths, node.ownership),
       );
+    } else if (node.status === "abandoned" || node.status === "superseded") {
+      evidenceDescendant = "HEAD";
+    } else if (node.status === "done") {
+      evidenceDescendant = graphRecord.repository.defaultBranch;
     }
 
     if (evidenceDescendant !== null) {
@@ -219,16 +235,14 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
     ancestorPairs: [],
     pullRequests: [],
   };
-  const relevantNodes = graph.nodes.filter(
-    (node) =>
-      node.kind === "slice" &&
-      (node.status === "running" || node.status === "done"),
+  const relevantNodes = graph.nodes.filter((node) =>
+    ["running", "done", "abandoned", "superseded"].includes(node.status),
   );
   const commits = new Set<string>();
   for (const node of relevantNodes) {
-    if (node.status === "running") {
+    if (node.kind === "slice" && node.status === "running") {
       commits.add(node.baseSha);
-    } else {
+    } else if (node.kind === "slice" && node.status === "done") {
       commits.add(node.mergeSha);
     }
     for (const evidence of node.evidence) {
@@ -252,7 +266,7 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
     gitDescendant: string;
   }> = [];
   for (const node of relevantNodes) {
-    if (node.status === "running") {
+    if (node.kind === "slice" && node.status === "running") {
       requiredPairs.push({
         ancestor: node.baseSha,
         descendant: "HEAD",
@@ -281,7 +295,7 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
           `unable to list changed paths for running slice ${node.id}`,
         );
       }
-    } else {
+    } else if (node.kind === "slice" && node.status === "done") {
       requiredPairs.push({
         ancestor: node.mergeSha,
         descendant: graph.repository.defaultBranch,
@@ -292,6 +306,19 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
           ancestor: evidence.commitSha,
           descendant: node.mergeSha,
           gitDescendant: node.mergeSha,
+        });
+      }
+    } else {
+      const descendant =
+        node.status === "abandoned" || node.status === "superseded"
+          ? "HEAD"
+          : graph.repository.defaultBranch;
+      const gitDescendant = descendant === "HEAD" ? "HEAD" : defaultBranchRef;
+      for (const evidence of node.evidence) {
+        requiredPairs.push({
+          ancestor: evidence.commitSha,
+          descendant,
+          gitDescendant,
         });
       }
     }
@@ -352,7 +379,7 @@ async function collectPullRequestFacts(
         .filter(
           (node) =>
             node.kind === "slice" &&
-            node.status === "done" &&
+            (node.status === "done" || node.status === "running") &&
             node.pr.length > 0,
         )
         .map((node) => node.pr),
