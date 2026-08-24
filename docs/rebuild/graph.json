@@ -92,6 +92,7 @@
       "checks": [
         "pnpm exec vitest run tooling/rebuild-graph.test.ts",
         "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
         "pnpm test",
         "pnpm typecheck",
         "pnpm lint",

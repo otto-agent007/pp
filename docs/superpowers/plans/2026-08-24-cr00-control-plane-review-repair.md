@@ -43,10 +43,12 @@ GitHub Actions, JSON, Markdown.
 ### Task 1: Close dependency, parent-cycle, and order holes
 
 **Files:**
+
 - Modify: `tooling/rebuild-graph.test.ts`
 - Modify: `tooling/rebuild-graph.ts`
 
 **Interfaces:**
+
 - Consumes: existing `validateRebuildGraph(value: unknown): string[]`.
 - Produces: parent-cycle detection and topological validation of
   `preferredPrOrder`; dependency completion applies to `done` as well as
@@ -155,17 +157,19 @@ git commit -m "fix: enforce rebuild graph ordering"
 ### Task 2: Replace hardcoded repository and target policy with validated data
 
 **Files:**
+
 - Modify: `tooling/rebuild-graph.test.ts`
 - Modify: `tooling/rebuild-graph.ts`
 - Modify: `docs/rebuild/graph.json`
 
 **Interfaces:**
+
 - Produces top-level `repository: { slug: string; defaultBranch: string }` and
   `targetPolicy: { prereleases: "forbidden"; refreshAt: "slice-start" }`.
 - Produces node field
   `target: null | { product: string; constraint: string; selection:
-  "lts-major" | "latest-stable-patch" | "stable-major" |
-  "exact-sdk-major"; resolvedVersion: string }`.
+"lts-major" | "latest-stable-patch" | "stable-major" |
+"exact-sdk-major"; resolvedVersion: string }`.
 - Removes `FROZEN_TARGET_MATRIX` and top-level `targetMatrix`.
 
 - [x] **Step 1: Add a fixture using repository data and node-local targets**
@@ -204,10 +208,14 @@ it("derives canonical PR URLs from graph repository data", () => {
     errorsFor({
       ...graph,
       repository: { slug: "example/fork", defaultBranch: "trunk" },
-      nodes: [doneSliceWith({ pr: "https://github.com/otto-agent007/pp/pull/7" })],
+      nodes: [
+        doneSliceWith({ pr: "https://github.com/otto-agent007/pp/pull/7" }),
+      ],
       preferredPrOrder: ["CR01"],
     }),
-  ).toContain("done slice CR01 must include a pull request URL for example/fork");
+  ).toContain(
+    "done slice CR01 must include a pull request URL for example/fork",
+  );
 });
 
 it("accepts node-local targets without hardcoded slice IDs or versions", () => {
@@ -280,11 +288,13 @@ git commit -m "refactor: move rebuild targets into graph data"
 ### Task 3: Enforce structured evidence, promotion readiness, and lifecycle
 
 **Files:**
+
 - Modify: `tooling/rebuild-graph.test.ts`
 - Modify: `tooling/rebuild-graph.ts`
 - Modify: `docs/rebuild/graph.json`
 
 **Interfaces:**
+
 - Produces structured command and claim evidence from the spec.
 - Produces terminal statuses `abandoned` and `superseded` plus
   `supersededBy: string | null`.
@@ -338,8 +348,11 @@ function doneNodeWith(overrides: Record<string, unknown> = {}) {
 
 ```ts
 it("rejects free-form evidence on done nodes", () => {
-  expect(errorsFor(graphWith({ nodes: [doneNodeWith({ evidence: ["x"] })] })))
-    .toContain("node CR01 evidence entry 0 must be a structured evidence record");
+  expect(
+    errorsFor(graphWith({ nodes: [doneNodeWith({ evidence: ["x"] })] })),
+  ).toContain(
+    "node CR01 evidence entry 0 must be a structured evidence record",
+  );
 });
 
 it("requires execution-ready fields before promotion", () => {
@@ -388,19 +401,40 @@ Expected: all tests pass.
 
 ```ts
 it("does not let abandoned dependencies satisfy promotion", () => {
-  expect(errorsFor(graphWith({ nodes: [
-    nodeWith({ id: "CR00", status: "abandoned", evidence: [claimEvidence()] }),
-    executionReadyNode({ dependencies: ["CR00"], status: "ready" }),
-  ] }))).toContain("ready node CR01 depends on abandoned node CR00");
+  expect(
+    errorsFor(
+      graphWith({
+        nodes: [
+          nodeWith({
+            id: "CR00",
+            status: "abandoned",
+            evidence: [claimEvidence()],
+          }),
+          executionReadyNode({ dependencies: ["CR00"], status: "ready" }),
+        ],
+      }),
+    ),
+  ).toContain("ready node CR01 depends on abandoned node CR00");
 });
 
 it("requires acyclic superseded replacement chains ending in done", () => {
-  const errors = errorsFor(graphWith({ nodes: [
-    nodeWith({ id: "CR00", status: "superseded", supersededBy: "CR02", evidence: [claimEvidence()] }),
-    executionReadyNode({ dependencies: ["CR00"], status: "ready" }),
-    nodeWith({ id: "CR02", status: "planned" }),
-  ] }));
-  expect(errors).toContain("ready node CR01 resolves superseded dependency CR00 to CR02 with status planned, not done");
+  const errors = errorsFor(
+    graphWith({
+      nodes: [
+        nodeWith({
+          id: "CR00",
+          status: "superseded",
+          supersededBy: "CR02",
+          evidence: [claimEvidence()],
+        }),
+        executionReadyNode({ dependencies: ["CR00"], status: "ready" }),
+        nodeWith({ id: "CR02", status: "planned" }),
+      ],
+    }),
+  );
+  expect(errors).toContain(
+    "ready node CR01 resolves superseded dependency CR00 to CR02 with status planned, not done",
+  );
 });
 ```
 
@@ -447,6 +481,7 @@ git commit -m "feat: enforce rebuild lifecycle evidence"
 ### Task 4: Add repository reconciliation and ownership enforcement
 
 **Files:**
+
 - Create: `tooling/rebuild-graph-reconcile.test.ts`
 - Create: `tooling/rebuild-graph-reconcile.ts`
 - Modify: `package.json`
@@ -485,44 +520,44 @@ export async function runRebuildGraphReconcileCli(
 ): Promise<number>;
 ```
 
-- [ ] **Step 1: Write ownership regressions first**
+- [x] **Step 1: Write ownership regressions first**
 
 Test exact-file coverage, directory-prefix coverage, prefix lookalikes such as
 `tooling-old/file.ts`, normalized-path rejection, and an undeclared
 `.github/workflows/ci.yml` change.
 
-- [ ] **Step 2: Run ownership tests and observe RED**
+- [x] **Step 2: Run ownership tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph-reconcile.test.ts -t "ownership"`
 
 Expected: FAIL because the module does not exist.
 
-- [ ] **Step 3: Implement pure ownership matching**
+- [x] **Step 3: Implement pure ownership matching**
 
 Cover a changed path only when it equals an ownership path or is a descendant
 of an owned directory path. Return sorted, deterministic errors for undeclared
 paths.
 
-- [ ] **Step 4: Run ownership tests and observe GREEN**
+- [x] **Step 4: Run ownership tests and observe GREEN**
 
 Run the Step 2 command. Expected: PASS.
 
-- [ ] **Step 5: Add fabricated PR and merge-SHA fact regressions**
+- [x] **Step 5: Add fabricated PR and merge-SHA fact regressions**
 
 Use literal `RepositoryFacts` to prove that a missing PR, non-merged PR,
 mismatched merge SHA, missing commit, non-ancestor merge commit, and missing or
 non-ancestor evidence commit each fail. Also prove a matching merged PR,
 evidence commit, and ancestor pairs pass.
 
-- [ ] **Step 6: Run repository-claim tests and observe RED**
+- [x] **Step 6: Run repository-claim tests and observe RED**
 
 Run:
 `node_modules/.bin/vitest run tooling/rebuild-graph-reconcile.test.ts -t "repository claims"`
 
 Expected: FAIL because repository fact validation is absent.
 
-- [ ] **Step 7: Implement claim validation and bounded adapters**
+- [x] **Step 7: Implement claim validation and bounded adapters**
 
 Keep `validateRepositoryClaims` pure. In the CLI, use `git cat-file -e`,
 `git merge-base --is-ancestor`, and `git diff --name-only` with
@@ -530,7 +565,7 @@ Keep `validateRepositoryClaims` pure. In the CLI, use `git cat-file -e`,
 `GITHUB_TOKEN` or `GH_TOKEN` for GitHub REST reads. Never print tokens or raw
 authorization headers.
 
-- [ ] **Step 8: Add scripts, the exact reconciliation check, and commit**
+- [x] **Step 8: Add scripts, the exact reconciliation check, and commit**
 
 Add scripts:
 
@@ -561,6 +596,7 @@ git commit -m "feat: reconcile rebuild graph claims"
 ### Task 5: Move verification mechanics into tooling
 
 **Files:**
+
 - Create: `tooling/rebuild-verification.test.ts`
 - Create: `tooling/rebuild-verification.ts`
 - Modify: `package.json`
@@ -673,12 +709,14 @@ git commit -m "feat: automate rebuild verification gates"
 ### Task 6: Wire real graph enforcement and governance into CI
 
 **Files:**
+
 - Create: `.github/CODEOWNERS`
 - Modify: `.github/workflows/ci.yml`
 - Modify: `package.json`
 - Modify: `docs/rebuild/graph.json`
 
 **Interfaces:**
+
 - CI supplies full Git history and read-only `GITHUB_TOKEN` to reconciliation.
 - CODEOWNERS assigns `@otto-agent007` to control-plane paths.
 
@@ -753,6 +791,7 @@ git commit -m "ci: enforce controlled rebuild graph"
 ### Task 7: Canonicalize lifecycle and operating documentation
 
 **Files:**
+
 - Modify: `docs/rebuild/README.md`
 - Modify: `docs/AGENTS.md`
 - Modify: `docs/CODEX_OPERATING_PLAN.md`
@@ -761,6 +800,7 @@ git commit -m "ci: enforce controlled rebuild graph"
 - Modify: `docs/rebuild/graph.json`
 
 **Interfaces:**
+
 - `docs/rebuild/README.md` is the one detailed operating contract.
 - Entry documents link to the runbook and retain only launch and authority
   boundaries.
@@ -812,10 +852,12 @@ git commit -m "docs: reconcile CR00 operating contract"
 ### Task 8: Full verification, review, and draft-PR update
 
 **Files:**
+
 - Modify when evidence changes: `docs/rebuild/graph.json`
 - Modify when status changes: `tasks/in-progress.md`
 
 **Interfaces:**
+
 - Consumes every command and invariant above.
 - Produces a verified pushed head on existing draft PR #146; does not merge.
 
