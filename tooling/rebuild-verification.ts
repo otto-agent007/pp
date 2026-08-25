@@ -11,6 +11,8 @@ import {
 import { delimiter, dirname, join, posix, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { validateChangedPathOwnership } from "./rebuild-graph-reconcile";
+
 export type GateStatus = "MISSING" | "STALE" | "BLOCKED" | "FAIL" | "PASS";
 
 export type VerificationGate = {
@@ -39,6 +41,7 @@ function gateId(command: string) {
 export function selectVerificationGates(
   changedPaths: readonly string[],
   declaredChecks: readonly string[],
+  recoveryOwnership?: readonly string[],
 ) {
   const commands = new Set(
     declaredChecks.map((command) => command.trim()).filter(Boolean),
@@ -119,6 +122,15 @@ export function selectVerificationGates(
     }
     if (!matched) {
       commands.add(`UNMAPPED changed path: ${path}`);
+    }
+  }
+
+  if (recoveryOwnership) {
+    for (const error of validateChangedPathOwnership(
+      changedPaths,
+      recoveryOwnership,
+    )) {
+      commands.add(`UNMAPPED recovery ownership: ${error}`);
     }
   }
 
@@ -238,6 +250,8 @@ type VerificationGraph = {
     checks: string[];
     id: string;
     kind: string;
+    mergeSha: string;
+    ownership: string[];
     status: string;
   }>;
 };
@@ -479,6 +493,7 @@ export function runRebuildVerificationCli(
   const ignoredInputs: string[] = [];
   let graphPath = "docs/rebuild/graph.json";
   let explicitPackageManager: string | null = null;
+  let recoverySliceId: string | null = null;
   for (let index = 0; index < normalizedArgs.length; index += 1) {
     const argument = normalizedArgs[index];
     const value = normalizedArgs[index + 1];
@@ -491,9 +506,12 @@ export function runRebuildVerificationCli(
     } else if (argument === "--package-manager" && value) {
       explicitPackageManager = value;
       index += 1;
+    } else if (argument === "--recovery-slice" && value) {
+      recoverySliceId = value;
+      index += 1;
     } else {
       console.error(
-        "Usage: rebuild:verify [--graph path] [--package-manager path] [--ignored-input path]",
+        "Usage: rebuild:verify [--graph path] [--package-manager path] [--ignored-input path] [--recovery-slice id]",
       );
       return 1;
     }
@@ -519,18 +537,58 @@ export function runRebuildVerificationCli(
   const runningNode = graph.nodes.find(
     (node) => node.kind === "slice" && node.status === "running",
   );
-  if (!runningNode) {
+  let verificationNode = runningNode;
+  let verificationBaseSha = runningNode?.baseSha ?? "";
+  let mode = "running-slice";
+  if (recoverySliceId) {
+    if (runningNode) {
+      console.error(
+        "Post-merge recovery verification is unavailable while a slice is running.",
+      );
+      return 1;
+    }
+    verificationNode = graph.nodes.find(
+      (node) =>
+        node.kind === "slice" &&
+        node.id === recoverySliceId &&
+        node.status === "done",
+    );
+    if (
+      !verificationNode ||
+      !/^[0-9a-f]{40}$/.test(verificationNode.mergeSha)
+    ) {
+      console.error(
+        `Post-merge recovery requires done slice ${recoverySliceId} with a full merge SHA.`,
+      );
+      return 1;
+    }
+    verificationBaseSha = verificationNode.mergeSha;
+    mode = "post-merge-recovery";
+    if (
+      runGit(cwd, ["merge-base", "--is-ancestor", verificationBaseSha, "HEAD"])
+        .status !== 0
+    ) {
+      console.error(
+        `Post-merge recovery merge SHA ${verificationBaseSha} is not an ancestor of HEAD.`,
+      );
+      return 1;
+    }
+  } else if (!verificationNode) {
     console.error("Rebuild verification requires one running slice.");
     return 1;
   }
   const changedPaths = gitOutput(cwd, [
     "diff",
     "--name-only",
-    `${runningNode.baseSha}...HEAD`,
+    `${verificationBaseSha}...HEAD`,
   ])
     .split(/\r?\n/)
     .filter(Boolean);
-  const gates = selectVerificationGates(changedPaths, runningNode.checks);
+  const gates = selectVerificationGates(
+    changedPaths,
+    verificationNode.checks,
+    recoverySliceId ? verificationNode.ownership : undefined,
+  );
   const discoveredCandidates = discoverPackageManagerCandidates(
     explicitPackageManager,
     environment,
@@ -553,7 +611,7 @@ export function runRebuildVerificationCli(
   const attempts = gates.map((gate) => {
     const needsPackageManager = /^pnpm(?:\s|$)/.test(gate.command);
     const resolvedCommand = resolveVerificationCommand(gate.command, {
-      baseSha: runningNode.baseSha,
+      baseSha: verificationBaseSha,
       packageManager,
     });
     if (gate.id.startsWith("missing-")) {
@@ -626,9 +684,10 @@ export function runRebuildVerificationCli(
   }));
   const status = aggregateGateStatus(gateResults.map((gate) => gate.status));
   const identityPayload = JSON.stringify({
-    baseSha: runningNode.baseSha,
+    baseSha: verificationBaseSha,
     finishedAt,
     gates: gateResults,
+    mode,
     post,
     pre,
     startedAt,
@@ -636,8 +695,9 @@ export function runRebuildVerificationCli(
   const result = {
     schemaVersion: 1,
     evidenceSetId: createHash("sha256").update(identityPayload).digest("hex"),
-    slice: runningNode.id,
-    baseSha: runningNode.baseSha,
+    slice: verificationNode.id,
+    baseSha: verificationBaseSha,
+    mode,
     startedAt,
     finishedAt,
     pre,

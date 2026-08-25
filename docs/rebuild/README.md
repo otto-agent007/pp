@@ -16,6 +16,14 @@ ancestry and the running slice's changed paths against its ownership. CI runs
 live reconciliation with full history and a read-only GitHub token. Live
 GitHub state wins over stale tracked state.
 
+Before marking a slice `done`, create and push the immutable lightweight tag
+`rebuild/<lowercase-slice-id>-source` at the canonical pull-request head. For
+example, CR00 uses `rebuild/cr00-source`. Never move or reuse a source tag.
+Ordinary clones fetch tags, so completed-slice evidence remains available after
+GitHub deletes the source branch. Missing tags fail both offline and live
+reconciliation; fetch tags or use live reconciliation to diagnose the recorded
+pull-request identity.
+
 ## Scheduling model
 
 Only one implementation slice and one draft PR may be active. Read-only
@@ -89,15 +97,40 @@ type ClaimEvidence = {
 
 Use full commit SHAs and UTC timestamps. A done node needs successful command
 evidence. Shape validation is deliberately pure; reconciliation separately
-proves commits, ancestry, merged PR state, merge-SHA agreement, running-base
-ancestry, and ownership coverage. Missing history, credentials, provider data,
-or network evidence fails live reconciliation.
+proves merged PR state, merge-SHA agreement, source history, tree identity,
+running-base ancestry, default-branch ancestry, and ownership coverage.
+
+For a done slice, each evidence commit must belong to the canonical pull
+request's original commit set. The original PR head tree must exactly match the
+tree at the recorded merge SHA. This binds evidence across merge commits,
+squash merges, and rebased merges without treating rewritten commit ancestry as
+proof or accepting content changed during merge. Offline reconciliation
+reconstructs these facts from the deterministic source tag; it never trusts a
+retained branch, which may be stale or deleted. Live reconciliation also
+requires that tag and proves its commit is the canonical GitHub PR head before
+reading the immutable PR commit set and both tree identities from GitHub.
+Missing tags, history, credentials, provider data, or network evidence fails
+the applicable reconciliation mode.
+
+Tree identity requires the source branch to contain the current default-branch
+tree at merge time. Bring it up to date before merging, either by rebasing or
+by merging the default branch into the source branch. If the default branch
+advances again, rerun the required checks against the new head.
 
 Run `pnpm rebuild:verify` for completion or PR-readiness evidence. It selects
 the union of path-driven and node-declared gates, resolves the exact declared
 package manager without installing it, digests declared ignored inputs, binds
 results to pre/post commit, tree, and worktree identities, and emits one JSON
 evidence set. `MISSING`, `STALE`, `BLOCKED`, or `FAIL` is never a waiver.
+
+An explicitly controller-approved post-merge control-plane repair may verify a
+named done slice with `pnpm rebuild:verify -- --recovery-slice <id>`. Recovery
+mode refuses to run while another slice is running, uses the done slice's merge
+SHA as its base, and turns changes outside that slice's ownership into missing
+gates. It is not a substitute for normal running-slice verification.
+CI does not infer a recovery slice when no node is running, so a recovery PR
+must report this mechanical evidence explicitly; no-running-slice ownership
+remains a review boundary until a durable CI selector is designed.
 
 ## Ownership and governance
 

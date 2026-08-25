@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,7 +16,100 @@ const BASE_SHA = "1111111111111111111111111111111111111111";
 const EVIDENCE_SHA = "2222222222222222222222222222222222222222";
 const MERGE_SHA = "3333333333333333333333333333333333333333";
 const OTHER_SHA = "4444444444444444444444444444444444444444";
+const TREE_SHA = "5555555555555555555555555555555555555555";
+const OTHER_TREE_SHA = "6666666666666666666666666666666666666666";
 const PR_URL = "https://github.com/otto-agent007/pp/pull/146";
+
+function git(cwd: string, args: string[]) {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout);
+  }
+  return result.stdout.trim();
+}
+
+function createSquashFixture() {
+  const directory = mkdtempSync(join(tmpdir(), "rebuild-squash-"));
+  git(directory, ["init", "-b", "main"]);
+  git(directory, ["config", "user.email", "tests@example.com"]);
+  git(directory, ["config", "user.name", "Rebuild Tests"]);
+  writeFileSync(join(directory, "fixture.txt"), "base\n", "utf8");
+  git(directory, ["add", "fixture.txt"]);
+  git(directory, ["commit", "-m", "base"]);
+  const baseSha = git(directory, ["rev-parse", "HEAD"]);
+
+  git(directory, ["switch", "-c", "codex/rebuild-test-v1"]);
+  writeFileSync(join(directory, "fixture.txt"), "source\n", "utf8");
+  git(directory, ["add", "fixture.txt"]);
+  git(directory, ["commit", "-m", "source evidence"]);
+  const evidenceSha = git(directory, ["rev-parse", "HEAD"]);
+  const sourceTreeSha = git(directory, ["rev-parse", "HEAD^{tree}"]);
+
+  git(directory, ["switch", "main"]);
+  git(directory, ["merge", "--squash", "codex/rebuild-test-v1"]);
+  git(directory, ["commit", "-m", "squash merge"]);
+  const mergeSha = git(directory, ["rev-parse", "HEAD"]);
+
+  const graph = doneGraph();
+  graph.nodes = graph.nodes.map((node) => ({
+    ...node,
+    baseSha,
+    branch: "codex/rebuild-test-v1",
+    evidence: node.evidence.map((evidence) => ({
+      ...evidence,
+      commitSha: evidenceSha,
+    })),
+    mergeSha,
+  }));
+  const graphPath = join(directory, "graph.json");
+  writeFileSync(graphPath, JSON.stringify(graph), "utf8");
+
+  return {
+    baseSha,
+    directory,
+    evidenceSha,
+    graphPath,
+    mergeSha,
+    sourceTreeSha,
+  };
+}
+
+function mockMergedPullRequest(
+  fixture: ReturnType<typeof createSquashFixture>,
+) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = String(input);
+    if (url.endsWith("/pulls/146")) {
+      return new Response(
+        JSON.stringify({
+          head: { sha: fixture.evidenceSha },
+          merged: true,
+          merge_commit_sha: fixture.mergeSha,
+          state: "closed",
+        }),
+        { status: 200 },
+      );
+    }
+    if (url.includes("/pulls/146/commits")) {
+      return new Response(JSON.stringify([{ sha: fixture.evidenceSha }]), {
+        status: 200,
+      });
+    }
+    if (url.endsWith(`/git/commits/${fixture.evidenceSha}`)) {
+      return new Response(
+        JSON.stringify({ tree: { sha: fixture.sourceTreeSha } }),
+        { status: 200 },
+      );
+    }
+    if (url.endsWith(`/git/commits/${fixture.mergeSha}`)) {
+      return new Response(
+        JSON.stringify({ tree: { sha: fixture.sourceTreeSha } }),
+        { status: 200 },
+      );
+    }
+    return new Response("not found", { status: 404 });
+  });
+}
 
 function doneGraph() {
   return {
@@ -67,6 +161,15 @@ function matchingFacts(
       { ancestor: EVIDENCE_SHA, descendant: MERGE_SHA },
     ],
     pullRequests: [{ url: PR_URL, state: "MERGED", mergeSha: MERGE_SHA }],
+    sliceSources: [
+      {
+        url: PR_URL,
+        headSha: OTHER_SHA,
+        headTreeSha: TREE_SHA,
+        mergeTreeSha: TREE_SHA,
+        commitShas: [EVIDENCE_SHA, OTHER_SHA],
+      },
+    ],
     ...overrides,
   };
 }
@@ -178,23 +281,78 @@ describe("rebuild graph repository claims", () => {
     );
   });
 
-  it("rejects missing and non-ancestor evidence commits", () => {
-    expect(
-      validateRepositoryClaims(
-        doneGraph(),
-        matchingFacts({ existingCommits: [BASE_SHA, MERGE_SHA] }),
-      ),
-    ).toContain(`node CR00 evidence commit does not exist: ${EVIDENCE_SHA}`);
-
+  it("accepts original PR evidence after a tree-identical squash merge", () => {
     expect(
       validateRepositoryClaims(
         doneGraph(),
         matchingFacts({
+          existingCommits: [BASE_SHA, MERGE_SHA],
           ancestorPairs: [{ ancestor: MERGE_SHA, descendant: "main" }],
         }),
       ),
+    ).toEqual([]);
+  });
+
+  it("rejects evidence outside the merged pull request commit set", () => {
+    expect(
+      validateRepositoryClaims(
+        doneGraph(),
+        matchingFacts({
+          sliceSources: [
+            {
+              url: PR_URL,
+              headSha: OTHER_SHA,
+              headTreeSha: TREE_SHA,
+              mergeTreeSha: TREE_SHA,
+              commitShas: [OTHER_SHA],
+            },
+          ],
+        }),
+      ),
     ).toContain(
-      `node CR00 evidence commit ${EVIDENCE_SHA} is not an ancestor of ${MERGE_SHA}`,
+      `node CR00 evidence commit ${EVIDENCE_SHA} is not part of merged pull request ${PR_URL}`,
+    );
+  });
+
+  it("rejects a merged tree that differs from the pull request head", () => {
+    expect(
+      validateRepositoryClaims(
+        doneGraph(),
+        matchingFacts({
+          sliceSources: [
+            {
+              url: PR_URL,
+              headSha: OTHER_SHA,
+              headTreeSha: TREE_SHA,
+              mergeTreeSha: OTHER_TREE_SHA,
+              commitShas: [EVIDENCE_SHA, OTHER_SHA],
+            },
+          ],
+        }),
+      ),
+    ).toContain(
+      `done slice CR00 merged tree ${OTHER_TREE_SHA} does not match pull request head tree ${TREE_SHA}`,
+    );
+  });
+
+  it("rejects an incomplete pull request commit set", () => {
+    expect(
+      validateRepositoryClaims(
+        doneGraph(),
+        matchingFacts({
+          sliceSources: [
+            {
+              url: PR_URL,
+              headSha: OTHER_SHA,
+              headTreeSha: TREE_SHA,
+              mergeTreeSha: TREE_SHA,
+              commitShas: [EVIDENCE_SHA],
+            },
+          ],
+        }),
+      ),
+    ).toContain(
+      `done slice CR00 pull request head commit is missing from source history: ${OTHER_SHA}`,
     );
   });
 
@@ -287,9 +445,189 @@ describe("rebuild graph repository claims", () => {
 });
 
 describe("rebuild graph reconciliation CLI", () => {
+  it("requires a durable source tag instead of a retained branch", async () => {
+    const fixture = createSquashFixture();
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        ["--offline", fixture.graphPath],
+        fixture.directory,
+        {},
+      );
+
+      expect(exitCode).toBe(1);
+      expect(error.mock.calls.flat().join("\n")).toContain(
+        "done slice CR00 source tag refs/tags/rebuild/cr00-source is unavailable; fetch tags or run live reconciliation",
+      );
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
+  it("reconstructs squash provenance from the durable source tag after branch deletion", async () => {
+    const fixture = createSquashFixture();
+    git(fixture.directory, [
+      "tag",
+      "rebuild/cr00-source",
+      "codex/rebuild-test-v1",
+    ]);
+    git(fixture.directory, ["branch", "-D", "codex/rebuild-test-v1"]);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        ["--offline", fixture.graphPath],
+        fixture.directory,
+        {},
+      );
+
+      expect(exitCode).toBe(0);
+      expect(error).not.toHaveBeenCalled();
+      expect(log.mock.calls.flat().join("\n")).toContain(
+        "Rebuild graph repository facts are valid",
+      );
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
+  it("does not diagnose a stale local source branch as merge tampering", async () => {
+    const fixture = createSquashFixture();
+    git(fixture.directory, [
+      "branch",
+      "-f",
+      "codex/rebuild-test-v1",
+      fixture.baseSha,
+    ]);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        ["--offline", fixture.graphPath],
+        fixture.directory,
+        {},
+      );
+      const stderr = error.mock.calls.flat().join("\n");
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain(
+        "done slice CR00 source tag refs/tags/rebuild/cr00-source is unavailable; fetch tags or run live reconciliation",
+      );
+      expect(stderr).not.toContain("does not match pull request head tree");
+    } finally {
+      error.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
+  it("prefers the remote default branch over a stale local branch", async () => {
+    const fixture = createSquashFixture();
+    git(fixture.directory, [
+      "tag",
+      "rebuild/cr00-source",
+      "codex/rebuild-test-v1",
+    ]);
+    git(fixture.directory, ["switch", "-c", "codex/recovery-test-v1"]);
+    git(fixture.directory, ["branch", "-f", "main", fixture.baseSha]);
+    git(fixture.directory, [
+      "update-ref",
+      "refs/remotes/origin/main",
+      fixture.mergeSha,
+    ]);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        ["--offline", fixture.graphPath],
+        fixture.directory,
+        {},
+      );
+
+      expect(exitCode).toBe(0);
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
+  it("reconstructs squash provenance from the merged pull request", async () => {
+    const fixture = createSquashFixture();
+    git(fixture.directory, [
+      "tag",
+      "rebuild/cr00-source",
+      "codex/rebuild-test-v1",
+    ]);
+    git(fixture.directory, ["branch", "-D", "codex/rebuild-test-v1"]);
+    const fetchMock = mockMergedPullRequest(fixture);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        [fixture.graphPath],
+        fixture.directory,
+        { GITHUB_TOKEN: "test-token" },
+      );
+
+      expect(exitCode).toBe(0);
+      expect(error).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    } finally {
+      error.mockRestore();
+      fetchMock.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
+  it("rejects a source tag that does not point to the canonical pull request head", async () => {
+    const fixture = createSquashFixture();
+    git(fixture.directory, ["tag", "rebuild/cr00-source", fixture.baseSha]);
+    git(fixture.directory, ["branch", "-D", "codex/rebuild-test-v1"]);
+    const fetchMock = mockMergedPullRequest(fixture);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        [fixture.graphPath],
+        fixture.directory,
+        { GITHUB_TOKEN: "test-token" },
+      );
+
+      expect(exitCode).toBe(1);
+      expect(error.mock.calls.flat().join("\n")).toContain(
+        `done slice CR00 source tag refs/tags/rebuild/cr00-source points to ${fixture.baseSha}, not pull request head ${fixture.evidenceSha}`,
+      );
+    } finally {
+      error.mockRestore();
+      fetchMock.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
   it("reports live pull-request claims as unverified when credentials are missing", async () => {
     const fixtureDirectory = mkdtempSync(join(tmpdir(), "rebuild-reconcile-"));
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     try {
       const graph = runningGraph();
       const graphPath = join(fixtureDirectory, "graph.json");

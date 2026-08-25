@@ -11,12 +11,25 @@ export type PullRequestFact = {
   mergeSha: string | null;
 };
 
+export type SliceSourceFact = {
+  url: string;
+  headSha: string;
+  headTreeSha: string;
+  mergeTreeSha: string;
+  commitShas: string[];
+};
+
 export type RepositoryFacts = {
   changedPaths: string[];
   existingCommits: string[];
   ancestorPairs: Array<{ ancestor: string; descendant: string }>;
   pullRequests: PullRequestFact[];
+  sliceSources: SliceSourceFact[];
 };
+
+function sourceTagRef(nodeId: string) {
+  return `refs/tags/rebuild/${nodeId.toLowerCase()}-source`;
+}
 
 function isRepositoryRelativePath(value: string) {
   return (
@@ -107,13 +120,34 @@ function validateRepositoryClaimsWithOptions(
     ),
   );
   const pullRequests = new Map(facts.pullRequests.map((pr) => [pr.url, pr]));
+  const sliceSources = new Map(
+    facts.sliceSources.map((source) => [source.url, source]),
+  );
   const isAncestor = (ancestor: string, descendant: string) =>
     ancestorPairs.has(`${ancestor}\u0000${descendant}`);
 
   for (const node of graphRecord.nodes) {
     let evidenceDescendant: string | null = null;
+    let sourceEvidenceCommits: Set<string> | null = null;
     if (node.kind === "slice" && node.status === "done") {
-      evidenceDescendant = node.mergeSha;
+      const source = sliceSources.get(node.pr);
+      if (!source) {
+        errors.push(
+          `done slice ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
+        );
+      } else {
+        sourceEvidenceCommits = new Set(source.commitShas);
+        if (!sourceEvidenceCommits.has(source.headSha)) {
+          errors.push(
+            `done slice ${node.id} pull request head commit is missing from source history: ${source.headSha}`,
+          );
+        }
+        if (source.headTreeSha !== source.mergeTreeSha) {
+          errors.push(
+            `done slice ${node.id} merged tree ${source.mergeTreeSha} does not match pull request head tree ${source.headTreeSha}`,
+          );
+        }
+      }
       if (checkPullRequests) {
         const pullRequest = pullRequests.get(node.pr);
         if (!pullRequest) {
@@ -174,7 +208,15 @@ function validateRepositoryClaimsWithOptions(
       evidenceDescendant = graphRecord.repository.defaultBranch;
     }
 
-    if (evidenceDescendant !== null) {
+    if (sourceEvidenceCommits !== null) {
+      for (const evidence of node.evidence) {
+        if (!sourceEvidenceCommits.has(evidence.commitSha)) {
+          errors.push(
+            `node ${node.id} evidence commit ${evidence.commitSha} is not part of merged pull request ${node.pr}`,
+          );
+        }
+      }
+    } else if (evidenceDescendant !== null) {
       for (const evidence of node.evidence) {
         if (!existingCommits.has(evidence.commitSha)) {
           errors.push(
@@ -197,6 +239,7 @@ type ReconciliationGraph = {
   repository: { slug: string; defaultBranch: string };
   nodes: Array<{
     baseSha: string;
+    branch: string;
     evidence: Array<{ commitSha: string }>;
     id: string;
     kind: string;
@@ -216,7 +259,7 @@ function runGit(cwd: string, args: readonly string[]) {
 }
 
 function resolveDefaultBranchRef(cwd: string, defaultBranch: string) {
-  for (const candidate of [defaultBranch, `origin/${defaultBranch}`]) {
+  for (const candidate of [`origin/${defaultBranch}`, defaultBranch]) {
     if (
       runGit(cwd, ["rev-parse", "--verify", `${candidate}^{commit}`]).status ===
       0
@@ -227,6 +270,14 @@ function resolveDefaultBranchRef(cwd: string, defaultBranch: string) {
   return defaultBranch;
 }
 
+function resolveSourceTagRef(cwd: string, nodeId: string) {
+  const candidate = sourceTagRef(nodeId);
+  return runGit(cwd, ["rev-parse", "--verify", `${candidate}^{commit}`])
+    .status === 0
+    ? candidate
+    : null;
+}
+
 function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
   const errors: string[] = [];
   const facts: RepositoryFacts = {
@@ -234,6 +285,7 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
     existingCommits: [],
     ancestorPairs: [],
     pullRequests: [],
+    sliceSources: [],
   };
   const relevantNodes = graph.nodes.filter((node) =>
     ["running", "done", "abandoned", "superseded"].includes(node.status),
@@ -248,6 +300,46 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
     for (const evidence of node.evidence) {
       commits.add(evidence.commitSha);
     }
+  }
+
+  for (const node of relevantNodes) {
+    if (node.kind !== "slice" || node.status !== "done") {
+      continue;
+    }
+    const sourceRef = resolveSourceTagRef(cwd, node.id);
+    if (!sourceRef) {
+      errors.push(
+        `done slice ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
+      );
+      continue;
+    }
+    const headSha = runGit(cwd, ["rev-parse", `${sourceRef}^{commit}`]);
+    const headTreeSha = runGit(cwd, ["rev-parse", `${sourceRef}^{tree}`]);
+    const mergeTreeSha = runGit(cwd, ["rev-parse", `${node.mergeSha}^{tree}`]);
+    const commitShas = runGit(cwd, [
+      "rev-list",
+      "--reverse",
+      `${node.baseSha}..${sourceRef}`,
+    ]);
+    if (
+      [headSha, headTreeSha, mergeTreeSha, commitShas].some(
+        (result) => result.status !== 0,
+      )
+    ) {
+      errors.push(
+        `unable to reconstruct source provenance for done slice ${node.id}`,
+      );
+      continue;
+    }
+    facts.sliceSources.push({
+      url: node.pr,
+      headSha: headSha.stdout.trim(),
+      headTreeSha: headTreeSha.stdout.trim(),
+      mergeTreeSha: mergeTreeSha.stdout.trim(),
+      commitShas: commitShas.stdout
+        .split(/\r?\n/)
+        .filter((sha) => sha.length > 0),
+    });
   }
 
   for (const commit of [...commits].sort()) {
@@ -301,13 +393,6 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
         descendant: graph.repository.defaultBranch,
         gitDescendant: defaultBranchRef,
       });
-      for (const evidence of node.evidence) {
-        requiredPairs.push({
-          ancestor: evidence.commitSha,
-          descendant: node.mergeSha,
-          gitDescendant: node.mergeSha,
-        });
-      }
     } else {
       const descendant =
         node.status === "abandoned" || node.status === "superseded"
@@ -351,6 +436,7 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
 
   facts.changedPaths = [...new Set(facts.changedPaths)].sort();
   facts.existingCommits.sort();
+  facts.sliceSources.sort((left, right) => left.url.localeCompare(right.url));
   facts.ancestorPairs.sort((left, right) =>
     `${left.ancestor}\u0000${left.descendant}`.localeCompare(
       `${right.ancestor}\u0000${right.descendant}`,
@@ -370,11 +456,23 @@ async function collectPullRequestFacts(
         "Live pull-request claims are unverified: GITHUB_TOKEN or GH_TOKEN is required for live reconciliation",
       ],
       pullRequests: [] as PullRequestFact[],
+      sliceSources: [] as SliceSourceFact[],
     };
   }
 
   const errors: string[] = [];
   const pullRequests: PullRequestFact[] = [];
+  const sliceSources: SliceSourceFact[] = [];
+  const request = (url: string) =>
+    fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "pest-patrol-rebuild-reconciler",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
   const urls = [
     ...new Set(
       graph.nodes
@@ -390,17 +488,8 @@ async function collectPullRequestFacts(
   for (const url of urls) {
     const number = new URL(url).pathname.split("/").at(-1);
     try {
-      const response = await fetch(
+      const response = await request(
         `https://api.github.com/repos/${graph.repository.slug}/pulls/${number}`,
-        {
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${token}`,
-            "User-Agent": "pest-patrol-rebuild-reconciler",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-          signal: AbortSignal.timeout(15_000),
-        },
       );
       if (!response.ok) {
         errors.push(
@@ -409,6 +498,7 @@ async function collectPullRequestFacts(
         continue;
       }
       const body = (await response.json()) as {
+        head?: { sha?: string };
         merged?: boolean;
         merge_commit_sha?: string | null;
         state?: string;
@@ -422,12 +512,97 @@ async function collectPullRequestFacts(
             : "CLOSED",
         mergeSha: body.merge_commit_sha ?? null,
       });
+      if (!body.merged) {
+        continue;
+      }
+
+      const headSha = body.head?.sha;
+      const mergeSha = body.merge_commit_sha;
+      if (!headSha || !mergeSha) {
+        errors.push(`unable to read merged source identity for ${url}`);
+        continue;
+      }
+
+      const commitShas: string[] = [];
+      for (let page = 1; page <= 100; page += 1) {
+        const commitsResponse = await request(
+          `https://api.github.com/repos/${graph.repository.slug}/pulls/${number}/commits?per_page=100&page=${page}`,
+        );
+        if (!commitsResponse.ok) {
+          errors.push(
+            `unable to read pull request commits ${url}: GitHub returned ${commitsResponse.status}`,
+          );
+          break;
+        }
+        const commitsBody = (await commitsResponse.json()) as Array<{
+          sha?: string;
+        }>;
+        if (!Array.isArray(commitsBody)) {
+          errors.push(
+            `unable to read pull request commits ${url}: malformed response`,
+          );
+          break;
+        }
+        commitShas.push(
+          ...commitsBody
+            .map((commit) => commit.sha)
+            .filter((sha): sha is string => typeof sha === "string"),
+        );
+        if (commitsBody.length < 100) {
+          break;
+        }
+        if (page === 100) {
+          errors.push(`pull request commit pagination exceeded limit: ${url}`);
+        }
+      }
+      if (!commitShas.includes(headSha)) {
+        errors.push(
+          `pull request head commit is missing from commit list: ${url}`,
+        );
+        continue;
+      }
+
+      const [headResponse, mergeResponse] = await Promise.all([
+        request(
+          `https://api.github.com/repos/${graph.repository.slug}/git/commits/${headSha}`,
+        ),
+        request(
+          `https://api.github.com/repos/${graph.repository.slug}/git/commits/${mergeSha}`,
+        ),
+      ]);
+      if (!headResponse.ok || !mergeResponse.ok) {
+        errors.push(`unable to read pull request tree identities: ${url}`);
+        continue;
+      }
+      const headCommit = (await headResponse.json()) as {
+        tree?: { sha?: string };
+      };
+      const mergeCommit = (await mergeResponse.json()) as {
+        tree?: { sha?: string };
+      };
+      const headTreeSha = headCommit.tree?.sha;
+      const mergeTreeSha = mergeCommit.tree?.sha;
+      if (!headTreeSha || !mergeTreeSha) {
+        errors.push(`pull request tree identities are malformed: ${url}`);
+        continue;
+      }
+      sliceSources.push({
+        url,
+        headSha,
+        headTreeSha,
+        mergeTreeSha,
+        commitShas,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.name : "unknown error";
       errors.push(`unable to read pull request ${url}: ${message}`);
     }
   }
-  return { errors: [...new Set(errors)].sort(), pullRequests };
+  return {
+    errors: [...new Set(errors)].sort(),
+    pullRequests,
+    sliceSources,
+  };
 }
 
 export async function runRebuildGraphReconcileCli(
@@ -468,6 +643,31 @@ export async function runRebuildGraphReconcileCli(
     const remote = await collectPullRequestFacts(typedGraph, environment);
     local.errors.push(...remote.errors);
     local.facts.pullRequests = remote.pullRequests;
+    const localSources = new Map(
+      local.facts.sliceSources.map((source) => [source.url, source]),
+    );
+    for (const remoteSource of remote.sliceSources) {
+      const localSource = localSources.get(remoteSource.url);
+      if (!localSource || localSource.headSha === remoteSource.headSha) {
+        continue;
+      }
+      const node = typedGraph.nodes.find(
+        (candidate) => candidate.pr === remoteSource.url,
+      );
+      if (node) {
+        local.errors.push(
+          `done slice ${node.id} source tag ${sourceTagRef(node.id)} points to ${localSource.headSha}, not pull request head ${remoteSource.headSha}`,
+        );
+      }
+    }
+    local.facts.sliceSources = [
+      ...new Map(
+        [...local.facts.sliceSources, ...remote.sliceSources].map((source) => [
+          source.url,
+          source,
+        ]),
+      ).values(),
+    ];
     checkPullRequests = remote.errors.length === 0;
   }
   const claimErrors = validateRepositoryClaimsWithOptions(

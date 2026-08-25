@@ -34,7 +34,7 @@
       "baseSha": "a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03",
       "id": "CR00",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": null,
       "dependencies": [],
       "conflicts": [
@@ -128,7 +128,7 @@
       ],
       "branch": "codex/rebuild-cr00-control-plane-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/146",
-      "mergeSha": "",
+      "mergeSha": "8f1e6cc4d1ea56a360e77c8ed36ec2fe8c315df2",
       "supersededBy": null,
       "target": null
     },

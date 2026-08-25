@@ -1,13 +1,15 @@
+import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   aggregateGateStatus,
@@ -16,11 +18,61 @@ import {
   readPackageManagerVersion,
   resolvePackageManager,
   resolveVerificationCommand,
+  runRebuildVerificationCli,
   selectVerificationGates,
   withPackageManagerPath,
 } from "./rebuild-verification";
 
 const temporaryDirectories: string[] = [];
+
+function git(cwd: string, args: string[]) {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout);
+  }
+  return result.stdout.trim();
+}
+
+function createRecoveryFixture(ownership: string[]) {
+  const repository = mkdtempSync(join(tmpdir(), "pp-rebuild-recovery-"));
+  const graphDirectory = mkdtempSync(join(tmpdir(), "pp-rebuild-graph-"));
+  temporaryDirectories.push(repository, graphDirectory);
+  git(repository, ["init", "-b", "main"]);
+  git(repository, ["config", "user.email", "tests@example.com"]);
+  git(repository, ["config", "user.name", "Rebuild Tests"]);
+  mkdirSync(join(repository, "tasks"), { recursive: true });
+  writeFileSync(
+    join(repository, "package.json"),
+    JSON.stringify({ packageManager: "pnpm@9.15.4" }),
+  );
+  writeFileSync(join(repository, "tasks", "in-progress.md"), "merged\n");
+  git(repository, ["add", "package.json", "tasks/in-progress.md"]);
+  git(repository, ["commit", "-m", "merged slice"]);
+  const mergeSha = git(repository, ["rev-parse", "HEAD"]);
+
+  writeFileSync(join(repository, "tasks", "in-progress.md"), "repaired\n");
+  git(repository, ["add", "tasks/in-progress.md"]);
+  git(repository, ["commit", "-m", "post-merge repair"]);
+
+  const graphPath = join(graphDirectory, "graph.json");
+  writeFileSync(
+    graphPath,
+    JSON.stringify({
+      nodes: [
+        {
+          baseSha: "1111111111111111111111111111111111111111",
+          checks: ["git diff --check"],
+          id: "CR00",
+          kind: "slice",
+          mergeSha,
+          ownership,
+          status: "done",
+        },
+      ],
+    }),
+  );
+  return { graphPath, mergeSha, repository };
+}
 
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
@@ -265,5 +317,98 @@ describe("controlled rebuild gate classification", () => {
         packageManager: "'/opt/pnpm'",
       }),
     ).toBe("'/opt/pnpm' test");
+  });
+});
+
+describe("controlled rebuild post-merge recovery", () => {
+  it("verifies an explicitly selected done slice from its merge SHA", () => {
+    const fixture = createRecoveryFixture(["tasks/in-progress.md"]);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = runRebuildVerificationCli(
+        ["--recovery-slice", "CR00", "--graph", fixture.graphPath],
+        fixture.repository,
+        {},
+      );
+      const output = log.mock.calls.flat().join("\n");
+
+      expect(exitCode).toBe(0);
+      const result = JSON.parse(output) as {
+        baseSha: string;
+        mode: string;
+        status: string;
+      };
+
+      expect(result).toMatchObject({
+        baseSha: fixture.mergeSha,
+        mode: "post-merge-recovery",
+        status: "PASS",
+      });
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
+  });
+
+  it("refuses recovery changes outside the completed slice ownership", () => {
+    const fixture = createRecoveryFixture(["docs"]);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = runRebuildVerificationCli(
+        ["--recovery-slice", "CR00", "--graph", fixture.graphPath],
+        fixture.repository,
+        {},
+      );
+      const output = log.mock.calls.flat().join("\n");
+
+      expect(exitCode).toBe(1);
+      expect(output).toContain(
+        "UNMAPPED recovery ownership: changed path tasks/in-progress.md is outside running-node ownership",
+      );
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
+  });
+
+  it("refuses a recovery base that is not an ancestor of HEAD", () => {
+    const fixture = createRecoveryFixture(["tasks/in-progress.md"]);
+    const treeSha = git(fixture.repository, ["rev-parse", "HEAD^{tree}"]);
+    const unrelatedSha = git(fixture.repository, [
+      "commit-tree",
+      treeSha,
+      "-m",
+      "unrelated merge",
+    ]);
+    const graph = JSON.parse(readFileSync(fixture.graphPath, "utf8")) as {
+      nodes: Array<{ mergeSha: string }>;
+    };
+    graph.nodes[0].mergeSha = unrelatedSha;
+    writeFileSync(fixture.graphPath, JSON.stringify(graph));
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = runRebuildVerificationCli(
+        ["--recovery-slice", "CR00", "--graph", fixture.graphPath],
+        fixture.repository,
+        {},
+      );
+
+      expect(exitCode).toBe(1);
+      expect(error.mock.calls.flat().join("\n")).toContain(
+        `Post-merge recovery merge SHA ${unrelatedSha} is not an ancestor of HEAD.`,
+      );
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
   });
 });
