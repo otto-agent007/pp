@@ -366,7 +366,9 @@ async function collectPullRequestFacts(
   const token = environment.GITHUB_TOKEN ?? environment.GH_TOKEN;
   if (!token) {
     return {
-      errors: ["GITHUB_TOKEN or GH_TOKEN is required for live reconciliation"],
+      errors: [
+        "Live pull-request claims are unverified: GITHUB_TOKEN or GH_TOKEN is required for live reconciliation",
+      ],
       pullRequests: [] as PullRequestFact[],
     };
   }
@@ -461,15 +463,17 @@ export async function runRebuildGraphReconcileCli(
 
   const typedGraph = graph as ReconciliationGraph;
   const local = collectLocalRepositoryFacts(typedGraph, cwd);
+  let checkPullRequests = false;
   if (!offline) {
     const remote = await collectPullRequestFacts(typedGraph, environment);
     local.errors.push(...remote.errors);
     local.facts.pullRequests = remote.pullRequests;
+    checkPullRequests = remote.errors.length === 0;
   }
   const claimErrors = validateRepositoryClaimsWithOptions(
     graph,
     local.facts,
-    !offline,
+    checkPullRequests,
   );
   const errors = [...new Set([...local.errors, ...claimErrors])].sort();
   if (errors.length > 0) {

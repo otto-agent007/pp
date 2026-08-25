@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  runRebuildGraphReconcileCli,
   validateChangedPathOwnership,
   validateRepositoryClaims,
   type RepositoryFacts,
@@ -278,5 +283,33 @@ describe("rebuild graph repository claims", () => {
         `node CR00 evidence commit ${EVIDENCE_SHA} is not an ancestor of HEAD`,
       ]),
     );
+  });
+});
+
+describe("rebuild graph reconciliation CLI", () => {
+  it("reports live pull-request claims as unverified when credentials are missing", async () => {
+    const fixtureDirectory = mkdtempSync(join(tmpdir(), "rebuild-reconcile-"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const graph = runningGraph();
+      const graphPath = join(fixtureDirectory, "graph.json");
+      writeFileSync(graphPath, JSON.stringify(graph), "utf8");
+
+      const exitCode = await runRebuildGraphReconcileCli(
+        [graphPath],
+        process.cwd(),
+        { GH_TOKEN: "", GITHUB_TOKEN: "" },
+      );
+      const stderr = error.mock.calls.flat().join("\n");
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain(
+        "Live pull-request claims are unverified: GITHUB_TOKEN or GH_TOKEN is required for live reconciliation",
+      );
+      expect(stderr).not.toContain("pull request does not exist");
+    } finally {
+      error.mockRestore();
+      rmSync(fixtureDirectory, { force: true, recursive: true });
+    }
   });
 });
