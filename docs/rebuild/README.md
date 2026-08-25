@@ -89,15 +89,30 @@ type ClaimEvidence = {
 
 Use full commit SHAs and UTC timestamps. A done node needs successful command
 evidence. Shape validation is deliberately pure; reconciliation separately
-proves commits, ancestry, merged PR state, merge-SHA agreement, running-base
-ancestry, and ownership coverage. Missing history, credentials, provider data,
-or network evidence fails live reconciliation.
+proves merged PR state, merge-SHA agreement, source history, tree identity,
+running-base ancestry, default-branch ancestry, and ownership coverage.
+
+For a done slice, each evidence commit must belong to the canonical pull
+request's original commit set. The original PR head tree must exactly match the
+tree at the recorded merge SHA. This binds evidence across merge commits,
+squash merges, and rebased merges without treating rewritten commit ancestry as
+proof or accepting content changed during merge. Offline reconciliation
+reconstructs these facts from a retained local source branch; live
+reconciliation reads the immutable PR commit set and both tree identities from
+GitHub. Missing history, credentials, provider data, or network evidence fails
+the applicable reconciliation mode.
 
 Run `pnpm rebuild:verify` for completion or PR-readiness evidence. It selects
 the union of path-driven and node-declared gates, resolves the exact declared
 package manager without installing it, digests declared ignored inputs, binds
 results to pre/post commit, tree, and worktree identities, and emits one JSON
 evidence set. `MISSING`, `STALE`, `BLOCKED`, or `FAIL` is never a waiver.
+
+An explicitly controller-approved post-merge control-plane repair may verify a
+named done slice with `pnpm rebuild:verify -- --recovery-slice <id>`. Recovery
+mode refuses to run while another slice is running, uses the done slice's merge
+SHA as its base, and turns changes outside that slice's ownership into missing
+gates. It is not a substitute for normal running-slice verification.
 
 ## Ownership and governance
 
