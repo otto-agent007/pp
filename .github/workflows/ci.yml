@@ -9,10 +9,15 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -27,6 +32,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Validate rebuild graph
+        run: pnpm rebuild:graph:check
+
+      - name: Reconcile rebuild graph
+        run: pnpm rebuild:graph:reconcile
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Security baseline
         run: pnpm security:baseline

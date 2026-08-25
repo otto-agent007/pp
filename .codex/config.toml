@@ -1,0 +1,3 @@
+[agents]
+# Cap controller-launched child-agent work; profiles themselves forbid nesting.
+max_concurrent_threads_per_session = 3

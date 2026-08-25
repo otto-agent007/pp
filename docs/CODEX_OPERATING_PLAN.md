@@ -4,12 +4,19 @@ This is the default operating model for Pest Patrol OS agent work. It optimizes 
 
 For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` as the project-level source of truth. Codex owns implementation, verification, GitHub stewardship, and architecture boundaries; Claude contributes design guidance through `.claude/design/*` relay files.
 
+For controlled-rebuild work, `docs/rebuild/graph.json` is the authoritative
+multi-slice scheduler and `docs/rebuild/README.md` is its operating contract.
+This plan does not duplicate that runbook's scheduling, lifecycle, evidence,
+or reconciliation algorithms. Those rules do not grant security, migration,
+provider, environment, preview, production, push, or PR authority.
+
 ## Default Mode
 
 - Ship safely before optimizing for speed.
 - Use approved multi-slice batches only when each slice is small, testable, and has non-overlapping ownership.
 - Keep the main Codex session responsible for architecture, integration, final review, verification, task docs, commits, PRs, and production-facing work.
 - Use Claude as a design partner through the file relay in `.claude/design/*` for UI-heavy slices; treat Claude output as advisory until Codex reviews it against AGENTS rules.
+- Use `pest-patrol-rebuild-orchestrator` when selecting, reconciling, or preparing one controlled-rebuild node; use `pest-patrol-architecture-guard` for read-only architecture and boundary review; and use `pest-patrol-verification-gate` before verification, completion, or PR-readiness claims. Follow `docs/CODEX_CLAUDE_GITHUB_WORKFLOW.md` for the existing Claude design relay.
 - Use subagents mostly as narrow scouts, test investigators, and reviewers. Use worker subagents only for isolated implementation scopes with explicit file or package ownership.
 - Treat active uncommitted work as protected. Do not overwrite, clean up, stash, revert, or merge it unless explicitly asked.
 - Treat the active branch as protected, but every new Pest Patrol slice must
@@ -23,6 +30,7 @@ For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WO
 1. Recon:
    - Read `docs/AGENTS.md`, relevant `docs/` files, `tasks/in-progress.md`, and `git status --short --branch`.
    - Identify dirty worktree risks before editing.
+   - For controlled rebuilds, follow `docs/rebuild/README.md`.
    - Spawn explorer agents for independent read-only subsystem mapping when it will reduce uncertainty.
 2. Plan:
    - State the slice goal, likely files/packages, data flow, tests, risks, and rollback or follow-up notes.
@@ -39,6 +47,8 @@ For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WO
    - Run focused tests first.
    - For code batches, run `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm build` unless the change scope or environment makes a check impractical.
    - For docs-only changes, run at least `git diff --check`.
+   - For controlled-rebuild work, run the canonical runbook's graph,
+     reconciliation, and verification commands.
 6. Ship:
    - Commit grouped changes, push the verified branch, open a draft PR,
      summarize verification, update task docs, and name the next recommended
@@ -70,6 +80,9 @@ For the Codex-Claude-GitHub collaboration loop, use `docs/CODEX_CLAUDE_GITHUB_WO
 - Expo: mobile, offline, native, and deployment workflow planning and verification.
 - Stripe: payment design, webhook, and test-mode readiness work.
 - GitHub and Vercel: PR readiness, CI/deployment checks, environment variable name checks, and release flow.
+- Controlled rebuild: `docs/rebuild/README.md` is the sole detailed operating
+  contract. GitHub, provider, environment, preview, production, push, and PR
+  decisions remain controller-approved.
 
 ## Production Boundaries
 

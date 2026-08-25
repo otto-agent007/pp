@@ -1,0 +1,647 @@
+{
+  "schemaVersion": 1,
+  "preferredPrOrder": [
+    "CR00",
+    "CR01",
+    "CR02",
+    "CR03",
+    "CR04",
+    "CR05",
+    "CR06",
+    "CR07",
+    "CR08",
+    "CR09",
+    "CR10",
+    "CR11",
+    "CR12",
+    "CR13",
+    "CR14",
+    "CR15",
+    "CR16",
+    "CR17",
+    "CR18"
+  ],
+  "repository": {
+    "slug": "otto-agent007/pp",
+    "defaultBranch": "main"
+  },
+  "targetPolicy": {
+    "prereleases": "forbidden",
+    "refreshAt": "slice-start"
+  },
+  "nodes": [
+    {
+      "baseSha": "a95be1ef64ebc2d90ba15c5d6aa92b71446d1f03",
+      "id": "CR00",
+      "kind": "slice",
+      "status": "running",
+      "parent": null,
+      "dependencies": [],
+      "conflicts": [
+        "CR01",
+        "CR02",
+        "CR03",
+        "CR04",
+        "CR05",
+        "CR06",
+        "CR07",
+        "CR08",
+        "CR09",
+        "CR10",
+        "CR11",
+        "CR12",
+        "CR13",
+        "CR14",
+        "CR15",
+        "CR16",
+        "CR17",
+        "CR18"
+      ],
+      "ownership": [
+        ".agents/skills/pest-patrol-architecture-guard/SKILL.md",
+        ".agents/skills/pest-patrol-rebuild-orchestrator/SKILL.md",
+        ".agents/skills/pest-patrol-verification-gate/SKILL.md",
+        ".codex/agents/pp-rebuild-explorer.toml",
+        ".codex/agents/pp-rebuild-reviewer.toml",
+        ".codex/agents/pp-rebuild-verifier.toml",
+        ".codex/agents/pp-rebuild-worker.toml",
+        ".codex/config.toml",
+        ".github/CODEOWNERS",
+        ".github/workflows/ci.yml",
+        "docs/AGENTS.md",
+        "docs/CODEX_OPERATING_PLAN.md",
+        "docs/rebuild/graph.json",
+        "docs/rebuild/README.md",
+        "docs/superpowers/plans/2026-08-22-controlled-rebuild-cr00.md",
+        "docs/superpowers/plans/2026-08-24-cr00-control-plane-review-repair.md",
+        "docs/superpowers/specs/2026-08-24-cr00-control-plane-review-repair-design.md",
+        "package.json",
+        "tasks/in-progress.md",
+        "tooling/rebuild-graph-reconcile.test.ts",
+        "tooling/rebuild-graph-reconcile.ts",
+        "tooling/rebuild-graph.test.ts",
+        "tooling/rebuild-graph.ts",
+        "tooling/rebuild-verification.test.ts",
+        "tooling/rebuild-verification.ts"
+      ],
+      "deliverables": [
+        "Versioned controlled-rebuild state machine and provisional roadmap",
+        "Pure structural validation and repository-fact reconciliation",
+        "Mechanical verification evidence-set tooling",
+        "CI enforcement, documented control-plane ownership, solo-maintainer governance, and canonical operator runbook"
+      ],
+      "checks": [
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-rebuild-orchestrator",
+        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-architecture-guard",
+        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-verification-gate",
+        "python3 -c \"import pathlib,tomllib; [tomllib.loads(path.read_text()) for path in pathlib.Path('.codex').rglob('*.toml')]\"",
+        "codex agents --help",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval before publication"
+      ],
+      "evidence": [
+        {
+          "kind": "github",
+          "summary": "Draft PR #146 opened.",
+          "commitSha": "600419a473cb57635192d25d83d48f98e989c2d0",
+          "recordedAt": "2026-08-23T05:58:24Z",
+          "url": "https://github.com/otto-agent007/pp/pull/146"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 22 selected gates with evidence set 26dd71c8bacb916fe34fe5686988dc848dae9b26abe5071b7566de430b7a185b.",
+          "command": "pnpm rebuild:verify -- --package-manager /tmp/pp-pnpm-tool/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "d7b6f50fdcf6dfd67154d34e5a298527fadaa6c8",
+          "recordedAt": "2026-08-24T21:13:29.675Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr00-control-plane-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/146",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR01",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR00"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Controlled rebuild foundation slice"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR02",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR01"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/types"
+      ],
+      "deliverables": [
+        "Bounded-context shared types with compatibility exports"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR03",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR01"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/domain"
+      ],
+      "deliverables": [
+        "Pure domain package"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR04",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR03"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/application"
+      ],
+      "deliverables": [
+        "Application ports and use cases"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR05",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR04"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/api-client"
+      ],
+      "deliverables": [
+        "API-client demo and Supabase adapters"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR06",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR05"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "packages/sync"
+      ],
+      "deliverables": [
+        "Durable offline mutation queue"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR07",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR02",
+        "CR06"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Type and offline-sync integration boundary"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR08",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR07"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Application composition preparation"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR09",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR08"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "apps"
+      ],
+      "deliverables": [
+        "Applications as composition and UI boundary"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR10",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR09"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Node 24 LTS migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "node",
+        "constraint": "24",
+        "selection": "lts-major",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR11",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR09"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Latest stable pnpm 11 patch migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "pnpm",
+        "constraint": "11",
+        "selection": "latest-stable-patch",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR12",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR10",
+        "CR11"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Next.js 16 stable migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "next",
+        "constraint": "16",
+        "selection": "stable-major",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR13",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR12"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 54 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "54",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR14",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR12",
+        "CR13"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 55 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "55",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR15",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR11",
+        "CR14"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 56 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "56",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR16",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR12",
+        "CR15"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Expo SDK 57 one-SDK migration"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": {
+        "product": "expo",
+        "constraint": "57",
+        "selection": "exact-sdk-major",
+        "resolvedVersion": ""
+      }
+    },
+    {
+      "baseSha": "",
+      "id": "CR17",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR11",
+        "CR12",
+        "CR14"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Cross-runtime compatibility reconciliation"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR18",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR10",
+        "CR11",
+        "CR12",
+        "CR13",
+        "CR14",
+        "CR15",
+        "CR16",
+        "CR17"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [],
+      "deliverables": [
+        "Controlled rebuild completion and final reconciliation"
+      ],
+      "checks": [],
+      "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    }
+  ]
+}
