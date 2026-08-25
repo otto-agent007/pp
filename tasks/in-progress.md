@@ -14,11 +14,18 @@
 - The graph now records CR00 `done` at the canonical merge SHA. Reconciliation
   preserves the original evidence records by proving PR commit membership and
   exact equality between the original PR head tree and merged tree.
+- Review follow-up published immutable source tag `rebuild/cr00-source` at PR
+  head `f0b3b5db99d337222704ea14390ffe8458658415`. Offline reconciliation now
+  requires that tag instead of trusting a retained branch, and live
+  reconciliation proves the tag still names GitHub's canonical PR head.
 - Required recovery checks include the three focused control-plane test files,
   structural and offline/live graph reconciliation, the explicit
   `pnpm rebuild:verify -- --recovery-slice CR00` gate, root test/typecheck/lint/
   build/security gates, skill validation, TOML parsing, and `git diff --check`.
 - CR01 remains `planned`; this repair does not promote it, create its branch, or
   begin implementation.
+- CI does not infer recovery ownership when no slice is running. This recovery
+  remains bounded by the explicit mechanical recovery verifier and review; a
+  durable CI recovery-slice selector is deferred rather than hard-coding CR00.
 - Explicit exclusions remain unchanged: no application, dependency, lockfile,
-  migration, provider, environment, preview, or production mutation.
+  migration, provider-setting, environment, preview, or production mutation.

@@ -27,6 +27,10 @@ export type RepositoryFacts = {
   sliceSources: SliceSourceFact[];
 };
 
+function sourceTagRef(nodeId: string) {
+  return `refs/tags/rebuild/${nodeId.toLowerCase()}-source`;
+}
+
 function isRepositoryRelativePath(value: string) {
   return (
     value.length > 0 &&
@@ -129,7 +133,7 @@ function validateRepositoryClaimsWithOptions(
       const source = sliceSources.get(node.pr);
       if (!source) {
         errors.push(
-          `done slice ${node.id} source provenance is unavailable: ${node.pr}`,
+          `done slice ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
         );
       } else {
         sourceEvidenceCommits = new Set(source.commitShas);
@@ -266,16 +270,12 @@ function resolveDefaultBranchRef(cwd: string, defaultBranch: string) {
   return defaultBranch;
 }
 
-function resolveSourceBranchRef(cwd: string, branch: string) {
-  for (const candidate of [branch, `origin/${branch}`]) {
-    if (
-      runGit(cwd, ["rev-parse", "--verify", `${candidate}^{commit}`]).status ===
-      0
-    ) {
-      return candidate;
-    }
-  }
-  return null;
+function resolveSourceTagRef(cwd: string, nodeId: string) {
+  const candidate = sourceTagRef(nodeId);
+  return runGit(cwd, ["rev-parse", "--verify", `${candidate}^{commit}`])
+    .status === 0
+    ? candidate
+    : null;
 }
 
 function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
@@ -306,8 +306,11 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
     if (node.kind !== "slice" || node.status !== "done") {
       continue;
     }
-    const sourceRef = resolveSourceBranchRef(cwd, node.branch);
+    const sourceRef = resolveSourceTagRef(cwd, node.id);
     if (!sourceRef) {
+      errors.push(
+        `done slice ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
+      );
       continue;
     }
     const headSha = runGit(cwd, ["rev-parse", `${sourceRef}^{commit}`]);
@@ -640,6 +643,23 @@ export async function runRebuildGraphReconcileCli(
     const remote = await collectPullRequestFacts(typedGraph, environment);
     local.errors.push(...remote.errors);
     local.facts.pullRequests = remote.pullRequests;
+    const localSources = new Map(
+      local.facts.sliceSources.map((source) => [source.url, source]),
+    );
+    for (const remoteSource of remote.sliceSources) {
+      const localSource = localSources.get(remoteSource.url);
+      if (!localSource || localSource.headSha === remoteSource.headSha) {
+        continue;
+      }
+      const node = typedGraph.nodes.find(
+        (candidate) => candidate.pr === remoteSource.url,
+      );
+      if (node) {
+        local.errors.push(
+          `done slice ${node.id} source tag ${sourceTagRef(node.id)} points to ${localSource.headSha}, not pull request head ${remoteSource.headSha}`,
+        );
+      }
+    }
     local.facts.sliceSources = [
       ...new Map(
         [...local.facts.sliceSources, ...remote.sliceSources].map((source) => [
