@@ -88,7 +88,7 @@
         "Versioned controlled-rebuild state machine and provisional roadmap",
         "Pure structural validation and repository-fact reconciliation",
         "Mechanical verification evidence-set tooling",
-        "CI enforcement, human CODEOWNERS, and canonical operator runbook"
+        "CI enforcement, documented control-plane ownership, solo-maintainer governance, and canonical operator runbook"
       ],
       "checks": [
         "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",

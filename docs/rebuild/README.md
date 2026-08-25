@@ -106,12 +106,18 @@ an ownership path or descend from an owned directory. Prefix lookalikes do not
 count. CR00 owns its graph, tests, reconciliation and verification tooling,
 workflow, CODEOWNERS, skills, profiles, scripts, and operating documents.
 
-CODEOWNERS requests human review for the control plane, but the file does not
-enforce that review by itself. Because target policy now lives in graph data,
-PR #146 must not merge until a separately authorized branch rule or ruleset
-requires pull requests, human approval, code-owner approval, and dismissal of
-stale approvals after new pushes. Local implementation does not grant provider
-mutation authority.
+CODEOWNERS documents the human owner of the control plane, but the file does
+not enforce a review by itself.
+While the repository has one trusted human maintainer, the authorized ruleset
+requires pull requests and the strict `verify` check, blocks deletion and force
+pushes, and has no bypass actors. Required approvals remain zero and required
+code-owner review remains disabled so the pull-request author is not
+self-deadlocked. Automated reviews are advisory and do not impersonate an
+independent approval. Dismissal of stale approvals after new pushes remains
+enabled and becomes consequential once approvals are required. When a second
+trusted human maintainer receives write access, add that maintainer to
+CODEOWNERS before enabling one required approval and required code-owner review.
+Local implementation does not grant provider mutation authority.
 
 Start every slice from its intended base on a fresh correctly named `codex/*`
 branch. The first commit of a new slice reconciles its predecessor. Security,

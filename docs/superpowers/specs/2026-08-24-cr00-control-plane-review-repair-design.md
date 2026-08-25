@@ -209,12 +209,18 @@ first acceptance test of ownership enforcement.
 - `.github/workflows/ci.yml`;
 - `.github/CODEOWNERS` itself.
 
-CODEOWNERS is not an enforcement boundary by itself. PR #146 may not merge
-after target constants move into graph data until a separately authorized
-GitHub ruleset or branch-protection configuration requires pull requests,
-human approval, code-owner approval where applicable, and dismissal of stale
-approvals after new pushes. No provider mutation is part of the local code
-implementation without that separate authorization.
+CODEOWNERS is not an enforcement boundary by itself. While the repository has
+one trusted human maintainer, requiring independent approval or code-owner
+review would self-deadlock changes authored by that maintainer. The separately
+authorized GitHub ruleset instead requires pull requests and the strict
+`verify` check, blocks deletion and force pushes, and has no bypass actors;
+required approvals remain zero and required code-owner review remains disabled.
+Automated reviews remain advisory. Dismissal of stale approvals after new
+pushes remains enabled and becomes consequential once approvals are required.
+When a second trusted human maintainer receives write access, add that
+maintainer to CODEOWNERS before enabling one required approval and required
+code-owner review. No provider mutation is part of the local code implementation
+without separate authorization.
 
 ## Documentation
 
@@ -243,5 +249,6 @@ Focused tests run after every RED/GREEN cycle. Final verification includes:
 
 Verified changes are committed and pushed to
 `codex/rebuild-cr00-control-plane-v1`, updating existing draft PR #146. The PR
-remains draft and unmerged pending human review and the separately authorized
-GitHub protection step.
+remains draft and unmerged pending final verification and controller approval
+for any ready-for-review or merge mutation. The separately authorized GitHub
+protection step is complete under the solo-maintainer policy above.

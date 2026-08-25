@@ -22,8 +22,12 @@
 - Draft PR [#146](https://github.com/otto-agent007/pp/pull/146) is active.
   Review repair is in progress on the same branch and PR; CR00 has not claimed
   final post-repair verification or completion.
-- CODEOWNERS is tracked, but PR #146 must not merge until a separately
-  authorized branch rule or ruleset requires human and code-owner approval and
-  dismisses stale approvals after new pushes.
+- CODEOWNERS is tracked. Because the repository currently has one trusted human
+  maintainer, the owner-configured ruleset requires pull requests and the
+  strict `verify` check, blocks deletion and force pushes, and has no bypass
+  actors; required approvals are zero and required code-owner review is off to
+  avoid self-deadlock. Stale-approval dismissal remains on, and automated
+  reviews remain advisory. Add a second trusted human maintainer to CODEOWNERS
+  before enabling one required approval and required code-owner review.
 - CR00 remains `running` until the draft PR is reviewed and merged. Do not
   start CR01 implementation or open a second controlled-rebuild draft PR.
