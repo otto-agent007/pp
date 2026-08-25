@@ -1,31 +1,24 @@
 # In Progress
 
-## Controlled rebuild CR00 post-merge reconciliation
+## Controlled rebuild CR01 executable architecture foundation
 
-- PR [#146](https://github.com/otto-agent007/pp/pull/146) was squash-merged as
-  `8f1e6cc4d1ea56a360e77c8ed36ec2fe8c315df2` on 2026-08-25. Its first `main`
-  CI run failed because CR00 still claimed `running` and the reconciler treated
-  original PR evidence commits as ancestors of the rewritten squash commit.
-- Active recovery branch:
-  `codex/rebuild-cr00-post-merge-reconcile-v1`, based on that exact merge SHA.
-  Draft repair PR [#147](https://github.com/otto-agent007/pp/pull/147) is open.
-  Initial clean-tree recovery verification passed all 17 gates before
-  publication.
-- The graph now records CR00 `done` at the canonical merge SHA. Reconciliation
-  preserves the original evidence records by proving PR commit membership and
-  exact equality between the original PR head tree and merged tree.
-- Review follow-up published immutable source tag `rebuild/cr00-source` at PR
-  head `f0b3b5db99d337222704ea14390ffe8458658415`. Offline reconciliation now
-  requires that tag instead of trusting a retained branch, and live
-  reconciliation proves the tag still names GitHub's canonical PR head.
-- Required recovery checks include the three focused control-plane test files,
-  structural and offline/live graph reconciliation, the explicit
-  `pnpm rebuild:verify -- --recovery-slice CR00` gate, root test/typecheck/lint/
-  build/security gates, skill validation, TOML parsing, and `git diff --check`.
-- CR01 remains `planned`; this repair does not promote it, create its branch, or
-  begin implementation.
-- CI does not infer recovery ownership when no slice is running. This recovery
-  remains bounded by the explicit mechanical recovery verifier and review; a
-  durable CI recovery-slice selector is deferred rather than hard-coding CR00.
-- Explicit exclusions remain unchanged: no application, dependency, lockfile,
-  migration, provider-setting, environment, preview, or production mutation.
+- CR00 recovery PR [#147](https://github.com/otto-agent007/pp/pull/147) was
+  squash-merged as `3630dbb3ecaf4361dc059a974246e688f473bcf2` on
+  2026-08-25. Structural, offline, and live reconciliation passed before CR01
+  selection, and that exact merge commit is the CR01 base.
+- Active branch: `codex/rebuild-cr01-foundation-v1`. CR01 is the sole running
+  controlled-rebuild node.
+- The selected design direction creates an executable architecture boundary
+  without editing packages or application behavior. It records exact current
+  dependency debt and assigns removal to CR05 and CR08 while preventing new or
+  silently stale exceptions.
+- Written specification:
+  `docs/superpowers/specs/2026-08-25-controlled-rebuild-cr01-foundation-design.md`.
+  Implementation remains gated on controller review of that committed spec and
+  the subsequent implementation plan.
+- Intended implementation is limited to the canonical architecture docs, a
+  versioned boundary policy, its TypeScript checker/tests, root scripts, graph,
+  plan, and this tracker. Exact path ownership is recorded in the graph.
+- Excluded: package or app implementation changes, dependency or lockfile
+  changes, package scaffolding, migrations, RLS, providers, environments,
+  previews, and production.

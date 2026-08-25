@@ -133,10 +133,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "3630dbb3ecaf4361dc059a974246e688f473bcf2",
       "id": "CR01",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -144,14 +144,44 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Controlled rebuild foundation slice"
+      "ownership": [
+        "docs/architecture.md",
+        "docs/DECISIONS.md",
+        "docs/PATTERNS.md",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/specs/2026-08-25-controlled-rebuild-cr01-foundation-design.md",
+        "docs/superpowers/plans/2026-08-25-controlled-rebuild-cr01-foundation.md",
+        "package.json",
+        "tasks/in-progress.md",
+        "tooling/architecture-boundaries.json",
+        "tooling/architecture-boundaries.ts",
+        "tooling/architecture-boundaries.test.ts"
       ],
-      "checks": [],
-      "approvals": [],
+      "deliverables": [
+        "Canonical package responsibility and dependency-direction contract",
+        "Executable manifest and TypeScript source boundary checker",
+        "Exact expiring debt exceptions assigned to CR05 and CR08",
+        "CR01 implementation plan and controlled-rebuild handoff"
+      ],
+      "checks": [
+        "pnpm exec vitest run tooling/architecture-boundaries.test.ts",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the written specification before implementation",
+        "Controller approval before publication"
+      ],
       "evidence": [],
-      "branch": "",
+      "branch": "codex/rebuild-cr01-foundation-v1",
       "pr": "",
       "mergeSha": "",
       "supersededBy": null,
@@ -200,7 +230,7 @@
         "packages/domain"
       ],
       "deliverables": [
-        "Pure domain package"
+        "Pure domain core with compatibility exports"
       ],
       "checks": [],
       "approvals": [],
@@ -332,7 +362,7 @@
       ],
       "ownership": [],
       "deliverables": [
-        "Application composition preparation"
+        "Application composition preparation and legacy domain-to-adapter removal"
       ],
       "checks": [],
       "approvals": [],
