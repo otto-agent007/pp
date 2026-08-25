@@ -8,7 +8,9 @@
   original PR evidence commits as ancestors of the rewritten squash commit.
 - Active recovery branch:
   `codex/rebuild-cr00-post-merge-reconcile-v1`, based on that exact merge SHA.
-  The draft repair PR remains pending until clean-tree verification passes.
+  Draft repair PR [#147](https://github.com/otto-agent007/pp/pull/147) is open.
+  Initial clean-tree recovery verification passed all 17 gates before
+  publication.
 - The graph now records CR00 `done` at the canonical merge SHA. Reconciliation
   preserves the original evidence records by proving PR commit membership and
   exact equality between the original PR head tree and merged tree.
