@@ -98,6 +98,21 @@ describe("architecture policy", () => {
     ]);
   });
 
+  it("reports package ordering and duplicate names beside sibling structural errors", () => {
+    const policy = validPolicy();
+    policy.packages = [
+      { ...policy.packages[1], path: "packages//types" },
+      { ...policy.packages[0] },
+      { ...policy.packages[0], path: "packages/application-copy" },
+    ];
+
+    expect(errorsFor(policy)).toEqual([
+      "package @pest-patrol/application name is duplicated",
+      "package @pest-patrol/types path must be a normalized repository-relative path",
+      "packages must be sorted by name",
+    ]);
+  });
+
   it("rejects invalid package names, paths, and states", () => {
     const policy = validPolicy();
     policy.packages[0] = {
@@ -111,6 +126,7 @@ describe("architecture policy", () => {
       "package application name must be an @pest-patrol/* package name",
       "package application path must be a normalized repository-relative path",
       "package application state must be required or planned",
+      "packages must be sorted by name",
     ]);
   });
 
@@ -199,6 +215,30 @@ describe("architecture policy", () => {
     expect(errorsFor(policy)).toEqual([
       "exception a forbidden-workspace-edge must not be an allowed dependency",
       "exception a is duplicated",
+    ]);
+  });
+
+  it("reports exception ordering and duplicate IDs beside sibling structural errors", () => {
+    const policy = validPolicy();
+    policy.packages[0].allowedDependencies = [
+      { name: "@pest-patrol/types", manifestSections: ["dependencies"] },
+    ];
+    policy.exceptions = [
+      exceptionWith({
+        id: "z",
+        sourceOccurrences: [{
+          ...exceptionWith().sourceOccurrences[0],
+          count: 0,
+        }],
+      }),
+      exceptionWith({ id: "a" }),
+      exceptionWith({ id: "a" }),
+    ];
+
+    expect(errorsFor(policy)).toEqual([
+      "exception a is duplicated",
+      "exception z occurrence 0 count must be a positive integer",
+      "exceptions must be sorted by ID",
     ]);
   });
 

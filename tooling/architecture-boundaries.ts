@@ -415,9 +415,13 @@ export function validateArchitecturePolicy(value: unknown): {
     : [];
 
   const packages = parsedPackages.filter((entry): entry is PackagePolicy => entry !== null);
-  if (packages.length === parsedPackages.length) {
-    const packageNames = packages.map((pkg) => pkg.name);
-    const packagePaths = packages.map((pkg) => pkg.path);
+  const packageEntries = Array.isArray(value.packages) ? value.packages : [];
+  const packageNames = packageEntries.flatMap((entry) =>
+    isRecord(entry) && typeof entry.name === "string" && entry.name.length > 0
+      ? [entry.name]
+      : [],
+  );
+  if (packageNames.length === packageEntries.length) {
     if (!isSorted(packageNames)) errors.push("packages must be sorted by name");
     if (hasDuplicate(packageNames)) {
       for (const name of new Set(packageNames)) {
@@ -426,12 +430,17 @@ export function validateArchitecturePolicy(value: unknown): {
         }
       }
     }
-    if (hasDuplicate(packagePaths)) {
-      for (const path of new Set(packagePaths)) {
-        if (packagePaths.filter((candidate) => candidate === path).length > 1) {
-          const owner = packages.find((pkg) => pkg.path === path)?.name ?? "at index";
-          errors.push(`package ${owner} path ${path} is duplicated`);
-        }
+  }
+  const packagePathCandidates = packageEntries.flatMap((entry, index) => {
+    if (!isRecord(entry) || typeof entry.path !== "string") return [];
+    return [{ label: packageLabel(entry, index), path: entry.path }];
+  });
+  const candidatePaths = packagePathCandidates.map((candidate) => candidate.path);
+  if (hasDuplicate(candidatePaths)) {
+    for (const path of new Set(candidatePaths)) {
+      if (candidatePaths.filter((candidate) => candidate === path).length > 1) {
+        const owner = packagePathCandidates.find((candidate) => candidate.path === path)?.label ?? "package at index";
+        errors.push(`${owner} path ${path} is duplicated`);
       }
     }
   }
@@ -452,8 +461,11 @@ export function validateArchitecturePolicy(value: unknown): {
     ? value.exceptions.map((entry, index) => validateArchitectureException(entry, index, packagePaths, errors))
     : [];
   const exceptions = parsedExceptions.filter((entry): entry is ArchitectureException => entry !== null);
-  if (exceptions.length === parsedExceptions.length) {
-    const exceptionIds = exceptions.map((exception) => exception.id);
+  const exceptionEntries = Array.isArray(value.exceptions) ? value.exceptions : [];
+  const exceptionIds = exceptionEntries.flatMap((entry) =>
+    isRecord(entry) && typeof entry.id === "string" && entry.id.length > 0 ? [entry.id] : [],
+  );
+  if (exceptionIds.length === exceptionEntries.length) {
     if (!isSorted(exceptionIds)) errors.push("exceptions must be sorted by ID");
     if (hasDuplicate(exceptionIds)) {
       for (const id of new Set(exceptionIds)) {
