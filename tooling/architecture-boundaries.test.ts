@@ -59,6 +59,12 @@ function writeManifest(workspace: string, packagePath: string, manifest: unknown
   writeFileSync(manifestPath, JSON.stringify(manifest));
 }
 
+function writeSource(workspace: string, sourcePath: string, contents: string) {
+  const absolutePath = join(workspace, sourcePath);
+  mkdirSync(join(absolutePath, ".."), { recursive: true });
+  writeFileSync(absolutePath, contents);
+}
+
 function repositoryPath(workspace: string, path: string) {
   return relative(workspace, path).split(sep).join("/");
 }
@@ -399,7 +405,6 @@ describe("architecture policy", () => {
     ]);
   });
 });
-
 describe("manifest facts", () => {
   it("discovers sorted manifest-bearing children, including planned and unlisted packages", () => {
     const workspace = createWorkspace();
@@ -542,5 +547,312 @@ describe("manifest facts", () => {
     expect(() => collectWorkspaceArchitectureFacts(unnamedWorkspace)).toThrow(
       "apps/unnamed/package.json: name must be a non-empty string",
     );
+  });
+});
+
+describe("TypeScript source facts", () => {
+  it("classifies supported syntax in production, test filenames, and __tests__ directories", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    const source = `
+      import value, { helper, type Model as LocalModel } from "@pest-patrol/domain/subpath";
+      import type { Contract } from "@pest-patrol/types";
+      export { rule, type RuleInput } from "@pest-patrol/domain";
+      export type * from "@pest-patrol/types";
+      void import("@pest-patrol/api-client/lazy");
+      const adapter = require("@pest-patrol/api-client");
+      type RemoteContract = import("@pest-patrol/types").Contract;
+      import legacyAdapter = require("@pest-patrol/api-client/legacy");
+    `;
+    for (const sourcePath of [
+      "packages/example/src/thing.ts",
+      "packages/example/src/thing.test.ts",
+      "packages/example/src/thing.spec.tsx",
+      "packages/example/src/__tests__/thing.ts",
+    ]) {
+      writeSource(workspace, sourcePath, source);
+    }
+
+    const occurrences =
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences;
+
+    expect(occurrences).toHaveLength(36);
+    expect([
+      ...new Set(occurrences.map((occurrence) => occurrence.path)),
+    ]).toEqual([
+      "packages/example/src/__tests__/thing.ts",
+      "packages/example/src/thing.spec.tsx",
+      "packages/example/src/thing.test.ts",
+      "packages/example/src/thing.ts",
+    ]);
+    expect(
+      [
+        ...new Set(occurrences.map((occurrence) => occurrence.specifier)),
+      ].sort(),
+    ).toEqual([
+      "@pest-patrol/api-client",
+      "@pest-patrol/domain",
+      "@pest-patrol/types",
+    ]);
+    expect(
+      [...new Set(occurrences.map((occurrence) => occurrence.syntax))].sort(),
+    ).toEqual(["dynamic-import", "export", "import", "require"]);
+    expect(
+      [
+        ...new Set(occurrences.map((occurrence) => occurrence.occurrenceClass)),
+      ].sort(),
+    ).toEqual([
+      "production-type",
+      "production-value",
+      "test-type",
+      "test-value",
+    ]);
+    expect(
+      [
+        ...new Set(
+          occurrences.map(
+            (occurrence) =>
+              `${occurrence.syntax}:${occurrence.occurrenceClass}`,
+          ),
+        ),
+      ].sort(),
+    ).toEqual([
+      "dynamic-import:production-value",
+      "dynamic-import:test-value",
+      "export:production-type",
+      "export:production-value",
+      "export:test-type",
+      "export:test-value",
+      "import:production-type",
+      "import:production-value",
+      "import:test-type",
+      "import:test-value",
+      "require:production-value",
+      "require:test-value",
+    ]);
+  });
+
+  it("ignores unsupported specifiers, non-literal calls, declarations, and excluded directories", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    writeSource(
+      workspace,
+      "packages/example/src/thing.ts",
+      `
+      import local from "./local";
+      import react from "react";
+      export { external } from "external-package";
+      const specifier = "@pest-patrol/domain";
+      void import(specifier);
+      require(specifier);
+    `,
+    );
+    writeSource(
+      workspace,
+      "packages/example/src/ignored.d.ts",
+      'export { Contract } from "@pest-patrol/types";',
+    );
+    for (const directory of [
+      "node_modules",
+      ".next",
+      "dist",
+      "build",
+      "coverage",
+      "generated",
+    ]) {
+      writeSource(
+        workspace,
+        `packages/example/src/${directory}/ignored.ts`,
+        'import "@pest-patrol/domain";',
+      );
+    }
+
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([]);
+  });
+
+  it("normalizes every binding form into literal binding digests", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    writeSource(
+      workspace,
+      "packages/example/src/bindings.ts",
+      `
+      import primary, { helper as localHelper, type Model as LocalModel } from "@pest-patrol/domain/one";
+      import * as domainNamespace from "@pest-patrol/domain/two";
+      import "@pest-patrol/domain/side-effect";
+      export { rule as localRule, type RuleInput as LocalRuleInput } from "@pest-patrol/domain/exports";
+      export * from "@pest-patrol/domain/star";
+      void import("@pest-patrol/api-client/lazy");
+      const adapter = require("@pest-patrol/api-client");
+      type RemoteContract = import("@pest-patrol/types").Contract;
+      type WholeModule = import("@pest-patrol/types/all");
+      import legacyAdapter = require("@pest-patrol/api-client/legacy");
+      import type LegacyContract = require("@pest-patrol/types/legacy");
+    `,
+    );
+
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/api-client",
+        syntax: "dynamic-import",
+        occurrenceClass: "production-value",
+        count: 1,
+        bindingDigest:
+          "6d25a851b1aa0a590cb1b40918400be43403b31d26452f56553f97569baa5e5b",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/api-client",
+        syntax: "import",
+        occurrenceClass: "production-value",
+        count: 1,
+        bindingDigest:
+          "6d25a851b1aa0a590cb1b40918400be43403b31d26452f56553f97569baa5e5b",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/api-client",
+        syntax: "require",
+        occurrenceClass: "production-value",
+        count: 1,
+        bindingDigest:
+          "6d25a851b1aa0a590cb1b40918400be43403b31d26452f56553f97569baa5e5b",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/domain",
+        syntax: "export",
+        occurrenceClass: "production-type",
+        count: 1,
+        bindingDigest:
+          "af6b5fb77d03749cc130f13378af86240981251553ac590cfe3abc224db8dda1",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/domain",
+        syntax: "export",
+        occurrenceClass: "production-value",
+        count: 2,
+        bindingDigest:
+          "77e10fbd465df018b2083e6a9a7d01fc9d2a19beb6a7a8d35478bbcf09bc6baf",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/domain",
+        syntax: "import",
+        occurrenceClass: "production-type",
+        count: 1,
+        bindingDigest:
+          "0082599e053d88f94ed659bd22e2453117f651ce264976b35ed345e6687fa73b",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/domain",
+        syntax: "import",
+        occurrenceClass: "production-value",
+        count: 3,
+        bindingDigest:
+          "5671a10bf55187cea93e1c119c45c1cac8060dba25794c8f6e062b78cd7e9252",
+      },
+      {
+        path: "packages/example/src/bindings.ts",
+        specifier: "@pest-patrol/types",
+        syntax: "import",
+        occurrenceClass: "production-type",
+        count: 3,
+        bindingDigest:
+          "6e57c7729cebebfd69a5a4de9f3f69451e570b038fd27c6810fa92daabb1cfc7",
+      },
+    ]);
+  });
+
+  it("keeps the binding digest stable across aliases and subpaths but changes it for same-file growth", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    const sourcePath = "packages/example/src/growth.ts";
+    const expectedStableOccurrence = {
+      path: sourcePath,
+      specifier: "@pest-patrol/domain",
+      syntax: "import",
+      occurrenceClass: "production-value",
+      count: 2,
+      bindingDigest:
+        "138bf4722f7ae17122c7282d0eb156499d349940e129bd4cdf27c8ffdcbb3d25",
+    };
+    writeSource(
+      workspace,
+      sourcePath,
+      `
+      import { alpha as LocalAlpha } from "@pest-patrol/domain/one";
+      import { beta as LocalBeta } from "@pest-patrol/domain/two";
+    `,
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([expectedStableOccurrence]);
+
+    writeSource(
+      workspace,
+      sourcePath,
+      `
+      import { alpha as RenamedAlpha } from "@pest-patrol/domain/one";
+      import { beta as RenamedBeta } from "@pest-patrol/domain/two";
+    `,
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([expectedStableOccurrence]);
+
+    writeSource(
+      workspace,
+      sourcePath,
+      `
+      import { alpha as LocalAlpha } from "@pest-patrol/domain/changed-one";
+      import { beta as LocalBeta } from "@pest-patrol/domain/changed-two";
+    `,
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([expectedStableOccurrence]);
+
+    writeSource(
+      workspace,
+      sourcePath,
+      `
+      import { alpha as LocalAlpha } from "@pest-patrol/domain/one";
+      import { beta as LocalBeta } from "@pest-patrol/domain/two";
+      import { alpha as ThirdAlpha } from "@pest-patrol/domain/three";
+    `,
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([
+      {
+        ...expectedStableOccurrence,
+        count: 3,
+        bindingDigest:
+          "caa15d1e302fbb3aca091ba5ee7d579ce46573d0a9fc638b6cde37306b7b0016",
+      },
+    ]);
   });
 });

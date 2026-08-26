@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { type Dirent, readFileSync, readdirSync } from "node:fs";
 import { join, posix, relative, resolve, sep, win32 } from "node:path";
+import ts from "typescript";
 
 export type ManifestSection =
   | "dependencies"
@@ -98,6 +100,14 @@ const SYNTAX_FORMS = new Set<SyntaxForm>([
 const EXCEPTION_KINDS = new Set<ArchitectureException["kind"]>([
   "forbidden-workspace-edge",
   "missing-manifest-dependency",
+]);
+const EXCLUDED_SOURCE_DIRECTORIES = new Set([
+  "node_modules",
+  ".next",
+  "dist",
+  "build",
+  "coverage",
+  "generated",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -577,6 +587,220 @@ function manifestDependencies(manifestPath: string, manifest: Record<string, unk
   });
 }
 
+function canonicalWorkspaceSpecifier(specifier: string) {
+  const parts = specifier.split("/");
+  return parts[0] === "@pest-patrol" &&
+    typeof parts[1] === "string" &&
+    parts[1].length > 0
+    ? `${parts[0]}/${parts[1]}`
+    : null;
+}
+
+function sourceFiles(cwd: string, packagePath: string) {
+  const files: string[] = [];
+
+  function visit(directoryPath: string) {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(directoryPath, { withFileTypes: true });
+    } catch {
+      throw new Error(`${repositoryPath(cwd, directoryPath)}: read failed`);
+    }
+
+    for (const entry of entries.sort((left, right) =>
+      compareStrings(left.name, right.name),
+    )) {
+      const entryPath = join(directoryPath, entry.name);
+      if (entry.isDirectory()) {
+        if (!EXCLUDED_SOURCE_DIRECTORIES.has(entry.name)) visit(entryPath);
+      } else if (
+        entry.isFile() &&
+        (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) &&
+        !entry.name.endsWith(".d.ts")
+      ) {
+        files.push(entryPath);
+      }
+    }
+  }
+
+  visit(packagePath);
+  return files;
+}
+
+function isTestSourcePath(sourcePath: string) {
+  const segments = sourcePath.split("/");
+  const filename = segments[segments.length - 1];
+  return (
+    segments.includes("__tests__") || /\.(?:test|spec)\.tsx?$/.test(filename)
+  );
+}
+
+type SourceUse = {
+  specifier: string;
+  syntax: SyntaxForm;
+  isTypeOnly: boolean;
+  bindings: string[];
+};
+
+function sourceOccurrences(
+  cwd: string,
+  sourceAbsolutePath: string,
+): SourceOccurrence[] {
+  const path = repositoryPath(cwd, sourceAbsolutePath);
+  const sourceFile = ts.createSourceFile(
+    path,
+    readText(cwd, sourceAbsolutePath),
+    ts.ScriptTarget.Latest,
+    true,
+    path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
+  const uses: SourceUse[] = [];
+
+  function addUse(
+    rawSpecifier: string,
+    syntax: SyntaxForm,
+    isTypeOnly: boolean,
+    bindings: string[],
+  ) {
+    const specifier = canonicalWorkspaceSpecifier(rawSpecifier);
+    if (specifier !== null && bindings.length > 0) {
+      uses.push({ specifier, syntax, isTypeOnly, bindings });
+    }
+  }
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      const typeBindings: string[] = [];
+      const valueBindings: string[] = [];
+      const clause = node.importClause;
+      if (clause === undefined) {
+        valueBindings.push("side-effect");
+      } else {
+        const bindingsFor = (isTypeOnly: boolean) =>
+          isTypeOnly ? typeBindings : valueBindings;
+        if (clause.name !== undefined)
+          bindingsFor(clause.isTypeOnly).push("default");
+        if (clause.namedBindings !== undefined) {
+          if (ts.isNamespaceImport(clause.namedBindings)) {
+            bindingsFor(clause.isTypeOnly).push("*");
+          } else {
+            for (const specifier of clause.namedBindings.elements) {
+              bindingsFor(clause.isTypeOnly || specifier.isTypeOnly).push(
+                (specifier.propertyName ?? specifier.name).text,
+              );
+            }
+          }
+        }
+      }
+      addUse(node.moduleSpecifier.text, "import", false, valueBindings);
+      addUse(node.moduleSpecifier.text, "import", true, typeBindings);
+    } else if (
+      ts.isExportDeclaration(node) &&
+      node.moduleSpecifier !== undefined &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      const typeBindings: string[] = [];
+      const valueBindings: string[] = [];
+      const bindingsFor = (isTypeOnly: boolean) =>
+        isTypeOnly ? typeBindings : valueBindings;
+      if (
+        node.exportClause === undefined ||
+        ts.isNamespaceExport(node.exportClause)
+      ) {
+        bindingsFor(node.isTypeOnly).push("*");
+      } else {
+        for (const specifier of node.exportClause.elements) {
+          bindingsFor(node.isTypeOnly || specifier.isTypeOnly).push(
+            (specifier.propertyName ?? specifier.name).text,
+          );
+        }
+      }
+      addUse(node.moduleSpecifier.text, "export", false, valueBindings);
+      addUse(node.moduleSpecifier.text, "export", true, typeBindings);
+    } else if (
+      ts.isImportTypeNode(node) &&
+      ts.isLiteralTypeNode(node.argument) &&
+      ts.isStringLiteral(node.argument.literal)
+    ) {
+      addUse(node.argument.literal.text, "import", true, [
+        node.qualifier?.getText(sourceFile) ?? "*",
+      ]);
+    } else if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference) &&
+      node.moduleReference.expression !== undefined &&
+      ts.isStringLiteral(node.moduleReference.expression)
+    ) {
+      addUse(node.moduleReference.expression.text, "import", node.isTypeOnly, [
+        "*",
+      ]);
+    } else if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments.length === 1 &&
+      ts.isStringLiteral(node.arguments[0])
+    ) {
+      addUse(node.arguments[0].text, "dynamic-import", false, ["*"]);
+    } else if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "require" &&
+      node.arguments.length === 1 &&
+      ts.isStringLiteral(node.arguments[0])
+    ) {
+      addUse(node.arguments[0].text, "require", false, ["*"]);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  const grouped = new Map<string, SourceOccurrence & { bindings: string[] }>();
+  const testSource = isTestSourcePath(path);
+  for (const use of uses) {
+    const occurrenceClass: OccurrenceClass = testSource
+      ? use.isTypeOnly
+        ? "test-type"
+        : "test-value"
+      : use.isTypeOnly
+        ? "production-type"
+        : "production-value";
+    const key = [path, use.specifier, use.syntax, occurrenceClass].join(
+      "\u0000",
+    );
+    const existing = grouped.get(key);
+    if (existing === undefined) {
+      grouped.set(key, {
+        path,
+        specifier: use.specifier,
+        syntax: use.syntax,
+        occurrenceClass,
+        count: 1,
+        bindingDigest: "",
+        bindings: [...use.bindings],
+      });
+    } else {
+      existing.count += 1;
+      existing.bindings.push(...use.bindings);
+    }
+  }
+
+  return [...grouped.values()]
+    .map(({ bindings, ...occurrence }) => ({
+      ...occurrence,
+      bindingDigest: createHash("sha256")
+        .update(JSON.stringify(bindings.sort(compareStrings)))
+        .digest("hex"),
+    }))
+    .sort((left, right) =>
+      compareStrings(occurrenceKey(left), occurrenceKey(right)),
+    );
+}
+
 export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchitectureFacts {
   const workspaceRootPath = resolve(cwd);
   const workspaceFilePath = join(workspaceRootPath, "pnpm-workspace.yaml");
@@ -615,7 +839,16 @@ export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchite
         path: packagePath,
         manifestPath: manifestFile,
         manifestDependencies: manifestDependencies(manifestFile, manifest),
-        sourceOccurrences: [],
+        sourceOccurrences: sourceFiles(
+          workspaceRootPath,
+          join(rootPath, child.name),
+        )
+          .flatMap((sourcePath) =>
+            sourceOccurrences(workspaceRootPath, sourcePath),
+          )
+          .sort((left, right) =>
+            compareStrings(occurrenceKey(left), occurrenceKey(right)),
+          ),
       });
     }
   }
