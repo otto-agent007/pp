@@ -483,6 +483,23 @@ describe("manifest facts", () => {
     });
   });
 
+  it("discovers manifest-bearing children under a nested literal workspace root", () => {
+    const workspace = createWorkspace('packages:\n  - "fixtures/workspaces/*"\n');
+    writeManifest(workspace, "fixtures/workspaces/example", {
+      name: "@pest-patrol/example",
+    });
+
+    expect(collectWorkspaceArchitectureFacts(workspace)).toEqual({
+      packages: [{
+        name: "@pest-patrol/example",
+        path: "fixtures/workspaces/example",
+        manifestPath: "fixtures/workspaces/example/package.json",
+        manifestDependencies: [],
+        sourceOccurrences: [],
+      }],
+    });
+  });
+
   it("rejects missing and malformed workspace files before collecting partial facts", () => {
     const missingWorkspaceFile = mkdtempSync(join(tmpdir(), "architecture-boundaries-"));
     temporaryWorkspaces.push(missingWorkspaceFile);

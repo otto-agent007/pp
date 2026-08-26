@@ -546,11 +546,11 @@ function parseWorkspacePatterns(workspacePath: string, contents: string) {
 }
 
 function workspaceRoot(workspacePath: string, pattern: string) {
-  const match = /^([^/\\*]+)/.exec(pattern);
-  if (match === null || pattern !== `${match[1]}/*` || !isRepositoryRelativePath(match[1])) {
+  const root = pattern.endsWith("/*") ? pattern.slice(0, -2) : null;
+  if (root === null || !isRepositoryRelativePath(root) || root.includes("*")) {
     throw new Error(`${workspacePath}: unsupported workspace pattern ${pattern}`);
   }
-  return match[1];
+  return root;
 }
 
 function manifestDependencies(manifestPath: string, manifest: Record<string, unknown>) {
