@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "name": "@pest-patrol/api-client",
+      "path": "packages/api-client",
+      "state": "required",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/application",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/domain",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/types",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/application",
+      "path": "packages/application",
+      "state": "planned",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/domain",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/types",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/domain",
+      "path": "packages/domain",
+      "state": "required",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/types",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/i18n",
+      "path": "packages/i18n",
+      "state": "required",
+      "allowedDependencies": []
+    },
+    {
+      "name": "@pest-patrol/mobile",
+      "path": "apps/mobile",
+      "state": "required",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/api-client",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/application",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/domain",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/i18n",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/sync",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/types",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/ui-native",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/ui-tokens",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/sync",
+      "path": "packages/sync",
+      "state": "planned",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/application",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/domain",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/types",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/types",
+      "path": "packages/types",
+      "state": "required",
+      "allowedDependencies": []
+    },
+    {
+      "name": "@pest-patrol/ui",
+      "path": "packages/ui",
+      "state": "required",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/ui-tokens",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/ui-native",
+      "path": "packages/ui-native",
+      "state": "required",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/ui-tokens",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    },
+    {
+      "name": "@pest-patrol/ui-tokens",
+      "path": "packages/ui-tokens",
+      "state": "required",
+      "allowedDependencies": []
+    },
+    {
+      "name": "@pest-patrol/web",
+      "path": "apps/web",
+      "state": "required",
+      "allowedDependencies": [
+        {
+          "name": "@pest-patrol/api-client",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/application",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/domain",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/i18n",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/sync",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/types",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/ui",
+          "manifestSections": ["dependencies"]
+        },
+        {
+          "name": "@pest-patrol/ui-tokens",
+          "manifestSections": ["dependencies"]
+        }
+      ]
+    }
+  ],
+  "exceptions": [
+    {
+      "id": "api-client-domain-manifest",
+      "kind": "missing-manifest-dependency",
+      "importer": "@pest-patrol/api-client",
+      "dependency": "@pest-patrol/domain",
+      "sourceOccurrences": [
+        {
+          "path": "packages/api-client/demoSeed.test.ts",
+          "specifier": "@pest-patrol/domain",
+          "syntax": "import",
+          "occurrenceClass": "test-value",
+          "count": 1,
+          "bindingDigest": "79d50e79b0739a5694efdfe0039aeeef914a836b181b700393c8b511a793e7e3"
+        },
+        {
+          "path": "packages/api-client/demoSeed.ts",
+          "specifier": "@pest-patrol/domain",
+          "syntax": "import",
+          "occurrenceClass": "production-type",
+          "count": 1,
+          "bindingDigest": "72c327d2d8ed3106adf19c84ad4c89796a13fd71b834c45da48d0a45e9cb5163"
+        },
+        {
+          "path": "packages/api-client/demoSeed.ts",
+          "specifier": "@pest-patrol/domain",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "47c82305f2b6e7f5b16a2a418405175d466a5e5e3575c4432f8b7f48e311f53c"
+        }
+      ],
+      "manifest": {
+        "section": null,
+        "versionSpecifier": null
+      },
+      "removeIn": "CR05",
+      "reason": "CR05 adds the missing domain dependency to the API-client manifest."
+    },
+    {
+      "id": "domain-to-api-client",
+      "kind": "forbidden-workspace-edge",
+      "importer": "@pest-patrol/domain",
+      "dependency": "@pest-patrol/api-client",
+      "sourceOccurrences": [
+        {
+          "path": "packages/domain/auth.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-type",
+          "count": 1,
+          "bindingDigest": "9bfb19be1597cf67444aac540a75d096d0c5b96bf2de811680512b9299669feb"
+        },
+        {
+          "path": "packages/domain/auth.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "111e54348ab51f050f05718bd35958a485761e39bd6e288bcfcf9e563749dc1c"
+        },
+        {
+          "path": "packages/domain/automation.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "0e81769f2ff07bca47ad8e56149e59f86969e006637c1ff6fabec13320dc085f"
+        },
+        {
+          "path": "packages/domain/closeouts.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "393f19dbd49cb3fb0fb4362565d2549e210d2239c2efb788b8234892d2e039ff"
+        },
+        {
+          "path": "packages/domain/compliance.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-type",
+          "count": 1,
+          "bindingDigest": "becc01bd5ebfbb5dbaebd24752be147fc8cbe1d54b2a0f1d0b151ee25eba68c7"
+        },
+        {
+          "path": "packages/domain/compliance.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "d9b735897db30e4163c76bbf4df4a05e374e51eb198afe202e8d06e95d970e6b"
+        },
+        {
+          "path": "packages/domain/customers.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "929c71dfde9599c2804029b24b64fbaeb55153abbeee33fbb16b4b52b574793d"
+        },
+        {
+          "path": "packages/domain/forms.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "f22ed82b2054968b3c25728add45d5e38719719d498b26c1c474b4b360be11da"
+        },
+        {
+          "path": "packages/domain/geofencing.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "691ad98b7c5525f2c46bb2f90d55cc3a4460c4a47aec475c3da3b14863b4ad05"
+        },
+        {
+          "path": "packages/domain/inventory.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-type",
+          "count": 1,
+          "bindingDigest": "becc01bd5ebfbb5dbaebd24752be147fc8cbe1d54b2a0f1d0b151ee25eba68c7"
+        },
+        {
+          "path": "packages/domain/inventory.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "9bb6eee8bc1a68ce5c24d6d916d71d3d2ed4ca1159c7a9725b873207a7619406"
+        },
+        {
+          "path": "packages/domain/jobs.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-type",
+          "count": 1,
+          "bindingDigest": "becc01bd5ebfbb5dbaebd24752be147fc8cbe1d54b2a0f1d0b151ee25eba68c7"
+        },
+        {
+          "path": "packages/domain/jobs.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "04688b2a25486086f7101b28a7058ec8d37cace57334c4d5e232208c15e747a0"
+        },
+        {
+          "path": "packages/domain/media.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "dynamic-import",
+          "occurrenceClass": "production-value",
+          "count": 2,
+          "bindingDigest": "dae2b46419341cc0e6249acb3a229ff1507d79bdb0b842805fc2263da17ba9ec"
+        },
+        {
+          "path": "packages/domain/offlineSync.test.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "test-value",
+          "count": 1,
+          "bindingDigest": "c6ac87448ae20bdd545533a7e65cf3d22facc6a8c275ec7e8e164eace8a68b19"
+        },
+        {
+          "path": "packages/domain/offlineSync.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-type",
+          "count": 1,
+          "bindingDigest": "becc01bd5ebfbb5dbaebd24752be147fc8cbe1d54b2a0f1d0b151ee25eba68c7"
+        },
+        {
+          "path": "packages/domain/offlineSync.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "c6ac87448ae20bdd545533a7e65cf3d22facc6a8c275ec7e8e164eace8a68b19"
+        },
+        {
+          "path": "packages/domain/payments.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "d9d64663b9a744c808befda9af38b20fa28c5946ea03e4158cbe60d937d49dbd"
+        },
+        {
+          "path": "packages/domain/technicianLicenses.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "5a94133040562e96b116e52e1523ff7ce481abe1a641e8abbe306f9483d124d7"
+        },
+        {
+          "path": "packages/domain/technicians.ts",
+          "specifier": "@pest-patrol/api-client",
+          "syntax": "import",
+          "occurrenceClass": "production-value",
+          "count": 1,
+          "bindingDigest": "f5b1a05da83a478df76fa359bd88b3de38df318c91b79065ec340ac53ba4d8f7"
+        }
+      ],
+      "manifest": {
+        "section": "dependencies",
+        "versionSpecifier": "workspace:*"
+      },
+      "removeIn": "CR08",
+      "reason": "CR08 removes the legacy domain dependency on the API client."
+    }
+  ]
+}

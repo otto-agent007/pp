@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { type Dirent, readFileSync, readdirSync } from "node:fs";
 import { join, posix, relative, resolve, sep, win32 } from "node:path";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 export type ManifestSection =
@@ -1146,4 +1147,153 @@ export function validateArchitectureFacts(
   }
 
   return errors.sort(compareStrings);
+}
+
+type ArchitectureBoundariesCliOptions = {
+  cwd?: string;
+  stdout?: (line: string) => void;
+  stderr?: (line: string) => void;
+};
+
+function readJsonInput(cwd: string, inputPath: string) {
+  const absolutePath = join(cwd, inputPath);
+  let contents: string;
+  try {
+    contents = readText(cwd, absolutePath);
+  } catch (error) {
+    return {
+      value: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  try {
+    return { value: JSON.parse(contents) as unknown, error: null };
+  } catch {
+    return { value: null, error: `${inputPath}: invalid JSON` };
+  }
+}
+
+function validateRebuildGraphFacts(value: unknown): {
+  graph: RebuildGraphFacts | null;
+  errors: string[];
+} {
+  if (!isRecord(value)) {
+    return { graph: null, errors: ["graph must be an object"] };
+  }
+  if (!Array.isArray(value.nodes)) {
+    return { graph: null, errors: ["nodes must be an array"] };
+  }
+
+  const errors: string[] = [];
+  const nodes: RebuildGraphFacts["nodes"] = [];
+  const ids: string[] = [];
+  for (const [index, entry] of value.nodes.entries()) {
+    if (!isRecord(entry)) {
+      errors.push(`node at index ${index} must be an object`);
+      continue;
+    }
+    const id =
+      typeof entry.id === "string" && entry.id.length > 0 ? entry.id : null;
+    const label = id === null ? `node at index ${index}` : `node ${id}`;
+    if (id === null) errors.push(`${label} ID must be a non-empty string`);
+    const status =
+      typeof entry.status === "string" && entry.status.length > 0
+        ? entry.status
+        : null;
+    if (status === null)
+      errors.push(`${label} status must be a non-empty string`);
+    const ownership =
+      isStringArray(entry.ownership) &&
+      entry.ownership.every(isRepositoryRelativePath)
+        ? entry.ownership
+        : null;
+    if (ownership === null) {
+      errors.push(
+        `${label} ownership must be an array of normalized repository-relative paths`,
+      );
+    }
+    if (id !== null) ids.push(id);
+    if (id !== null && status !== null && ownership !== null) {
+      nodes.push({ id, status, ownership });
+    }
+  }
+
+  for (const id of new Set(ids)) {
+    if (ids.filter((candidate) => candidate === id).length > 1) {
+      errors.push(`node ${id} is duplicated`);
+    }
+  }
+  const sortedErrors = errors.sort(compareStrings);
+  return sortedErrors.length === 0
+    ? { graph: { nodes }, errors: [] }
+    : { graph: null, errors: sortedErrors };
+}
+
+export function runArchitectureBoundariesCli(
+  options: ArchitectureBoundariesCliOptions = {},
+): number {
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const stdout = options.stdout ?? console.log;
+  const stderr = options.stderr ?? console.error;
+  const fail = (errors: readonly string[]) => {
+    for (const error of errors) {
+      stderr(`architecture boundary error: ${error}`);
+    }
+    return 1;
+  };
+
+  const policyInput = readJsonInput(cwd, ARCHITECTURE_POLICY_PATH);
+  if (policyInput.error !== null) return fail([policyInput.error]);
+  const policyResult = validateArchitecturePolicy(policyInput.value);
+  if (policyResult.policy === null) {
+    return fail(
+      policyResult.errors.map(
+        (error) => `${ARCHITECTURE_POLICY_PATH}: ${error}`,
+      ),
+    );
+  }
+
+  const graphPath = "docs/rebuild/graph.json";
+  const graphInput = readJsonInput(cwd, graphPath);
+  if (graphInput.error !== null) return fail([graphInput.error]);
+  const graphResult = validateRebuildGraphFacts(graphInput.value);
+  if (graphResult.graph === null) {
+    return fail(graphResult.errors.map((error) => `${graphPath}: ${error}`));
+  }
+
+  let facts: WorkspaceArchitectureFacts;
+  try {
+    facts = collectWorkspaceArchitectureFacts(cwd);
+  } catch (error) {
+    return fail([error instanceof Error ? error.message : String(error)]);
+  }
+
+  const errors = validateArchitectureFacts(
+    policyResult.policy,
+    facts,
+    graphResult.graph,
+  );
+  if (errors.length > 0) return fail(errors);
+
+  stdout(
+    `Architecture boundaries valid: ${facts.packages.length} workspace packages, ${policyResult.policy.exceptions.length} matched exceptions`,
+  );
+  return 0;
+}
+
+export function runArchitectureBoundariesMain(
+  args: readonly string[] = process.argv.slice(2),
+  options: ArchitectureBoundariesCliOptions = {},
+): number {
+  if (args.length > 0) {
+    const stderr = options.stderr ?? console.error;
+    stderr("architecture boundary error: Usage: architecture:check");
+    return 1;
+  }
+  return runArchitectureBoundariesCli(options);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  process.exitCode = runArchitectureBoundariesMain();
 }

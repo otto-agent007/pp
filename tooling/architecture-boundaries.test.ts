@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 
@@ -11,6 +17,8 @@ import {
   type RebuildGraphFacts,
   type WorkspaceArchitectureFacts,
   collectWorkspaceArchitectureFacts,
+  runArchitectureBoundariesCli,
+  runArchitectureBoundariesMain,
   validateArchitectureFacts,
   validateArchitecturePolicy,
 } from "./architecture-boundaries";
@@ -69,6 +77,73 @@ function writeSource(workspace: string, sourcePath: string, contents: string) {
   const absolutePath = join(workspace, sourcePath);
   mkdirSync(join(absolutePath, ".."), { recursive: true });
   writeFileSync(absolutePath, contents);
+}
+
+function writeJson(workspace: string, path: string, value: unknown) {
+  const absolutePath = join(workspace, path);
+  mkdirSync(join(absolutePath, ".."), { recursive: true });
+  writeFileSync(absolutePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function cliPolicy(): ArchitecturePolicy {
+  return {
+    schemaVersion: 1,
+    packages: [
+      {
+        name: "@pest-patrol/importer",
+        path: "packages/importer",
+        state: "required",
+        allowedDependencies: [
+          {
+            name: "@pest-patrol/target",
+            manifestSections: ["dependencies"],
+          },
+        ],
+      },
+      {
+        name: "@pest-patrol/target",
+        path: "packages/target",
+        state: "required",
+        allowedDependencies: [],
+      },
+    ],
+    exceptions: [],
+  };
+}
+
+function createCliWorkspace() {
+  const workspace = createWorkspace();
+  writeManifest(workspace, "packages/importer", {
+    name: "@pest-patrol/importer",
+    dependencies: { "@pest-patrol/target": "workspace:*" },
+  });
+  writeSource(
+    workspace,
+    "packages/importer/index.ts",
+    'import type { Target } from "@pest-patrol/target";\nexport type Importer = Target;\n',
+  );
+  writeManifest(workspace, "packages/target", {
+    name: "@pest-patrol/target",
+  });
+  writeSource(
+    workspace,
+    "packages/target/index.ts",
+    "export type Target = string;\n",
+  );
+  writeJson(workspace, "tooling/architecture-boundaries.json", cliPolicy());
+  writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+  return workspace;
+}
+
+function runCli(workspace: string) {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const exitCode = runArchitectureBoundariesCli({
+    cwd: workspace,
+    stdout: (line) => stdout.push(line),
+    stderr: (line) => stderr.push(line),
+  });
+  return { exitCode, stdout, stderr };
 }
 
 function repositoryPath(workspace: string, path: string) {
@@ -1472,5 +1547,211 @@ describe("TypeScript source facts", () => {
           "caa15d1e302fbb3aca091ba5ee7d579ce46573d0a9fc638b6cde37306b7b0016",
       },
     ]);
+  });
+});
+
+describe("architecture CLI", () => {
+  it("reports one success line for a conforming workspace without rewriting inputs", () => {
+    const workspace = createCliWorkspace();
+    const inputPaths = [
+      "pnpm-workspace.yaml",
+      "tooling/architecture-boundaries.json",
+      "docs/rebuild/graph.json",
+      "packages/importer/package.json",
+      "packages/importer/index.ts",
+      "packages/target/package.json",
+      "packages/target/index.ts",
+    ];
+    const before = inputPaths.map((path) =>
+      readFileSync(join(workspace, path), "utf8"),
+    );
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 0,
+      stdout: [
+        "Architecture boundaries valid: 2 workspace packages, 0 matched exceptions",
+      ],
+      stderr: [],
+    });
+    expect(
+      inputPaths.map((path) => readFileSync(join(workspace, path), "utf8")),
+    ).toEqual(before);
+  });
+
+  it("returns path-qualified errors for missing files and malformed JSON", () => {
+    const missingPolicy = createCliWorkspace();
+    rmSync(join(missingPolicy, "tooling/architecture-boundaries.json"));
+    expect(runCli(missingPolicy)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: read failed",
+      ],
+    });
+
+    const malformedPolicy = createCliWorkspace();
+    writeFileSync(
+      join(malformedPolicy, "tooling/architecture-boundaries.json"),
+      "{",
+    );
+    expect(runCli(malformedPolicy)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: invalid JSON",
+      ],
+    });
+
+    const missingGraph = createCliWorkspace();
+    rmSync(join(missingGraph, "docs/rebuild/graph.json"));
+    expect(runCli(missingGraph)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: docs/rebuild/graph.json: read failed",
+      ],
+    });
+  });
+
+  it("returns path-qualified errors for invalid policy and collection input", () => {
+    const invalidPolicy = createCliWorkspace();
+    writeJson(invalidPolicy, "tooling/architecture-boundaries.json", {
+      ...cliPolicy(),
+      schemaVersion: 2,
+    });
+    writeFileSync(
+      join(invalidPolicy, "pnpm-workspace.yaml"),
+      "packages:\n  - packages/*\n",
+    );
+    expect(runCli(invalidPolicy)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: schemaVersion must be 1",
+      ],
+    });
+
+    const collectionFailure = createCliWorkspace();
+    writeFileSync(
+      join(collectionFailure, "pnpm-workspace.yaml"),
+      "packages:\n  - packages/*\n",
+    );
+    expect(runCli(collectionFailure)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: pnpm-workspace.yaml: packages must be a YAML string list",
+      ],
+    });
+  });
+
+  it("validates minimal graph input before architecture facts", () => {
+    const workspace = createCliWorkspace();
+    const policy = cliPolicy();
+    policy.packages[0].allowedDependencies = [];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", {
+      nodes: [
+        { id: "CR02", status: "planned", ownership: "packages/importer" },
+      ],
+    });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: docs/rebuild/graph.json: node CR02 ownership must be an array of normalized repository-relative paths",
+      ],
+    });
+  });
+
+  it("returns path-qualified architecture violations", () => {
+    const workspace = createCliWorkspace();
+    const policy = cliPolicy();
+    policy.packages[0].allowedDependencies = [];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("prints every architecture violation in sorted order", () => {
+    const workspace = createCliWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+      dependencies: {
+        "@pest-patrol/target": "workspace:*",
+        "@pest-patrol/types": "workspace:*",
+      },
+    });
+    writeManifest(workspace, "packages/types", { name: "@pest-patrol/types" });
+    const policy = cliPolicy();
+    policy.packages[0].allowedDependencies = [];
+    policy.packages.push({
+      name: "@pest-patrol/types",
+      path: "packages/types",
+      state: "required",
+      allowedDependencies: [],
+    });
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
+        "architecture boundary error: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/types; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
+      ],
+    });
+  });
+
+  it("rejects every argument, including accept and update flags, as a usage error", () => {
+    for (const argument of ["--accept", "--update", "unexpected"]) {
+      const stdout: string[] = [];
+      const stderr: string[] = [];
+      expect(
+        runArchitectureBoundariesMain([argument], {
+          stdout: (line) => stdout.push(line),
+          stderr: (line) => stderr.push(line),
+        }),
+      ).toBe(1);
+      expect(stdout).toEqual([]);
+      expect(stderr).toEqual([
+        "architecture boundary error: Usage: architecture:check",
+      ]);
+    }
+  });
+});
+
+describe("checked-in architecture policy", () => {
+  it("matches the live workspace facts and rebuild graph", () => {
+    const repositoryRoot = process.cwd();
+    const policyInput = JSON.parse(
+      readFileSync(
+        join(repositoryRoot, "tooling/architecture-boundaries.json"),
+        "utf8",
+      ),
+    ) as unknown;
+    const policyResult = validateArchitecturePolicy(policyInput);
+    expect(policyResult.errors).toEqual([]);
+    if (policyResult.policy === null) {
+      throw new Error("checked-in architecture policy did not validate");
+    }
+    const rebuildGraph = JSON.parse(
+      readFileSync(join(repositoryRoot, "docs/rebuild/graph.json"), "utf8"),
+    ) as RebuildGraphFacts;
+
+    expect(
+      validateArchitectureFacts(
+        policyResult.policy,
+        collectWorkspaceArchitectureFacts(repositoryRoot),
+        rebuildGraph,
+      ),
+    ).toEqual([]);
   });
 });
