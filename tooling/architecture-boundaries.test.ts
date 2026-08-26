@@ -186,6 +186,56 @@ function factErrors(
   return validateArchitectureFacts(policy, facts, EMPTY_REBUILD_GRAPH);
 }
 
+function forbiddenDebtPolicy(): ArchitecturePolicy {
+  const policy = edgePolicy([]);
+  policy.exceptions = [{
+    id: "importer-target-debt",
+    kind: "forbidden-workspace-edge",
+    importer: "@pest-patrol/importer",
+    dependency: "@pest-patrol/target",
+    sourceOccurrences: [
+      occurrence("production-type"),
+      occurrence("production-value"),
+    ],
+    manifest: {
+      section: "devDependencies",
+      versionSpecifier: "workspace:*",
+    },
+    removeIn: "CR02",
+    reason: "CR02 removes the forbidden edge.",
+  }];
+  return policy;
+}
+
+function forbiddenDebtFacts(): WorkspaceArchitectureFacts {
+  return edgeFacts(
+    ["devDependencies"],
+    ["production-type", "production-value"],
+  );
+}
+
+function missingManifestDebtPolicy(): ArchitecturePolicy {
+  const policy = edgePolicy(["dependencies"]);
+  policy.exceptions = [{
+    id: "importer-target-manifest",
+    kind: "missing-manifest-dependency",
+    importer: "@pest-patrol/importer",
+    dependency: "@pest-patrol/target",
+    sourceOccurrences: [occurrence("production-type")],
+    manifest: { section: null, versionSpecifier: null },
+    removeIn: "CR02",
+    reason: "CR02 adds the required manifest dependency.",
+  }];
+  return policy;
+}
+
+function removalGraph(
+  status: string,
+  ownership: string[] = [],
+): RebuildGraphFacts {
+  return { nodes: [{ id: "CR02", status, ownership }] };
+}
+
 describe("architecture policy", () => {
   it("accepts a minimal valid policy and returns its typed value", () => {
     const policy = validPolicy();
@@ -565,6 +615,293 @@ describe("architecture facts", () => {
     expect(factErrors(policy, facts)).toEqual([
       "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts",
     ]);
+  });
+});
+
+describe("debt exceptions", () => {
+  it("suppresses precisely matched forbidden-edge and missing-manifest debt", () => {
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      forbiddenDebtFacts(),
+      removalGraph("planned"),
+    )).toEqual([]);
+    expect(validateArchitectureFacts(
+      missingManifestDebtPolicy(),
+      edgeFacts([], ["production-type"]),
+      removalGraph("planned"),
+    )).toEqual([]);
+  });
+
+  it.each([
+    {
+      name: "an added source occurrence",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences.push(
+          occurrence("test-value", "packages/importer/src/added.ts"),
+        );
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "a removed source occurrence",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences.pop();
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "a duplicated source occurrence",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences.push({
+          ...facts.packages[0].sourceOccurrences[0],
+        });
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "same-file occurrence-count growth",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences[0].count = 2;
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "type-to-value occurrence drift",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences[0].occurrenceClass = "production-value";
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "syntax-form drift",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences[0].syntax = "export";
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "canonical-specifier drift",
+      mutate(policy: ArchitecturePolicy) {
+        policy.exceptions[0].sourceOccurrences[0].specifier = "@pest-patrol/importer";
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "binding-digest drift",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].sourceOccurrences[0].bindingDigest = "f".repeat(64);
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "manifest-section drift",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].manifestDependencies[0].section = "peerDependencies";
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "manifest-version drift",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].manifestDependencies[0].versionSpecifier = "workspace:^";
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "manifest present-to-absent drift",
+      mutate(_policy: ArchitecturePolicy, facts: WorkspaceArchitectureFacts) {
+        facts.packages[0].manifestDependencies = [];
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "importer drift",
+      mutate(policy: ArchitecturePolicy) {
+        policy.exceptions[0].importer = "@pest-patrol/target";
+        return "@pest-patrol/target -> @pest-patrol/target";
+      },
+    },
+    {
+      name: "dependency drift",
+      mutate(policy: ArchitecturePolicy) {
+        policy.exceptions[0].dependency = "@pest-patrol/importer";
+        return "@pest-patrol/importer -> @pest-patrol/importer";
+      },
+    },
+    {
+      name: "violation-kind drift",
+      mutate(policy: ArchitecturePolicy) {
+        policy.exceptions[0].kind = "missing-manifest-dependency";
+        return "@pest-patrol/importer -> @pest-patrol/target";
+      },
+    },
+  ])("rejects $name", ({ mutate }) => {
+    const policy = forbiddenDebtPolicy();
+    const facts = forbiddenDebtFacts();
+    const edge = mutate(policy, facts);
+
+    expect(validateArchitectureFacts(
+      policy,
+      facts,
+      removalGraph("planned"),
+    )).toContain(
+      `exception importer-target-debt is stale or drifted for ${edge}`,
+    );
+  });
+
+  it("rejects an exception left behind after its violation disappears", () => {
+    expect(validateArchitectureFacts(
+      missingManifestDebtPolicy(),
+      edgeFacts([], []),
+      removalGraph("planned"),
+    )).toEqual([
+      "exception importer-target-manifest is stale or drifted for @pest-patrol/importer -> @pest-patrol/target",
+    ]);
+  });
+
+  it("rejects multiple exception IDs that consume one observed violation", () => {
+    const policy = forbiddenDebtPolicy();
+    policy.exceptions.push({
+      ...policy.exceptions[0],
+      id: "second-importer-target-debt",
+    });
+
+    expect(validateArchitectureFacts(
+      policy,
+      forbiddenDebtFacts(),
+      removalGraph("planned"),
+    )).toEqual([
+      "exception second-importer-target-debt contradicts importer-target-debt for @pest-patrol/importer -> @pest-patrol/target: both match one observed violation",
+    ]);
+  });
+
+  it("reports new unexcepted debt beside a precisely matched exception", () => {
+    const facts = forbiddenDebtFacts();
+    facts.packages[0].manifestDependencies.push({
+      dependency: "@pest-patrol/target",
+      section: "peerDependencies",
+      versionSpecifier: "workspace:^",
+    });
+
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      facts,
+      removalGraph("planned"),
+    )).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[peerDependencies]=workspace:^; sources=packages/importer/src/production-type.ts,packages/importer/src/production-value.ts",
+    ]);
+  });
+});
+
+describe("removal node lifecycle and ownership", () => {
+  it("rejects an unknown removal node but accepts planned without future ownership", () => {
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      forbiddenDebtFacts(),
+      EMPTY_REBUILD_GRAPH,
+    )).toEqual([
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target has unknown removal node CR02",
+    ]);
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      forbiddenDebtFacts(),
+      removalGraph("planned"),
+    )).toEqual([]);
+  });
+
+  it.each(["blocked", "done", "abandoned"])(
+    "rejects removal node status %s",
+    (status) => {
+      expect(validateArchitectureFacts(
+        forbiddenDebtPolicy(),
+        forbiddenDebtFacts(),
+        removalGraph(status),
+      )).toEqual([
+        `exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target has invalid removal node CR02 status ${status}`,
+      ]);
+    },
+  );
+
+  it("rejects a superseded removal node without inheriting replacement ownership", () => {
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      forbiddenDebtFacts(),
+      {
+        nodes: [
+          { id: "CR02", status: "superseded", ownership: [] },
+          {
+            id: "CR03",
+            status: "ready",
+            ownership: [
+              "packages/importer",
+              "tooling/architecture-boundaries.json",
+            ],
+          },
+        ],
+      },
+    )).toEqual([
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target has invalid removal node CR02 status superseded",
+    ]);
+  });
+
+  it.each(["ready", "running"])(
+    "accepts a %s removal node whose component ownership covers every required path",
+    (status) => {
+      expect(validateArchitectureFacts(
+        forbiddenDebtPolicy(),
+        forbiddenDebtFacts(),
+        removalGraph(status, [
+          "packages/importer",
+          "tooling/architecture-boundaries.json",
+        ]),
+      )).toEqual([]);
+    },
+  );
+
+  it("rejects every deterministically sorted path uncovered by promoted removal node ownership", () => {
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      forbiddenDebtFacts(),
+      removalGraph("ready"),
+    )).toEqual([
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own packages/importer/package.json",
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own packages/importer/src/production-type.ts",
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own packages/importer/src/production-value.ts",
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own tooling/architecture-boundaries.json",
+    ]);
+  });
+
+  it("does not let prefix-lookalike ownership cover package descendants", () => {
+    expect(validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      forbiddenDebtFacts(),
+      removalGraph("running", [
+        "packages/importer-old",
+        "tooling/architecture-boundaries.json",
+      ]),
+    )).toEqual([
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own packages/importer/package.json",
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own packages/importer/src/production-type.ts",
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target removal node CR02 does not own packages/importer/src/production-value.ts",
+    ]);
+  });
+
+  it("validates removal-node status even when the exception is stale", () => {
+    const facts = forbiddenDebtFacts();
+    facts.packages[0].sourceOccurrences[0].bindingDigest = "f".repeat(64);
+
+    const errors = validateArchitectureFacts(
+      forbiddenDebtPolicy(),
+      facts,
+      removalGraph("done"),
+    );
+
+    expect(errors).toContain(
+      "exception importer-target-debt is stale or drifted for @pest-patrol/importer -> @pest-patrol/target",
+    );
+    expect(errors).toContain(
+      "exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target has invalid removal node CR02 status done",
+    );
   });
 });
 

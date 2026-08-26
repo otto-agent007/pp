@@ -92,6 +92,10 @@ type RenderableViolation = {
   violation: ObservedViolation;
 };
 
+const ARCHITECTURE_POLICY_PATH = "tooling/architecture-boundaries.json";
+const ACTIVE_REMOVAL_STATUSES = new Set(["planned", "ready", "running"]);
+const PROMOTED_REMOVAL_STATUSES = new Set(["ready", "running"]);
+
 const MANIFEST_SECTIONS = new Set<ManifestSection>([
   "dependencies",
   "devDependencies",
@@ -177,6 +181,41 @@ function occurrenceKey(occurrence: SourceOccurrence) {
     String(occurrence.count),
     occurrence.bindingDigest,
   ].join("\u0000");
+}
+
+function canonicalViolation(violation: ObservedViolation): ObservedViolation {
+  return {
+    kind: violation.kind,
+    importer: violation.importer,
+    dependency: violation.dependency,
+    sourceOccurrences: [...violation.sourceOccurrences]
+      .sort((left, right) =>
+        compareStrings(occurrenceKey(left), occurrenceKey(right))
+      )
+      .map((occurrence) => ({
+        path: occurrence.path,
+        specifier: occurrence.specifier,
+        syntax: occurrence.syntax,
+        occurrenceClass: occurrence.occurrenceClass,
+        count: occurrence.count,
+        bindingDigest: occurrence.bindingDigest,
+      })),
+    manifest: {
+      section: violation.manifest.section,
+      versionSpecifier: violation.manifest.versionSpecifier,
+    },
+  };
+}
+
+function violationKey(violation: ObservedViolation) {
+  return JSON.stringify(canonicalViolation(violation));
+}
+
+function ownershipCoversPath(ownership: readonly string[], requiredPath: string) {
+  return ownership.some(
+    (ownedPath) =>
+      requiredPath === ownedPath || requiredPath.startsWith(`${ownedPath}/`),
+  );
 }
 
 function exceptionLabel(value: Record<string, unknown>, index: number) {
@@ -878,7 +917,7 @@ export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchite
 export function validateArchitectureFacts(
   policy: ArchitecturePolicy,
   facts: WorkspaceArchitectureFacts,
-  _rebuildGraph: RebuildGraphFacts,
+  rebuildGraph: RebuildGraphFacts,
 ): string[] {
   const errors: string[] = [];
   const policyByName = new Map(policy.packages.map((pkg) => [pkg.name, pkg]));
@@ -1025,7 +1064,76 @@ export function validateArchitectureFacts(
     }
   }
 
-  for (const { manifestPath, violation } of renderableViolations) {
+  const rebuildNodeById = new Map(
+    rebuildGraph.nodes.map((node) => [node.id, node]),
+  );
+  for (const exception of policy.exceptions) {
+    const edge = `${exception.importer} -> ${exception.dependency}`;
+    const removalNode = rebuildNodeById.get(exception.removeIn);
+    if (removalNode === undefined) {
+      errors.push(
+        `exception ${exception.id} for ${edge} has unknown removal node ${exception.removeIn}`,
+      );
+      continue;
+    }
+    if (!ACTIVE_REMOVAL_STATUSES.has(removalNode.status)) {
+      errors.push(
+        `exception ${exception.id} for ${edge} has invalid removal node ${exception.removeIn} status ${removalNode.status}`,
+      );
+      continue;
+    }
+    if (!PROMOTED_REMOVAL_STATUSES.has(removalNode.status)) continue;
+
+    const importerPath = policyByName.get(exception.importer)?.path;
+    const requiredPaths = new Set([ARCHITECTURE_POLICY_PATH]);
+    if (importerPath !== undefined) {
+      requiredPaths.add(`${importerPath}/package.json`);
+    }
+    for (const occurrence of exception.sourceOccurrences) {
+      requiredPaths.add(occurrence.path);
+    }
+    for (const requiredPath of [...requiredPaths].sort(compareStrings)) {
+      if (!ownershipCoversPath(removalNode.ownership, requiredPath)) {
+        errors.push(
+          `exception ${exception.id} for ${edge} removal node ${exception.removeIn} does not own ${requiredPath}`,
+        );
+      }
+    }
+  }
+
+  const violationKeys = renderableViolations.map(({ violation }) =>
+    violationKey(violation)
+  );
+  const matchedViolationIds = new Map<number, string>();
+  for (const exception of policy.exceptions) {
+    const edge = `${exception.importer} -> ${exception.dependency}`;
+    const exceptionKey = violationKey(exception);
+    const matchingViolationIndices = violationKeys.flatMap((key, index) =>
+      key === exceptionKey ? [index] : []
+    );
+    const unmatchedViolationIndex = matchingViolationIndices.find(
+      (index) => !matchedViolationIds.has(index),
+    );
+    if (unmatchedViolationIndex !== undefined) {
+      matchedViolationIds.set(unmatchedViolationIndex, exception.id);
+      continue;
+    }
+    if (matchingViolationIndices.length === 0) {
+      errors.push(
+        `exception ${exception.id} is stale or drifted for ${edge}`,
+      );
+      continue;
+    }
+    const matchedExceptionId = matchedViolationIds.get(
+      matchingViolationIndices[0],
+    );
+    errors.push(
+      `exception ${exception.id} contradicts ${matchedExceptionId} for ${edge}: both match one observed violation`,
+    );
+  }
+
+  for (const [index, { manifestPath, violation }] of renderableViolations.entries()) {
+    if (matchedViolationIds.has(index)) continue;
     const manifest = violation.manifest.section === null
       ? `${manifestPath}[none]`
       : `${manifestPath}[${violation.manifest.section}]=${violation.manifest.versionSpecifier}`;
