@@ -1,0 +1,485 @@
+import { posix, win32 } from "node:path";
+
+export type ManifestSection =
+  | "dependencies"
+  | "devDependencies"
+  | "peerDependencies"
+  | "optionalDependencies";
+
+export type PackageState = "required" | "planned";
+
+export type OccurrenceClass =
+  | "production-value"
+  | "production-type"
+  | "test-value"
+  | "test-type";
+
+export type SyntaxForm = "import" | "export" | "dynamic-import" | "require";
+
+export type AllowedDependency = {
+  name: string;
+  manifestSections: ManifestSection[];
+};
+
+export type PackagePolicy = {
+  name: string;
+  path: string;
+  state: PackageState;
+  allowedDependencies: AllowedDependency[];
+};
+
+export type SourceOccurrence = {
+  path: string;
+  specifier: string;
+  syntax: SyntaxForm;
+  occurrenceClass: OccurrenceClass;
+  count: number;
+  bindingDigest: string;
+};
+
+export type ArchitectureException = {
+  id: string;
+  kind: "forbidden-workspace-edge" | "missing-manifest-dependency";
+  importer: string;
+  dependency: string;
+  sourceOccurrences: SourceOccurrence[];
+  manifest: {
+    section: ManifestSection | null;
+    versionSpecifier: string | null;
+  };
+  removeIn: string;
+  reason: string;
+};
+
+export type ArchitecturePolicy = {
+  schemaVersion: 1;
+  packages: PackagePolicy[];
+  exceptions: ArchitectureException[];
+};
+
+export type ManifestDependencyFact = {
+  dependency: string;
+  section: ManifestSection;
+  versionSpecifier: string;
+};
+
+export type PackageArchitectureFact = {
+  name: string;
+  path: string;
+  manifestPath: string;
+  manifestDependencies: ManifestDependencyFact[];
+  sourceOccurrences: SourceOccurrence[];
+};
+
+export type WorkspaceArchitectureFacts = {
+  packages: PackageArchitectureFact[];
+};
+
+const MANIFEST_SECTIONS = new Set<ManifestSection>([
+  "dependencies",
+  "devDependencies",
+  "peerDependencies",
+  "optionalDependencies",
+]);
+const PACKAGE_STATES = new Set<PackageState>(["required", "planned"]);
+const OCCURRENCE_CLASSES = new Set<OccurrenceClass>([
+  "production-value",
+  "production-type",
+  "test-value",
+  "test-type",
+]);
+const SYNTAX_FORMS = new Set<SyntaxForm>([
+  "import",
+  "export",
+  "dynamic-import",
+  "require",
+]);
+const EXCEPTION_KINDS = new Set<ArchitectureException["kind"]>([
+  "forbidden-workspace-edge",
+  "missing-manifest-dependency",
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function compareStrings(left: string, right: string) {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function isSorted(values: readonly string[]) {
+  return values.every((value, index) => index === 0 || compareStrings(values[index - 1], value) <= 0);
+}
+
+function hasDuplicate(values: readonly string[]) {
+  return new Set(values).size !== values.length;
+}
+
+function isRepositoryRelativePath(value: string) {
+  return (
+    value.length > 0 &&
+    !value.includes("\\") &&
+    !posix.isAbsolute(value) &&
+    !win32.isAbsolute(value) &&
+    win32.parse(value).root.length === 0 &&
+    value === posix.normalize(value) &&
+    !value.split("/").some((part) => part.length === 0 || part === "." || part === "..")
+  );
+}
+
+function isPackageName(value: string) {
+  return /^@pest-patrol\/.+$/.test(value);
+}
+
+function isManifestSection(value: unknown): value is ManifestSection {
+  return typeof value === "string" && MANIFEST_SECTIONS.has(value as ManifestSection);
+}
+
+function isPackageState(value: unknown): value is PackageState {
+  return typeof value === "string" && PACKAGE_STATES.has(value as PackageState);
+}
+
+function occurrenceKey(occurrence: SourceOccurrence) {
+  return [
+    occurrence.path,
+    occurrence.specifier,
+    occurrence.syntax,
+    occurrence.occurrenceClass,
+    String(occurrence.count),
+    occurrence.bindingDigest,
+  ].join("\u0000");
+}
+
+function exceptionLabel(value: Record<string, unknown>, index: number) {
+  return typeof value.id === "string" && value.id.length > 0
+    ? `exception ${value.id}`
+    : `exception at index ${index}`;
+}
+
+function packageLabel(value: Record<string, unknown>, index: number) {
+  return typeof value.name === "string" && value.name.length > 0
+    ? `package ${value.name}`
+    : `package at index ${index}`;
+}
+
+function validateAllowedDependencies(
+  value: unknown,
+  label: string,
+  errors: string[],
+): AllowedDependency[] | null {
+  if (!Array.isArray(value)) {
+    errors.push(`${label} allowedDependencies must be an array`);
+    return null;
+  }
+
+  const dependencies: Array<AllowedDependency | null> = value.map((entry, index) => {
+    if (!isRecord(entry)) {
+      errors.push(`${label} allowed dependency at index ${index} must be an object`);
+      return null;
+    }
+
+    const dependencyLabel =
+      typeof entry.name === "string" && entry.name.length > 0
+        ? `${label} allowed dependency ${entry.name}`
+        : `${label} allowed dependency at index ${index}`;
+    const name = typeof entry.name === "string" && entry.name.length > 0 ? entry.name : null;
+    if (name === null) {
+      errors.push(`${dependencyLabel} name must be a non-empty string`);
+    }
+
+    const sections = isStringArray(entry.manifestSections) && entry.manifestSections.length > 0
+      ? entry.manifestSections
+      : null;
+    if (sections === null) {
+      errors.push(`${dependencyLabel} manifest sections must be a non-empty array`);
+    } else {
+      if (!sections.every(isManifestSection)) {
+        errors.push(`${dependencyLabel} manifest sections are invalid`);
+      }
+      if (!isSorted(sections)) {
+        errors.push(`${dependencyLabel} manifest sections must be sorted`);
+      }
+      if (hasDuplicate(sections)) {
+        const repeatedSection = sections.find(
+          (section, sectionIndex) => sections.indexOf(section) !== sectionIndex,
+        );
+        if (repeatedSection !== undefined) {
+          errors.push(`${dependencyLabel} repeats ${repeatedSection}`);
+        }
+      }
+    }
+
+    return name !== null && sections !== null && sections.every(isManifestSection)
+      ? { name, manifestSections: sections as ManifestSection[] }
+      : null;
+  });
+
+  const names = dependencies.flatMap((dependency) => (dependency ? [dependency.name] : []));
+  if (names.length === dependencies.filter(Boolean).length && !isSorted(names)) {
+    errors.push(`${label} allowed dependencies must be sorted`);
+  }
+    if (hasDuplicate(names)) {
+      for (const name of new Set(names)) {
+        if (names.filter((candidate) => candidate === name).length > 1) {
+          errors.push(`${label} allowed dependency ${name} is duplicated`);
+        }
+      }
+  }
+
+  return dependencies.every((dependency): dependency is AllowedDependency => dependency !== null)
+    ? dependencies
+    : null;
+}
+
+function validateSourceOccurrences(
+  value: unknown,
+  label: string,
+  dependency: string | null,
+  importerPath: string | null,
+  errors: string[],
+): SourceOccurrence[] | null {
+  if (!Array.isArray(value)) {
+    errors.push(`${label} sourceOccurrences must be an array`);
+    return null;
+  }
+
+  const occurrences: Array<SourceOccurrence | null> = value.map((entry, index) => {
+    const occurrenceLabel = `${label} occurrence ${index}`;
+    if (!isRecord(entry)) {
+      errors.push(`${occurrenceLabel} must be an object`);
+      return null;
+    }
+    const path = typeof entry.path === "string" ? entry.path : null;
+    if (path === null || !isRepositoryRelativePath(path)) {
+      errors.push(`${occurrenceLabel} path must be a normalized repository-relative path`);
+    } else if (importerPath !== null && !path.startsWith(`${importerPath}/`)) {
+      errors.push(`${occurrenceLabel} path must be inside ${importerPath}`);
+    }
+    const specifier = typeof entry.specifier === "string" ? entry.specifier : null;
+    if (specifier === null || (dependency !== null && specifier !== dependency)) {
+      errors.push(`${occurrenceLabel} specifier must be ${dependency ?? "a string"}`);
+    }
+    const syntax = typeof entry.syntax === "string" && SYNTAX_FORMS.has(entry.syntax as SyntaxForm)
+      ? (entry.syntax as SyntaxForm)
+      : null;
+    if (syntax === null) {
+      errors.push(`${occurrenceLabel} syntax is invalid`);
+    }
+    const occurrenceClass =
+      typeof entry.occurrenceClass === "string" && OCCURRENCE_CLASSES.has(entry.occurrenceClass as OccurrenceClass)
+        ? (entry.occurrenceClass as OccurrenceClass)
+        : null;
+    if (occurrenceClass === null) {
+      errors.push(`${occurrenceLabel} occurrenceClass is invalid`);
+    }
+    const count = typeof entry.count === "number" && Number.isSafeInteger(entry.count) && entry.count > 0
+      ? entry.count
+      : null;
+    if (count === null) {
+      errors.push(`${occurrenceLabel} count must be a positive integer`);
+    }
+    const bindingDigest =
+      typeof entry.bindingDigest === "string" && /^[0-9a-f]{64}$/.test(entry.bindingDigest)
+        ? entry.bindingDigest
+        : null;
+    if (bindingDigest === null) {
+      errors.push(`${occurrenceLabel} bindingDigest must be a lowercase 64-character SHA-256 digest`);
+    }
+
+    return path !== null && isRepositoryRelativePath(path) && specifier !== null && syntax !== null && occurrenceClass !== null && count !== null && bindingDigest !== null
+      ? { path, specifier, syntax, occurrenceClass, count, bindingDigest }
+      : null;
+  });
+
+  const validOccurrences = occurrences.filter((occurrence): occurrence is SourceOccurrence => occurrence !== null);
+  if (validOccurrences.length === occurrences.length && !isSorted(validOccurrences.map(occurrenceKey))) {
+    errors.push(`${label} sourceOccurrences must be sorted`);
+  }
+  return validOccurrences.length === occurrences.length ? validOccurrences : null;
+}
+
+function validateArchitectureException(
+  value: unknown,
+  index: number,
+  packagePaths: ReadonlyMap<string, string>,
+  errors: string[],
+): ArchitectureException | null {
+  if (!isRecord(value)) {
+    errors.push(`exception at index ${index} must be an object`);
+    return null;
+  }
+  const label = exceptionLabel(value, index);
+  const id = typeof value.id === "string" && value.id.length > 0 ? value.id : null;
+  if (id === null) errors.push(`${label} ID must be a non-empty string`);
+  const kind =
+    typeof value.kind === "string" && EXCEPTION_KINDS.has(value.kind as ArchitectureException["kind"])
+      ? (value.kind as ArchitectureException["kind"])
+      : null;
+  if (kind === null) errors.push(`${label} kind is invalid`);
+  const importer = typeof value.importer === "string" && value.importer.length > 0 ? value.importer : null;
+  if (importer === null) {
+    errors.push(`${label} importer must be a non-empty package name`);
+  } else if (!packagePaths.has(importer)) {
+    errors.push(`${label} importer ${importer} must name a policy package`);
+  }
+  const dependency = typeof value.dependency === "string" && value.dependency.length > 0 ? value.dependency : null;
+  if (dependency === null) {
+    errors.push(`${label} dependency must be a non-empty package name`);
+  } else if (!packagePaths.has(dependency)) {
+    errors.push(`${label} dependency ${dependency} must name a policy package`);
+  }
+  const sourceOccurrences = validateSourceOccurrences(
+    value.sourceOccurrences,
+    label,
+    dependency,
+    importer === null ? null : packagePaths.get(importer) ?? null,
+    errors,
+  );
+
+  let manifest: ArchitectureException["manifest"] | null = null;
+  if (!isRecord(value.manifest)) {
+    errors.push(`${label} manifest must be an object`);
+  } else {
+    const section = value.manifest.section;
+    const versionSpecifier = value.manifest.versionSpecifier;
+    const validSection = section === null || isManifestSection(section);
+    const validVersion = versionSpecifier === null || (typeof versionSpecifier === "string" && versionSpecifier.trim().length > 0);
+    if (!validSection) errors.push(`${label} manifest section is invalid`);
+    if (!validVersion) errors.push(`${label} manifest versionSpecifier must not be blank`);
+    if ((section === null) !== (versionSpecifier === null)) {
+      errors.push(`${label} manifest section and versionSpecifier must both be null or non-null`);
+    }
+    if (validSection && validVersion && (section === null) === (versionSpecifier === null)) {
+      manifest = { section, versionSpecifier };
+    }
+  }
+  const removeIn = typeof value.removeIn === "string" && /^CR[0-9]+$/.test(value.removeIn) ? value.removeIn : null;
+  if (removeIn === null) errors.push(`${label} removeIn must be a CR node ID`);
+  const reason = typeof value.reason === "string" && value.reason.trim().length > 0 ? value.reason : null;
+  if (reason === null) errors.push(`${label} reason must not be blank`);
+
+  if (kind === "missing-manifest-dependency") {
+    if (manifest === null || manifest.section !== null || manifest.versionSpecifier !== null) {
+      errors.push(`${label} missing-manifest-dependency manifest must be null`);
+    }
+    if (sourceOccurrences !== null && sourceOccurrences.length === 0) {
+      errors.push(`${label} missing-manifest-dependency must include source occurrences`);
+    }
+  }
+
+  return id !== null && kind !== null && importer !== null && dependency !== null && sourceOccurrences !== null && manifest !== null && removeIn !== null && reason !== null
+    ? { id, kind, importer, dependency, sourceOccurrences, manifest, removeIn, reason }
+    : null;
+}
+
+export function validateArchitecturePolicy(value: unknown): {
+  policy: ArchitecturePolicy | null;
+  errors: string[];
+} {
+  const errors: string[] = [];
+  if (!isRecord(value)) {
+    return { policy: null, errors: ["policy must be an object"] };
+  }
+  if (value.schemaVersion !== 1) errors.push("schemaVersion must be 1");
+  if (!Array.isArray(value.packages) || value.packages.length === 0) {
+    errors.push("packages must be a non-empty array");
+  }
+  if (!Array.isArray(value.exceptions)) errors.push("exceptions must be an array");
+
+  const parsedPackages: Array<PackagePolicy | null> = Array.isArray(value.packages)
+    ? value.packages.map((entry, index) => {
+        if (!isRecord(entry)) {
+          errors.push(`package at index ${index} must be an object`);
+          return null;
+        }
+        const label = packageLabel(entry, index);
+        const name = typeof entry.name === "string" && entry.name.length > 0 ? entry.name : null;
+        if (name === null || !isPackageName(name)) {
+          errors.push(`${label} name must be an @pest-patrol/* package name`);
+        }
+        const path = typeof entry.path === "string" && isRepositoryRelativePath(entry.path) ? entry.path : null;
+        if (path === null) {
+          errors.push(`${label} path must be a normalized repository-relative path`);
+        }
+        const state = isPackageState(entry.state) ? entry.state : null;
+        if (state === null) errors.push(`${label} state must be required or planned`);
+        const allowedDependencies = validateAllowedDependencies(entry.allowedDependencies, label, errors);
+        return name !== null && isPackageName(name) && path !== null && state !== null && allowedDependencies !== null
+          ? { name, path, state, allowedDependencies }
+          : null;
+      })
+    : [];
+
+  const packages = parsedPackages.filter((entry): entry is PackagePolicy => entry !== null);
+  if (packages.length === parsedPackages.length) {
+    const packageNames = packages.map((pkg) => pkg.name);
+    const packagePaths = packages.map((pkg) => pkg.path);
+    if (!isSorted(packageNames)) errors.push("packages must be sorted by name");
+    if (hasDuplicate(packageNames)) {
+      for (const name of new Set(packageNames)) {
+        if (packageNames.filter((candidate) => candidate === name).length > 1) {
+          errors.push(`package ${name} name is duplicated`);
+        }
+      }
+    }
+    if (hasDuplicate(packagePaths)) {
+      for (const path of new Set(packagePaths)) {
+        if (packagePaths.filter((candidate) => candidate === path).length > 1) {
+          const owner = packages.find((pkg) => pkg.path === path)?.name ?? "at index";
+          errors.push(`package ${owner} path ${path} is duplicated`);
+        }
+      }
+    }
+  }
+
+  const packagePaths = new Map(packages.map((pkg) => [pkg.name, pkg.path]));
+  for (const pkg of packages) {
+    for (const dependency of pkg.allowedDependencies) {
+      if (!packagePaths.has(dependency.name)) {
+        errors.push(`package ${pkg.name} allowed dependency ${dependency.name} must name a policy package`);
+      }
+      if (dependency.name === pkg.name) {
+        errors.push(`package ${pkg.name} allowed dependency ${dependency.name} must not depend on itself`);
+      }
+    }
+  }
+
+  const parsedExceptions: Array<ArchitectureException | null> = Array.isArray(value.exceptions)
+    ? value.exceptions.map((entry, index) => validateArchitectureException(entry, index, packagePaths, errors))
+    : [];
+  const exceptions = parsedExceptions.filter((entry): entry is ArchitectureException => entry !== null);
+  if (exceptions.length === parsedExceptions.length) {
+    const exceptionIds = exceptions.map((exception) => exception.id);
+    if (!isSorted(exceptionIds)) errors.push("exceptions must be sorted by ID");
+    if (hasDuplicate(exceptionIds)) {
+      for (const id of new Set(exceptionIds)) {
+        if (exceptionIds.filter((candidate) => candidate === id).length > 1) {
+          errors.push(`exception ${id} is duplicated`);
+        }
+      }
+    }
+  }
+
+  const dependenciesByPackage = new Map(
+    packages.map((pkg) => [pkg.name, new Set(pkg.allowedDependencies.map((dependency) => dependency.name))]),
+  );
+  for (const exception of exceptions) {
+    if (!packagePaths.has(exception.importer) || !packagePaths.has(exception.dependency)) continue;
+    const allowed = dependenciesByPackage.get(exception.importer)?.has(exception.dependency) ?? false;
+    if (exception.kind === "forbidden-workspace-edge" && allowed) {
+      errors.push(`exception ${exception.id} forbidden-workspace-edge must not be an allowed dependency`);
+    }
+    if (exception.kind === "missing-manifest-dependency" && !allowed) {
+      errors.push(`exception ${exception.id} missing-manifest-dependency must be an allowed dependency`);
+    }
+  }
+
+  const sortedErrors = errors.sort(compareStrings);
+  return sortedErrors.length === 0 && packages.length === parsedPackages.length && exceptions.length === parsedExceptions.length
+    ? { policy: { schemaVersion: 1, packages, exceptions }, errors: [] }
+    : { policy: null, errors: sortedErrors };
+}
