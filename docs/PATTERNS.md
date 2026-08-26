@@ -1,4 +1,11 @@
 # Coding Standards
-- **UI Updates**: Always use Optimistic UI via React Query so the app feels instant to users.
-- **Styling**: TailwindCSS exclusively. Rely on the custom variables (`primary`, `secondary`, `accent`) defined in the central config.
-- **Data Fetching**: All Supabase calls must be wrapped in Domain logic (`packages/domain/`) rather than called directly inside React components.
+
+- **UI Updates**: Use optimistic UI through React Query so the app feels
+  immediate to users.
+- **Styling**: Use Tailwind CSS and the central `primary`, `secondary`, and
+  `accent` variables.
+- **Provider adapter boundary**: Domain code expresses provider-independent
+  rules. Application ports and use cases coordinate behavior. `api-client`
+  adapters own Supabase and other provider SDK calls plus result mapping, and
+  apps wire implementations at composition roots. Existing violations are
+  tracked debt, not examples to copy.
