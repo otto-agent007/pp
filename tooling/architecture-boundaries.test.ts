@@ -29,6 +29,10 @@ const CLI_TARGET_DIGEST =
   "52426cb7cd243cab4b07bd18b355378a754d0ea5c32706cca953dd2f85759a11";
 const CLI_TYPE_DIGEST =
   "0ef3d97416c57c9c96fb7999cd1c11df68fdb9756d891dae2f37048efdffd818";
+const EMPTY_NAMED_CLAUSE_DIGEST =
+  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945";
+const EMPTY_NAMED_BINDING_DIGEST =
+  "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066";
 
 function validPolicy(): ArchitecturePolicy {
   return {
@@ -1714,7 +1718,7 @@ describe("TypeScript source facts", () => {
     ).toEqual([]);
   });
 
-  it("collects empty value and type named clauses as import and re-export edges", () => {
+  it("records zero-binding named clauses apart from named bindings called empty", () => {
     const workspace = createWorkspace();
     writeManifest(workspace, "packages/example", {
       name: "@pest-patrol/example",
@@ -1730,18 +1734,17 @@ describe("TypeScript source facts", () => {
     `,
     );
 
-    expect(
+    const emptyClauses =
       collectWorkspaceArchitectureFacts(workspace).packages[0]
-        .sourceOccurrences,
-    ).toEqual([
+        .sourceOccurrences;
+    expect(emptyClauses).toEqual([
       {
         path: "packages/example/src/empty-clauses.ts",
         specifier: "@pest-patrol/target",
         syntax: "export",
         occurrenceClass: "production-type",
         count: 1,
-        bindingDigest:
-          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+        bindingDigest: EMPTY_NAMED_CLAUSE_DIGEST,
       },
       {
         path: "packages/example/src/empty-clauses.ts",
@@ -1749,8 +1752,7 @@ describe("TypeScript source facts", () => {
         syntax: "export",
         occurrenceClass: "production-value",
         count: 1,
-        bindingDigest:
-          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+        bindingDigest: EMPTY_NAMED_CLAUSE_DIGEST,
       },
       {
         path: "packages/example/src/empty-clauses.ts",
@@ -1758,8 +1760,7 @@ describe("TypeScript source facts", () => {
         syntax: "import",
         occurrenceClass: "production-type",
         count: 1,
-        bindingDigest:
-          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+        bindingDigest: EMPTY_NAMED_CLAUSE_DIGEST,
       },
       {
         path: "packages/example/src/empty-clauses.ts",
@@ -1767,9 +1768,80 @@ describe("TypeScript source facts", () => {
         syntax: "import",
         occurrenceClass: "production-value",
         count: 1,
-        bindingDigest:
-          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+        bindingDigest: EMPTY_NAMED_CLAUSE_DIGEST,
       },
+    ]);
+
+    writeSource(
+      workspace,
+      "packages/example/src/empty-clauses.ts",
+      `
+      import { empty } from "@pest-patrol/target/import-value";
+      import type { empty } from "@pest-patrol/target/import-type";
+      export { empty } from "@pest-patrol/target/export-value";
+      export type { empty } from "@pest-patrol/target/export-type";
+    `,
+    );
+
+    const namedBindings =
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences;
+    expect(namedBindings).toEqual(
+      emptyClauses.map((occurrence) => ({
+        ...occurrence,
+        bindingDigest: EMPTY_NAMED_BINDING_DIGEST,
+      })),
+    );
+    expect(namedBindings.map((occurrence) => occurrence.bindingDigest)).not.toEqual(
+      emptyClauses.map((occurrence) => occurrence.bindingDigest),
+    );
+  });
+
+  it("makes an exception frozen for a zero-binding clause stale when empty becomes a real binding", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeManifest(workspace, "packages/target", {
+      name: "@pest-patrol/target",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'import type {} from "@pest-patrol/target";\n',
+    );
+    const policy = cliPolicy();
+    policy.exceptions = [{
+      ...cliException(),
+      sourceOccurrences: [{
+        path: "packages/importer/index.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "import",
+        occurrenceClass: "production-type",
+        count: 1,
+        bindingDigest: EMPTY_NAMED_CLAUSE_DIGEST,
+      }],
+    }];
+
+    expect(validateArchitectureFacts(
+      policy,
+      collectWorkspaceArchitectureFacts(workspace),
+      removalGraph("planned"),
+    )).toEqual([]);
+
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'import type { empty } from "@pest-patrol/target";\n',
+    );
+
+    expect(validateArchitectureFacts(
+      policy,
+      collectWorkspaceArchitectureFacts(workspace),
+      removalGraph("planned"),
+    )).toEqual([
+      "exception importer-target-debt is stale or drifted for @pest-patrol/importer -> @pest-patrol/target",
+      "missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
     ]);
   });
 

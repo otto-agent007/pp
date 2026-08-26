@@ -730,8 +730,6 @@ type SourceUse = {
   bindings: string[];
 };
 
-const EMPTY_NAMED_BINDING = "empty";
-
 function unwrapTransparentExpression(expression: ts.Expression): ts.Expression {
   if (
     ts.isParenthesizedExpression(expression) ||
@@ -770,9 +768,10 @@ function sourceOccurrences(
     syntax: SyntaxForm,
     isTypeOnly: boolean,
     bindings: string[],
+    isEmptyNamedClause = false,
   ) {
     const specifier = canonicalWorkspaceSpecifier(rawSpecifier);
-    if (specifier !== null && bindings.length > 0) {
+    if (specifier !== null && (bindings.length > 0 || isEmptyNamedClause)) {
       uses.push({ specifier, syntax, isTypeOnly, bindings });
     }
   }
@@ -784,6 +783,8 @@ function sourceOccurrences(
     ) {
       const typeBindings: string[] = [];
       const valueBindings: string[] = [];
+      let isEmptyTypeNamedClause = false;
+      let isEmptyValueNamedClause = false;
       const clause = node.importClause;
       if (clause === undefined) {
         valueBindings.push("side-effect");
@@ -796,7 +797,11 @@ function sourceOccurrences(
           if (ts.isNamespaceImport(clause.namedBindings)) {
             bindingsFor(clause.isTypeOnly).push("*");
           } else if (clause.namedBindings.elements.length === 0) {
-            bindingsFor(clause.isTypeOnly).push(EMPTY_NAMED_BINDING);
+            if (clause.isTypeOnly) {
+              isEmptyTypeNamedClause = true;
+            } else {
+              isEmptyValueNamedClause = true;
+            }
           } else {
             for (const specifier of clause.namedBindings.elements) {
               bindingsFor(clause.isTypeOnly || specifier.isTypeOnly).push(
@@ -806,8 +811,20 @@ function sourceOccurrences(
           }
         }
       }
-      addUse(node.moduleSpecifier.text, "import", false, valueBindings);
-      addUse(node.moduleSpecifier.text, "import", true, typeBindings);
+      addUse(
+        node.moduleSpecifier.text,
+        "import",
+        false,
+        valueBindings,
+        isEmptyValueNamedClause,
+      );
+      addUse(
+        node.moduleSpecifier.text,
+        "import",
+        true,
+        typeBindings,
+        isEmptyTypeNamedClause,
+      );
     } else if (
       ts.isExportDeclaration(node) &&
       node.moduleSpecifier !== undefined &&
@@ -815,6 +832,8 @@ function sourceOccurrences(
     ) {
       const typeBindings: string[] = [];
       const valueBindings: string[] = [];
+      let isEmptyTypeNamedClause = false;
+      let isEmptyValueNamedClause = false;
       const bindingsFor = (isTypeOnly: boolean) =>
         isTypeOnly ? typeBindings : valueBindings;
       if (
@@ -823,7 +842,11 @@ function sourceOccurrences(
       ) {
         bindingsFor(node.isTypeOnly).push("*");
       } else if (node.exportClause.elements.length === 0) {
-        bindingsFor(node.isTypeOnly).push(EMPTY_NAMED_BINDING);
+        if (node.isTypeOnly) {
+          isEmptyTypeNamedClause = true;
+        } else {
+          isEmptyValueNamedClause = true;
+        }
       } else {
         for (const specifier of node.exportClause.elements) {
           bindingsFor(node.isTypeOnly || specifier.isTypeOnly).push(
@@ -831,8 +854,20 @@ function sourceOccurrences(
           );
         }
       }
-      addUse(node.moduleSpecifier.text, "export", false, valueBindings);
-      addUse(node.moduleSpecifier.text, "export", true, typeBindings);
+      addUse(
+        node.moduleSpecifier.text,
+        "export",
+        false,
+        valueBindings,
+        isEmptyValueNamedClause,
+      );
+      addUse(
+        node.moduleSpecifier.text,
+        "export",
+        true,
+        typeBindings,
+        isEmptyTypeNamedClause,
+      );
     } else if (
       ts.isImportTypeNode(node) &&
       ts.isLiteralTypeNode(node.argument) &&
