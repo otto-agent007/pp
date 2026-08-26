@@ -9,8 +9,8 @@ exception inventory are the source of truth for the repository's exact state.
 
 The product includes a Next.js admin dashboard and customer portal, an Expo
 technician mobile app, and provider-backed operational services. Mobile is
-offline-first, UI mutations are optimistic, and database integrity controls
-remain provider concerns behind adapters.
+offline-first, eligible UI mutations are optimistic, and database integrity
+controls remain provider concerns behind adapters.
 
 ## Target package direction
 
@@ -75,11 +75,18 @@ that exact edge.
 UI/input -> app composition root -> application use case -> port -> adapter -> provider -> mapped result
 ```
 
+Mobile writes use this canonical flow:
+
+```text
+UI/input -> durable offline queue -> optimistic projection -> sync/retry -> port/client adapter -> provider -> mapped result
+```
+
 This flow keeps policy and provider concerns separate. Domain code expresses
 provider-independent rules; provider clients belong in adapter
 implementations, never in domain code or UI components. Mobile remains
-offline-first: writes enter the durable sync path and support retry rather
-than blocking field work on network availability.
+offline-first: a write is durably enqueued before its optimistic projection,
+then the queue drives sync and retry rather than blocking field work on network
+availability. Do not create optimistic-first or network-first mobile writes.
 
 ## Target versus current repository state
 
