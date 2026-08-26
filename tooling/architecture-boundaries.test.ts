@@ -4,6 +4,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -393,6 +394,66 @@ describe("architecture policy", () => {
     ]);
   });
 
+  it("reports package-name ordering when a sibling package name is missing", () => {
+    const policy = validPolicy();
+
+    expect(errorsFor({
+      ...policy,
+      packages: [
+        {
+          name: "@pest-patrol/z",
+          path: "packages/z",
+          state: "required",
+          allowedDependencies: [],
+        },
+        {
+          path: "packages/missing",
+          state: "planned",
+          allowedDependencies: [],
+        },
+        {
+          name: "@pest-patrol/a",
+          path: "packages/a",
+          state: "planned",
+          allowedDependencies: [],
+        },
+      ],
+    })).toEqual([
+      "package at index 1 name must be an @pest-patrol/* package name",
+      "packages must be sorted by name",
+    ]);
+  });
+
+  it("reports duplicate package names when a sibling package name is missing", () => {
+    const policy = validPolicy();
+
+    expect(errorsFor({
+      ...policy,
+      packages: [
+        {
+          name: "@pest-patrol/a",
+          path: "packages/a",
+          state: "planned",
+          allowedDependencies: [],
+        },
+        {
+          path: "packages/missing",
+          state: "planned",
+          allowedDependencies: [],
+        },
+        {
+          name: "@pest-patrol/a",
+          path: "packages/a-copy",
+          state: "planned",
+          allowedDependencies: [],
+        },
+      ],
+    })).toEqual([
+      "package @pest-patrol/a name is duplicated",
+      "package at index 1 name must be an @pest-patrol/* package name",
+    ]);
+  });
+
   it("rejects invalid package names, paths, and states", () => {
     const policy = validPolicy();
     policy.packages[0] = {
@@ -553,6 +614,48 @@ describe("architecture policy", () => {
       "exception a is duplicated",
       "exception z occurrence 0 count must be a positive integer",
       "exceptions must be sorted by ID",
+    ]);
+  });
+
+  it("reports exception-ID ordering when a sibling exception ID is missing", () => {
+    const policy = validPolicy();
+    policy.packages[0].allowedDependencies = [
+      { name: "@pest-patrol/types", manifestSections: ["dependencies"] },
+    ];
+    const missingId: Record<string, unknown> = exceptionWith();
+    delete missingId.id;
+
+    expect(errorsFor({
+      ...policy,
+      exceptions: [
+        exceptionWith({ id: "z" }),
+        missingId,
+        exceptionWith({ id: "a" }),
+      ],
+    })).toEqual([
+      "exception at index 1 ID must be a non-empty string",
+      "exceptions must be sorted by ID",
+    ]);
+  });
+
+  it("reports duplicate exception IDs when a sibling exception ID is missing", () => {
+    const policy = validPolicy();
+    policy.packages[0].allowedDependencies = [
+      { name: "@pest-patrol/types", manifestSections: ["dependencies"] },
+    ];
+    const missingId: Record<string, unknown> = exceptionWith();
+    delete missingId.id;
+
+    expect(errorsFor({
+      ...policy,
+      exceptions: [
+        exceptionWith({ id: "a" }),
+        missingId,
+        exceptionWith({ id: "a" }),
+      ],
+    })).toEqual([
+      "exception a is duplicated",
+      "exception at index 1 ID must be a non-empty string",
     ]);
   });
 
@@ -1347,6 +1450,49 @@ describe("manifest facts", () => {
       "apps/unnamed/package.json: name must be a non-empty string",
     );
   });
+
+  it("rejects symbolic links used as immediate workspace children", () => {
+    const workspace = createWorkspace();
+    const targetPath = join(workspace, "fixtures", "linked-package");
+    mkdirSync(targetPath, { recursive: true });
+    symlinkSync(targetPath, join(workspace, "packages", "linked"), "dir");
+
+    expect(() => collectWorkspaceArchitectureFacts(workspace)).toThrow(
+      "packages/linked: symbolic links are not supported",
+    );
+  });
+
+  it("rejects symbolic links in package source file and ignored-directory positions", () => {
+    const fileWorkspace = createWorkspace();
+    writeManifest(fileWorkspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    const fileTarget = join(fileWorkspace, "fixtures", "linked.ts");
+    writeSource(fileWorkspace, "fixtures/linked.ts", "export {};\n");
+    const fileLink = join(fileWorkspace, "packages", "example", "src", "linked.ts");
+    mkdirSync(join(fileLink, ".."), { recursive: true });
+    symlinkSync(fileTarget, fileLink, "file");
+
+    expect(() => collectWorkspaceArchitectureFacts(fileWorkspace)).toThrow(
+      "packages/example/src/linked.ts: symbolic links are not supported",
+    );
+
+    const directoryWorkspace = createWorkspace();
+    writeManifest(directoryWorkspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    const directoryTarget = join(directoryWorkspace, "fixtures", "generated");
+    mkdirSync(directoryTarget, { recursive: true });
+    symlinkSync(
+      directoryTarget,
+      join(directoryWorkspace, "packages", "example", "generated"),
+      "dir",
+    );
+
+    expect(() => collectWorkspaceArchitectureFacts(directoryWorkspace)).toThrow(
+      "packages/example/generated: symbolic links are not supported",
+    );
+  });
 });
 
 describe("TypeScript source facts", () => {
@@ -1536,6 +1682,114 @@ describe("TypeScript source facts", () => {
       collectWorkspaceArchitectureFacts(workspace).packages[0]
         .sourceOccurrences,
     ).toEqual([]);
+  });
+
+  it("collects runtime literals through transparent wrappers and additional arguments", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    writeSource(
+      workspace,
+      "packages/example/src/runtime.ts",
+      `
+      void import("@pest-patrol/target/bare");
+      void import("@pest-patrol/target/options", { with: { type: "json" } });
+      void import(("@pest-patrol/target/parenthesized"));
+      void import("@pest-patrol/target/as" as string);
+      void import(<string>"@pest-patrol/target/asserted");
+      void import("@pest-patrol/target/satisfies" satisfies string);
+      void import("@pest-patrol/target/non-null"!);
+
+      require("@pest-patrol/target/bare");
+      require("@pest-patrol/target/extra", "ignored");
+      require(("@pest-patrol/target/parenthesized"));
+      require("@pest-patrol/target/as" as string);
+      require(<string>"@pest-patrol/target/asserted");
+      require("@pest-patrol/target/satisfies" satisfies string);
+      require("@pest-patrol/target/non-null"!);
+
+      const target = "@pest-patrol/ignored";
+      void import(target);
+      require(\`@pest-patrol/ignored\`);
+      void import("@pest-patrol" + "/ignored");
+    `,
+    );
+
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([
+      {
+        path: "packages/example/src/runtime.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "dynamic-import",
+        occurrenceClass: "production-value",
+        count: 7,
+        bindingDigest:
+          "aa056a0fc0b1f278c24f2690197d1b82e5493ce6005994537f03c2999edcddbd",
+      },
+      {
+        path: "packages/example/src/runtime.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "require",
+        occurrenceClass: "production-value",
+        count: 7,
+        bindingDigest:
+          "aa056a0fc0b1f278c24f2690197d1b82e5493ce6005994537f03c2999edcddbd",
+      },
+    ]);
+  });
+
+  it("normalizes import-type qualifier digests without source trivia", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    const sourcePath = "packages/example/src/import-type.ts";
+    const expectedOccurrence = {
+      path: sourcePath,
+      specifier: "@pest-patrol/types",
+      syntax: "import" as const,
+      occurrenceClass: "production-type" as const,
+      count: 1,
+      bindingDigest:
+        "79715f1f08af7f25c89d5dc859655008bb57dfc348d78e97216de070e202d9a7",
+    };
+
+    writeSource(
+      workspace,
+      sourcePath,
+      'type Contract = import("@pest-patrol/types").Foo.Bar;\n',
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([expectedOccurrence]);
+
+    writeSource(
+      workspace,
+      sourcePath,
+      'type Contract = import("@pest-patrol/types").Foo /* stable */ . /* trivia */ Bar;\n',
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([expectedOccurrence]);
+
+    writeSource(
+      workspace,
+      sourcePath,
+      'type Contract = import("@pest-patrol/types").Foo.Baz;\n',
+    );
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([{
+      ...expectedOccurrence,
+      bindingDigest:
+        "dcf54863b7c114b5177072fddd3143846a7649d5a39f2daf35bbd83f2929fa5a",
+    }]);
   });
 
   it("normalizes every binding form into literal binding digests", () => {
@@ -1864,6 +2118,56 @@ describe("architecture CLI", () => {
       stdout: [],
       stderr: [
         "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/new-debt; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
+      ],
+    });
+  });
+
+  it("runtime literal CLI rejects an unknown target through a transparent wrapper", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'void import(("@pest-patrol/unknown/wrapped"));\n',
+    );
+    const policy = cliPolicy();
+    policy.packages = [policy.packages[0]];
+    policy.packages[0].allowedDependencies = [];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/unknown; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("runtime literal CLI rejects an allowed target missing its manifest dependency", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'void import("@pest-patrol/target/options", { with: { type: "json" } });\n',
+    );
+    writeManifest(workspace, "packages/target", {
+      name: "@pest-patrol/target",
+    });
+    writeJson(workspace, "tooling/architecture-boundaries.json", cliPolicy());
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
       ],
     });
   });

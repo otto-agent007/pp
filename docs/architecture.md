@@ -57,17 +57,24 @@ that exact edge.
   workspace dependency.
 - `domain` owns pure business rules and depends only on `types`. It is
   provider-independent.
-- `application` owns ports and use cases and coordinates domain behavior.
+- `application` owns ports and use cases, coordinates domain behavior, and
+  defines provider-independent conflict and terminal-failure semantics and
+  policy.
 - `api-client` owns provider and persistence adapters, including provider-SDK
-  calls and mapping provider data to application-facing results.
-- `sync` owns durable queue execution and retry orchestration. Provider-adapter
-  implementations are selected and wired at app composition roots.
+  calls, mapping provider requests, responses, and errors to
+  application-facing results, and idempotent delivery using stable intent
+  identities. Adapter handling includes ambiguous provider responses.
+- `sync` owns durable persisted intent identity and state, restart
+  replay/recovery, retry and backoff scheduling, queue execution, and durable
+  state transitions. Provider-adapter implementations are selected and wired
+  at app composition roots.
 - `i18n`, `ui-tokens`, `ui`, and `ui-native` are presentation libraries with
   explicit package-specific allowlists; they do not become application or
   provider layers.
 - Web and mobile are app composition roots. They select implementations and
   wire dependencies rather than placing business rules or provider access in
-  UI components.
+  UI components. Mobile presentation also makes terminal failures visible and
+  provides user recovery UI.
 
 ## Data flow
 
@@ -87,6 +94,20 @@ implementations, never in domain code or UI components. Mobile remains
 offline-first: a write is durably enqueued before its optimistic projection,
 then the queue drives sync and retry rather than blocking field work on network
 availability. Do not create optimistic-first or network-first mobile writes.
+If a provider response is ambiguous, replay reuses the same stable intent
+identity rather than creating a duplicate logical write.
+
+## Future mobile-write evidence
+
+CR06 must provide focused tests for persistence before optimistic projection,
+restart replay, stable intent identity, ambiguous-success replay, conflict
+transition, and terminal failure. It must also provide an integration test
+from the mobile composition root through durable queue persistence and
+restart, sync execution, the selected adapter, and provider acknowledgment.
+
+CR01 documents this target contract only. It creates no application or sync
+package implementation and does not claim that these behaviors exist in the
+current repository.
 
 ## Target versus current repository state
 

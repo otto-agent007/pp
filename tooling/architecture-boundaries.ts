@@ -500,13 +500,11 @@ export function validateArchitecturePolicy(value: unknown): {
       ? [entry.name]
       : [],
   );
-  if (packageNames.length === packageEntries.length) {
-    if (!isSorted(packageNames)) errors.push("packages must be sorted by name");
-    if (hasDuplicate(packageNames)) {
-      for (const name of new Set(packageNames)) {
-        if (packageNames.filter((candidate) => candidate === name).length > 1) {
-          errors.push(`package ${name} name is duplicated`);
-        }
+  if (!isSorted(packageNames)) errors.push("packages must be sorted by name");
+  if (hasDuplicate(packageNames)) {
+    for (const name of new Set(packageNames)) {
+      if (packageNames.filter((candidate) => candidate === name).length > 1) {
+        errors.push(`package ${name} name is duplicated`);
       }
     }
   }
@@ -544,13 +542,11 @@ export function validateArchitecturePolicy(value: unknown): {
   const exceptionIds = exceptionEntries.flatMap((entry) =>
     isRecord(entry) && typeof entry.id === "string" && entry.id.length > 0 ? [entry.id] : [],
   );
-  if (exceptionIds.length === exceptionEntries.length) {
-    if (!isSorted(exceptionIds)) errors.push("exceptions must be sorted by ID");
-    if (hasDuplicate(exceptionIds)) {
-      for (const id of new Set(exceptionIds)) {
-        if (exceptionIds.filter((candidate) => candidate === id).length > 1) {
-          errors.push(`exception ${id} is duplicated`);
-        }
+  if (!isSorted(exceptionIds)) errors.push("exceptions must be sorted by ID");
+  if (hasDuplicate(exceptionIds)) {
+    for (const id of new Set(exceptionIds)) {
+      if (exceptionIds.filter((candidate) => candidate === id).length > 1) {
+        errors.push(`exception ${id} is duplicated`);
       }
     }
   }
@@ -679,6 +675,11 @@ function sourceFiles(cwd: string, packagePath: string) {
       compareStrings(left.name, right.name),
     )) {
       const entryPath = join(directoryPath, entry.name);
+      if (entry.isSymbolicLink()) {
+        throw new Error(
+          `${repositoryPath(cwd, entryPath)}: symbolic links are not supported`,
+        );
+      }
       if (entry.isDirectory()) {
         if (!EXCLUDED_SOURCE_DIRECTORIES.has(entry.name)) visit(entryPath);
       } else if (
@@ -709,6 +710,25 @@ type SourceUse = {
   isTypeOnly: boolean;
   bindings: string[];
 };
+
+function unwrapTransparentExpression(expression: ts.Expression): ts.Expression {
+  if (
+    ts.isParenthesizedExpression(expression) ||
+    ts.isAsExpression(expression) ||
+    ts.isTypeAssertionExpression(expression) ||
+    ts.isSatisfiesExpression(expression) ||
+    ts.isNonNullExpression(expression)
+  ) {
+    return unwrapTransparentExpression(expression.expression);
+  }
+  return expression;
+}
+
+function importTypeQualifierBinding(qualifier: ts.EntityName | undefined): string {
+  if (qualifier === undefined) return "*";
+  if (ts.isIdentifier(qualifier)) return qualifier.text;
+  return `${importTypeQualifierBinding(qualifier.left)}.${qualifier.right.text}`;
+}
 
 function sourceOccurrences(
   cwd: string,
@@ -794,7 +814,7 @@ function sourceOccurrences(
       ts.isStringLiteral(node.argument.literal)
     ) {
       addUse(node.argument.literal.text, "import", true, [
-        node.qualifier?.getText(sourceFile) ?? "*",
+        importTypeQualifierBinding(node.qualifier),
       ]);
     } else if (
       ts.isImportEqualsDeclaration(node) &&
@@ -807,19 +827,27 @@ function sourceOccurrences(
       ]);
     } else if (
       ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments.length === 1 &&
-      ts.isStringLiteral(node.arguments[0])
+      node.expression.kind === ts.SyntaxKind.ImportKeyword
     ) {
-      addUse(node.arguments[0].text, "dynamic-import", false, ["*"]);
+      const firstArgument = node.arguments[0];
+      if (firstArgument !== undefined) {
+        const specifier = unwrapTransparentExpression(firstArgument);
+        if (ts.isStringLiteral(specifier)) {
+          addUse(specifier.text, "dynamic-import", false, ["*"]);
+        }
+      }
     } else if (
       ts.isCallExpression(node) &&
       ts.isIdentifier(node.expression) &&
-      node.expression.text === "require" &&
-      node.arguments.length === 1 &&
-      ts.isStringLiteral(node.arguments[0])
+      node.expression.text === "require"
     ) {
-      addUse(node.arguments[0].text, "require", false, ["*"]);
+      const firstArgument = node.arguments[0];
+      if (firstArgument !== undefined) {
+        const specifier = unwrapTransparentExpression(firstArgument);
+        if (ts.isStringLiteral(specifier)) {
+          addUse(specifier.text, "require", false, ["*"]);
+        }
+      }
     }
 
     ts.forEachChild(node, visit);
@@ -886,9 +914,18 @@ export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchite
     } catch {
       throw new Error(`${repositoryPath(workspaceRootPath, rootPath)}: read failed`);
     }
-    for (const child of children.filter((entry) => entry.isDirectory()).sort((left, right) => compareStrings(left.name, right.name))) {
+    for (const child of children.sort((left, right) =>
+      compareStrings(left.name, right.name)
+    )) {
+      const childPath = join(rootPath, child.name);
+      if (child.isSymbolicLink()) {
+        throw new Error(
+          `${repositoryPath(workspaceRootPath, childPath)}: symbolic links are not supported`,
+        );
+      }
+      if (!child.isDirectory()) continue;
       const packagePath = `${root}/${child.name}`;
-      const manifestAbsolutePath = join(rootPath, child.name, "package.json");
+      const manifestAbsolutePath = join(childPath, "package.json");
       const manifestFile = repositoryPath(workspaceRootPath, manifestAbsolutePath);
       const manifestText = readText(workspaceRootPath, manifestAbsolutePath, true);
       if (manifestText === null) continue;
@@ -909,7 +946,7 @@ export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchite
         manifestDependencies: manifestDependencies(manifestFile, manifest),
         sourceOccurrences: sourceFiles(
           workspaceRootPath,
-          join(rootPath, child.name),
+          childPath,
         )
           .flatMap((sourcePath) =>
             sourceOccurrences(workspaceRootPath, sourcePath),
