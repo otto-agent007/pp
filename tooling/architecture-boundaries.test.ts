@@ -26,6 +26,8 @@ import {
 const DIGEST = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 const CLI_TARGET_DIGEST =
   "52426cb7cd243cab4b07bd18b355378a754d0ea5c32706cca953dd2f85759a11";
+const CLI_TYPE_DIGEST =
+  "0ef3d97416c57c9c96fb7999cd1c11df68fdb9756d891dae2f37048efdffd818";
 
 function validPolicy(): ArchitecturePolicy {
   return {
@@ -1734,6 +1736,57 @@ describe("architecture CLI", () => {
       stdout: [],
       stderr: [
         "architecture boundary error: docs/rebuild/graph.json: exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target has unknown removal node CR02",
+      ],
+    });
+  });
+
+  it("sorts mixed graph and policy fact errors after path qualification", () => {
+    const workspace = createCliWorkspace();
+    writeManifest(workspace, "packages/types", { name: "@pest-patrol/types" });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'import type { Target } from "@pest-patrol/target";\nimport type { Type } from "@pest-patrol/types";\nexport type Importer = Target | Type;\n',
+    );
+    const policy = cliPolicy();
+    policy.packages[0].allowedDependencies.push({
+      name: "@pest-patrol/types",
+      manifestSections: ["dependencies"],
+    });
+    policy.packages.push({
+      name: "@pest-patrol/types",
+      path: "packages/types",
+      state: "required",
+      allowedDependencies: [],
+    });
+    policy.exceptions = [
+      { ...cliException(), id: "a-stale" },
+      {
+        ...cliException(),
+        id: "z-unknown",
+        dependency: "@pest-patrol/types",
+        sourceOccurrences: [{
+          path: "packages/importer/index.ts",
+          specifier: "@pest-patrol/types",
+          syntax: "import",
+          occurrenceClass: "production-type",
+          count: 1,
+          bindingDigest: CLI_TYPE_DIGEST,
+        }],
+        removeIn: "CR03",
+      },
+    ];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", {
+      nodes: [{ id: "CR02", status: "planned", ownership: [] }],
+    });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: docs/rebuild/graph.json: exception z-unknown for @pest-patrol/importer -> @pest-patrol/types has unknown removal node CR03",
+        "architecture boundary error: tooling/architecture-boundaries.json: exception a-stale is stale or drifted for @pest-patrol/importer -> @pest-patrol/target",
       ],
     });
   });

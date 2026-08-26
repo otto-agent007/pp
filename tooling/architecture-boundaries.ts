@@ -1286,7 +1286,9 @@ export function runArchitectureBoundariesCli(
   );
   if (errors.length > 0) {
     return fail(
-      errors.map((error) => `${architectureFactErrorPath(error)}: ${error}`),
+      errors
+        .map((error) => `${architectureFactErrorPath(error)}: ${error}`)
+        .sort(compareStrings),
     );
   }
 
