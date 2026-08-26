@@ -22,12 +22,21 @@
   merge remain separate controller gates under the rebuild runbook.
 - The versioned boundary policy, TypeScript checker/tests, root scripts, graph,
   plan, and canonical architecture documentation are implemented on this
-  branch. The focused policy suite passed 74/74 tests; the root test command
-  passed 170/170 tests plus 7 Turbo tasks; and `pnpm architecture:check`
-  validates 9 present workspace packages with 2 matched exceptions.
-- Full typecheck, lint, build, security, and provenance verification have not
-  run. The branch has not been pushed or source-tagged, no CR01 PR exists, and
-  no approval or completion is claimed.
+  branch. At repair commit
+  `e0f6dcc444e73c0b5dcc02838402f6cfb40e7afb`, the focused architecture
+  suite passed 98/98 tests, the focused graph/provenance suite passed 80/80,
+  the root test command passed 194/194 tests plus 7 Turbo tasks, and
+  `pnpm architecture:check` validated 9 present workspace packages with 2
+  matched exceptions.
+- The node-declared graph check, offline and live reconciliation, root
+  typecheck, lint, build, security baseline, and whitespace checks also passed
+  at that repair commit. A direct strict TypeScript compile covered the new
+  root-level architecture checker because Turbo typecheck covers workspace
+  packages only. The controller runs the clean final-tree `pnpm rebuild:verify`
+  after this tracker-only commit so provenance evidence is not made stale by
+  recording itself.
+- The branch has not been pushed or source-tagged, no CR01 PR exists, and no
+  publication approval or completion is claimed.
 - Scope remains the canonical architecture docs, the versioned boundary policy,
   its checker/tests, root scripts, graph, plan, and this tracker. Exact path
   ownership is recorded in the graph.
