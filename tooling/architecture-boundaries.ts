@@ -78,6 +78,20 @@ export type WorkspaceArchitectureFacts = {
   packages: PackageArchitectureFact[];
 };
 
+export type RebuildGraphFacts = {
+  nodes: Array<{ id: string; status: string; ownership: string[] }>;
+};
+
+type ObservedViolation = Omit<
+  ArchitectureException,
+  "id" | "removeIn" | "reason"
+>;
+
+type RenderableViolation = {
+  manifestPath: string;
+  violation: ObservedViolation;
+};
+
 const MANIFEST_SECTIONS = new Set<ManifestSection>([
   "dependencies",
   "devDependencies",
@@ -859,4 +873,169 @@ export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchite
       return nameOrder !== 0 ? nameOrder : compareStrings(left.path, right.path);
     }),
   };
+}
+
+export function validateArchitectureFacts(
+  policy: ArchitecturePolicy,
+  facts: WorkspaceArchitectureFacts,
+  _rebuildGraph: RebuildGraphFacts,
+): string[] {
+  const errors: string[] = [];
+  const policyByName = new Map(policy.packages.map((pkg) => [pkg.name, pkg]));
+  const policyByPath = new Map(policy.packages.map((pkg) => [pkg.path, pkg]));
+  const observedPolicyPackages = new Set<string>();
+  const exactPackageFacts = new Map<string, PackageArchitectureFact>();
+
+  for (const fact of facts.packages) {
+    const policyForName = policyByName.get(fact.name);
+    const policyForPath = policyByPath.get(fact.path);
+    if (policyForName !== undefined) {
+      observedPolicyPackages.add(policyForName.name);
+      if (fact.path !== policyForName.path) {
+        errors.push(
+          `package ${fact.name} found at ${fact.path}; expected ${policyForName.path}`,
+        );
+      } else {
+        exactPackageFacts.set(policyForName.name, fact);
+      }
+    } else if (policyForPath !== undefined) {
+      observedPolicyPackages.add(policyForPath.name);
+      errors.push(
+        `package at ${fact.path} has name ${fact.name}; expected ${policyForPath.name}`,
+      );
+    } else {
+      errors.push(
+        `discovered package ${fact.name} at ${fact.path} is missing from policy`,
+      );
+    }
+  }
+
+  for (const pkg of policy.packages) {
+    if (pkg.state === "required" && !observedPolicyPackages.has(pkg.name)) {
+      errors.push(`required package ${pkg.name} is missing at ${pkg.path}`);
+    }
+  }
+
+  const workspacePackageNames = new Set([
+    ...policy.packages.map((pkg) => pkg.name),
+    ...facts.packages.map((pkg) => pkg.name),
+  ]);
+  const renderableViolations: RenderableViolation[] = [];
+  for (const importerPolicy of policy.packages) {
+    const importerFact = exactPackageFacts.get(importerPolicy.name);
+    if (importerFact === undefined) continue;
+
+    const manifestsByDependency = new Map<string, ManifestDependencyFact[]>();
+    for (const manifest of importerFact.manifestDependencies) {
+      if (!workspacePackageNames.has(manifest.dependency)) continue;
+      const manifests = manifestsByDependency.get(manifest.dependency) ?? [];
+      manifests.push(manifest);
+      manifestsByDependency.set(manifest.dependency, manifests);
+    }
+    const occurrencesByDependency = new Map<string, SourceOccurrence[]>();
+    for (const occurrence of importerFact.sourceOccurrences) {
+      if (!workspacePackageNames.has(occurrence.specifier)) continue;
+      const occurrences = occurrencesByDependency.get(occurrence.specifier) ?? [];
+      occurrences.push(occurrence);
+      occurrencesByDependency.set(occurrence.specifier, occurrences);
+    }
+
+    const dependencies = new Set([
+      ...manifestsByDependency.keys(),
+      ...occurrencesByDependency.keys(),
+    ]);
+    for (const dependency of dependencies) {
+      const manifests = [...(manifestsByDependency.get(dependency) ?? [])]
+        .sort((left, right) => {
+          const sectionOrder = compareStrings(left.section, right.section);
+          return sectionOrder !== 0
+            ? sectionOrder
+            : compareStrings(left.versionSpecifier, right.versionSpecifier);
+        });
+      const sourceOccurrences = [
+        ...(occurrencesByDependency.get(dependency) ?? []),
+      ].sort((left, right) =>
+        compareStrings(occurrenceKey(left), occurrenceKey(right))
+      );
+      const allowedDependency = importerPolicy.allowedDependencies.find(
+        (candidate) => candidate.name === dependency,
+      );
+
+      if (allowedDependency === undefined) {
+        const manifestEvidence = manifests.length === 0
+          ? [{ section: null, versionSpecifier: null }]
+          : manifests.map(({ section, versionSpecifier }) => ({
+              section,
+              versionSpecifier,
+            }));
+        for (const manifest of manifestEvidence) {
+          renderableViolations.push({
+            manifestPath: importerFact.manifestPath,
+            violation: {
+              kind: "forbidden-workspace-edge",
+              importer: importerPolicy.name,
+              dependency,
+              sourceOccurrences,
+              manifest,
+            },
+          });
+        }
+        continue;
+      }
+
+      const allowedSections = new Set(allowedDependency.manifestSections);
+      for (const manifest of manifests) {
+        if (!allowedSections.has(manifest.section)) {
+          renderableViolations.push({
+            manifestPath: importerFact.manifestPath,
+            violation: {
+              kind: "forbidden-workspace-edge",
+              importer: importerPolicy.name,
+              dependency,
+              sourceOccurrences,
+              manifest: {
+                section: manifest.section,
+                versionSpecifier: manifest.versionSpecifier,
+              },
+            },
+          });
+        }
+      }
+
+      const suitableForEveryOccurrence = sourceOccurrences.every(
+        (occurrence) => manifests.some((manifest) => {
+          if (!allowedSections.has(manifest.section)) return false;
+          return occurrence.occurrenceClass === "test-type" ||
+            occurrence.occurrenceClass === "test-value" ||
+            manifest.section !== "devDependencies";
+        }),
+      );
+      if (!suitableForEveryOccurrence) {
+        renderableViolations.push({
+          manifestPath: importerFact.manifestPath,
+          violation: {
+            kind: "missing-manifest-dependency",
+            importer: importerPolicy.name,
+            dependency,
+            sourceOccurrences,
+            manifest: { section: null, versionSpecifier: null },
+          },
+        });
+      }
+    }
+  }
+
+  for (const { manifestPath, violation } of renderableViolations) {
+    const manifest = violation.manifest.section === null
+      ? `${manifestPath}[none]`
+      : `${manifestPath}[${violation.manifest.section}]=${violation.manifest.versionSpecifier}`;
+    const sourcePaths = [
+      ...new Set(violation.sourceOccurrences.map((occurrence) => occurrence.path)),
+    ].sort(compareStrings);
+    errors.push(
+      `${violation.kind}: ${violation.importer} -> ${violation.dependency}; manifest=${manifest}; sources=${sourcePaths.length === 0 ? "none" : sourcePaths.join(",")}`,
+    );
+  }
+
+  return errors.sort(compareStrings);
 }

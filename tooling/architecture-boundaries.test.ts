@@ -5,7 +5,13 @@ import { join, relative, sep } from "node:path";
 
 import {
   type ArchitecturePolicy,
+  type ManifestSection,
+  type OccurrenceClass,
+  type PackageArchitectureFact,
+  type RebuildGraphFacts,
+  type WorkspaceArchitectureFacts,
   collectWorkspaceArchitectureFacts,
+  validateArchitectureFacts,
   validateArchitecturePolicy,
 } from "./architecture-boundaries";
 
@@ -90,6 +96,94 @@ function exceptionWith(overrides: Record<string, unknown> = {}) {
     reason: "The package manifest will be updated in CR02.",
     ...overrides,
   };
+}
+
+const EMPTY_REBUILD_GRAPH: RebuildGraphFacts = { nodes: [] };
+
+function packageFact(
+  name: string,
+  path: string,
+  overrides: Partial<PackageArchitectureFact> = {},
+): PackageArchitectureFact {
+  return {
+    name,
+    path,
+    manifestPath: `${path}/package.json`,
+    manifestDependencies: [],
+    sourceOccurrences: [],
+    ...overrides,
+  };
+}
+
+function edgePolicy(
+  manifestSections: ManifestSection[],
+  importerState: "required" | "planned" = "required",
+): ArchitecturePolicy {
+  return {
+    schemaVersion: 1,
+    packages: [
+      {
+        name: "@pest-patrol/importer",
+        path: "packages/importer",
+        state: importerState,
+        allowedDependencies: manifestSections.length === 0
+          ? []
+          : [{
+              name: "@pest-patrol/target",
+              manifestSections,
+            }],
+      },
+      {
+        name: "@pest-patrol/target",
+        path: "packages/target",
+        state: "required",
+        allowedDependencies: [],
+      },
+    ],
+    exceptions: [],
+  };
+}
+
+function occurrence(
+  occurrenceClass: OccurrenceClass,
+  path = `packages/importer/src/${occurrenceClass}.ts`,
+) {
+  return {
+    path,
+    specifier: "@pest-patrol/target",
+    syntax: "import" as const,
+    occurrenceClass,
+    count: 1,
+    bindingDigest: DIGEST,
+  };
+}
+
+function edgeFacts(
+  manifestSections: ManifestSection[],
+  occurrenceClasses: OccurrenceClass[] = [],
+): WorkspaceArchitectureFacts {
+  return {
+    packages: [
+      packageFact("@pest-patrol/importer", "packages/importer", {
+        manifestDependencies: manifestSections.map((section) => ({
+          dependency: "@pest-patrol/target",
+          section,
+          versionSpecifier: "workspace:*",
+        })),
+        sourceOccurrences: occurrenceClasses.map((occurrenceClass) =>
+          occurrence(occurrenceClass)
+        ),
+      }),
+      packageFact("@pest-patrol/target", "packages/target"),
+    ],
+  };
+}
+
+function factErrors(
+  policy: ArchitecturePolicy,
+  facts: WorkspaceArchitectureFacts,
+) {
+  return validateArchitectureFacts(policy, facts, EMPTY_REBUILD_GRAPH);
 }
 
 describe("architecture policy", () => {
@@ -405,6 +499,193 @@ describe("architecture policy", () => {
     ]);
   });
 });
+
+describe("architecture facts", () => {
+  it("accepts an absent planned package but rejects an absent required package", () => {
+    const policy = validPolicy();
+    const facts = {
+      packages: [packageFact("@pest-patrol/types", "packages/types")],
+    };
+
+    expect(factErrors(policy, facts)).toEqual([]);
+
+    policy.packages[0].state = "required";
+    expect(factErrors(policy, facts)).toEqual([
+      "required package @pest-patrol/application is missing at packages/application",
+    ]);
+  });
+
+  it("rejects unlisted packages and required packages with the wrong name or path in sorted order", () => {
+    const policy: ArchitecturePolicy = {
+      schemaVersion: 1,
+      packages: [
+        {
+          name: "@pest-patrol/by-name",
+          path: "packages/by-name",
+          state: "required",
+          allowedDependencies: [],
+        },
+        {
+          name: "@pest-patrol/by-path",
+          path: "packages/by-path",
+          state: "required",
+          allowedDependencies: [],
+        },
+        {
+          name: "@pest-patrol/missing",
+          path: "packages/missing",
+          state: "required",
+          allowedDependencies: [],
+        },
+      ],
+      exceptions: [],
+    };
+    const facts = {
+      packages: [
+        packageFact("@pest-patrol/z-unlisted", "packages/z-unlisted"),
+        packageFact("@pest-patrol/by-name", "packages/wrong-path"),
+        packageFact("@pest-patrol/wrong-name", "packages/by-path"),
+        packageFact("@pest-patrol/a-unlisted", "apps/a-unlisted"),
+      ],
+    };
+
+    expect(factErrors(policy, facts)).toEqual([
+      "discovered package @pest-patrol/a-unlisted at apps/a-unlisted is missing from policy",
+      "discovered package @pest-patrol/z-unlisted at packages/z-unlisted is missing from policy",
+      "package @pest-patrol/by-name found at packages/wrong-path; expected packages/by-name",
+      "package at packages/by-path has name @pest-patrol/wrong-name; expected @pest-patrol/by-path",
+      "required package @pest-patrol/missing is missing at packages/missing",
+    ]);
+  });
+
+  it("validates a present planned package against its declared permissions", () => {
+    const policy = edgePolicy([], "planned");
+    const facts = edgeFacts([], ["production-value"]);
+
+    expect(factErrors(policy, facts)).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts",
+    ]);
+  });
+});
+
+describe("manifest sections", () => {
+  it("accepts a manifest-only edge only in a section permitted for that exact edge", () => {
+    expect(factErrors(
+      edgePolicy(["dependencies"]),
+      edgeFacts(["dependencies"]),
+    )).toEqual([]);
+
+    expect(factErrors(
+      edgePolicy(["dependencies"]),
+      edgeFacts(["devDependencies"]),
+    )).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[devDependencies]=workspace:*; sources=none",
+    ]);
+  });
+
+  it("requires production value and type occurrences to have a permitted runtime declaration", () => {
+    const policy = edgePolicy(["dependencies", "devDependencies"]);
+    const classes: OccurrenceClass[] = [
+      "production-type",
+      "production-value",
+    ];
+
+    expect(factErrors(policy, edgeFacts(["devDependencies"], classes))).toEqual([
+      "missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-type.ts,packages/importer/src/production-value.ts",
+    ]);
+    expect(factErrors(policy, edgeFacts(["dependencies"], classes))).toEqual([]);
+  });
+
+  it("allows test value and type occurrences to use devDependencies only when explicitly permitted", () => {
+    const classes: OccurrenceClass[] = ["test-type", "test-value"];
+
+    expect(factErrors(
+      edgePolicy(["devDependencies"]),
+      edgeFacts(["devDependencies"], classes),
+    )).toEqual([]);
+
+    expect(factErrors(
+      edgePolicy(["dependencies"]),
+      edgeFacts(["devDependencies"], classes),
+    )).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[devDependencies]=workspace:*; sources=packages/importer/src/test-type.ts,packages/importer/src/test-value.ts",
+      "missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/test-type.ts,packages/importer/src/test-value.ts",
+    ]);
+  });
+
+  it("accepts peer and optional declarations only when the exact edge names them", () => {
+    for (const section of [
+      "optionalDependencies",
+      "peerDependencies",
+    ] as const) {
+      expect(factErrors(
+        edgePolicy([section]),
+        edgeFacts([section], ["production-value"]),
+      )).toEqual([]);
+
+      expect(factErrors(
+        edgePolicy(["dependencies"]),
+        edgeFacts([section], ["production-value"]),
+      )).toEqual([
+        `forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[${section}]=workspace:*; sources=packages/importer/src/production-value.ts`,
+        "missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts",
+      ]);
+    }
+  });
+
+  it("requires every applicable occurrence class when production and test uses coexist", () => {
+    const classes: OccurrenceClass[] = ["production-value", "test-value"];
+    const policy = edgePolicy(["dependencies", "devDependencies"]);
+
+    expect(factErrors(policy, edgeFacts(["devDependencies"], classes))).toEqual([
+      "missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts,packages/importer/src/test-value.ts",
+    ]);
+    expect(factErrors(
+      policy,
+      edgeFacts(["dependencies", "devDependencies"], classes),
+    )).toEqual([]);
+  });
+
+  it("reports an allowed source edge without a suitable declaration as missing", () => {
+    expect(factErrors(
+      edgePolicy(["dependencies"]),
+      edgeFacts([], ["production-type"]),
+    )).toEqual([
+      "missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-type.ts",
+    ]);
+  });
+
+  it("reports manifest and source edges absent from the importer allowlist as forbidden", () => {
+    expect(factErrors(
+      edgePolicy([]),
+      edgeFacts(["peerDependencies", "dependencies"]),
+    )).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[peerDependencies]=workspace:*; sources=none",
+    ]);
+    expect(factErrors(
+      edgePolicy([]),
+      edgeFacts([], ["production-value"]),
+    )).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts",
+    ]);
+  });
+
+  it("validates every declaration when an internal dependency appears in two sections", () => {
+    expect(factErrors(
+      edgePolicy(["dependencies", "peerDependencies"]),
+      edgeFacts(["dependencies", "peerDependencies"]),
+    )).toEqual([]);
+
+    expect(factErrors(
+      edgePolicy(["dependencies"]),
+      edgeFacts(["dependencies", "peerDependencies"]),
+    )).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[peerDependencies]=workspace:*; sources=none",
+    ]);
+  });
+});
+
 describe("manifest facts", () => {
   it("discovers sorted manifest-bearing children, including planned and unlisted packages", () => {
     const workspace = createWorkspace();
