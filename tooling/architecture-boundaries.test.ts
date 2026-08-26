@@ -1493,6 +1493,36 @@ describe("manifest facts", () => {
       "packages/example/generated: symbolic links are not supported",
     );
   });
+
+  it("rejects a configured workspace root that is a symbolic link", () => {
+    const workspace = createWorkspace(
+      'packages:\n  - "linked-packages/*"\n',
+    );
+    const targetPath = join(workspace, "fixtures", "root-target");
+    writeManifest(workspace, "fixtures/root-target/example", {
+      name: "@pest-patrol/example",
+    });
+    symlinkSync(targetPath, join(workspace, "linked-packages"), "dir");
+
+    expect(() => collectWorkspaceArchitectureFacts(workspace)).toThrow(
+      "linked-packages: symbolic links are not supported",
+    );
+  });
+
+  it("rejects a symbolic link in an intermediate configured workspace root component", () => {
+    const workspace = createWorkspace(
+      'packages:\n  - "fixtures/workspaces/*"\n',
+    );
+    const targetPath = join(workspace, "targets", "intermediate");
+    writeManifest(workspace, "targets/intermediate/workspaces/example", {
+      name: "@pest-patrol/example",
+    });
+    symlinkSync(targetPath, join(workspace, "fixtures"), "dir");
+
+    expect(() => collectWorkspaceArchitectureFacts(workspace)).toThrow(
+      "fixtures: symbolic links are not supported",
+    );
+  });
 });
 
 describe("TypeScript source facts", () => {
@@ -1682,6 +1712,65 @@ describe("TypeScript source facts", () => {
       collectWorkspaceArchitectureFacts(workspace).packages[0]
         .sourceOccurrences,
     ).toEqual([]);
+  });
+
+  it("collects empty value and type named clauses as import and re-export edges", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    writeSource(
+      workspace,
+      "packages/example/src/empty-clauses.ts",
+      `
+      import {} from "@pest-patrol/target/import-value";
+      import type {} from "@pest-patrol/target/import-type";
+      export {} from "@pest-patrol/target/export-value";
+      export type {} from "@pest-patrol/target/export-type";
+    `,
+    );
+
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([
+      {
+        path: "packages/example/src/empty-clauses.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "export",
+        occurrenceClass: "production-type",
+        count: 1,
+        bindingDigest:
+          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+      },
+      {
+        path: "packages/example/src/empty-clauses.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "export",
+        occurrenceClass: "production-value",
+        count: 1,
+        bindingDigest:
+          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+      },
+      {
+        path: "packages/example/src/empty-clauses.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "import",
+        occurrenceClass: "production-type",
+        count: 1,
+        bindingDigest:
+          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+      },
+      {
+        path: "packages/example/src/empty-clauses.ts",
+        specifier: "@pest-patrol/target",
+        syntax: "import",
+        occurrenceClass: "production-value",
+        count: 1,
+        bindingDigest:
+          "6c7accfe4beda7ac50b2228fb8e847f3900c2ed65b1b8b729a5d5f88c753d066",
+      },
+    ]);
   });
 
   it("collects runtime literals through transparent wrappers and additional arguments", () => {
@@ -2156,6 +2245,56 @@ describe("architecture CLI", () => {
       workspace,
       "packages/importer/index.ts",
       'void import("@pest-patrol/target/options", { with: { type: "json" } });\n',
+    );
+    writeManifest(workspace, "packages/target", {
+      name: "@pest-patrol/target",
+    });
+    writeJson(workspace, "tooling/architecture-boundaries.json", cliPolicy());
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("empty named clause CLI rejects an unknown target through an import", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'import {} from "@pest-patrol/unknown/empty";\n',
+    );
+    const policy = cliPolicy();
+    policy.packages = [policy.packages[0]];
+    policy.packages[0].allowedDependencies = [];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/unknown; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("empty named clause CLI rejects an allowed undeclared target through a type re-export", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'export type {} from "@pest-patrol/target/empty";\n',
     );
     writeManifest(workspace, "packages/target", {
       name: "@pest-patrol/target",

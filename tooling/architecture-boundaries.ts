@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { type Dirent, readFileSync, readdirSync } from "node:fs";
+import { type Dirent, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join, posix, relative, resolve, sep, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -627,6 +627,25 @@ function workspaceRoot(workspacePath: string, pattern: string) {
   return root;
 }
 
+function assertWorkspaceRootHasNoSymbolicLinks(cwd: string, root: string) {
+  const rootPath = join(cwd, root);
+  let componentPath = cwd;
+  for (const component of root.split("/")) {
+    componentPath = join(componentPath, component);
+    let isSymbolicLink: boolean;
+    try {
+      isSymbolicLink = lstatSync(componentPath).isSymbolicLink();
+    } catch {
+      throw new Error(`${repositoryPath(cwd, rootPath)}: read failed`);
+    }
+    if (isSymbolicLink) {
+      throw new Error(
+        `${repositoryPath(cwd, componentPath)}: symbolic links are not supported`,
+      );
+    }
+  }
+}
+
 function manifestDependencies(manifestPath: string, manifest: Record<string, unknown>) {
   const dependencies: ManifestDependencyFact[] = [];
   for (const section of MANIFEST_SECTIONS) {
@@ -711,6 +730,8 @@ type SourceUse = {
   bindings: string[];
 };
 
+const EMPTY_NAMED_BINDING = "empty";
+
 function unwrapTransparentExpression(expression: ts.Expression): ts.Expression {
   if (
     ts.isParenthesizedExpression(expression) ||
@@ -774,6 +795,8 @@ function sourceOccurrences(
         if (clause.namedBindings !== undefined) {
           if (ts.isNamespaceImport(clause.namedBindings)) {
             bindingsFor(clause.isTypeOnly).push("*");
+          } else if (clause.namedBindings.elements.length === 0) {
+            bindingsFor(clause.isTypeOnly).push(EMPTY_NAMED_BINDING);
           } else {
             for (const specifier of clause.namedBindings.elements) {
               bindingsFor(clause.isTypeOnly || specifier.isTypeOnly).push(
@@ -799,6 +822,8 @@ function sourceOccurrences(
         ts.isNamespaceExport(node.exportClause)
       ) {
         bindingsFor(node.isTypeOnly).push("*");
+      } else if (node.exportClause.elements.length === 0) {
+        bindingsFor(node.isTypeOnly).push(EMPTY_NAMED_BINDING);
       } else {
         for (const specifier of node.exportClause.elements) {
           bindingsFor(node.isTypeOnly || specifier.isTypeOnly).push(
@@ -908,6 +933,7 @@ export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchite
   for (const pattern of patterns) {
     const root = workspaceRoot(workspaceFile, pattern);
     const rootPath = join(workspaceRootPath, root);
+    assertWorkspaceRootHasNoSymbolicLinks(workspaceRootPath, root);
     let children: Dirent[];
     try {
       children = readdirSync(rootPath, { withFileTypes: true });
