@@ -163,7 +163,11 @@ function isRepositoryRelativePath(value: string) {
 }
 
 function isPackageName(value: string) {
-  return /^@pest-patrol\/.+$/.test(value);
+  return /^@pest-patrol\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+function isExceptionId(value: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 }
 
 function isManifestSection(value: unknown): value is ManifestSection {
@@ -379,8 +383,17 @@ function validateArchitectureException(
     return null;
   }
   const label = exceptionLabel(value, index);
-  const id = typeof value.id === "string" && value.id.length > 0 ? value.id : null;
-  if (id === null) errors.push(`${label} ID must be a non-empty string`);
+  const idCandidate = typeof value.id === "string" && value.id.length > 0
+    ? value.id
+    : null;
+  const id = idCandidate !== null && isExceptionId(idCandidate)
+    ? idCandidate
+    : null;
+  if (idCandidate === null) {
+    errors.push(`${label} ID must be a non-empty string`);
+  } else if (id === null) {
+    errors.push(`${label} ID must be kebab-case`);
+  }
   const kind =
     typeof value.kind === "string" && EXCEPTION_KINDS.has(value.kind as ArchitectureException["kind"])
       ? (value.kind as ArchitectureException["kind"])
@@ -957,10 +970,6 @@ export function validateArchitectureFacts(
     }
   }
 
-  const workspacePackageNames = new Set([
-    ...policy.packages.map((pkg) => pkg.name),
-    ...facts.packages.map((pkg) => pkg.name),
-  ]);
   const renderableViolations: RenderableViolation[] = [];
   for (const importerPolicy of policy.packages) {
     const importerFact = exactPackageFacts.get(importerPolicy.name);
@@ -968,14 +977,12 @@ export function validateArchitectureFacts(
 
     const manifestsByDependency = new Map<string, ManifestDependencyFact[]>();
     for (const manifest of importerFact.manifestDependencies) {
-      if (!workspacePackageNames.has(manifest.dependency)) continue;
       const manifests = manifestsByDependency.get(manifest.dependency) ?? [];
       manifests.push(manifest);
       manifestsByDependency.set(manifest.dependency, manifests);
     }
     const occurrencesByDependency = new Map<string, SourceOccurrence[]>();
     for (const occurrence of importerFact.sourceOccurrences) {
-      if (!workspacePackageNames.has(occurrence.specifier)) continue;
       const occurrences = occurrencesByDependency.get(occurrence.specifier) ?? [];
       occurrences.push(occurrence);
       occurrencesByDependency.set(occurrence.specifier, occurrences);

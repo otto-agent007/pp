@@ -410,6 +410,40 @@ describe("architecture policy", () => {
     ]);
   });
 
+  it.each([
+    "@pest-patrol/domain/nested",
+    "@pest-patrol/domain ",
+    "@pest-patrol/Domain",
+    "@pest-patrol/domain--rules",
+    "@pest-patrol/domain_rules",
+  ])("rejects malformed package name %s", (name) => {
+    const policy = validPolicy();
+    policy.packages[0] = { ...policy.packages[0], name };
+
+    expect(errorsFor(policy)).toContain(
+      `package ${name} name must be an @pest-patrol/* package name`,
+    );
+  });
+
+  it.each([
+    "Domain Debt",
+    "domain_debt",
+    "domain--debt",
+    "-domain-debt",
+    "domain-debt-",
+    "domain/debt",
+  ])("rejects malformed exception ID %s", (id) => {
+    const policy = validPolicy();
+    policy.packages[0].allowedDependencies = [
+      { name: "@pest-patrol/types", manifestSections: ["dependencies"] },
+    ];
+    policy.exceptions = [exceptionWith({ id })];
+
+    expect(errorsFor(policy)).toContain(
+      `exception ${id} ID must be kebab-case`,
+    );
+  });
+
   it("rejects non-normalized repository-relative package and source paths", () => {
     for (const path of [
       "/packages/application",
@@ -641,9 +675,17 @@ describe("architecture policy", () => {
     ];
 
     expect(errorsFor(policy)).toEqual([
+      "exception A! ID must be kebab-case",
+      "exception A! dependency @pest-patrol/A must name a policy package",
+      "exception A! importer @pest-patrol/a! must name a policy package",
+      "exception z! ID must be kebab-case",
+      "exception z! dependency @pest-patrol/A must name a policy package",
+      "exception z! importer @pest-patrol/a! must name a policy package",
       "exception z! sourceOccurrences must be sorted",
       "exceptions must be sorted by ID",
+      "package @pest-patrol/A name must be an @pest-patrol/* package name",
       "package @pest-patrol/a! allowed dependencies must be sorted",
+      "package @pest-patrol/a! name must be an @pest-patrol/* package name",
       "packages must be sorted by name",
     ]);
   });
@@ -713,6 +755,46 @@ describe("architecture facts", () => {
 
     expect(factErrors(policy, facts)).toEqual([
       "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts",
+    ]);
+  });
+});
+
+describe("unknown Pest Patrol targets", () => {
+  it("governs a manifest-only target absent from policy and workspace discovery", () => {
+    const policy = edgePolicy([]);
+    policy.packages = [policy.packages[0]];
+    const facts = {
+      packages: [packageFact("@pest-patrol/importer", "packages/importer", {
+        manifestDependencies: [{
+          dependency: "@pest-patrol/new-debt",
+          section: "dependencies",
+          versionSpecifier: "workspace:*",
+        }],
+      })],
+    };
+
+    expect(factErrors(policy, facts)).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/new-debt; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
+    ]);
+  });
+
+  it("governs a source-only target absent from policy and workspace discovery", () => {
+    const policy = edgePolicy([]);
+    policy.packages = [policy.packages[0]];
+    const facts = {
+      packages: [packageFact("@pest-patrol/importer", "packages/importer", {
+        sourceOccurrences: [{
+          ...occurrence(
+            "production-value",
+            "packages/importer/src/unknown-target.ts",
+          ),
+          specifier: "@pest-patrol/new-debt",
+        }],
+      })],
+    };
+
+    expect(factErrors(policy, facts)).toEqual([
+      "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/new-debt; manifest=packages/importer/package.json[none]; sources=packages/importer/src/unknown-target.ts",
     ]);
   });
 });
@@ -1297,6 +1379,67 @@ describe("TypeScript source facts", () => {
         .sourceOccurrences;
 
     expect(occurrences).toHaveLength(36);
+    expect(Object.fromEntries(
+      [
+        "packages/example/src/__tests__/thing.ts",
+        "packages/example/src/thing.spec.tsx",
+        "packages/example/src/thing.test.ts",
+        "packages/example/src/thing.ts",
+      ].map((path) => [
+        path,
+        occurrences
+          .filter((occurrence) => occurrence.path === path)
+          .map((occurrence) => [
+            occurrence.syntax,
+            occurrence.occurrenceClass,
+          ]),
+      ]),
+    )).toEqual({
+      "packages/example/src/__tests__/thing.ts": [
+        ["dynamic-import", "test-value"],
+        ["import", "test-value"],
+        ["require", "test-value"],
+        ["export", "test-type"],
+        ["export", "test-value"],
+        ["import", "test-type"],
+        ["import", "test-value"],
+        ["export", "test-type"],
+        ["import", "test-type"],
+      ],
+      "packages/example/src/thing.spec.tsx": [
+        ["dynamic-import", "test-value"],
+        ["import", "test-value"],
+        ["require", "test-value"],
+        ["export", "test-type"],
+        ["export", "test-value"],
+        ["import", "test-type"],
+        ["import", "test-value"],
+        ["export", "test-type"],
+        ["import", "test-type"],
+      ],
+      "packages/example/src/thing.test.ts": [
+        ["dynamic-import", "test-value"],
+        ["import", "test-value"],
+        ["require", "test-value"],
+        ["export", "test-type"],
+        ["export", "test-value"],
+        ["import", "test-type"],
+        ["import", "test-value"],
+        ["export", "test-type"],
+        ["import", "test-type"],
+      ],
+      "packages/example/src/thing.ts": [
+        ["dynamic-import", "production-value"],
+        ["import", "production-value"],
+        ["require", "production-value"],
+        ["export", "production-type"],
+        ["export", "production-value"],
+        ["import", "production-type"],
+        ["import", "production-value"],
+        ["export", "production-type"],
+        ["import", "production-type"],
+      ],
+    });
     expect([
       ...new Set(occurrences.map((occurrence) => occurrence.path)),
     ]).toEqual([
@@ -1700,6 +1843,27 @@ describe("architecture CLI", () => {
       stdout: [],
       stderr: [
         "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("returns nonzero for an unknown Pest Patrol target", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+      dependencies: { "@pest-patrol/new-debt": "workspace:*" },
+    });
+    const policy = cliPolicy();
+    policy.packages = [policy.packages[0]];
+    policy.packages[0].allowedDependencies = [];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/new-debt; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
       ],
     });
   });
