@@ -1,4 +1,5 @@
-import { posix, win32 } from "node:path";
+import { type Dirent, readFileSync, readdirSync } from "node:fs";
+import { join, posix, relative, resolve, sep, win32 } from "node:path";
 
 export type ManifestSection =
   | "dependencies"
@@ -494,4 +495,135 @@ export function validateArchitecturePolicy(value: unknown): {
   return sortedErrors.length === 0 && packages.length === parsedPackages.length && exceptions.length === parsedExceptions.length
     ? { policy: { schemaVersion: 1, packages, exceptions }, errors: [] }
     : { policy: null, errors: sortedErrors };
+}
+
+function repositoryPath(cwd: string, path: string) {
+  return relative(cwd, path).split(sep).join("/");
+}
+
+function readText(cwd: string, path: string): string;
+function readText(cwd: string, path: string, missingIsAbsent: true): string | null;
+function readText(cwd: string, path: string, missingIsAbsent = false) {
+  try {
+    return readFileSync(path, "utf8");
+  } catch (error) {
+    if (
+      missingIsAbsent &&
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return null;
+    }
+    throw new Error(`${repositoryPath(cwd, path)}: read failed`);
+  }
+}
+
+function parseWorkspacePatterns(workspacePath: string, contents: string) {
+  const lines = contents.split(/\r?\n/);
+  const headerIndex = lines.findIndex((line) => /^packages:\s*$/.test(line));
+  if (headerIndex === -1) {
+    throw new Error(`${workspacePath}: packages must be a YAML string list`);
+  }
+
+  const patterns: string[] = [];
+  for (const line of lines.slice(headerIndex + 1)) {
+    if (line.trim().length === 0) continue;
+    if (/^\S/.test(line)) break;
+
+    const match = /^\s+-\s+(?:"([^"]*)"|'([^']*)')\s*$/.exec(line);
+    if (match === null) {
+      throw new Error(`${workspacePath}: packages must be a YAML string list`);
+    }
+    patterns.push(match[1] ?? match[2]);
+  }
+
+  if (patterns.length === 0) {
+    throw new Error(`${workspacePath}: packages must be a YAML string list`);
+  }
+  return patterns;
+}
+
+function workspaceRoot(workspacePath: string, pattern: string) {
+  const match = /^([^/\\*]+)/.exec(pattern);
+  if (match === null || pattern !== `${match[1]}/*` || !isRepositoryRelativePath(match[1])) {
+    throw new Error(`${workspacePath}: unsupported workspace pattern ${pattern}`);
+  }
+  return match[1];
+}
+
+function manifestDependencies(manifestPath: string, manifest: Record<string, unknown>) {
+  const dependencies: ManifestDependencyFact[] = [];
+  for (const section of MANIFEST_SECTIONS) {
+    const entries = manifest[section];
+    if (entries === undefined) continue;
+    if (!isRecord(entries)) {
+      throw new Error(`${manifestPath}: ${section} must be an object`);
+    }
+    for (const [dependency, versionSpecifier] of Object.entries(entries)) {
+      if (!dependency.startsWith("@pest-patrol/")) continue;
+      if (typeof versionSpecifier !== "string") {
+        throw new Error(`${manifestPath}: ${section} dependency ${dependency} must be a string`);
+      }
+      dependencies.push({ dependency, section, versionSpecifier });
+    }
+  }
+  return dependencies.sort((left, right) => {
+    const dependencyOrder = compareStrings(left.dependency, right.dependency);
+    if (dependencyOrder !== 0) return dependencyOrder;
+    const sectionOrder = compareStrings(left.section, right.section);
+    return sectionOrder !== 0 ? sectionOrder : compareStrings(left.versionSpecifier, right.versionSpecifier);
+  });
+}
+
+export function collectWorkspaceArchitectureFacts(cwd: string): WorkspaceArchitectureFacts {
+  const workspaceRootPath = resolve(cwd);
+  const workspaceFilePath = join(workspaceRootPath, "pnpm-workspace.yaml");
+  const workspaceFile = repositoryPath(workspaceRootPath, workspaceFilePath);
+  const contents = readText(workspaceRootPath, workspaceFilePath);
+  const patterns = parseWorkspacePatterns(workspaceFile, contents);
+  const packages: PackageArchitectureFact[] = [];
+
+  for (const pattern of patterns) {
+    const root = workspaceRoot(workspaceFile, pattern);
+    const rootPath = join(workspaceRootPath, root);
+    let children: Dirent[];
+    try {
+      children = readdirSync(rootPath, { withFileTypes: true });
+    } catch {
+      throw new Error(`${repositoryPath(workspaceRootPath, rootPath)}: read failed`);
+    }
+    for (const child of children.filter((entry) => entry.isDirectory()).sort((left, right) => compareStrings(left.name, right.name))) {
+      const packagePath = `${root}/${child.name}`;
+      const manifestAbsolutePath = join(rootPath, child.name, "package.json");
+      const manifestFile = repositoryPath(workspaceRootPath, manifestAbsolutePath);
+      const manifestText = readText(workspaceRootPath, manifestAbsolutePath, true);
+      if (manifestText === null) continue;
+
+      let manifest: unknown;
+      try {
+        manifest = JSON.parse(manifestText);
+      } catch {
+        throw new Error(`${manifestFile}: invalid JSON`);
+      }
+      if (!isRecord(manifest) || typeof manifest.name !== "string" || manifest.name.trim().length === 0) {
+        throw new Error(`${manifestFile}: name must be a non-empty string`);
+      }
+      packages.push({
+        name: manifest.name,
+        path: packagePath,
+        manifestPath: manifestFile,
+        manifestDependencies: manifestDependencies(manifestFile, manifest),
+        sourceOccurrences: [],
+      });
+    }
+  }
+
+  return {
+    packages: packages.sort((left, right) => {
+      const nameOrder = compareStrings(left.name, right.name);
+      return nameOrder !== 0 ? nameOrder : compareStrings(left.path, right.path);
+    }),
+  };
 }

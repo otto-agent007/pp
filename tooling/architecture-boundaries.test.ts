@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, relative, sep } from "node:path";
 
 import {
   type ArchitecturePolicy,
+  collectWorkspaceArchitectureFacts,
   validateArchitecturePolicy,
 } from "./architecture-boundaries";
 
@@ -30,6 +34,33 @@ function validPolicy(): ArchitecturePolicy {
 
 function errorsFor(value: unknown) {
   return validateArchitecturePolicy(value).errors;
+}
+
+const temporaryWorkspaces: string[] = [];
+
+afterEach(() => {
+  for (const workspace of temporaryWorkspaces.splice(0)) {
+    rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+function createWorkspace(workspaceFile = 'packages:\n  - "apps/*"\n  - "packages/*"\n') {
+  const workspace = mkdtempSync(join(tmpdir(), "architecture-boundaries-"));
+  temporaryWorkspaces.push(workspace);
+  writeFileSync(join(workspace, "pnpm-workspace.yaml"), workspaceFile);
+  mkdirSync(join(workspace, "apps"), { recursive: true });
+  mkdirSync(join(workspace, "packages"), { recursive: true });
+  return workspace;
+}
+
+function writeManifest(workspace: string, packagePath: string, manifest: unknown) {
+  const manifestPath = join(workspace, packagePath, "package.json");
+  mkdirSync(join(workspace, packagePath), { recursive: true });
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+}
+
+function repositoryPath(workspace: string, path: string) {
+  return relative(workspace, path).split(sep).join("/");
 }
 
 function exceptionWith(overrides: Record<string, unknown> = {}) {
@@ -366,5 +397,133 @@ describe("architecture policy", () => {
       "package @pest-patrol/a! allowed dependencies must be sorted",
       "packages must be sorted by name",
     ]);
+  });
+});
+
+describe("manifest facts", () => {
+  it("discovers sorted manifest-bearing children, including planned and unlisted packages", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/zeta", {
+      name: "@pest-patrol/zeta",
+      dependencies: {
+        "@pest-patrol/types": "workspace:*",
+        react: "19.0.0",
+      },
+      devDependencies: {
+        "@pest-patrol/domain": "workspace:^",
+        vitest: "4.0.0",
+      },
+      peerDependencies: {
+        "@pest-patrol/application": "workspace:~",
+      },
+      optionalDependencies: {
+        "@pest-patrol/adapter": "workspace:^",
+      },
+    });
+    writeManifest(workspace, "apps/unlisted", {
+      name: "@pest-patrol/unlisted",
+      dependencies: { "@pest-patrol/types": "^1.2.3" },
+    });
+    writeManifest(workspace, "packages/application", {
+      name: "@pest-patrol/application",
+    });
+    mkdirSync(join(workspace, "packages", "without-manifest"), { recursive: true });
+
+    expect(collectWorkspaceArchitectureFacts(workspace)).toEqual({
+      packages: [
+        {
+          name: "@pest-patrol/application",
+          path: "packages/application",
+          manifestPath: "packages/application/package.json",
+          manifestDependencies: [],
+          sourceOccurrences: [],
+        },
+        {
+          name: "@pest-patrol/unlisted",
+          path: "apps/unlisted",
+          manifestPath: "apps/unlisted/package.json",
+          manifestDependencies: [
+            {
+              dependency: "@pest-patrol/types",
+              section: "dependencies",
+              versionSpecifier: "^1.2.3",
+            },
+          ],
+          sourceOccurrences: [],
+        },
+        {
+          name: "@pest-patrol/zeta",
+          path: "packages/zeta",
+          manifestPath: "packages/zeta/package.json",
+          manifestDependencies: [
+            {
+              dependency: "@pest-patrol/adapter",
+              section: "optionalDependencies",
+              versionSpecifier: "workspace:^",
+            },
+            {
+              dependency: "@pest-patrol/application",
+              section: "peerDependencies",
+              versionSpecifier: "workspace:~",
+            },
+            {
+              dependency: "@pest-patrol/domain",
+              section: "devDependencies",
+              versionSpecifier: "workspace:^",
+            },
+            {
+              dependency: "@pest-patrol/types",
+              section: "dependencies",
+              versionSpecifier: "workspace:*",
+            },
+          ],
+          sourceOccurrences: [],
+        },
+      ],
+    });
+  });
+
+  it("rejects missing and malformed workspace files before collecting partial facts", () => {
+    const missingWorkspaceFile = mkdtempSync(join(tmpdir(), "architecture-boundaries-"));
+    temporaryWorkspaces.push(missingWorkspaceFile);
+
+    expect(() => collectWorkspaceArchitectureFacts(missingWorkspaceFile)).toThrow(
+      new RegExp(`${repositoryPath(missingWorkspaceFile, join(missingWorkspaceFile, "pnpm-workspace.yaml"))}.*read`),
+    );
+
+    const malformedWorkspace = createWorkspace("packages:\n  - apps/*\n");
+    writeManifest(malformedWorkspace, "apps/ignored", { name: "@pest-patrol/ignored" });
+
+    expect(() => collectWorkspaceArchitectureFacts(malformedWorkspace)).toThrow(
+      "pnpm-workspace.yaml: packages must be a YAML string list",
+    );
+  });
+
+  it("rejects recursive, absolute, and multi-segment workspace wildcards", () => {
+    for (const pattern of ["apps/**", "/apps/*", "apps/*/nested"]) {
+      const workspace = createWorkspace(`packages:\n  - "${pattern}"\n`);
+
+      expect(() => collectWorkspaceArchitectureFacts(workspace)).toThrow(
+        `pnpm-workspace.yaml: unsupported workspace pattern ${pattern}`,
+      );
+    }
+  });
+
+  it("reports the discovered manifest path for invalid JSON and missing names", () => {
+    const invalidJsonWorkspace = createWorkspace();
+    const invalidJsonManifest = join(invalidJsonWorkspace, "packages", "broken", "package.json");
+    mkdirSync(join(invalidJsonWorkspace, "packages", "broken"), { recursive: true });
+    writeFileSync(invalidJsonManifest, "{");
+
+    expect(() => collectWorkspaceArchitectureFacts(invalidJsonWorkspace)).toThrow(
+      `${repositoryPath(invalidJsonWorkspace, invalidJsonManifest)}: invalid JSON`,
+    );
+
+    const unnamedWorkspace = createWorkspace();
+    writeManifest(unnamedWorkspace, "apps/unnamed", { name: "" });
+
+    expect(() => collectWorkspaceArchitectureFacts(unnamedWorkspace)).toThrow(
+      "apps/unnamed/package.json: name must be a non-empty string",
+    );
   });
 });
