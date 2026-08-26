@@ -14,8 +14,12 @@
   silently stale exceptions.
 - Written specification:
   `docs/superpowers/specs/2026-08-25-controlled-rebuild-cr01-foundation-design.md`.
-  Implementation remains gated on controller review of that committed spec and
-  the subsequent implementation plan.
+  The controller approved that committed specification and directed
+  implementation on 2026-08-25.
+- Detailed TDD implementation plan:
+  `docs/superpowers/plans/2026-08-25-controlled-rebuild-cr01-foundation.md`.
+  Implementation is authorized task by task; publication, source tagging, and
+  merge remain separate controller gates under the rebuild runbook.
 - Intended implementation is limited to the canonical architecture docs, a
   versioned boundary policy, its TypeScript checker/tests, root scripts, graph,
   plan, and this tracker. Exact path ownership is recorded in the graph.
