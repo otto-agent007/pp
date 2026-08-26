@@ -575,9 +575,49 @@ function repositoryPath(cwd: string, path: string) {
   return relative(cwd, path).split(sep).join("/");
 }
 
+function assertRepositoryPathHasNoSymbolicLinks(
+  cwd: string,
+  path: string,
+  missingIsAbsent = false,
+) {
+  const repositoryRelativePath = repositoryPath(cwd, path);
+  if (!isRepositoryRelativePath(repositoryRelativePath)) {
+    throw new Error(`${repositoryRelativePath}: read failed`);
+  }
+
+  let componentPath = cwd;
+  for (const component of repositoryRelativePath.split("/")) {
+    componentPath = join(componentPath, component);
+    let isSymbolicLink: boolean;
+    try {
+      isSymbolicLink = lstatSync(componentPath).isSymbolicLink();
+    } catch (error) {
+      if (
+        missingIsAbsent &&
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return false;
+      }
+      throw new Error(`${repositoryRelativePath}: read failed`);
+    }
+    if (isSymbolicLink) {
+      throw new Error(
+        `${repositoryPath(cwd, componentPath)}: symbolic links are not supported`,
+      );
+    }
+  }
+  return true;
+}
+
 function readText(cwd: string, path: string): string;
 function readText(cwd: string, path: string, missingIsAbsent: true): string | null;
 function readText(cwd: string, path: string, missingIsAbsent = false) {
+  if (!assertRepositoryPathHasNoSymbolicLinks(cwd, path, missingIsAbsent)) {
+    return null;
+  }
   try {
     return readFileSync(path, "utf8");
   } catch (error) {
@@ -628,22 +668,7 @@ function workspaceRoot(workspacePath: string, pattern: string) {
 }
 
 function assertWorkspaceRootHasNoSymbolicLinks(cwd: string, root: string) {
-  const rootPath = join(cwd, root);
-  let componentPath = cwd;
-  for (const component of root.split("/")) {
-    componentPath = join(componentPath, component);
-    let isSymbolicLink: boolean;
-    try {
-      isSymbolicLink = lstatSync(componentPath).isSymbolicLink();
-    } catch {
-      throw new Error(`${repositoryPath(cwd, rootPath)}: read failed`);
-    }
-    if (isSymbolicLink) {
-      throw new Error(
-        `${repositoryPath(cwd, componentPath)}: symbolic links are not supported`,
-      );
-    }
-  }
+  assertRepositoryPathHasNoSymbolicLinks(cwd, join(cwd, root));
 }
 
 function manifestDependencies(manifestPath: string, manifest: Record<string, unknown>) {
@@ -892,7 +917,7 @@ function sourceOccurrences(
       const firstArgument = node.arguments[0];
       if (firstArgument !== undefined) {
         const specifier = unwrapTransparentExpression(firstArgument);
-        if (ts.isStringLiteral(specifier)) {
+        if (ts.isStringLiteralLike(specifier)) {
           addUse(specifier.text, "dynamic-import", false, ["*"]);
         }
       }
@@ -904,7 +929,7 @@ function sourceOccurrences(
       const firstArgument = node.arguments[0];
       if (firstArgument !== undefined) {
         const specifier = unwrapTransparentExpression(firstArgument);
-        if (ts.isStringLiteral(specifier)) {
+        if (ts.isStringLiteralLike(specifier)) {
           addUse(specifier.text, "require", false, ["*"]);
         }
       }

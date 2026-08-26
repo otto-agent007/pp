@@ -99,11 +99,16 @@ identity rather than creating a duplicate logical write.
 
 ## Future mobile-write evidence
 
-CR06 must provide focused tests for persistence before optimistic projection,
-restart replay, stable intent identity, ambiguous-success replay, conflict
-transition, and terminal failure. It must also provide an integration test
-from the mobile composition root through durable queue persistence and
-restart, sync execution, the selected adapter, and provider acknowledgment.
+CR04 (`packages/application`) must provide provider-independent conflict and
+terminal-failure semantics and policy tests. CR05 (`packages/api-client`) must
+provide adapter-mapping, stable-intent idempotency, and ambiguous-response
+replay tests. CR06 (`packages/sync`) must provide package-local tests for
+durable identity and state, persistence, restart replay, retry/backoff
+scheduling, durable transitions, and stable identity across retry, using owned
+package boundaries or fakes where needed. CR09 (`apps`) must provide the real
+`apps/mobile` composition-root integration through durable enqueue, optimistic
+projection, restart, sync, adapter/provider acknowledgment, plus a
+terminal-failure visibility and user-recovery interaction test.
 
 CR01 documents this target contract only. It creates no application or sync
 package implementation and does not claim that these behaviors exist in the

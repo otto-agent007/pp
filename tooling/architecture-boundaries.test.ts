@@ -1529,6 +1529,81 @@ describe("manifest facts", () => {
   });
 });
 
+describe("control input symlinks", () => {
+  it("rejects a symlinked pnpm-workspace.yaml leaf before collection", () => {
+    const workspace = createCliWorkspace();
+    const workspaceFile = join(workspace, "pnpm-workspace.yaml");
+    const target = join(workspace, "workspace-input.yaml");
+    writeFileSync(target, readFileSync(workspaceFile, "utf8"));
+    rmSync(workspaceFile);
+    symlinkSync(target, workspaceFile, "file");
+
+    expect(() => collectWorkspaceArchitectureFacts(workspace)).toThrow(
+      "pnpm-workspace.yaml: symbolic links are not supported",
+    );
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: pnpm-workspace.yaml: symbolic links are not supported",
+      ],
+    });
+  });
+
+  it("rejects a symlinked architecture policy leaf before CLI parsing", () => {
+    const workspace = createCliWorkspace();
+    const policyFile = join(workspace, "tooling", "architecture-boundaries.json");
+    const target = join(workspace, "policy-input.json");
+    writeFileSync(target, readFileSync(policyFile, "utf8"));
+    rmSync(policyFile);
+    symlinkSync(target, policyFile, "file");
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: symbolic links are not supported",
+      ],
+    });
+  });
+
+  it("rejects a symlinked rebuild graph leaf before CLI parsing", () => {
+    const workspace = createCliWorkspace();
+    const graphFile = join(workspace, "docs", "rebuild", "graph.json");
+    const target = join(workspace, "graph-input.json");
+    writeFileSync(target, readFileSync(graphFile, "utf8"));
+    rmSync(graphFile);
+    symlinkSync(target, graphFile, "file");
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: docs/rebuild/graph.json: symbolic links are not supported",
+      ],
+    });
+  });
+
+  it("rejects a symlinked intermediate control-input component by name", () => {
+    const workspace = createCliWorkspace();
+    writeJson(workspace, "control-tooling/architecture-boundaries.json", cliPolicy());
+    rmSync(join(workspace, "tooling"), { recursive: true });
+    symlinkSync(
+      join(workspace, "control-tooling"),
+      join(workspace, "tooling"),
+      "dir",
+    );
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling: symbolic links are not supported",
+      ],
+    });
+  });
+});
+
 describe("TypeScript source facts", () => {
   it("classifies supported syntax in production, test filenames, and __tests__ directories", () => {
     const workspace = createWorkspace();
@@ -1872,7 +1947,7 @@ describe("TypeScript source facts", () => {
 
       const target = "@pest-patrol/ignored";
       void import(target);
-      require(\`@pest-patrol/ignored\`);
+      require(\`@pest-patrol/\${target}\`);
       void import("@pest-patrol" + "/ignored");
     `,
     );
@@ -1900,6 +1975,90 @@ describe("TypeScript source facts", () => {
           "aa056a0fc0b1f278c24f2690197d1b82e5493ce6005994537f03c2999edcddbd",
       },
     ]);
+  });
+
+  it("collects no-substitution runtime template literals like quoted literals", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    const quotedPath = "packages/example/src/runtime-quoted.ts";
+    const templatePath = "packages/example/src/runtime-templates.ts";
+    writeSource(
+      workspace,
+      quotedPath,
+      `
+      void import("@pest-patrol/target/direct");
+      void import(("@pest-patrol/target/wrapped"));
+      require("@pest-patrol/target/direct");
+      require(("@pest-patrol/target/wrapped" as string));
+    `,
+    );
+    writeSource(
+      workspace,
+      templatePath,
+      `
+      void import(\`@pest-patrol/target/direct\`);
+      void import((\`@pest-patrol/target/wrapped\`));
+      require(\`@pest-patrol/target/direct\`);
+      require((\`@pest-patrol/target/wrapped\` as string));
+    `,
+    );
+
+    const occurrences = collectWorkspaceArchitectureFacts(workspace).packages[0]
+      .sourceOccurrences;
+    const quotedLiterals = occurrences.filter(
+      (occurrence) => occurrence.path === quotedPath,
+    );
+    expect(quotedLiterals).toEqual([
+      {
+        path: quotedPath,
+        specifier: "@pest-patrol/target",
+        syntax: "dynamic-import",
+        occurrenceClass: "production-value",
+        count: 2,
+        bindingDigest:
+          "dae2b46419341cc0e6249acb3a229ff1507d79bdb0b842805fc2263da17ba9ec",
+      },
+      {
+        path: quotedPath,
+        specifier: "@pest-patrol/target",
+        syntax: "require",
+        occurrenceClass: "production-value",
+        count: 2,
+        bindingDigest:
+          "dae2b46419341cc0e6249acb3a229ff1507d79bdb0b842805fc2263da17ba9ec",
+      },
+    ]);
+    expect(
+      occurrences.filter((occurrence) => occurrence.path === templatePath),
+    ).toEqual(
+      quotedLiterals.map((occurrence) => ({
+        ...occurrence,
+        path: templatePath,
+      })),
+    );
+  });
+
+  it("ignores interpolated runtime template literals", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/example", {
+      name: "@pest-patrol/example",
+    });
+    writeSource(
+      workspace,
+      "packages/example/src/interpolated-templates.ts",
+      `
+      const name = "target";
+      void import(\`@pest-patrol/\${name}\`);
+      require(\`@pest-patrol/\${name}\`);
+    `,
+    );
+
+    expect(
+      collectWorkspaceArchitectureFacts(workspace).packages[0]
+        .sourceOccurrences,
+    ).toEqual([]);
   });
 
   it("normalizes import-type qualifier digests without source trivia", () => {
@@ -2317,6 +2476,56 @@ describe("architecture CLI", () => {
       workspace,
       "packages/importer/index.ts",
       'void import("@pest-patrol/target/options", { with: { type: "json" } });\n',
+    );
+    writeManifest(workspace, "packages/target", {
+      name: "@pest-patrol/target",
+    });
+    writeJson(workspace, "tooling/architecture-boundaries.json", cliPolicy());
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: missing-manifest-dependency: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("runtime template literals CLI reject an unknown target through import", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'void import((`@pest-patrol/unknown/template`));\n',
+    );
+    const policy = cliPolicy();
+    policy.packages = [policy.packages[0]];
+    policy.packages[0].allowedDependencies = [];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", { nodes: [] });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/unknown; manifest=packages/importer/package.json[none]; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("runtime template literals CLI reject an allowed target missing its manifest dependency through require", () => {
+    const workspace = createWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    writeSource(
+      workspace,
+      "packages/importer/index.ts",
+      'require((`@pest-patrol/target/template` as string));\n',
     );
     writeManifest(workspace, "packages/target", {
       name: "@pest-patrol/target",
