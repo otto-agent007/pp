@@ -24,6 +24,8 @@ import {
 } from "./architecture-boundaries";
 
 const DIGEST = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+const CLI_TARGET_DIGEST =
+  "52426cb7cd243cab4b07bd18b355378a754d0ea5c32706cca953dd2f85759a11";
 
 function validPolicy(): ArchitecturePolicy {
   return {
@@ -108,6 +110,26 @@ function cliPolicy(): ArchitecturePolicy {
       },
     ],
     exceptions: [],
+  };
+}
+
+function cliException(): ArchitecturePolicy["exceptions"][number] {
+  return {
+    id: "importer-target-debt",
+    kind: "missing-manifest-dependency",
+    importer: "@pest-patrol/importer",
+    dependency: "@pest-patrol/target",
+    sourceOccurrences: [{
+      path: "packages/importer/index.ts",
+      specifier: "@pest-patrol/target",
+      syntax: "import",
+      occurrenceClass: "production-type",
+      count: 1,
+      bindingDigest: CLI_TARGET_DIGEST,
+    }],
+    manifest: { section: null, versionSpecifier: null },
+    removeIn: "CR02",
+    reason: "CR02 removes the fixture debt.",
   };
 }
 
@@ -1675,7 +1697,43 @@ describe("architecture CLI", () => {
       exitCode: 1,
       stdout: [],
       stderr: [
-        "architecture boundary error: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
+      ],
+    });
+  });
+
+  it("qualifies stale exception errors with the policy path", () => {
+    const workspace = createCliWorkspace();
+    const policy = cliPolicy();
+    policy.exceptions = [cliException()];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+    writeJson(workspace, "docs/rebuild/graph.json", {
+      nodes: [{ id: "CR02", status: "planned", ownership: [] }],
+    });
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: tooling/architecture-boundaries.json: exception importer-target-debt is stale or drifted for @pest-patrol/importer -> @pest-patrol/target",
+      ],
+    });
+  });
+
+  it("qualifies unknown removal-node errors with the graph path", () => {
+    const workspace = createCliWorkspace();
+    writeManifest(workspace, "packages/importer", {
+      name: "@pest-patrol/importer",
+    });
+    const policy = cliPolicy();
+    policy.exceptions = [cliException()];
+    writeJson(workspace, "tooling/architecture-boundaries.json", policy);
+
+    expect(runCli(workspace)).toEqual({
+      exitCode: 1,
+      stdout: [],
+      stderr: [
+        "architecture boundary error: docs/rebuild/graph.json: exception importer-target-debt for @pest-patrol/importer -> @pest-patrol/target has unknown removal node CR02",
       ],
     });
   });
@@ -1704,8 +1762,8 @@ describe("architecture CLI", () => {
       exitCode: 1,
       stdout: [],
       stderr: [
-        "architecture boundary error: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
-        "architecture boundary error: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/types; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=packages/importer/index.ts",
+        "architecture boundary error: tooling/architecture-boundaries.json: forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/types; manifest=packages/importer/package.json[dependencies]=workspace:*; sources=none",
       ],
     });
   });

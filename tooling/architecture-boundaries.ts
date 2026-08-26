@@ -94,6 +94,7 @@ type RenderableViolation = {
 };
 
 const ARCHITECTURE_POLICY_PATH = "tooling/architecture-boundaries.json";
+const REBUILD_GRAPH_PATH = "docs/rebuild/graph.json";
 const ACTIVE_REMOVAL_STATUSES = new Set(["planned", "ready", "running"]);
 const PROMOTED_REMOVAL_STATUSES = new Set(["ready", "running"]);
 
@@ -1230,6 +1231,14 @@ function validateRebuildGraphFacts(value: unknown): {
     : { graph: null, errors: sortedErrors };
 }
 
+function architectureFactErrorPath(error: string) {
+  return error.includes(" has unknown removal node ") ||
+      error.includes(" has invalid removal node ") ||
+      (error.includes(" removal node ") && error.includes(" does not own "))
+    ? REBUILD_GRAPH_PATH
+    : ARCHITECTURE_POLICY_PATH;
+}
+
 export function runArchitectureBoundariesCli(
   options: ArchitectureBoundariesCliOptions = {},
 ): number {
@@ -1254,12 +1263,13 @@ export function runArchitectureBoundariesCli(
     );
   }
 
-  const graphPath = "docs/rebuild/graph.json";
-  const graphInput = readJsonInput(cwd, graphPath);
+  const graphInput = readJsonInput(cwd, REBUILD_GRAPH_PATH);
   if (graphInput.error !== null) return fail([graphInput.error]);
   const graphResult = validateRebuildGraphFacts(graphInput.value);
   if (graphResult.graph === null) {
-    return fail(graphResult.errors.map((error) => `${graphPath}: ${error}`));
+    return fail(
+      graphResult.errors.map((error) => `${REBUILD_GRAPH_PATH}: ${error}`),
+    );
   }
 
   let facts: WorkspaceArchitectureFacts;
@@ -1274,7 +1284,11 @@ export function runArchitectureBoundariesCli(
     facts,
     graphResult.graph,
   );
-  if (errors.length > 0) return fail(errors);
+  if (errors.length > 0) {
+    return fail(
+      errors.map((error) => `${architectureFactErrorPath(error)}: ${error}`),
+    );
+  }
 
   stdout(
     `Architecture boundaries valid: ${facts.packages.length} workspace packages, ${policyResult.policy.exceptions.length} matched exceptions`,
