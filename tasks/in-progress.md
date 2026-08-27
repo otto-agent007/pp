@@ -30,13 +30,18 @@
   matched exceptions.
 - The node-declared graph check, offline and live reconciliation, root
   typecheck, lint, build, security baseline, and whitespace checks also passed
-  at that reviewed code commit. A direct strict TypeScript compile covered the new
-  root-level architecture checker because Turbo typecheck covers workspace
-  packages only. The controller runs the clean final-tree `pnpm rebuild:verify`
-  after this tracker-only commit so provenance evidence is not made stale by
-  recording itself.
-- The branch has not been pushed or source-tagged, no CR01 PR exists, and no
-  publication approval or completion is claimed.
+  at that reviewed code commit. A direct strict TypeScript compile covered the
+  new root-level architecture checker because Turbo typecheck covers workspace
+  packages only. The clean final-tree `pnpm rebuild:verify` passed 12/12 gates
+  at pre-publication commit `bdf51b8e96958e71fb8e016d2e35daefc1cd685a`.
+  The controller reruns it after this publication-metadata commit so evidence
+  is bound to the canonical draft-PR head.
+- Controller-approved publication created draft PR
+  [#148](https://github.com/otto-agent007/pp/pull/148). The branch is pushed,
+  but the immutable `rebuild/cr01-source` tag remains intentionally deferred
+  until the canonical PR head is frozen before the later done/merge gate. The
+  PR remains draft, and no ready-for-review, merge, or completion approval is
+  claimed.
 - Scope remains the canonical architecture docs, the versioned boundary policy,
   its checker/tests, root scripts, graph, plan, and this tracker. Exact path
   ownership is recorded in the graph.

@@ -182,7 +182,7 @@
       ],
       "evidence": [],
       "branch": "codex/rebuild-cr01-foundation-v1",
-      "pr": "",
+      "pr": "https://github.com/otto-agent007/pp/pull/148",
       "mergeSha": "",
       "supersededBy": null,
       "target": null
