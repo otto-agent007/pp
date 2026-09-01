@@ -283,7 +283,7 @@ Require a clean pre/post worktree and overall `PASS`.
 Push `codex/rebuild-cr00-process-optimization-recovery-v1`, create a draft PR
 against `main`, and do not mark it ready or merge it synchronously.
 
-- [ ] **Step 6: Record the PR URL and rebind final evidence**
+- [x] **Step 6: Record the PR URL and rebind final evidence**
 
 Replace the pending tracker line with the canonical PR URL, commit, push, rerun
 the complete clean-tree recovery verifier, and inspect hosted checks once.

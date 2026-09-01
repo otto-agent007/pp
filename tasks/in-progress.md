@@ -33,7 +33,10 @@
   recovery verification passed 17/17 gates at pre-publication commit
   `7295329fd02cabcb216640f65f062093dc564b40` with evidence set
   `1412a98f1cc7fd12ae46a9e5e5c1efc98f6965ec0c45bb586f7e5c544faff574`.
-  Final publication-metadata recovery verification and hosted checks remain
-  pending.
+  Publication-metadata recovery verification then passed 17/17 at pushed head
+  `f68a4b1c025cb7e0c40fce3281b2ed3982e9118d` with evidence set
+  `7602283c9c5ae5ff9188714060e483d39dcf22f862064864ea2620b07b2c688e`.
+  The final plan-marker commit requires one last clean-tree run; hosted checks
+  remain pending.
 - Excluded: application behavior, dependency and lockfile content, migrations,
   RLS, EAS/provider actions, environments, previews, and production.
