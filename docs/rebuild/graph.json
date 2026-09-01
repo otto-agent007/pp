@@ -284,7 +284,9 @@
         "Durable offline mutation queue"
       ],
       "checks": [],
-      "approvals": [],
+      "approvals": [
+        "decompose into parallel write-tasks at promotion"
+      ],
       "evidence": [],
       "branch": "",
       "pr": "",
@@ -322,7 +324,7 @@
       "baseSha": "",
       "id": "CR08",
       "kind": "slice",
-      "status": "planned",
+      "status": "superseded",
       "parent": "CR00",
       "dependencies": [
         "CR07"
@@ -336,11 +338,18 @@
       ],
       "checks": [],
       "approvals": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved Fable process optimization: supersede CR08 into CR09.",
+          "commitSha": "3630dbb3ecaf4361dc059a974246e688f473bcf2",
+          "recordedAt": "2026-09-01T02:20:05Z"
+        }
+      ],
       "branch": "",
       "pr": "",
       "mergeSha": "",
-      "supersededBy": null,
+      "supersededBy": "CR09",
       "target": null
     },
     {
@@ -350,7 +359,7 @@
       "status": "planned",
       "parent": "CR00",
       "dependencies": [
-        "CR08"
+        "CR07"
       ],
       "conflicts": [
         "CR00"
@@ -359,10 +368,12 @@
         "apps"
       ],
       "deliverables": [
-        "Applications as composition and UI boundary"
+        "Application composition preparation and applications as the composition and UI boundary"
       ],
       "checks": [],
-      "approvals": [],
+      "approvals": [
+        "decompose into parallel write-tasks at promotion"
+      ],
       "evidence": [],
       "branch": "",
       "pr": "",
@@ -537,7 +548,7 @@
       ],
       "ownership": [],
       "deliverables": [
-        "Expo SDK 56 one-SDK migration"
+        "Expo SDK 56-to-57 migration with a final SDK 57 floor of 57.0.9"
       ],
       "checks": [],
       "approvals": [],
@@ -548,16 +559,16 @@
       "supersededBy": null,
       "target": {
         "product": "expo",
-        "constraint": "56",
+        "constraint": "57",
         "selection": "exact-sdk-major",
-        "resolvedVersion": ""
+        "resolvedVersion": "57.0.9"
       }
     },
     {
       "baseSha": "",
       "id": "CR16",
       "kind": "slice",
-      "status": "planned",
+      "status": "superseded",
       "parent": "CR00",
       "dependencies": [
         "CR12",
@@ -572,11 +583,18 @@
       ],
       "checks": [],
       "approvals": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved Fable process optimization: supersede CR16 into CR15.",
+          "commitSha": "3630dbb3ecaf4361dc059a974246e688f473bcf2",
+          "recordedAt": "2026-09-01T02:20:05Z"
+        }
+      ],
       "branch": "",
       "pr": "",
       "mergeSha": "",
-      "supersededBy": null,
+      "supersededBy": "CR15",
       "target": {
         "product": "expo",
         "constraint": "57",
@@ -588,7 +606,7 @@
       "baseSha": "",
       "id": "CR17",
       "kind": "slice",
-      "status": "planned",
+      "status": "superseded",
       "parent": "CR00",
       "dependencies": [
         "CR11",
@@ -604,11 +622,18 @@
       ],
       "checks": [],
       "approvals": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved Fable process optimization: supersede CR17 into CR18.",
+          "commitSha": "3630dbb3ecaf4361dc059a974246e688f473bcf2",
+          "recordedAt": "2026-09-01T02:20:05Z"
+        }
+      ],
       "branch": "",
       "pr": "",
       "mergeSha": "",
-      "supersededBy": null,
+      "supersededBy": "CR18",
       "target": null
     },
     {
@@ -624,15 +649,14 @@
         "CR13",
         "CR14",
         "CR15",
-        "CR16",
-        "CR17"
+        "CR16"
       ],
       "conflicts": [
         "CR00"
       ],
       "ownership": [],
       "deliverables": [
-        "Controlled rebuild completion and final reconciliation"
+        "Cross-runtime compatibility, controlled rebuild completion, and final reconciliation"
       ],
       "checks": [],
       "approvals": [],

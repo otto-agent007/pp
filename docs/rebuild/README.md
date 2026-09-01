@@ -26,10 +26,19 @@ pull-request identity.
 
 ## Scheduling model
 
-Only one implementation slice and one draft PR may be active. Read-only
-preparation for a future node may not edit tracked files, create a branch or
-PR, or claim `running`. The controller resolves the running node before another
-slice begins.
+Only one implementation slice and one slice PR may be active. An explicitly
+controller-approved control-plane recovery PR is not another implementation
+slice and may coexist only when it names a done slice through recovery
+verification; it may not promote a future node. The controller resolves and
+reconciles the running node before another slice is promoted.
+
+While slice N is in review, slice N+1 may perform read-only exploration and
+draft its promotion specification in an isolated, non-authoritative workspace.
+That preparation may not claim ownership, change graph state, open the next
+slice PR, or begin implementation. After N merges, refresh the draft against
+the reconciled default branch, obtain promotion approval, and start N+1 on a
+fresh correctly based branch. Promotion never rests on a predecessor that is
+merely green, approved, or waiting for auto-merge.
 
 `preferredPrOrder` contains every node once and is a valid topological order of
 the resolved dependency graph. It is a deterministic tie breaker between
@@ -66,11 +75,13 @@ slice also requires a correctly named `codex/*` branch. Every resolved
 dependency must be done.
 
 Version policy lives on the applicable node rather than in validator code.
-CR10 targets Node 24 LTS, CR11 pnpm 11 stable, CR12 Next.js 16 stable, and
-CR13–CR16 one Expo SDK each from 54 through 57. At slice start, resolve the
-node's declared constraint to a released stable version, record controller
-approval evidence, and freeze that exact version for the slice. Prereleases
-are forbidden.
+CR10 targets Node 24 LTS, CR11 pnpm 11 stable, CR12 Next.js 16 stable, CR13
+Expo SDK 54, CR14 Expo SDK 55, and CR15 the SDK 56-to-57 hop. CR15's final SDK
+57 version may not be lower than 57.0.9 because that is the Hermes-fix floor;
+CR16 is superseded by CR15. At slice start, refresh the node's declared
+constraint to a released stable version at or above any recorded floor, record
+controller approval evidence, and freeze that exact version for the slice.
+Prereleases are forbidden.
 
 ## Evidence and repository facts
 
@@ -112,6 +123,26 @@ reading the immutable PR commit set and both tree identities from GitHub.
 Missing tags, history, credentials, provider data, or network evidence fails
 the applicable reconciliation mode.
 
+### Expo native-build evidence
+
+Expo migration slices must prove native-project compatibility even though the
+ordinary CI runner does not compile iOS or Android applications. Before
+promotion, put the exact Expo Doctor and prebuild commands in the node's
+declared checks. The native-build gate accepts successful, commit-bound
+`command` evidence for Expo Doctor and clean, no-install prebuild generation
+for both iOS and Android. Run prebuild in a disposable clean checkout and
+record the exact commands, exit codes, commit SHA, and UTC timestamps; generated
+native projects are evidence inputs, not an authorization to commit them.
+
+Where a native compile is required and CI cannot perform it, record one
+`github` evidence item per required platform whose URL is the immutable EAS
+build page. Its summary must name the platform, build profile, successful
+result, and source commit. A dashboard landing page, mutable build list, job
+still in progress, failed build, missing platform, mismatched commit, prose-only
+claim, or local unrecorded run is `MISSING`, not a waiver. EAS execution and
+provider configuration remain separately controller-approved actions; this
+policy defines acceptable evidence but does not authorize those actions.
+
 Tree identity requires the source branch to contain the current default-branch
 tree at merge time. Bring it up to date before merging, either by rebasing or
 by merging the default branch into the source branch. If the default branch
@@ -136,8 +167,18 @@ remains a review boundary until a durable CI selector is designed.
 
 Every changed path from the running slice's `baseSha` through `HEAD` must equal
 an ownership path or descend from an owned directory. Prefix lookalikes do not
-count. CR00 owns its graph, tests, reconciliation and verification tooling,
-workflow, CODEOWNERS, skills, profiles, scripts, and operating documents.
+count. In addition to its declared ownership, every selected slice implicitly
+owns the exact files `docs/rebuild/graph.json`, `tasks/in-progress.md`, and
+`pnpm-lock.yaml`, plus its own Markdown plan under
+`docs/superpowers/plans/` when the filename contains that slice ID as a
+lowercase hyphen-delimited token. It does not own another slice's plan or a
+prefix lookalike. The reconciler enforces this standing policy for the running
+slice, and recovery verification enforces it for the explicitly selected done
+slice. Thus the root lockfile belongs mechanically to whichever slice is
+running, or to the controller-selected recovery slice during an approved
+post-merge repair; it is never ownerless shared scope. CR00 additionally owns
+its tests, reconciliation and verification tooling, workflow, CODEOWNERS,
+skills, profiles, scripts, and operating documents.
 
 CODEOWNERS documents the human owner of the control plane, but the file does
 not enforce a review by itself.
@@ -151,6 +192,29 @@ enabled and becomes consequential once approvals are required. When a second
 trusted human maintainer receives write access, add that maintainer to
 CODEOWNERS before enabling one required approval and required code-owner review.
 Local implementation does not grant provider mutation authority.
+
+## Merge authorization checklist
+
+Before merging a slice or recovery PR:
+
+1. Freeze the reviewed PR head and prove it is based on the current reconciled
+   default branch.
+2. Run the applicable clean-tree rebuild verifier on that head and require
+   every selected gate to pass.
+3. Complete external adversarial pre-review. Under solo-maintainer governance
+   this review is advisory rather than a fabricated independent approval, but
+   every Critical or Important finding must be resolved or explicitly rejected
+   with reproducible evidence.
+4. Require all repository ruleset checks to be green and record controller
+   approval for that PR to merge.
+5. For a normal slice, publish the immutable source tag at the frozen canonical
+   PR head before later recording the node as done.
+
+Recorded controller merge approval plus green required checks constitutes merge
+authorization. Enable GitHub auto-merge under that authorization; do not issue
+a synchronous merge command and do not wait in-session for the merge event.
+The next controller cycle reads live GitHub state, reconciles the merge and
+source evidence into the graph, and only then promotes a dependent slice.
 
 Start every slice from its intended base on a fresh correctly named `codex/*`
 branch. The first commit of a new slice reconciles its predecessor. Security,
