@@ -20,7 +20,8 @@
 - The canonical rebuild runbook now defines N+1 read-only/spec-drafting
   pipelining, Expo native-build evidence, external adversarial pre-review, and
   asynchronous auto-merge authorization.
-- Draft recovery PR URL: pending publication.
+- Draft recovery PR
+  [#149](https://github.com/otto-agent007/pp/pull/149) is open against `main`.
 - Draft CR01 PR [#148](https://github.com/otto-agent007/pp/pull/148) remains
   open, draft, and unmodified at `e0783e73ba9368be90ade0046e79cc706699f629`.
   This control-plane recovery does not promote CR01 or CR02, source-tag, mark
@@ -28,8 +29,11 @@
 - The reviewed tree passes 83/83 focused control-plane tests, structural graph
   validation, offline reconciliation, 99/99 root tooling tests plus all seven
   Turbo test tasks, all nine typecheck/lint/build tasks, the security baseline,
-  focused TypeScript/Markdown formatting, and `git diff --check`. The final
-  clean-tree recovery verifier and hosted checks remain pending until commit
-  and publication.
+  focused TypeScript/Markdown formatting, and `git diff --check`. Clean-tree
+  recovery verification passed 17/17 gates at pre-publication commit
+  `7295329fd02cabcb216640f65f062093dc564b40` with evidence set
+  `1412a98f1cc7fd12ae46a9e5e5c1efc98f6965ec0c45bb586f7e5c544faff574`.
+  Final publication-metadata recovery verification and hosted checks remain
+  pending.
 - Excluded: application behavior, dependency and lockfile content, migrations,
   RLS, EAS/provider actions, environments, previews, and production.

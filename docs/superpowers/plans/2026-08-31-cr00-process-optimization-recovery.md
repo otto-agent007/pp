@@ -268,7 +268,7 @@ the supersession topology, ownership negative cases, evidence provenance, and
 the README's authority boundaries. Repair every Critical or Important finding
 with a focused RED/GREEN cycle before publication.
 
-- [ ] **Step 4: Commit and run clean-tree recovery verification**
+- [x] **Step 4: Commit and run clean-tree recovery verification**
 
 Commit the reviewed files, then run:
 
@@ -278,7 +278,7 @@ pnpm rebuild:verify -- --recovery-slice CR00 --package-manager /home/user1/.npm/
 
 Require a clean pre/post worktree and overall `PASS`.
 
-- [ ] **Step 5: Push and open exactly one draft PR**
+- [x] **Step 5: Push and open exactly one draft PR**
 
 Push `codex/rebuild-cr00-process-optimization-recovery-v1`, create a draft PR
 against `main`, and do not mark it ready or merge it synchronously.
