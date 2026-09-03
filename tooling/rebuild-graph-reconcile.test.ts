@@ -220,6 +220,39 @@ describe("rebuild graph changed-path ownership", () => {
       'ownership path must be normalized and repository-relative: "tooling/../tooling"',
     ]);
   });
+
+  it("accepts standing slice ownership for shared control files and its own plan", () => {
+    expect(
+      validateChangedPathOwnership(
+        [
+          "docs/rebuild/graph.json",
+          "tasks/in-progress.md",
+          "docs/superpowers/plans/2026-08-31-controlled-rebuild-cr06.md",
+          "pnpm-lock.yaml",
+        ],
+        [],
+        "CR06",
+      ),
+    ).toEqual([]);
+  });
+
+  it("keeps standing slice ownership bounded to exact files and its own plan", () => {
+    expect(
+      validateChangedPathOwnership(
+        [
+          "docs/superpowers/plans/2026-08-31-controlled-rebuild-cr09.md",
+          "pnpm-lock.yaml.backup",
+          "packages/sync/src/index.ts",
+        ],
+        [],
+        "CR06",
+      ),
+    ).toEqual([
+      "changed path docs/superpowers/plans/2026-08-31-controlled-rebuild-cr09.md is outside running-node ownership",
+      "changed path packages/sync/src/index.ts is outside running-node ownership",
+      "changed path pnpm-lock.yaml.backup is outside running-node ownership",
+    ]);
+  });
 });
 
 describe("rebuild graph repository claims", () => {
@@ -358,7 +391,7 @@ describe("rebuild graph repository claims", () => {
 
   it("validates running-slice base ancestry and changed-path ownership", () => {
     const facts = matchingFacts({
-      changedPaths: ["tooling/check.ts"],
+      changedPaths: ["tasks/in-progress.md", "tooling/check.ts"],
       existingCommits: [BASE_SHA, EVIDENCE_SHA],
       ancestorPairs: [
         { ancestor: BASE_SHA, descendant: "HEAD" },

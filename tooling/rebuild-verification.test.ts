@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -33,25 +33,28 @@ function git(cwd: string, args: string[]) {
   return result.stdout.trim();
 }
 
-function createRecoveryFixture(ownership: string[]) {
+function createRecoveryFixture(
+  ownership: string[],
+  changedPath = "tasks/in-progress.md",
+) {
   const repository = mkdtempSync(join(tmpdir(), "pp-rebuild-recovery-"));
   const graphDirectory = mkdtempSync(join(tmpdir(), "pp-rebuild-graph-"));
   temporaryDirectories.push(repository, graphDirectory);
   git(repository, ["init", "-b", "main"]);
   git(repository, ["config", "user.email", "tests@example.com"]);
   git(repository, ["config", "user.name", "Rebuild Tests"]);
-  mkdirSync(join(repository, "tasks"), { recursive: true });
+  mkdirSync(dirname(join(repository, changedPath)), { recursive: true });
   writeFileSync(
     join(repository, "package.json"),
     JSON.stringify({ packageManager: "pnpm@9.15.4" }),
   );
-  writeFileSync(join(repository, "tasks", "in-progress.md"), "merged\n");
-  git(repository, ["add", "package.json", "tasks/in-progress.md"]);
+  writeFileSync(join(repository, changedPath), "merged\n");
+  git(repository, ["add", "package.json", changedPath]);
   git(repository, ["commit", "-m", "merged slice"]);
   const mergeSha = git(repository, ["rev-parse", "HEAD"]);
 
-  writeFileSync(join(repository, "tasks", "in-progress.md"), "repaired\n");
-  git(repository, ["add", "tasks/in-progress.md"]);
+  writeFileSync(join(repository, changedPath), "repaired\n");
+  git(repository, ["add", changedPath]);
   git(repository, ["commit", "-m", "post-merge repair"]);
 
   const graphPath = join(graphDirectory, "graph.json");
@@ -141,6 +144,26 @@ describe("controlled rebuild verification gate selection", () => {
         (gate) => gate.command,
       ),
     ).toEqual(["git diff --check"]);
+  });
+
+  it("accepts standing slice ownership during recovery gate selection", () => {
+    const commands = selectVerificationGates(
+      [
+        "docs/rebuild/graph.json",
+        "tasks/in-progress.md",
+        "docs/superpowers/plans/2026-08-31-cr00-process-optimization-recovery.md",
+        "pnpm-lock.yaml",
+      ],
+      [],
+      [],
+      "CR00",
+    ).map((gate) => gate.command);
+
+    expect(
+      commands.filter((command) =>
+        command.startsWith("UNMAPPED recovery ownership:"),
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -322,7 +345,7 @@ describe("controlled rebuild gate classification", () => {
 
 describe("controlled rebuild post-merge recovery", () => {
   it("verifies an explicitly selected done slice from its merge SHA", () => {
-    const fixture = createRecoveryFixture(["tasks/in-progress.md"]);
+    const fixture = createRecoveryFixture([]);
     const error = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
@@ -354,7 +377,7 @@ describe("controlled rebuild post-merge recovery", () => {
   });
 
   it("refuses recovery changes outside the completed slice ownership", () => {
-    const fixture = createRecoveryFixture(["docs"]);
+    const fixture = createRecoveryFixture(["tasks"], "docs/AGENTS.md");
     const error = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
@@ -369,7 +392,7 @@ describe("controlled rebuild post-merge recovery", () => {
 
       expect(exitCode).toBe(1);
       expect(output).toContain(
-        "UNMAPPED recovery ownership: changed path tasks/in-progress.md is outside running-node ownership",
+        "UNMAPPED recovery ownership: changed path docs/AGENTS.md is outside running-node ownership",
       );
     } finally {
       error.mockRestore();

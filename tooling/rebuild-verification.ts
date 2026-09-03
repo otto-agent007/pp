@@ -42,6 +42,7 @@ export function selectVerificationGates(
   changedPaths: readonly string[],
   declaredChecks: readonly string[],
   recoveryOwnership?: readonly string[],
+  recoverySliceId?: string,
 ) {
   const commands = new Set(
     declaredChecks.map((command) => command.trim()).filter(Boolean),
@@ -129,6 +130,7 @@ export function selectVerificationGates(
     for (const error of validateChangedPathOwnership(
       changedPaths,
       recoveryOwnership,
+      recoverySliceId,
     )) {
       commands.add(`UNMAPPED recovery ownership: ${error}`);
     }
@@ -588,6 +590,7 @@ export function runRebuildVerificationCli(
     changedPaths,
     verificationNode.checks,
     recoverySliceId ? verificationNode.ownership : undefined,
+    recoverySliceId ? verificationNode.id : undefined,
   );
   const discoveredCandidates = discoverPackageManagerCandidates(
     explicitPackageManager,

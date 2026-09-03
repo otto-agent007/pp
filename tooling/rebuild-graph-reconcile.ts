@@ -45,9 +45,32 @@ function isRepositoryRelativePath(value: string) {
   );
 }
 
+const STANDING_SLICE_OWNERSHIP = new Set([
+  "docs/rebuild/graph.json",
+  "pnpm-lock.yaml",
+  "tasks/in-progress.md",
+]);
+
+function isStandingSliceOwnership(path: string, sliceId: string) {
+  if (STANDING_SLICE_OWNERSHIP.has(path)) {
+    return true;
+  }
+  if (!path.startsWith("docs/superpowers/plans/") || !path.endsWith(".md")) {
+    return false;
+  }
+
+  const escapedSliceId = sliceId
+    .toLowerCase()
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|-)${escapedSliceId}(?:-|\\.md$)`).test(
+    posix.basename(path),
+  );
+}
+
 export function validateChangedPathOwnership(
   changedPaths: readonly string[],
   ownership: readonly string[],
+  sliceId?: string,
 ) {
   const errors: string[] = [];
   const validOwnership = ownership.filter((path) => {
@@ -68,9 +91,13 @@ export function validateChangedPathOwnership(
       continue;
     }
     if (
-      !validOwnership.some(
-        (ownedPath) =>
-          changedPath === ownedPath || changedPath.startsWith(`${ownedPath}/`),
+      !(
+        (sliceId && isStandingSliceOwnership(changedPath, sliceId)) ||
+        validOwnership.some(
+          (ownedPath) =>
+            changedPath === ownedPath ||
+            changedPath.startsWith(`${ownedPath}/`),
+        )
       )
     ) {
       errors.push(
@@ -200,7 +227,11 @@ function validateRepositoryClaimsWithOptions(
         );
       }
       errors.push(
-        ...validateChangedPathOwnership(facts.changedPaths, node.ownership),
+        ...validateChangedPathOwnership(
+          facts.changedPaths,
+          node.ownership,
+          node.id,
+        ),
       );
     } else if (node.status === "abandoned" || node.status === "superseded") {
       evidenceDescendant = "HEAD";
