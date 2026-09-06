@@ -38,6 +38,13 @@ function gateId(command: string) {
   return `gate-${createHash("sha256").update(command).digest("hex").slice(0, 12)}`;
 }
 
+// Gates are executed with `shell: true` (POSIX /bin/sh), so any changed-path
+// segment interpolated into a gate command must be single-quoted to prevent
+// shell metacharacters in a crafted filename from being interpreted.
+function shellQuoteArgument(value: string) {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
 export function selectVerificationGates(
   changedPaths: readonly string[],
   declaredChecks: readonly string[],
@@ -84,13 +91,13 @@ export function selectVerificationGates(
     if (skillMatch) {
       matched = true;
       commands.add(
-        `python3 $CODEX_SKILL_VALIDATOR .agents/skills/${skillMatch[1]}`,
+        `python3 $CODEX_SKILL_VALIDATOR ${shellQuoteArgument(`.agents/skills/${skillMatch[1]}`)}`,
       );
     }
     if (path.endsWith(".toml")) {
       matched = true;
       commands.add(
-        `python3 -c "import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))" ${path}`,
+        `python3 -c "import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))" ${shellQuoteArgument(path)}`,
       );
     }
     if (

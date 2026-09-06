@@ -111,10 +111,32 @@ describe("controlled rebuild verification gate selection", () => {
         "pnpm rebuild:graph:reconcile -- --offline",
         "pnpm security:baseline",
         "pnpm test",
-        "python3 -c \"import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))\" .codex/agents/pp-rebuild-worker.toml",
-        "python3 $CODEX_SKILL_VALIDATOR .agents/skills/pest-patrol-verification-gate",
+        "python3 -c \"import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))\" '.codex/agents/pp-rebuild-worker.toml'",
+        "python3 $CODEX_SKILL_VALIDATOR '.agents/skills/pest-patrol-verification-gate'",
       ].sort(),
     );
+  });
+
+  it("shell-quotes a .toml path so shell metacharacters cannot break out", () => {
+    const commands = selectVerificationGates(
+      ["$(touch pwned).toml"],
+      [],
+    ).map((gate) => gate.command);
+
+    expect(commands).toEqual([
+      "python3 -c \"import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))\" '$(touch pwned).toml'",
+    ]);
+  });
+
+  it("shell-quotes a skill path containing shell metacharacters", () => {
+    const commands = selectVerificationGates(
+      [".agents/skills/`touch pwned`/SKILL.md"],
+      [],
+    ).map((gate) => gate.command);
+
+    expect(commands).toEqual([
+      "python3 $CODEX_SKILL_VALIDATOR '.agents/skills/`touch pwned`'",
+    ]);
   });
 
   it("deduplicates exact commands and orders gates lexically", () => {

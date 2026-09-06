@@ -28,6 +28,10 @@ const textExtensions = new Set([
   ".jsx",
   ".md",
   ".mjs",
+  ".py",
+  ".sh",
+  ".sql",
+  ".toml",
   ".ts",
   ".tsx",
   ".txt",
@@ -78,6 +82,12 @@ function isEnvExample(fileName: string) {
 
 function isEnvFile(fileName: string) {
   return basename(fileName).startsWith(".env");
+}
+
+const jsTsExtensions = new Set([".cjs", ".js", ".jsx", ".mjs", ".ts", ".tsx"]);
+
+function isJsTsFile(fileName: string) {
+  return jsTsExtensions.has(fileExtension(basename(fileName)));
 }
 
 function walk(root: string, current = root): string[] {
@@ -187,6 +197,13 @@ function checkServiceRoleBoundary(
   filePath: string,
   content: string,
 ) {
+  if (!isJsTsFile(filePath)) {
+    // Client/server code-boundary rules below only make sense for JS/TS
+    // source; a SQL/Python/shell/toml file mentioning the helper name in a
+    // comment (e.g. explaining an RLS decision) isn't a boundary violation.
+    return;
+  }
+
   const path = toRepoPath(root, filePath);
   const referencesServiceRoleEnv = content.includes("SUPABASE_SERVICE_ROLE_KEY");
   const referencesServiceRoleHelper = content.includes(
@@ -219,6 +236,11 @@ function checkPortalLeakage(
   filePath: string,
   content: string,
 ) {
+  if (!isJsTsFile(filePath)) {
+    // Route/import-boundary rules below only make sense for JS/TS source.
+    return;
+  }
+
   const path = toRepoPath(root, filePath);
 
   if (path.includes("apps/web/app/api/portal/") && path.endsWith("route.ts")) {

@@ -7,3 +7,5 @@
 /tooling/rebuild-verification.test.ts @otto-agent007
 /.github/workflows/ci.yml @otto-agent007
 /.github/CODEOWNERS @otto-agent007
+/supabase/migrations/ @otto-agent007
+/apps/web/app/api/ @otto-agent007

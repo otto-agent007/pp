@@ -45,6 +45,9 @@ jobs:
       - name: Security baseline
         run: pnpm security:baseline
 
+      - name: Security audit
+        run: pnpm security:audit
+
       - name: Test
         run: pnpm test
 
