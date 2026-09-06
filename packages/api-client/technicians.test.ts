@@ -67,6 +67,11 @@ class MockQuery<T> {
     return Promise.resolve(this.result);
   }
 
+  maybeSingle() {
+    this.calls.push(["maybeSingle", []]);
+    return Promise.resolve(this.result);
+  }
+
   then(resolve: (value: T) => unknown, reject: (error: unknown) => unknown) {
     return Promise.resolve(this.result).then(resolve, reject);
   }
@@ -153,8 +158,12 @@ describe("technician api client", () => {
   });
 
   it("uses Supabase admin invite and upserts technician profile metadata", async () => {
-    const profilesQuery = new MockQuery({ data: technician, error: null });
-    const clientFrom = vi.fn().mockReturnValue(profilesQuery);
+    const existingProfileQuery = new MockQuery({ data: null, error: null });
+    const upsertQuery = new MockQuery({ data: technician, error: null });
+    const clientFrom = vi
+      .fn()
+      .mockReturnValueOnce(existingProfileQuery)
+      .mockReturnValueOnce(upsertQuery);
     const inviteUserByEmail = vi.fn().mockResolvedValue({
       data: { user: { id: "technician-1" } },
       error: null,
@@ -175,6 +184,10 @@ describe("technician api client", () => {
     });
 
     expect(result.technician.id).toBe("technician-1");
+    expect(existingProfileQuery.calls).toContainEqual([
+      "eq",
+      ["email", "testnician@example.com"],
+    ]);
     expect(inviteUserByEmail).toHaveBeenCalledWith(
       "testnician@example.com",
       expect.objectContaining({
@@ -186,7 +199,7 @@ describe("technician api client", () => {
       }),
     );
     expect(clientFrom).toHaveBeenCalledWith("profiles");
-    expect(profilesQuery.calls[0]).toEqual([
+    expect(upsertQuery.calls[0]).toEqual([
       "upsert",
       [
         expect.objectContaining({
@@ -199,6 +212,35 @@ describe("technician api client", () => {
         { onConflict: "id" },
       ],
     ]);
+  });
+
+  it("rejects inviting an email that belongs to an existing non-technician profile", async () => {
+    const existingProfileQuery = new MockQuery({
+      data: { id: "admin-1", role: "admin" },
+      error: null,
+    });
+    const clientFrom = vi.fn().mockReturnValue(existingProfileQuery);
+    const inviteUserByEmail = vi.fn();
+    const client = {
+      auth: {
+        admin: {
+          inviteUserByEmail,
+        },
+      },
+      from: clientFrom,
+    } as never;
+
+    await expect(
+      inviteTechnicianWithAdminClientRecord(client, {
+        email: "admin@example.com",
+        display_name: "Someone",
+        redirect_to: "https://app.example.com/auth/update-password",
+      }),
+    ).rejects.toThrow(
+      "This email belongs to an existing admin or dispatcher account and cannot be invited as a technician",
+    );
+
+    expect(inviteUserByEmail).not.toHaveBeenCalled();
   });
 
   it("lists non-archived technician license records", async () => {

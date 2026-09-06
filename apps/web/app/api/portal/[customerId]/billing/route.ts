@@ -31,9 +31,11 @@ export async function GET(
       invoices: buildCustomerPortalInvoices(invoices),
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to load portal billing";
+    console.error("Customer portal billing load failed", error);
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to load portal billing" },
+      { status: 500 },
+    );
   }
 }

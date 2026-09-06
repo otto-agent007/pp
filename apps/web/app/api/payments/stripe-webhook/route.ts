@@ -26,6 +26,7 @@ const maximumStripeWebhookToleranceSeconds = 900;
 
 interface StripeEvent<TObject = StripeObject> {
   id: string;
+  livemode?: boolean;
   type: string;
   data: {
     object: TObject;
@@ -111,6 +112,45 @@ function verifyStripeSignature(
     .digest("hex");
 
   return signatures.some((signature) => secureCompareHex(signature, expected));
+}
+
+function isExpectedStripeLivemode(
+  stripeKeyMode: string,
+  eventLivemode: boolean | undefined,
+) {
+  if (stripeKeyMode === "test") {
+    return eventLivemode !== true;
+  }
+
+  if (stripeKeyMode === "live") {
+    return eventLivemode === true;
+  }
+
+  // Mode can't be determined reliably (missing/unknown key) — skip the check
+  // rather than block on an inconclusive signal.
+  return true;
+}
+
+async function claimStripeEventForProcessing(
+  client: ReturnType<typeof createServiceRoleSupabaseClient>,
+  event: StripeEvent,
+) {
+  const { error } = await client
+    .from("stripe_webhook_events")
+    .insert({ event_id: event.id, event_type: event.type })
+    .select()
+    .maybeSingle();
+
+  if (!error) {
+    return true;
+  }
+
+  // Unique violation on event_id means this event was already processed.
+  if (error.code === "23505") {
+    return false;
+  }
+
+  throw error;
 }
 
 function getStripeWebhookToleranceSeconds() {
@@ -236,6 +276,17 @@ async function reconcileStripeEvent(
     };
   }
 
+  const claimed = await claimStripeEventForProcessing(client, event);
+
+  if (!claimed) {
+    return {
+      invoice_id: payload.invoice_id,
+      message: "Stripe event already processed",
+      payment_id: null,
+      status: "ignored",
+    };
+  }
+
   const payment = await upsertPaymentRecordRecord(payload, client);
   const updatedInvoice = mergePaymentIntoInvoice(invoice, payment);
   const paymentDecision = getInvoicePaymentCoverageDecision(
@@ -321,6 +372,20 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Invalid Stripe webhook payload" },
+      { status: 400 },
+    );
+  }
+
+  if (!isExpectedStripeLivemode(stripeReadiness.stripe_key_mode, event.livemode)) {
+    safeLogWarn("stripe.webhook.livemode_mismatch", {
+      event_id: event.id,
+      provider: "stripe",
+      route: "payments/stripe-webhook",
+      stripe_key_mode: stripeReadiness.stripe_key_mode,
+    });
+
+    return NextResponse.json(
+      { error: "Stripe event livemode does not match configured key" },
       { status: 400 },
     );
   }

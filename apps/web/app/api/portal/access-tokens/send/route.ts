@@ -13,6 +13,7 @@ import {
   getAdminAccess,
 } from "../../../_lib/server-auth";
 import { checkApiRateLimit, rateLimitResponse } from "../../../_lib/rate-limit";
+import { dispatchSignedWebhook } from "../../../_lib/webhook-dispatch";
 import { recordCustomerPortalAccessTokenEvent } from "../../_lib/access-token-events";
 import { hashPortalSecret } from "../../_lib/portal-session";
 
@@ -68,6 +69,17 @@ function isExpired(expiresAt: string | null) {
   return Boolean(expiresAt && Date.parse(expiresAt) <= Date.now());
 }
 
+function isKnownSafeSendError(message: string) {
+  return (
+    message === "Portal delivery provider is not configured" ||
+    message === "Portal delivery provider is unavailable" ||
+    message === "Portal delivery provider request failed" ||
+    message.includes("required") ||
+    message === "Portal URL is invalid" ||
+    message.startsWith("Portal URL does not match")
+  );
+}
+
 function errorStatus(message: string) {
   if (
     message === "Portal delivery provider is not configured" ||
@@ -114,19 +126,18 @@ async function sendThroughProvider(payload: CustomerPortalSendProviderPayload) {
     throw new Error("Portal delivery provider is not configured");
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
   const webhookSecret = process.env.PORTAL_DELIVERY_WEBHOOK_SECRET;
+  const headers: Record<string, string> = {};
 
   if (webhookSecret) {
     headers.Authorization = `Bearer ${webhookSecret}`;
   }
 
-  const response = await fetch(webhookUrl, {
-    body: JSON.stringify(payload),
+  const response = await dispatchSignedWebhook({
     headers,
-    method: "POST",
+    payload,
+    secret: webhookSecret,
+    url: webhookUrl,
   });
 
   if (!response.ok) {
@@ -304,16 +315,18 @@ export async function POST(request: Request) {
       status: "requested",
     });
   } catch (error) {
-    const message =
+    const rawMessage =
       error instanceof Error ? error.message : "Unable to request portal send";
+    const message = isKnownSafeSendError(rawMessage)
+      ? rawMessage
+      : "Unable to request portal send";
+
+    if (message !== rawMessage) {
+      console.error("Portal send request failed", error);
+    }
 
     return NextResponse.json(
-      {
-        error:
-          message === "Portal delivery provider request failed"
-            ? message
-            : message,
-      },
+      { error: message },
       { status: errorStatus(message) },
     );
   }

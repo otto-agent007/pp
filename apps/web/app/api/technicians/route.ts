@@ -25,10 +25,12 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ technicians });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to load technicians";
+    console.error("Technician list failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to load technicians" },
+      { status: 400 },
+    );
   }
 }
 
@@ -50,9 +52,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to invite technician";
+    console.error("Technician invite failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to invite technician" },
+      { status: 400 },
+    );
   }
 }

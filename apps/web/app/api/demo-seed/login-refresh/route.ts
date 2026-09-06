@@ -50,6 +50,7 @@ export async function POST(request: Request) {
   const plan = buildDemoSeedPlan();
   const summary = getDemoSeedPlanSummary(plan);
   const status = buildDemoSeedRuntimeStatus({
+    previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
     serviceRoleConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     target,
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
 
   const guardrail = validateDemoSeedGuardrails({
     confirm: DEMO_SEED_CONFIRMATION,
+    previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     target,
@@ -98,13 +100,10 @@ export async function POST(request: Request) {
       summary,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to refresh demo login data";
+    console.error("Demo login refresh failed", error);
 
     return NextResponse.json(
-      { error: message, status, summary },
+      { error: "Unable to refresh demo login data", status, summary },
       { status: 400 },
     );
   }

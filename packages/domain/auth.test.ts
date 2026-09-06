@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   establishPasswordRecoverySession,
   requestPasswordReset,
+  signInAdmin,
+  signInTechnician,
   updateCurrentUserPassword,
   validateAdminAccess,
   validateAdminProfile,
@@ -199,6 +201,31 @@ describe("auth domain", () => {
     ).toThrow("Admin or dispatcher access is required");
   });
 
+  it("rejects deactivated admin and dispatcher profiles", () => {
+    expect(() =>
+      validateAdminProfile({
+        id: "user-0",
+        role: "admin",
+        status: "inactive",
+        created_at: now,
+        updated_at: now,
+      }),
+    ).toThrow("This account has been deactivated");
+
+    expect(() =>
+      validateAdminAccess({
+        session,
+        profile: {
+          id: "user-1",
+          role: "dispatcher",
+          status: "inactive",
+          created_at: now,
+          updated_at: now,
+        },
+      }),
+    ).toThrow("This account has been deactivated");
+  });
+
   it("accepts technician profiles only", () => {
     expect(
       validateTechnicianAccess({
@@ -276,5 +303,100 @@ describe("auth domain", () => {
     });
 
     expect(updateUser).toHaveBeenCalledWith({ password: "new-password" });
+  });
+
+  it("signs out a wrong-role admin session before surfacing the access error", async () => {
+    const signInWithPassword = vi.fn().mockResolvedValue({
+      data: { session },
+      error: null,
+    });
+    const signOut = vi.fn().mockResolvedValue({ error: null });
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        id: "user-1",
+        role: "technician",
+        created_at: now,
+        updated_at: now,
+      },
+      error: null,
+    });
+    const client = {
+      auth: { signInWithPassword, signOut },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single,
+      }),
+    } as never;
+
+    await expect(
+      signInAdmin(client, { email: "tech@example.com", password: "password" }),
+    ).rejects.toThrow("Admin or dispatcher access is required");
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("signs out a wrong-role technician session before surfacing the access error", async () => {
+    const signInWithPassword = vi.fn().mockResolvedValue({
+      data: { session },
+      error: null,
+    });
+    const signOut = vi.fn().mockResolvedValue({ error: null });
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        id: "user-1",
+        role: "admin",
+        created_at: now,
+        updated_at: now,
+      },
+      error: null,
+    });
+    const client = {
+      auth: { signInWithPassword, signOut },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single,
+      }),
+    } as never;
+
+    await expect(
+      signInTechnician(client, { email: "admin@example.com", password: "password" }),
+    ).rejects.toThrow("Technician access is required");
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not sign out when role validation succeeds", async () => {
+    const signInWithPassword = vi.fn().mockResolvedValue({
+      data: { session },
+      error: null,
+    });
+    const signOut = vi.fn().mockResolvedValue({ error: null });
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        id: "user-1",
+        role: "admin",
+        created_at: now,
+        updated_at: now,
+      },
+      error: null,
+    });
+    const client = {
+      auth: { signInWithPassword, signOut },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single,
+      }),
+    } as never;
+
+    const record = await signInAdmin(client, {
+      email: "admin@example.com",
+      password: "password",
+    });
+
+    expect(record).toMatchObject({ profile: { role: "admin" } });
+    expect(signOut).not.toHaveBeenCalled();
   });
 });

@@ -200,8 +200,23 @@ describe("demo seed data", () => {
         confirm: DEMO_SEED_CONFIRMATION,
         supabaseUrl: "https://example.supabase.co",
         serviceRoleKey: "service-role-key",
+        previewSecretConfigured: true,
       }),
     ).toEqual({ ok: true, target: "preview" });
+
+    expect(
+      validateDemoSeedGuardrails({
+        target: "preview",
+        confirm: DEMO_SEED_CONFIRMATION,
+        supabaseUrl: "https://example.supabase.co",
+        serviceRoleKey: "service-role-key",
+        previewSecretConfigured: false,
+      }),
+    ).toEqual({
+      ok: false,
+      message:
+        "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
+    });
 
     expect(
       validateDemoSeedGuardrails({
@@ -376,11 +391,28 @@ describe("demo seed data", () => {
         supabaseUrl: "https://project.supabase.co",
         target: "preview",
         vercelEnv: "preview",
+        previewSecretConfigured: true,
       }),
     ).toMatchObject({
       available: true,
       environment_label: "Protected preview demo",
       reason: null,
+      target: "preview",
+    });
+
+    expect(
+      buildDemoSeedRuntimeStatus({
+        serviceRoleConfigured: true,
+        supabaseUrl: "https://project.supabase.co",
+        target: "preview",
+        vercelEnv: "preview",
+        previewSecretConfigured: false,
+      }),
+    ).toMatchObject({
+      available: false,
+      environment_label: "Protected preview demo",
+      reason:
+        "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
       target: "preview",
     });
 

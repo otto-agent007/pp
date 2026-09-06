@@ -77,6 +77,7 @@ async function main() {
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
   const validation = validateDemoSeedExecution({} as DemoSeedSupabaseClient, {
     confirm: options.confirm,
+    previewSecretConfigured: Boolean(getEnv("DEMO_SEED_PREVIEW_SECRET")),
     serviceRoleKey,
     supabaseUrl,
     target: options.target,

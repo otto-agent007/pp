@@ -110,6 +110,10 @@ export function validateAdminProfile(profile: UserProfile | null) {
     throw new Error("Admin or dispatcher access is required");
   }
 
+  if (profile.status === "inactive") {
+    throw new Error("This account has been deactivated");
+  }
+
   return profile;
 }
 
@@ -138,10 +142,18 @@ export async function signInTechnician(
   input: TechnicianLoginInput,
 ) {
   const normalized = validateTechnicianLoginInput(input);
-
-  return validateTechnicianAccess(
-    await signInWithPasswordRecord(client, normalized.email, normalized.password),
+  const record = await signInWithPasswordRecord(
+    client,
+    normalized.email,
+    normalized.password,
   );
+
+  try {
+    return validateTechnicianAccess(record);
+  } catch (error) {
+    await signOutRecord(client);
+    throw error;
+  }
 }
 
 export async function signInAdmin(
@@ -149,10 +161,18 @@ export async function signInAdmin(
   input: LoginInput,
 ) {
   const normalized = validateAdminLoginInput(input);
-
-  return validateAdminAccess(
-    await signInWithPasswordRecord(client, normalized.email, normalized.password),
+  const record = await signInWithPasswordRecord(
+    client,
+    normalized.email,
+    normalized.password,
   );
+
+  try {
+    return validateAdminAccess(record);
+  } catch (error) {
+    await signOutRecord(client);
+    throw error;
+  }
 }
 
 export async function signOutTechnician(client: AuthSupabaseClient) {
