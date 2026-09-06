@@ -176,12 +176,12 @@ export async function POST(request: Request) {
       });
     }
 
-    const message =
-      error instanceof Error ? error.message : "Unable to create compliance advisory";
+    const message = "Unable to create compliance advisory";
 
     safeLogError("compliance.advisory.failed", {
       route: "compliance/advisories",
       workflow: input?.workflow ?? null,
+      error: error instanceof Error ? error.message : String(error),
     });
 
     return NextResponse.json({ error: message }, { status: 500 });

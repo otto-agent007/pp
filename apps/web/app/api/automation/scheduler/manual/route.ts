@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to run scheduler";
+    console.error("Manual scheduler run failed", error);
 
     try {
       const client = createServiceRoleSupabaseClient();
@@ -62,6 +63,9 @@ export async function POST(request: Request) {
       // Keep the manual run response focused on the original failure.
     }
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to run scheduler" },
+      { status: 500 },
+    );
   }
 }

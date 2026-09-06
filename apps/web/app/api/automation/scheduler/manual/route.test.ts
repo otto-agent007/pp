@@ -107,7 +107,7 @@ describe("manual automation scheduler route", () => {
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(500);
-    expect(body.error).toBe("Manual scheduler failed");
+    expect(body.error).toBe("Unable to run scheduler");
     expect(createAutomationSchedulerRunRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         error_message: "Manual scheduler failed",

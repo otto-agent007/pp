@@ -98,13 +98,10 @@ export async function POST(request: Request) {
       summary,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to refresh demo login data";
+    console.error("Demo login refresh failed", error);
 
     return NextResponse.json(
-      { error: message, status, summary },
+      { error: "Unable to refresh demo login data", status, summary },
       { status: 400 },
     );
   }

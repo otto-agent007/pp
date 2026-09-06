@@ -143,9 +143,11 @@ export async function POST(request: Request) {
       summary,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to run demo seed";
+    console.error("Demo seed run failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to run demo seed" },
+      { status: 400 },
+    );
   }
 }

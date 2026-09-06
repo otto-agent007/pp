@@ -68,6 +68,17 @@ function isExpired(expiresAt: string | null) {
   return Boolean(expiresAt && Date.parse(expiresAt) <= Date.now());
 }
 
+function isKnownSafeSendError(message: string) {
+  return (
+    message === "Portal delivery provider is not configured" ||
+    message === "Portal delivery provider is unavailable" ||
+    message === "Portal delivery provider request failed" ||
+    message.includes("required") ||
+    message === "Portal URL is invalid" ||
+    message.startsWith("Portal URL does not match")
+  );
+}
+
 function errorStatus(message: string) {
   if (
     message === "Portal delivery provider is not configured" ||
@@ -304,16 +315,18 @@ export async function POST(request: Request) {
       status: "requested",
     });
   } catch (error) {
-    const message =
+    const rawMessage =
       error instanceof Error ? error.message : "Unable to request portal send";
+    const message = isKnownSafeSendError(rawMessage)
+      ? rawMessage
+      : "Unable to request portal send";
+
+    if (message !== rawMessage) {
+      console.error("Portal send request failed", error);
+    }
 
     return NextResponse.json(
-      {
-        error:
-          message === "Portal delivery provider request failed"
-            ? message
-            : message,
-      },
+      { error: message },
       { status: errorStatus(message) },
     );
   }
