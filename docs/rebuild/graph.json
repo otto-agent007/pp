@@ -456,6 +456,14 @@
           "exitCode": 0,
           "commitSha": "23cc38f5f7b1a7f3508ed438dfb76b0cf0cbd1b4",
           "recordedAt": "2026-09-06T22:32:52.902Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 15 selected gates on Node 24.20.0 after updating from main, with evidence set 8f819cbc49eb32b787f8f95ec15553edc01e8d12d59f55c214a9abef625969e3.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm9/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "a28d5d3f1d38c43a30010406d6aa47c78798b8ee",
+          "recordedAt": "2026-09-06T23:50:35.196Z"
         }
       ],
       "branch": "codex/rebuild-cr10-node-24-v1",
