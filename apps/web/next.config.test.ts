@@ -72,8 +72,18 @@ describe("web Next config", () => {
       key: "Cross-Origin-Opener-Policy",
       value: "same-origin",
     });
-    expect(headerNames).not.toContain("Strict-Transport-Security");
-    expect(headerNames).not.toContain("Cross-Origin-Resource-Policy");
+    expect(headers).toContainEqual({
+      key: "Cross-Origin-Resource-Policy",
+      value: "same-origin",
+    });
+    expect(headers).toContainEqual({
+      key: "Strict-Transport-Security",
+      value: "max-age=63072000; includeSubDomains",
+    });
+  });
+
+  it("disables the X-Powered-By header", () => {
+    expect(nextConfig.poweredByHeader).toBe(false);
   });
 
   it("keeps the CSP baseline report-only and compatible with portal media, QR, Stripe, and Next", () => {
@@ -95,8 +105,7 @@ describe("web Next config", () => {
     expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).toContain("manifest-src 'self'");
     expect(csp).toContain("upgrade-insecure-requests");
-    expect(csp).not.toContain("report-uri");
-    expect(csp).not.toContain("report-to");
+    expect(csp).toContain("report-uri /api/csp-report");
   });
 
   it("allows local Whisper connections only in development", () => {
@@ -137,7 +146,7 @@ describe("web Next config", () => {
     )?.value;
 
     expect(permissionsPolicy).toContain("camera=()");
-    expect(permissionsPolicy).toContain("microphone=()");
+    expect(permissionsPolicy).toContain("microphone=(self)");
     expect(permissionsPolicy).toContain("geolocation=()");
     expect(permissionsPolicy).toContain("payment=()");
     expect(permissionsPolicy).toContain("usb=()");
