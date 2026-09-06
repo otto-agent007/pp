@@ -446,6 +446,14 @@
           "commitSha": "62207736d06ef169b20721e62f0a061036e4126c",
           "recordedAt": "2026-09-06T22:28:03Z",
           "url": "https://github.com/otto-agent007/pp/pull/169"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 14 selected gates on Node 24.20.0 with evidence set 8366bf24eeebcc595103fc838c43ce666f7dec0c9eac4ec4186a42f9e0e318fa.",
+          "command": "pnpm rebuild:verify -- --package-manager /tmp/claude-1000/-mnt-2TBHDD-pp/1fbd063c-d7f7-4afa-9e31-27f1cafac637/scratchpad/pnpm-tool/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "23cc38f5f7b1a7f3508ed438dfb76b0cf0cbd1b4",
+          "recordedAt": "2026-09-06T22:32:52.902Z"
         }
       ],
       "branch": "codex/rebuild-cr10-node-24-v1",

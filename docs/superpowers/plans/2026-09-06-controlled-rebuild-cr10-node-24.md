@@ -40,9 +40,11 @@ controller-approved gates per `docs/rebuild/README.md`.
 - [x] Teach `tooling/rebuild-verification.ts` to map `.nvmrc` and the root
       `README.md` to gates (docs/config check plus a runtime check that the
       verifier itself runs on the pinned Node version); tests first.
-- [ ] Run every declared check on Node 24.20.0 and record the
-      `pnpm rebuild:verify` evidence set on the node.
-- [ ] Open the draft PR, record it on the node, and re-verify the pushed head.
+- [x] Run every declared check on Node 24.20.0 and record the
+      `pnpm rebuild:verify` evidence set on the node (14/14 gates PASS at
+      `23cc38f5f7b1a7f3508ed438dfb76b0cf0cbd1b4`).
+- [x] Open the draft PR (#169) and record it on the node; controller merge
+      approval and the `rebuild/cr10-source` tag remain open.
 
 ## Declared checks
 
