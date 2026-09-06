@@ -133,14 +133,15 @@ export async function POST(
 
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to exchange portal grant";
-
     safeLogError("portal.session.exchange_failed", {
       customer_id: customerId,
+      error: error instanceof Error ? error.message : String(error),
       route: "portal/sessions",
     });
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to exchange portal grant" },
+      { status: 500 },
+    );
   }
 }

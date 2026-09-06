@@ -26,6 +26,11 @@ interface ProviderResult {
   provider_message_id: string | null;
 }
 
+const KNOWN_SAFE_DELIVERY_ERRORS = new Set([
+  "Notification delivery provider is unavailable",
+  "Notification provider delivery failed",
+]);
+
 function requireNonEmpty(value: string, fieldName: string) {
   if (!value.trim()) {
     throw new Error(`${fieldName} is required`);
@@ -212,14 +217,18 @@ export async function POST(
       provider_message_id: result.provider_message_id,
     });
   } catch (error) {
-    const message =
+    const rawMessage =
       error instanceof Error ? error.message : "Unable to send notification";
+    const message = KNOWN_SAFE_DELIVERY_ERRORS.has(rawMessage)
+      ? rawMessage
+      : "Unable to send notification";
     const provider = process.env.NOTIFICATION_DELIVERY_WEBHOOK_URL
       ? "webhook"
       : "manual";
 
     safeLogError("notification.delivery.failed", {
       customer_id: notification.customer_id,
+      error: rawMessage,
       job_id: notification.job_id,
       notification_id: notification.id,
       provider,

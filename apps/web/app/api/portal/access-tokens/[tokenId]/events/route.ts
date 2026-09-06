@@ -56,11 +56,11 @@ export async function GET(
       truncated_before: null,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to load portal access history";
+    console.error("Portal access history load failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to load portal access history" },
+      { status: 400 },
+    );
   }
 }
