@@ -27,12 +27,19 @@ const sensitiveTables = [
   "jobs",
   "job_media",
   "job_form_submissions",
+  "form_templates",
   "chemical_inventory",
   "chemical_logs",
   "invoices",
+  "invoice_line_items",
   "payments",
+  "stripe_webhook_events",
   "notification_events",
+  "notification_templates",
+  "automation_rules",
+  "automation_scheduler_runs",
   "customer_portal_access_tokens",
+  "customer_portal_access_token_events",
   "customer_portal_sessions",
   "technician_licenses",
   "compliance_sources",
@@ -40,6 +47,8 @@ const sensitiveTables = [
   "compliance_chunks",
   "compliance_advisory_audits",
   "job_location_events",
+  "location_units",
+  "job_unit_audit_items",
 ];
 
 function normalizeSql(sql: string) {
