@@ -7,7 +7,7 @@
   "types": "./index.ts",
   "dependencies": {
     "@pest-patrol/types": "workspace:*",
-    "@supabase/supabase-js": "^2.47.10"
+    "@supabase/supabase-js": "^2.115.0"
   },
   "scripts": {
     "build": "tsc --noEmit",
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3"
   }
 }
