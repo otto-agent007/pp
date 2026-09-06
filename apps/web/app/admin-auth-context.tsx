@@ -290,12 +290,18 @@ async function signInLocalDemo() {
 }
 
 async function signOut() {
+  let revokeError: string | null = null;
+
   try {
     await signOutAdmin(supabase);
+  } catch (error) {
+    revokeError =
+      "Sign out was not confirmed by the server. If you notice unexpected access, please sign out again.";
+    console.error("Admin sign-out failed to revoke the server session", error);
   } finally {
     deactivateLocalDemoFixtureSession();
     writeLocalDemoSession(false);
-    setAuthState(signedOutState);
+    setAuthState({ ...signedOutState, error: revokeError });
   }
 }
 
