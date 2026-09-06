@@ -75,7 +75,7 @@ slice also requires a correctly named `codex/*` branch. Every resolved
 dependency must be done.
 
 Version policy lives on the applicable node rather than in validator code.
-CR10 targets Node 24 LTS, CR11 pnpm 11 stable, CR12 Next.js 16 stable, CR13
+CR10 targets Node 24 LTS, CR11 pnpm 12 stable, CR12 Next.js 16 stable, CR13
 Expo SDK 54, CR14 Expo SDK 55, and CR15 the SDK 56-to-57 hop. CR15's final SDK
 57 version may not be lower than 57.0.9 because that is the Hermes-fix floor;
 CR16 is superseded by CR15. At slice start, refresh the node's declared
