@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
-
 import { CustomerPortalClient } from "./portal-client";
+import { PortalSessionExchange } from "./portal-session-exchange";
 
 export default async function CustomerPortalPage({
   params,
@@ -16,9 +15,11 @@ export default async function CustomerPortalPage({
     : grantParam ?? "";
 
   if (grant.trim()) {
-    redirect(
-      `/api/portal/${encodeURIComponent(customerId)}/sessions?grant=${encodeURIComponent(grant)}`,
-    );
+    // Rendering this page performs no session mutation on its own — the
+    // actual grant exchange only fires from client-side JS below, so a
+    // stateless GET (link-preview crawlers, email scanners) can no longer
+    // burn a customer's one-time portal link.
+    return <PortalSessionExchange customerId={customerId} grant={grant} />;
   }
 
   return <CustomerPortalClient customerId={customerId} />;

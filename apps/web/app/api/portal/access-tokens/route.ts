@@ -75,12 +75,12 @@ export async function GET(request: Request) {
       tokens: (data ?? []).map(tokenSummary),
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to load portal access tokens";
+    console.error("Portal access token list failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to load portal access tokens" },
+      { status: 400 },
+    );
   }
 }
 
@@ -160,11 +160,11 @@ export async function POST(request: Request) {
       portal_url: portalUrl.toString(),
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to create portal access token";
+    console.error("Portal access token creation failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to create portal access token" },
+      { status: 400 },
+    );
   }
 }

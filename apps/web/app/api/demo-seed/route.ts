@@ -25,6 +25,7 @@ function configuredTarget(): DemoSeedTarget {
 
 function runtimeStatus(target: DemoSeedTarget) {
   return buildDemoSeedRuntimeStatus({
+    previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
     serviceRoleConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     target,
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
 
     const guardrail = validateDemoSeedGuardrails({
       confirm: input.confirm,
+      previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
       serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
       target: input.target,
@@ -143,9 +145,11 @@ export async function POST(request: Request) {
       summary,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to run demo seed";
+    console.error("Demo seed run failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to run demo seed" },
+      { status: 400 },
+    );
   }
 }

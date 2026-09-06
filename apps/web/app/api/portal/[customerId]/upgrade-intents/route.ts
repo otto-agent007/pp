@@ -84,11 +84,11 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to request recurring service follow-up";
+    console.error("Portal upgrade intent request failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to request recurring service follow-up" },
+      { status: 400 },
+    );
   }
 }

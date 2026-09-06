@@ -59,6 +59,12 @@ export async function POST(
       );
     }
 
+    await client
+      .from("customer_portal_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("token_id", data.id)
+      .is("revoked_at", null);
+
     await recordCustomerPortalAccessTokenEvent(client, {
       actorProfileId: access.userId,
       customerId: data.customer_id,
@@ -68,11 +74,11 @@ export async function POST(
 
     return NextResponse.json(tokenSummary(data));
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to revoke portal access token";
+    console.error("Portal access token revoke failed", error);
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to revoke portal access token" },
+      { status: 400 },
+    );
   }
 }

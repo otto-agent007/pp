@@ -1,16 +1,35 @@
 import { createAutomationSchedulerRunRecord } from "@pest-patrol/api-client";
 import { runAutomationSchedulerForClient } from "@pest-patrol/domain";
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { createServiceRoleSupabaseClient } from "../../_lib/server-auth";
 
 export const runtime = "nodejs";
 
+function timingSafeMatch(
+  candidate: string | null | undefined,
+  secret: string,
+) {
+  if (!candidate) {
+    return false;
+  }
+
+  const candidateBuffer = Buffer.from(candidate);
+  const secretBuffer = Buffer.from(secret);
+
+  if (candidateBuffer.length !== secretBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(candidateBuffer, secretBuffer);
+}
+
 function isAuthorized(request: Request) {
   const cronSecrets = [
     process.env.AUTOMATION_CRON_SECRET,
     process.env.CRON_SECRET,
-  ].filter(Boolean);
+  ].filter((secret): secret is string => Boolean(secret));
 
   if (cronSecrets.length === 0) {
     return false;
@@ -22,7 +41,9 @@ function isAuthorized(request: Request) {
   const headerToken = request.headers.get("x-automation-cron-secret");
 
   return cronSecrets.some(
-    (secret) => bearerToken === secret || headerToken === secret,
+    (secret) =>
+      timingSafeMatch(bearerToken, secret) ||
+      timingSafeMatch(headerToken, secret),
   );
 }
 
@@ -58,6 +79,7 @@ async function runScheduler(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to run scheduler";
+    console.error("Automation scheduler run failed", error);
 
     try {
       const client = createServiceRoleSupabaseClient();
@@ -80,7 +102,10 @@ async function runScheduler(request: Request) {
       // Keep the scheduler response focused on the original failure.
     }
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to run scheduler" },
+      { status: 500 },
+    );
   }
 }
 

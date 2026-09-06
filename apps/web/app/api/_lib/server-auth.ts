@@ -95,12 +95,14 @@ export async function getAdminAccess(request: Request): Promise<
       response: null,
     };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Authentication failed";
+    console.error("Authentication failed", error);
 
     return {
       access: null,
-      response: NextResponse.json({ error: message }, { status: 403 }),
+      response: NextResponse.json(
+        { error: "Authentication failed" },
+        { status: 403 },
+      ),
     };
   }
 }

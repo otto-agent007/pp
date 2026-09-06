@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { safeLogError, safeLogInfo, safeLogWarn } from "@pest-patrol/domain";
 
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
+import {
+  checkApiRateLimit,
+  getClientIpFromRequest,
+  rateLimitResponse,
+} from "../../../_lib/rate-limit";
 import { recordCustomerPortalOpenedEvent } from "../../_lib/access-token-events";
 import {
   hashPortalSecret,
@@ -14,20 +19,40 @@ import {
 
 export const runtime = "nodejs";
 
-interface PortalGrantRow {
+interface ClaimedPortalGrant {
   customer_id: string;
   expires_at: string | null;
   id: string;
-  status: "active" | "revoked";
 }
 
-export async function GET(
+async function readGrant(request: Request) {
+  try {
+    const body = (await request.json()) as { grant?: unknown } | null;
+
+    return typeof body?.grant === "string" ? body.grant : "";
+  } catch {
+    return "";
+  }
+}
+
+export async function POST(
   request: Request,
   { params }: { params: Promise<{ customerId: string }> },
 ) {
   const { customerId } = await params;
-  const url = new URL(request.url);
-  const grant = url.searchParams.get("grant") ?? "";
+  const grant = await readGrant(request);
+  const clientIp = getClientIpFromRequest(request);
+  const ipSuffix = clientIp ? `:${clientIp}` : "";
+
+  if (
+    await checkApiRateLimit({
+      id: "portal-session-exchange",
+      request,
+      key: `portal-session-exchange:${customerId}${ipSuffix}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
 
   if (!grant.trim()) {
     safeLogWarn("portal.session.grant_required", {
@@ -41,14 +66,22 @@ export async function GET(
 
   try {
     const client = createServiceRoleSupabaseClient();
-    const { data, error } = await client
+    const nowIso = new Date().toISOString();
+
+    // Atomically claim the grant: the conditional `status = 'active'` filter
+    // means only one concurrent request can flip it to `revoked`, so two
+    // simultaneous exchanges of the same grant can never both mint a session.
+    const { data: claimed, error: claimError } = await client
       .from("customer_portal_access_tokens")
-      .select("id, customer_id, expires_at, status")
+      .update({ last_used_at: nowIso, status: "revoked" })
       .eq("customer_id", customerId)
       .eq("token_hash", hashPortalSecret(grant.trim()))
-      .maybeSingle<PortalGrantRow>();
+      .eq("status", "active")
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .select("id, customer_id, expires_at")
+      .maybeSingle<ClaimedPortalGrant>();
 
-    if (error || !data || data.status !== "active") {
+    if (claimError || !claimed) {
       safeLogWarn("portal.session.denied", {
         customer_id: customerId,
         route: "portal/sessions",
@@ -58,34 +91,22 @@ export async function GET(
       return portalSessionDenied();
     }
 
-    if (data.expires_at && Date.parse(data.expires_at) <= Date.now()) {
-      safeLogWarn("portal.session.expired", {
-        customer_id: data.customer_id,
-        route: "portal/sessions",
-        status: "denied",
-        token_id: data.id,
-      });
-
-      return portalSessionDenied();
-    }
-
     const sessionToken = newPortalSecret();
-    const expiresAt = portalSessionExpiry(data.expires_at);
-    const usedAt = new Date().toISOString();
+    const expiresAt = portalSessionExpiry(claimed.expires_at);
     const { error: insertError } = await client
       .from("customer_portal_sessions")
       .insert({
-        customer_id: data.customer_id,
+        customer_id: claimed.customer_id,
         expires_at: expiresAt,
         session_hash: hashPortalSecret(sessionToken),
-        token_id: data.id,
+        token_id: claimed.id,
       });
 
     if (insertError) {
       safeLogError("portal.session.create_failed", {
-        customer_id: data.customer_id,
+        customer_id: claimed.customer_id,
         route: "portal/sessions",
-        token_id: data.id,
+        token_id: claimed.id,
       });
 
       return NextResponse.json(
@@ -94,38 +115,33 @@ export async function GET(
       );
     }
 
-    await client
-      .from("customer_portal_access_tokens")
-      .update({ last_used_at: usedAt, status: "revoked" })
-      .eq("id", data.id);
     await recordCustomerPortalOpenedEvent(client, {
-      customerId: data.customer_id,
-      tokenId: data.id,
+      customerId: claimed.customer_id,
+      tokenId: claimed.id,
     });
 
     safeLogInfo("portal.session.opened", {
-      customer_id: data.customer_id,
+      customer_id: claimed.customer_id,
       route: "portal/sessions",
-      token_id: data.id,
+      token_id: claimed.id,
     });
 
-    const redirectUrl = new URL(
-      `/portal/${encodeURIComponent(customerId)}`,
-      request.url,
-    );
-    const response = NextResponse.redirect(redirectUrl);
+    const response = NextResponse.json({
+      redirectTo: `/portal/${encodeURIComponent(customerId)}`,
+    });
     setPortalSessionCookie(response, sessionToken, expiresAt);
 
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to exchange portal grant";
-
     safeLogError("portal.session.exchange_failed", {
       customer_id: customerId,
+      error: error instanceof Error ? error.message : String(error),
       route: "portal/sessions",
     });
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to exchange portal grant" },
+      { status: 500 },
+    );
   }
 }
