@@ -199,6 +199,31 @@ describe("auth domain", () => {
     ).toThrow("Admin or dispatcher access is required");
   });
 
+  it("rejects deactivated admin and dispatcher profiles", () => {
+    expect(() =>
+      validateAdminProfile({
+        id: "user-0",
+        role: "admin",
+        status: "inactive",
+        created_at: now,
+        updated_at: now,
+      }),
+    ).toThrow("This account has been deactivated");
+
+    expect(() =>
+      validateAdminAccess({
+        session,
+        profile: {
+          id: "user-1",
+          role: "dispatcher",
+          status: "inactive",
+          created_at: now,
+          updated_at: now,
+        },
+      }),
+    ).toThrow("This account has been deactivated");
+  });
+
   it("accepts technician profiles only", () => {
     expect(
       validateTechnicianAccess({

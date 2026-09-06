@@ -99,6 +99,7 @@ describe("demo seed route", () => {
   it("replaces demo data from protected preview after confirmation", async () => {
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+    vi.stubEnv("DEMO_SEED_PREVIEW_SECRET", "preview-secret");
 
     const response = await POST(
       request({
@@ -119,6 +120,26 @@ describe("demo seed route", () => {
       serviceClient,
       expect.objectContaining({ marker: "[pest-patrol-demo-seed-v1]" }),
     );
+  });
+
+  it("refuses preview seeding when DEMO_SEED_PREVIEW_SECRET is not configured", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+
+    const response = await POST(
+      request({
+        action: "seed",
+        confirm: "seed-demo-data",
+        target: "preview",
+      }),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe(
+      "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
+    );
+    expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
   });
 
   it("resets demo data only after confirmation", async () => {
