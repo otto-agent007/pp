@@ -13,6 +13,7 @@ import {
   getAdminAccess,
 } from "../../../_lib/server-auth";
 import { checkApiRateLimit, rateLimitResponse } from "../../../_lib/rate-limit";
+import { dispatchSignedWebhook } from "../../../_lib/webhook-dispatch";
 import { recordCustomerPortalAccessTokenEvent } from "../../_lib/access-token-events";
 import { hashPortalSecret } from "../../_lib/portal-session";
 
@@ -125,19 +126,18 @@ async function sendThroughProvider(payload: CustomerPortalSendProviderPayload) {
     throw new Error("Portal delivery provider is not configured");
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
   const webhookSecret = process.env.PORTAL_DELIVERY_WEBHOOK_SECRET;
+  const headers: Record<string, string> = {};
 
   if (webhookSecret) {
     headers.Authorization = `Bearer ${webhookSecret}`;
   }
 
-  const response = await fetch(webhookUrl, {
-    body: JSON.stringify(payload),
+  const response = await dispatchSignedWebhook({
     headers,
-    method: "POST",
+    payload,
+    secret: webhookSecret,
+    url: webhookUrl,
   });
 
   if (!response.ok) {

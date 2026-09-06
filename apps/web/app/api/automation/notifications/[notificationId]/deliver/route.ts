@@ -15,6 +15,7 @@ import {
   getAdminAccess,
 } from "../../../../_lib/server-auth";
 import { checkApiRateLimit, rateLimitResponse } from "../../../../_lib/rate-limit";
+import { dispatchSignedWebhook } from "../../../../_lib/webhook-dispatch";
 
 export const runtime = "nodejs";
 
@@ -64,19 +65,18 @@ async function sendThroughProvider(
     };
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
   const webhookSecret = process.env.NOTIFICATION_DELIVERY_WEBHOOK_SECRET;
+  const headers: Record<string, string> = {};
 
   if (webhookSecret) {
     headers.Authorization = `Bearer ${webhookSecret}`;
   }
 
-  const response = await fetch(webhookUrl, {
-    body: JSON.stringify(buildNotificationDeliveryProviderPayload(notification)),
+  const response = await dispatchSignedWebhook({
     headers,
-    method: "POST",
+    payload: buildNotificationDeliveryProviderPayload(notification),
+    secret: webhookSecret,
+    url: webhookUrl,
   });
   const responseBody = (await response.json().catch(() => ({}))) as {
     id?: string;
@@ -128,6 +128,34 @@ async function updateDeliveryState(
   return data as NotificationEvent;
 }
 
+async function claimNotificationForSending(
+  client: ReturnType<typeof createServiceRoleSupabaseClient>,
+  id: string,
+  input: { last_delivery_attempted_at: string; next_attempts: number },
+) {
+  const { data, error } = await client
+    .from("notification_events")
+    .update({
+      delivery_attempts: input.next_attempts,
+      delivery_provider: null,
+      delivery_status: "sending",
+      last_delivery_attempted_at: input.last_delivery_attempted_at,
+      last_delivery_error: null,
+      provider_message_id: null,
+    })
+    .eq("id", id)
+    .eq("status", "pending")
+    .in("delivery_status", ["not_sent", "failed"])
+    .select(notificationSelect)
+    .maybeSingle<NotificationEvent>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as NotificationEvent | null;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ notificationId: string }> },
@@ -174,30 +202,35 @@ export async function POST(
     );
   }
 
-  if (notification.delivery_status === "sending") {
+  const nextAttempts = (notification.delivery_attempts ?? 0) + 1;
+  const attemptedAt = new Date().toISOString();
+
+  // Atomic claim: the WHERE clause guarantees only one concurrent request can
+  // transition delivery_status into "sending", preventing double-sends.
+  const sendingNotification = await claimNotificationForSending(client, id, {
+    last_delivery_attempted_at: attemptedAt,
+    next_attempts: nextAttempts,
+  });
+
+  if (!sendingNotification) {
+    const { data: latest } = await client
+      .from("notification_events")
+      .select(notificationSelect)
+      .eq("id", id)
+      .maybeSingle<NotificationEvent>();
+
+    if (latest?.delivery_status === "sent") {
+      return NextResponse.json(
+        { error: "Notification has already been sent" },
+        { status: 409 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Notification delivery is already in progress" },
       { status: 409 },
     );
   }
-
-  if (notification.delivery_status === "sent") {
-    return NextResponse.json(
-      { error: "Notification has already been sent" },
-      { status: 409 },
-    );
-  }
-
-  const nextAttempts = (notification.delivery_attempts ?? 0) + 1;
-  const attemptedAt = new Date().toISOString();
-  const sendingNotification = await updateDeliveryState(client, id, {
-    delivery_provider: null,
-    delivery_status: "sending",
-    last_delivery_attempted_at: attemptedAt,
-    last_delivery_error: null,
-    next_attempts: nextAttempts,
-    provider_message_id: null,
-  });
 
   try {
     const result = await sendThroughProvider(sendingNotification);

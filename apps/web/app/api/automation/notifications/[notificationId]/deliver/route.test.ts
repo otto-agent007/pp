@@ -28,6 +28,11 @@ class MockQuery<T> {
     return this;
   }
 
+  in(...args: unknown[]) {
+    this.calls.push(["in", args]);
+    return this;
+  }
+
   select(...args: unknown[]) {
     this.calls.push(["select", args]);
     return this;
@@ -35,6 +40,11 @@ class MockQuery<T> {
 
   single() {
     this.calls.push(["single", []]);
+    return Promise.resolve(this.result);
+  }
+
+  maybeSingle() {
+    this.calls.push(["maybeSingle", []]);
     return Promise.resolve(this.result);
   }
 
@@ -418,41 +428,64 @@ describe("notification delivery route", () => {
   });
 
   it("rejects duplicate delivery attempts already in progress", async () => {
-    serviceClient.from.mockReturnValueOnce(
-      new MockQuery({
-        data: {
-          ...notification,
-          delivery_status: "sending",
-        },
-        error: null,
-      }),
-    );
+    serviceClient.from
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            ...notification,
+            delivery_status: "sending",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            ...notification,
+            delivery_status: "sending",
+          },
+          error: null,
+        }),
+      );
 
     const response = await POST(request(), params());
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(409);
     expect(body.error).toBe("Notification delivery is already in progress");
-    expect(serviceClient.from).toHaveBeenCalledTimes(1);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
   });
 
   it("rejects duplicate delivery attempts already sent", async () => {
-    serviceClient.from.mockReturnValueOnce(
-      new MockQuery({
-        data: {
-          ...notification,
-          delivery_status: "sent",
-          provider_message_id: "message-1",
-        },
-        error: null,
-      }),
-    );
+    serviceClient.from
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            ...notification,
+            delivery_status: "sent",
+            provider_message_id: "message-1",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(
+        new MockQuery({
+          data: {
+            ...notification,
+            delivery_status: "sent",
+            provider_message_id: "message-1",
+          },
+          error: null,
+        }),
+      );
 
     const response = await POST(request(), params());
     const body = (await response.json()) as { error?: string };
 
     expect(response.status).toBe(409);
     expect(body.error).toBe("Notification has already been sent");
-    expect(serviceClient.from).toHaveBeenCalledTimes(1);
+    expect(serviceClient.from).toHaveBeenCalledTimes(3);
   });
 });
