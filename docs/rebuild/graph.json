@@ -404,12 +404,15 @@
         "package.json",
         "packages/api-client/package.json",
         "pnpm-lock.yaml",
-        "tasks/in-progress.md"
+        "tasks/in-progress.md",
+        "tooling/rebuild-verification.test.ts",
+        "tooling/rebuild-verification.ts"
       ],
       "deliverables": [
         "Node 24.20.0 LTS frozen as the repository runtime via .nvmrc, the CI setup-node step, and engines.node",
         "@types/node on the 24 line for the web app, api-client, and the root peer resolution",
         "Runtime guidance in README.md and docs/PRODUCTION_READINESS.md updated to Node 24",
+        "Controlled-rebuild verifier maps .nvmrc and the root README.md to gates, including a runtime check that the verifier runs on the pinned Node version",
         "CR10 implementation plan and controlled-rebuild evidence"
       ],
       "checks": [

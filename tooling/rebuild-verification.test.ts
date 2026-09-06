@@ -118,10 +118,9 @@ describe("controlled rebuild verification gate selection", () => {
   });
 
   it("shell-quotes a .toml path so shell metacharacters cannot break out", () => {
-    const commands = selectVerificationGates(
-      ["$(touch pwned).toml"],
-      [],
-    ).map((gate) => gate.command);
+    const commands = selectVerificationGates(["$(touch pwned).toml"], []).map(
+      (gate) => gate.command,
+    );
 
     expect(commands).toEqual([
       "python3 -c \"import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))\" '$(touch pwned).toml'",
@@ -166,6 +165,21 @@ describe("controlled rebuild verification gate selection", () => {
         (gate) => gate.command,
       ),
     ).toEqual(["git diff --check"]);
+  });
+
+  it("maps the root README to the docs/config gate", () => {
+    expect(
+      selectVerificationGates(["README.md"], []).map((gate) => gate.command),
+    ).toEqual(["git diff --check"]);
+  });
+
+  it("maps the .nvmrc runtime pin to the docs/config gate and a runtime check", () => {
+    expect(
+      selectVerificationGates([".nvmrc"], []).map((gate) => gate.command),
+    ).toEqual([
+      "git diff --check",
+      "node -e \"const pinned = require('node:fs').readFileSync('.nvmrc', 'utf8').trim(); if (process.version !== 'v' + pinned) { throw new Error(process.version + ' is not v' + pinned) }\"",
+    ]);
   });
 
   it("accepts standing slice ownership during recovery gate selection", () => {

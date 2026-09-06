@@ -37,6 +37,9 @@ controller-approved gates per `docs/rebuild/README.md`.
       and the root (the root entry pins Vite and Vitest's auto-installed
       peer to 24 instead of drifting to the newest major).
 - [x] Update `README.md` and `docs/PRODUCTION_READINESS.md` runtime guidance.
+- [x] Teach `tooling/rebuild-verification.ts` to map `.nvmrc` and the root
+      `README.md` to gates (docs/config check plus a runtime check that the
+      verifier itself runs on the pinned Node version); tests first.
 - [ ] Run every declared check on Node 24.20.0 and record the
       `pnpm rebuild:verify` evidence set on the node.
 - [ ] Open the draft PR, record it on the node, and re-verify the pushed head.
