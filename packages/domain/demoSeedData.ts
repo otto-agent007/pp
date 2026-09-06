@@ -40,6 +40,7 @@ export type DemoSeedTable =
 
 export interface DemoSeedGuardrailInput {
   confirm?: string;
+  previewSecretConfigured?: boolean;
   serviceRoleKey?: string;
   supabaseUrl?: string;
   target?: string;
@@ -201,6 +202,7 @@ export interface DemoSeedPlan {
 }
 
 export interface DemoSeedRuntimeStatusInput {
+  previewSecretConfigured?: boolean;
   serviceRoleConfigured: boolean;
   supabaseUrl?: string;
   target: DemoSeedTarget;
@@ -857,6 +859,14 @@ export function validateDemoSeedGuardrails(
     };
   }
 
+  if (input.target === "preview" && !input.previewSecretConfigured) {
+    return {
+      ok: false,
+      message:
+        "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
+    };
+  }
+
   return { ok: true, target: input.target };
 }
 
@@ -913,6 +923,16 @@ export function buildDemoSeedRuntimeStatus(
       available: false,
       environment_label: "Protected preview demo",
       reason: "Preview demo seed must run from a Vercel preview deployment.",
+      target: input.target,
+    };
+  }
+
+  if (input.target === "preview" && !input.previewSecretConfigured) {
+    return {
+      available: false,
+      environment_label: "Protected preview demo",
+      reason:
+        "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
       target: input.target,
     };
   }

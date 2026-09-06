@@ -110,6 +110,10 @@ export function validateAdminProfile(profile: UserProfile | null) {
     throw new Error("Admin or dispatcher access is required");
   }
 
+  if (profile.status === "inactive") {
+    throw new Error("This account has been deactivated");
+  }
+
   return profile;
 }
 
