@@ -72,6 +72,8 @@ export function buildAllowedImageSources(_nodeEnv = process.env.NODE_ENV) {
   );
 }
 
+export const CSP_REPORT_PATH = "/api/csp-report";
+
 export function buildContentSecurityPolicyReportOnly(
   nodeEnv = process.env.NODE_ENV,
 ) {
@@ -96,6 +98,7 @@ export function buildContentSecurityPolicyReportOnly(
     `media-src 'self' blob: data: ${supabaseMediaSources.join(" ")}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
+    `report-uri ${CSP_REPORT_PATH}`,
   ];
 
   if (nodeEnv === "production") {
@@ -125,7 +128,10 @@ export function buildSecurityHeaders(
       key: "Permissions-Policy",
       value: [
         "camera=()",
-        "microphone=()",
+        // The web app records audio itself via getUserMedia (useSpeechRecorder),
+        // so the top-level document needs microphone access; cross-origin
+        // embeds still get none.
+        "microphone=(self)",
         "geolocation=()",
         "payment=()",
         "usb=()",
@@ -143,6 +149,14 @@ export function buildSecurityHeaders(
       key: "Cross-Origin-Opener-Policy",
       value: "same-origin",
     },
+    {
+      key: "Cross-Origin-Resource-Policy",
+      value: "same-origin",
+    },
+    {
+      key: "Strict-Transport-Security",
+      value: "max-age=63072000; includeSubDomains",
+    },
   ];
 }
 
@@ -156,6 +170,7 @@ const nextConfig: NextConfig = {
     ]);
   },
   outputFileTracingRoot: join(appDir, "../.."),
+  poweredByHeader: false,
   rewrites() {
     return Promise.resolve(buildLocalWhisperRewrites());
   },
