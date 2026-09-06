@@ -59,6 +59,12 @@ export async function POST(
       );
     }
 
+    await client
+      .from("customer_portal_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("token_id", data.id)
+      .is("revoked_at", null);
+
     await recordCustomerPortalAccessTokenEvent(client, {
       actorProfileId: access.userId,
       customerId: data.customer_id,
