@@ -2,6 +2,14 @@
   "schemaVersion": 1,
   "preferredPrOrder": [
     "CR00",
+    "CR10",
+    "CR11",
+    "CR12",
+    "CR13",
+    "CR14",
+    "CR15",
+    "CR16",
+    "CR17",
     "CR01",
     "CR02",
     "CR03",
@@ -11,14 +19,6 @@
     "CR07",
     "CR08",
     "CR09",
-    "CR10",
-    "CR11",
-    "CR12",
-    "CR13",
-    "CR14",
-    "CR15",
-    "CR16",
-    "CR17",
     "CR18"
   ],
   "repository": {
@@ -388,7 +388,7 @@
       "status": "planned",
       "parent": "CR00",
       "dependencies": [
-        "CR09"
+        "CR00"
       ],
       "conflicts": [
         "CR00"
@@ -418,14 +418,14 @@
       "status": "planned",
       "parent": "CR00",
       "dependencies": [
-        "CR09"
+        "CR00"
       ],
       "conflicts": [
         "CR00"
       ],
       "ownership": [],
       "deliverables": [
-        "Latest stable pnpm 11 patch migration"
+        "Latest stable pnpm 12 patch migration"
       ],
       "checks": [],
       "approvals": [],
@@ -436,7 +436,7 @@
       "supersededBy": null,
       "target": {
         "product": "pnpm",
-        "constraint": "11",
+        "constraint": "12",
         "selection": "latest-stable-patch",
         "resolvedVersion": ""
       }
@@ -649,7 +649,8 @@
         "CR13",
         "CR14",
         "CR15",
-        "CR16"
+        "CR16",
+        "CR09"
       ],
       "conflicts": [
         "CR00"
