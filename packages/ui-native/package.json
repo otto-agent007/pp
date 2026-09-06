@@ -16,7 +16,7 @@
     "@types/react": "^19.0.14",
     "react": "^19.0.0",
     "react-native": "^0.79.6",
-    "typescript": "^5.7.2"
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "build": "tsc --noEmit",
