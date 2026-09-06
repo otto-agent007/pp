@@ -20,6 +20,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # ---------------------------------------------------------------------------
 MODEL_SIZE = os.getenv("WHISPER_MODEL", "base")
 
+# Generous ceiling for a short field-ops voice clip; bounds memory use and
+# rejects runaway uploads instead of buffering an unbounded body in RAM.
+MAX_AUDIO_BYTES = 100 * 1024 * 1024
+_READ_CHUNK_BYTES = 1024 * 1024
+
 print(f"[whisper] Loading model '{MODEL_SIZE}'...")
 _model = whisper.load_model(MODEL_SIZE)
 print(f"[whisper] Model ready.")
@@ -43,7 +48,15 @@ def health() -> dict:
 @app.post("/transcribe")
 async def transcribe(audio: UploadFile = File(...)) -> dict:
     """Accept an audio blob (webm/ogg/wav/mp4) and return the transcript."""
-    data = await audio.read()
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := await audio.read(_READ_CHUNK_BYTES):
+        total += len(chunk)
+        if total > MAX_AUDIO_BYTES:
+            raise HTTPException(status_code=413, detail="Audio file too large")
+        chunks.append(chunk)
+    data = b"".join(chunks)
+
     if not data:
         raise HTTPException(status_code=400, detail="Empty audio file")
 

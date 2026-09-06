@@ -13,6 +13,16 @@ const RepoParamsSchema = z.object({
   repo: z.string().optional(),
 });
 
+// Encode each path segment separately so a segment containing `#`, `?`, or
+// `../` can't corrupt the request's query string or path structure, while
+// still allowing `/` to separate legitimate nested directories.
+function encodeRepoPath(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
 export function registerFileTools(server: McpServer): void {
   // ── github_get_file ──────────────────────────────────────────────────────────
   server.registerTool(
@@ -53,7 +63,7 @@ Examples:
         if (params.ref) queryParams.ref = params.ref;
 
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/contents/${params.path}`,
+          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeRepoPath(params.path)}`,
           { params: queryParams }
         );
 
@@ -132,9 +142,11 @@ Examples:
         const queryParams: Record<string, string> = {};
         if (params.ref) queryParams.ref = params.ref;
 
+        const encodedOwner = encodeURIComponent(owner);
+        const encodedRepo = encodeURIComponent(repo);
         const urlPath = params.path
-          ? `/repos/${owner}/${repo}/contents/${params.path}`
-          : `/repos/${owner}/${repo}/contents`;
+          ? `/repos/${encodedOwner}/${encodedRepo}/contents/${encodeRepoPath(params.path)}`
+          : `/repos/${encodedOwner}/${encodedRepo}/contents`;
 
         const { data } = await getClient().get(urlPath, {
           params: queryParams,
