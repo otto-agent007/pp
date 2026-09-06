@@ -52,6 +52,22 @@ export async function inviteTechnicianWithAdminClientRecord(
   client: AuthSupabaseClient,
   input: TechnicianInviteRecordInput,
 ) {
+  const { data: existingProfile, error: existingProfileError } = await client
+    .from("profiles")
+    .select("id, role")
+    .eq("email", input.email)
+    .maybeSingle<Pick<TechnicianProfile, "id" | "role">>();
+
+  if (existingProfileError) {
+    throw existingProfileError;
+  }
+
+  if (existingProfile && existingProfile.role !== "technician") {
+    throw new Error(
+      "This email belongs to an existing admin or dispatcher account and cannot be invited as a technician",
+    );
+  }
+
   const { data, error } = await client.auth.admin.inviteUserByEmail(
     input.email,
     {
