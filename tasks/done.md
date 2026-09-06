@@ -1,5 +1,12 @@
 # Done
 
+## Repository Hygiene V1
+
+- Loosened every exact `pnpm.overrides` pin to a caret range so Dependabot and `pnpm update` can move those packages forward again; the pins were security floors, not compatibility locks. Moved `postcss` from 8.5.23 to 8.5.28 now that the override no longer blocks it.
+- Refreshed `tasks/in-progress.md`: no slice is running, CR00 is done, and CR01 draft PR #148 needs a rebase before promotion.
+- Repository settings, not commits: required SHA-pinned actions in the Actions settings and deleted nine merged `worktree-agent-*` local branches; adding the CodeQL check to the `main` ruleset was prepared but needs an operator to apply the ruleset update.
+- Verified with `pnpm audit`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm security:baseline`, `pnpm rebuild:graph:check`, `pnpm rebuild:graph:reconcile -- --offline`, and `git diff --check`
+
 ## Repository Security Refresh V1
 
 - Cleared 31 of 34 `pnpm audit` advisories in the root workspace by re-resolving transitive dependencies inside their declared ranges (browserslist, js-yaml, brace-expansion, undici, vite, esbuild, @babel/core, postcss-selector-parser, @xmldom/xmldom), bumping `turbo` to 2.10.x, and adding two scoped overrides: `next>sharp` to ^0.35.4 (Next 15.5 uses no API removed in sharp 0.35; smoke-tested rotate/resize/webp/metadata) and `xcode>uuid` to ^11.1.1 (xcode only calls `uuid.v4()`)
