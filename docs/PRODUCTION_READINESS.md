@@ -178,10 +178,10 @@ Latest hardening status:
 ## Supabase Security Advisor Follow-up
 
 
-- [ ] Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` to approved local target.
-- [ ] Verify local migration applies cleanly.
-- [ ] Apply the same migration to approved preview target.
-- [ ] Rerun Supabase Security Advisors and confirm no `anon`/`public` technician RPC execute warnings remain.
+- [x] Apply `20260609000000_supabase_rpc_execute_grants_hardening_v1.sql` to approved local target.
+- [x] Verify local migration applies cleanly.
+- [x] Apply the same migration to approved preview target. (Confirmed applied on the live project via `list_migrations` as of 2026-09-06.)
+- [x] Rerun Supabase Security Advisors and confirm no `anon`/`public` technician RPC execute warnings remain. (Confirmed via `get_advisors` as of 2026-09-06 — remaining warnings are unrelated: `record_assigned_job_geofence_event`/`update_assigned_job_status` SECURITY DEFINER exposure and leaked-password protection below.)
 - [ ] Confirm authenticated execute for technician RPCs is documented and intentionally accepted with remaining status checks.
 - [ ] Confirm leaked-password protection is enabled in Supabase Auth settings (operator dashboard action).
 - [ ] Rerun Auth advisor and confirm leaked-password warning is resolved.
@@ -312,7 +312,7 @@ Customer portal:
 4. Confirm the portal provider readiness copy reports webhook-backed or manual-only mode without exposing the webhook URL or secret.
 5. If `PORTAL_DELIVERY_WEBHOOK_URL` is configured, use `Send link ▶` and confirm the UI says `Send requested` without claiming delivery.
 6. From an active token row, use `Send new link` and confirm it creates a fresh session link before requesting send; if the provider fails, the fresh link remains available for manual copy.
-7. Open `/portal/<customer-id>?access_token=<token>`.
+7. Open `/portal/<customer-id>?grant=<token>`. The grant exchange now fires from client-side JS (a plain GET no longer mutates state), so expect a brief loading state before the portal content renders.
 8. Confirm completed closeouts render service date, location, customer-safe capture counts, and invoice state.
 9. Confirm completed closeouts render without internal service notes, technician details, chemical logs, or inventory internals.
 10. Confirm private job media renders through signed URLs.

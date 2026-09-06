@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  __resetRateLimitCheckerForTest,
   __setTestRateLimitChecker,
   checkApiRateLimit,
   getClientIpFromRequest,
@@ -62,6 +63,48 @@ describe("rate-limit helper", () => {
         rateLimitKey: "payment-link-create:admin-1:invoice-1",
       }),
     );
+  });
+
+  it("fails open only in local development when no firewall client is available", async () => {
+    __resetRateLimitCheckerForTest();
+    vi.stubEnv("NODE_ENV", "development");
+
+    const limited = await checkApiRateLimit({
+      id: "payment-link-create",
+      request: request("http://localhost/api/payments/payment-link"),
+    });
+
+    expect(limited).toBe(false);
+  });
+
+  it("fails closed outside development when no firewall client is available", async () => {
+    __resetRateLimitCheckerForTest();
+    vi.stubEnv("NODE_ENV", "production");
+
+    const limited = await checkApiRateLimit({
+      id: "payment-link-create",
+      request: request("http://localhost/api/payments/payment-link"),
+    });
+
+    expect(limited).toBe(true);
+  });
+
+  it("fails closed when the firewall reports an unrecognized rule id", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        error: "not-found",
+        rateLimited: false,
+      }),
+    );
+
+    const limited = await checkApiRateLimit({
+      id: "payment-link-create",
+      request: request("http://localhost/api/payments/payment-link"),
+    });
+
+    expect(limited).toBe(true);
   });
 
   it("extracts client ip from trusted vercel headers", () => {

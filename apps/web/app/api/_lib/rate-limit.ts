@@ -1,4 +1,5 @@
 import type { ApiRateLimitPolicyId } from "@pest-patrol/types";
+import { safeLogError } from "@pest-patrol/domain";
 import { NextResponse } from "next/server";
 
 type FirewallCheckOptions = {
@@ -40,15 +41,28 @@ function isVercelRuntime() {
   return Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 }
 
+function isLocalDevRuntime() {
+  return process.env.NODE_ENV === "development";
+}
+
 function sanitizeFirewallResult(
   result: FirewallCheckResult | null | undefined,
+  ruleId: string,
 ): boolean {
   if (result?.error === "blocked") {
     return true;
   }
 
   if (result?.error === "not-found") {
-    return false;
+    // An unrecognized rule id means the Vercel Firewall isn't actually
+    // enforcing this policy (misconfiguration) — fail closed rather than
+    // silently letting every request for this rule through unlimited.
+    safeLogError("rate_limit.fail_closed", {
+      reason: "unknown_rule_id",
+      rule_id: ruleId,
+    });
+
+    return true;
   }
 
   return Boolean(result?.rateLimited);
@@ -74,7 +88,10 @@ function loadFirewallClient(): Promise<FirewallClient> {
   return import("@vercel/firewall").catch(() => ({} as FirewallClient));
 }
 
-let rateLimitChecker: RateLimitChecker = async (rateLimitId, options) => {
+const defaultRateLimitChecker: RateLimitChecker = async (
+  rateLimitId,
+  options,
+) => {
   const firewall = await loadFirewallClient();
   const fn =
     firewall.checkRateLimit ??
@@ -83,6 +100,7 @@ let rateLimitChecker: RateLimitChecker = async (rateLimitId, options) => {
 
   return fn(rateLimitId, options);
 };
+let rateLimitChecker: RateLimitChecker = defaultRateLimitChecker;
 let usingDefaultChecker = true;
 
 export async function checkApiRateLimit({
@@ -99,7 +117,19 @@ export async function checkApiRateLimit({
   }
 
   if (!isVercelRuntime() && usingDefaultChecker) {
-    return false;
+    if (isLocalDevRuntime()) {
+      return false;
+    }
+
+    // No Vercel Firewall client is available outside Vercel/local dev, so
+    // there's nothing to enforce a limit — fail closed instead of silently
+    // disabling rate limiting for every route on a non-Vercel deployment.
+    safeLogError("rate_limit.fail_closed", {
+      reason: "firewall_client_unavailable",
+      rule_id: id,
+    });
+
+    return true;
   }
 
   const firewallResult = await rateLimitChecker(id, {
@@ -107,7 +137,7 @@ export async function checkApiRateLimit({
     rateLimitKey: key,
   });
 
-  return sanitizeFirewallResult(firewallResult);
+  return sanitizeFirewallResult(firewallResult, id);
 }
 
 export function getClientIpFromRequest(request: Request) {
@@ -146,4 +176,9 @@ export function rateLimitResponse() {
 export function __setTestRateLimitChecker(next: RateLimitChecker) {
   rateLimitChecker = next;
   usingDefaultChecker = false;
+}
+
+export function __resetRateLimitCheckerForTest() {
+  rateLimitChecker = defaultRateLimitChecker;
+  usingDefaultChecker = true;
 }
