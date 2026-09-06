@@ -405,6 +405,8 @@
         "packages/api-client/package.json",
         "pnpm-lock.yaml",
         "tasks/in-progress.md",
+        "tooling/rebuild-graph-reconcile.test.ts",
+        "tooling/rebuild-graph-reconcile.ts",
         "tooling/rebuild-verification.test.ts",
         "tooling/rebuild-verification.ts"
       ],
