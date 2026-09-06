@@ -1,0 +1,76 @@
+# Dependabot version updates. Security updates are enabled separately in the
+# repository settings. Major upgrades of the platform stack are scheduled by
+# the controlled rebuild (docs/rebuild/graph.json), so they are ignored here.
+# Note: Dependabot cannot patch transitive pnpm dependencies; clear those with
+# `pnpm audit` locally (see docs in tasks/done.md, Repository Security Refresh).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      workspace-minor-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+    ignore:
+      # Major bumps (Node/pnpm/Next/Expo lines) belong to rebuild slices.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # Expo SDK 53 pins these; move them with `npx expo install --fix` inside a rebuild slice.
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+
+  - package-ecosystem: "npm"
+    directory: "/tools/github-mcp-server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      mcp-server-minor-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/apps/whisper"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "build(deps)"

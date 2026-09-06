@@ -1,5 +1,17 @@
 # Done
 
+## Repository Security Refresh V1
+
+- Cleared 31 of 34 `pnpm audit` advisories in the root workspace by re-resolving transitive dependencies inside their declared ranges (browserslist, js-yaml, brace-expansion, undici, vite, esbuild, @babel/core, postcss-selector-parser, @xmldom/xmldom), bumping `turbo` to 2.10.x, and adding two scoped overrides: `next>sharp` to ^0.35.4 (Next 15.5 uses no API removed in sharp 0.35; smoke-tested rotate/resize/webp/metadata) and `xcode>uuid` to ^11.1.1 (xcode only calls `uuid.v4()`)
+- Recorded the three remaining advisories as accepted risks in `pnpm.auditConfig.ignoreGhsas` so `pnpm audit` fails only on new findings: `image-size` 1.2.1 under `metro` (GHSA-5p2g-fcmc-qvqq, GHSA-w3rx-r6r6-pgpr; no patched release exists) and `decode-uri-component` 0.2.2 under `query-string` via `@react-navigation/core` (GHSA-vcc3-ghjq-m6fr; the only fixed release is ESM-only and would break the CommonJS `require` in query-string 7)
+- Pinned the CI actions to commit SHAs (checkout, pnpm/action-setup, setup-node at v4.4.0) and stopped persisting the checkout token
+- Added `.github/dependabot.yml` for grouped weekly minor/patch version updates on the root workspace, the GitHub MCP server, GitHub Actions, and the Whisper helper; majors and the Expo-pinned packages are ignored because the controlled rebuild owns those upgrades
+- Learned that Dependabot security updates cannot patch transitive pnpm dependencies here (its `pnpm update <dep> --lockfile-only -r` never touches sub-dependencies, so every root-lockfile run failed with `security_update_not_possible`); transitive advisories must be cleared manually with `pnpm audit`, as in this slice
+- Enabled secret scanning, push protection, and CodeQL default setup in the GitHub repository settings (settings change, not a commit)
+- Left open Dependabot PRs [#150](https://github.com/otto-agent007/pp/pull/150) and [#151](https://github.com/otto-agent007/pp/pull/151) for the GitHub MCP server lock as the merge path for its `fast-uri` and `qs` advisories
+- Kept application source, migrations, RLS, providers, environments, previews, and production out of scope
+- Verified with `pnpm audit`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm security:baseline`, `pnpm rebuild:graph:check`, `pnpm rebuild:graph:reconcile -- --offline`, and `git diff --check`
+
 ## GitHub MCP Dependency Security Follow-ups
 
 - Merged Dependabot PRs [#137](https://github.com/otto-agent007/pp/pull/137),
