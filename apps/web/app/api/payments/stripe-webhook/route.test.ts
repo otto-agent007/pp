@@ -36,6 +36,11 @@ class MockQuery<T> {
     return Promise.resolve(this.result);
   }
 
+  maybeSingle() {
+    this.calls.push(["maybeSingle", []]);
+    return Promise.resolve(this.result);
+  }
+
   update(...args: unknown[]) {
     this.calls.push(["update", args]);
     return this;
@@ -271,6 +276,7 @@ describe("stripe webhook route", () => {
     const response = await POST(
       request({
         id: "evt_999",
+        livemode: false,
         type: "customer.subscription.created",
         data: {
           object: {
@@ -310,6 +316,7 @@ describe("stripe webhook route", () => {
     const response = await POST(
       request({
         id: "evt_999",
+        livemode: true,
         type: "customer.subscription.created",
         data: {
           object: {
@@ -330,6 +337,7 @@ describe("stripe webhook route", () => {
 
   it("accepts a current Stripe webhook timestamp and marks the invoice paid", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_123" }, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
       error: { code: "PGRST116" },
@@ -338,6 +346,7 @@ describe("stripe webhook route", () => {
     const updateInvoiceQuery = new MockQuery({ data: paidInvoice, error: null });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(insertPaymentQuery as never)
       .mockReturnValueOnce(updateInvoiceQuery as never);
@@ -397,11 +406,13 @@ describe("stripe webhook route", () => {
 
   it("updates an existing payment for duplicate Stripe events instead of inserting again", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_123" }, error: null });
     const existingPaymentQuery = new MockQuery({ data: payment, error: null });
     const updatePaymentQuery = new MockQuery({ data: payment, error: null });
     const updateInvoiceQuery = new MockQuery({ data: paidInvoice, error: null });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(updatePaymentQuery as never)
       .mockReturnValueOnce(updateInvoiceQuery as never);
@@ -423,10 +434,12 @@ describe("stripe webhook route", () => {
 
   it("does not transition a duplicate paid invoice again", async () => {
     const invoiceQuery = new MockQuery({ data: paidInvoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_123" }, error: null });
     const existingPaymentQuery = new MockQuery({ data: payment, error: null });
     const updatePaymentQuery = new MockQuery({ data: payment, error: null });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(updatePaymentQuery as never);
 
@@ -443,11 +456,12 @@ describe("stripe webhook route", () => {
       ],
     ]);
     expect(updatePaymentQuery.calls).toContainEqual(["eq", ["id", "payment-1"]]);
-    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+    expect(serviceClient.from).toHaveBeenCalledTimes(4);
   });
 
   it("records pending checkout sessions without marking the invoice paid", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_123" }, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
       error: { code: "PGRST116" },
@@ -462,6 +476,7 @@ describe("stripe webhook route", () => {
     });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(insertPaymentQuery as never);
 
@@ -495,11 +510,12 @@ describe("stripe webhook route", () => {
         }),
       ],
     ]);
-    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+    expect(serviceClient.from).toHaveBeenCalledTimes(4);
   });
 
   it("does not mark the invoice paid for partial checkout payments", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_123" }, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
       error: { code: "PGRST116" },
@@ -513,6 +529,7 @@ describe("stripe webhook route", () => {
     });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(insertPaymentQuery as never);
 
@@ -546,11 +563,12 @@ describe("stripe webhook route", () => {
         }),
       ],
     ]);
-    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+    expect(serviceClient.from).toHaveBeenCalledTimes(4);
   });
 
   it("does not mark the invoice paid when the currency does not match", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_123" }, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
       error: { code: "PGRST116" },
@@ -564,6 +582,7 @@ describe("stripe webhook route", () => {
     });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(insertPaymentQuery as never);
 
@@ -598,11 +617,12 @@ describe("stripe webhook route", () => {
         }),
       ],
     ]);
-    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+    expect(serviceClient.from).toHaveBeenCalledTimes(4);
   });
 
   it("records async payment failures without marking the invoice paid", async () => {
     const invoiceQuery = new MockQuery({ data: invoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_125" }, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
       error: { code: "PGRST116" },
@@ -617,6 +637,7 @@ describe("stripe webhook route", () => {
     });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(insertPaymentQuery as never);
 
@@ -642,11 +663,12 @@ describe("stripe webhook route", () => {
         }),
       ],
     ]);
-    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+    expect(serviceClient.from).toHaveBeenCalledTimes(4);
   });
 
   it("does not mark a void invoice paid from Stripe webhook events", async () => {
     const invoiceQuery = new MockQuery({ data: voidInvoice, error: null });
+    const dedupeQuery = new MockQuery({ data: { event_id: "evt_124" }, error: null });
     const existingPaymentQuery = new MockQuery({
       data: null,
       error: { code: "PGRST116" },
@@ -654,6 +676,7 @@ describe("stripe webhook route", () => {
     const insertPaymentQuery = new MockQuery({ data: payment, error: null });
     serviceClient.from
       .mockReturnValueOnce(invoiceQuery as never)
+      .mockReturnValueOnce(dedupeQuery as never)
       .mockReturnValueOnce(existingPaymentQuery as never)
       .mockReturnValueOnce(insertPaymentQuery as never);
 
@@ -679,7 +702,7 @@ describe("stripe webhook route", () => {
         }),
       ],
     ]);
-    expect(serviceClient.from).toHaveBeenCalledTimes(3);
+    expect(serviceClient.from).toHaveBeenCalledTimes(4);
   });
 
   it("ignores events with missing invoice metadata", async () => {
