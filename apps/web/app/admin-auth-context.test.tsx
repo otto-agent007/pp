@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 async function renderAuthProbe(
   profileEmail: string,
@@ -14,6 +14,7 @@ async function renderAuthProbe(
       reason: string | null;
       target: "local" | "preview";
     };
+    signOutError?: Error;
   } = {},
 ) {
   vi.resetModules();
@@ -41,6 +42,9 @@ async function renderAuthProbe(
     },
   };
   const signInAdmin = vi.fn().mockResolvedValue(authRecord);
+  const signOutAdmin = options.signOutError
+    ? vi.fn().mockRejectedValue(options.signOutError)
+    : vi.fn().mockResolvedValue(undefined);
   const getCurrentAdminAuth = vi
     .fn()
     .mockResolvedValue(options.currentAuth ? authRecord : null);
@@ -74,7 +78,7 @@ async function renderAuthProbe(
     requestPasswordReset: vi.fn(),
     shouldUseLocalDemoFixtures: vi.fn().mockReturnValue(false),
     signInAdmin,
-    signOutAdmin: vi.fn(),
+    signOutAdmin,
     updateCurrentUserPassword: vi.fn(),
   }));
   vi.doMock("../hooks/localDemoData", () => ({
@@ -96,6 +100,7 @@ async function renderAuthProbe(
     return (
       <div>
         <p>{auth.status}</p>
+        <p>{auth.error ?? ""}</p>
         <button
           onClick={() => {
             void auth.signIn(profileEmail, "password");
@@ -103,6 +108,14 @@ async function renderAuthProbe(
           type="button"
         >
           Sign in
+        </button>
+        <button
+          onClick={() => {
+            void auth.signOut();
+          }}
+          type="button"
+        >
+          Sign out
         </button>
       </div>
     );
@@ -126,6 +139,7 @@ async function renderAuthProbe(
     isDemoLoginRefreshUnavailableError,
     refreshDemoLoginSeedRecord,
     signInAdmin,
+    signOutAdmin,
   };
 }
 
@@ -197,5 +211,60 @@ describe("AdminAuthProvider demo login refresh", () => {
     await waitFor(() => expect(signInAdmin).toHaveBeenCalled());
 
     expect(refreshDemoLoginSeedRecord).not.toHaveBeenCalled();
+  });
+});
+
+describe("AdminAuthProvider sign-out", () => {
+  beforeEach(() => {
+    // jsdom's localStorage is unavailable in this test environment; stub a
+    // minimal in-memory implementation so signOut's local-demo bookkeeping
+    // (unrelated to the behavior under test) doesn't throw.
+    const store = new Map<string, string>();
+
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      removeItem: (key: string) => store.delete(key),
+      setItem: (key: string, value: string) => store.set(key, value),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+    vi.doUnmock("@pest-patrol/api-client");
+    vi.doUnmock("@pest-patrol/domain");
+    vi.doUnmock("../hooks/localDemoData");
+  });
+
+  it("clears the session and shows no error when the server revoke succeeds", async () => {
+    const { signOutAdmin } = await renderAuthProbe("admin@example.com", {
+      currentAuth: true,
+    });
+
+    await waitFor(() => expect(screen.getByText("signed_in")).toBeTruthy());
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => expect(signOutAdmin).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText("signed_out")).toBeTruthy());
+    expect(
+      screen.queryByText(/sign out was not confirmed/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clears local state but surfaces a warning when the server revoke fails", async () => {
+    const signOutError = new Error("network error");
+    const { signOutAdmin } = await renderAuthProbe("admin@example.com", {
+      currentAuth: true,
+      signOutError,
+    });
+
+    await waitFor(() => expect(screen.getByText("signed_in")).toBeTruthy());
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => expect(signOutAdmin).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText("signed_out")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(/sign out was not confirmed/i)).toBeTruthy(),
+    );
   });
 });
