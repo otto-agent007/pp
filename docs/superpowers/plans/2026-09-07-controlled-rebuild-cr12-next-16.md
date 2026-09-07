@@ -114,8 +114,8 @@ slice branch.
       config files to the lint and docs/config gates; tests first.
 - [x] Run every declared check on the migrated tree and record the
       `pnpm rebuild:verify` evidence set on the node (15/15 gates PASS,
-      evidence set `3e81ae8c…`; re-run after updating from main as
-      `b539efa9…`).
+      evidence set `3e81ae8c…`; re-run after each update from main as
+      `b539efa9…` and `c05b1849…`).
 - [x] Open the draft PR and record it on the node; controller merge approval
       and the `rebuild/cr12-source` tag remain open.
 

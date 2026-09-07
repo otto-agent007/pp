@@ -666,6 +666,14 @@
           "exitCode": 0,
           "commitSha": "559c8c17dd13f49a2e7cde395279107337d7622a",
           "recordedAt": "2026-09-07T06:57:27.930Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 15 selected gates after updating from main for the reconciler fix in PR #174, with evidence set c05b184982a3df4bbfeeee81bb93eea0556be859755f69aaad623fc37d120bfd.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm12/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "8943041b186d8111c7cd15bf20aa98f481b2f384",
+          "recordedAt": "2026-09-07T08:14:42.279Z"
         }
       ],
       "branch": "codex/rebuild-cr12-next-16-v1",
