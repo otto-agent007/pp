@@ -72,8 +72,8 @@ export function Wordmark({
         height,
         lineHeight: 0,
       }}
-      // eslint-disable-next-line react/no-danger -- SVG content is a static
-      // brand asset; the only dynamic edit is ID suffixing.
+      // SVG content is a static brand asset; the only dynamic edit is ID
+      // suffixing.
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

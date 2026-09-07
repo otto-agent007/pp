@@ -134,6 +134,11 @@ export function selectVerificationGates(
       matched = true;
       commands.add("git diff --check");
     }
+    if (/(?:^|\/)(?:eslint\.config\.[cm]?js|\.eslintrc(?:\.[cm]?js|\.json|\.ya?ml)?)$/.test(path)) {
+      matched = true;
+      commands.add("pnpm lint");
+      commands.add("git diff --check");
+    }
     if (path === ".nvmrc") {
       matched = true;
       commands.add(
@@ -266,6 +271,7 @@ export function classifyGate(input: {
 }
 
 type VerificationGraph = {
+  repository?: { defaultBranch?: string };
   nodes: Array<{
     baseSha: string;
     checks: string[];
@@ -290,6 +296,18 @@ function runGit(cwd: string, args: readonly string[]) {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+function resolveDefaultBranchRef(cwd: string, defaultBranch: string) {
+  for (const candidate of [`origin/${defaultBranch}`, defaultBranch]) {
+    if (
+      runGit(cwd, ["rev-parse", "--verify", `${candidate}^{commit}`]).status ===
+      0
+    ) {
+      return candidate;
+    }
+  }
+  return defaultBranch;
 }
 
 function gitOutput(cwd: string, args: readonly string[]) {
@@ -598,10 +616,18 @@ export function runRebuildVerificationCli(
     console.error("Rebuild verification requires one running slice.");
     return 1;
   }
+  // Gate selection must describe what this slice changed, not what it merged
+  // in. Diffing from the frozen baseSha would re-attribute every default-branch
+  // commit landed since then to the slice, which both inflates the gate set and
+  // reports MISSING for paths the slice does not own. Post-merge recovery
+  // genuinely wants its merge SHA, so it keeps using verificationBaseSha.
+  const changedPathsBase = recoverySliceId
+    ? verificationBaseSha
+    : resolveDefaultBranchRef(cwd, graph.repository?.defaultBranch ?? "main");
   const changedPaths = gitOutput(cwd, [
     "diff",
     "--name-only",
-    `${verificationBaseSha}...HEAD`,
+    `${changedPathsBase}...HEAD`,
   ])
     .split(/\r?\n/)
     .filter(Boolean);
