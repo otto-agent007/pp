@@ -93,7 +93,25 @@ Notably the new default `watchFolders` enumerates workspace projects rather
 than the repository root, so Metro no longer walks `tools/` at all; the
 exclusion is kept as defence in depth for the Windows case rather than removed.
 
-After the rewrite Expo Doctor reports 18/18 checks passing.
+That same narrowing broke the build, which is the trap worth recording.
+`pnpm-workspace.yaml` relocates pnpm's virtual store to `<root>/.pnpm` through
+`virtualStoreDir`. Expo's default `watchFolders` cover `<root>/node_modules`
+and each workspace project, and none of them contain the relocated store, so
+every dependency symlink resolved to a real path outside all watch folders and
+`expo export` failed with `Unable to resolve module ./.pnpm/expo-router@.../
+entry.js from <root>/.`. The old blanket `watchFolders = [workspaceRoot]` had
+been covering that case by accident. The store is now appended to Expo's
+defaults explicitly, with the reason recorded inline.
+
+Expo Doctor accepts the extension — its check is that the defaults are a subset
+of the configured folders, not that the two are equal — so the config satisfies
+both constraints at once: 18/18 checks passing and a working export. The
+exported Hermes bundles are byte-identical to the ones the pre-rewrite config
+produced (`entry-83f097ce…` for Android, `entry-9d392ace…` for iOS), which
+confirms the rewrite changed no output.
+
+This is also a reminder that Expo Doctor is not a substitute for `pnpm build`:
+the first version of the rewrite passed 18/18 while leaving the app unbuildable.
 
 ## A note on what `pnpm test` can and cannot prove here
 
