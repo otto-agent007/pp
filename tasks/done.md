@@ -1,5 +1,33 @@
 # Done
 
+## CR11 pnpm 12 migration
+
+- Base `d7ddb8fb4b33da3311ea553bcf316ced11de879f` (CR10's merge commit on
+  `main`), branch `codex/rebuild-cr11-pnpm-12-v1`, plan
+  `docs/superpowers/plans/2026-09-07-controlled-rebuild-cr11-pnpm-12.md`.
+- Frozen target pnpm `12.3.4` via `packageManager`, the CI `pnpm/action-setup`
+  version input, and `README.md`. The lockfile stays on `lockfileVersion: 9.0`,
+  so Dependabot, Vercel, and turbo were unaffected.
+- Moved `virtual-store-dir` out of `.npmrc` (deleted) and the `pnpm.overrides` /
+  `pnpm.auditConfig` blocks out of `package.json` into `pnpm-workspace.yaml`,
+  which is the only location pnpm 12 reads; declined `allowBuilds` for
+  `esbuild` and `unrs-resolver`.
+- pnpm 12's peer resolution no longer preserves per-workspace version islands,
+  so `apps/web` could not keep `react@19.2.5` while `apps/mobile` stayed on
+  Expo SDK 53's `19.0.0`. The controller chose a deterministic repo-wide pin at
+  `react`/`react-dom` `19.0.0` (with `@types/react` `19.0.14`), deliberately
+  moving `apps/web` down from 19.2.5.
+- Taught `tooling/rebuild-verification.ts` to map `pnpm-workspace.yaml` and
+  `.npmrc` to gates.
+- Controller approved the pnpm 12 target refresh and the CR11 start in the
+  2026-09-06 handoff. Merged as PR
+  [#170](https://github.com/otto-agent007/pp/pull/170),
+  `d9a84c44035185bfee00aa8ac3d8230349726c88`, tagged `rebuild/cr11-source`.
+- Verified with `pnpm rebuild:verify` (14/14 gates), `pnpm rebuild:graph:check`,
+  `pnpm rebuild:graph:reconcile -- --offline`, `pnpm install --frozen-lockfile`,
+  `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`,
+  `pnpm security:baseline`, `pnpm security:audit`, and `git diff --check`
+
 ## CR10 Node 24 LTS migration
 
 - Base `eee1726d2e78dc065db227474ff1419fc9bb97b8` (head of re-sequencing PR
