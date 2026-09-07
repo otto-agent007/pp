@@ -20,7 +20,7 @@ Pest Patrol OS is a pest control operations platform intended to replace PestPac
 
 ## Getting Started
 
-Use Node.js `24.20.0` (pinned in `.nvmrc`) or a newer 24.x release and pnpm `9.15.4`.
+Use Node.js `24.20.0` (pinned in `.nvmrc`) or a newer 24.x release and pnpm `12.3.4`.
 
 ```bash
 pnpm install

@@ -385,7 +385,7 @@
       "baseSha": "eee1726d2e78dc065db227474ff1419fc9bb97b8",
       "id": "CR10",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -439,7 +439,7 @@
         {
           "kind": "approval",
           "summary": "Controller approved platform-first sequencing, the Node 24.20.0 target refresh, and the CR10 start on 2026-09-06.",
-          "commitSha": "eee1726d2e78dc065db227474ff1419fc9bb97b8",
+          "commitSha": "97c2afd2fc1f0e73d3f6f92ef1b6fd8cfb41d15a",
           "recordedAt": "2026-09-06T22:28:03Z"
         },
         {
@@ -464,11 +464,18 @@
           "exitCode": 0,
           "commitSha": "a28d5d3f1d38c43a30010406d6aa47c78798b8ee",
           "recordedAt": "2026-09-06T23:50:35.196Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #169 merged as d7ddb8fb4b33da3311ea553bcf316ced11de879f.",
+          "commitSha": "21549f1dac66b3f49135ee38851474d44ce90500",
+          "recordedAt": "2026-09-07T00:53:33Z",
+          "url": "https://github.com/otto-agent007/pp/pull/169"
         }
       ],
       "branch": "codex/rebuild-cr10-node-24-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/169",
-      "mergeSha": "",
+      "mergeSha": "d7ddb8fb4b33da3311ea553bcf316ced11de879f",
       "supersededBy": null,
       "target": {
         "product": "node",
@@ -478,10 +485,10 @@
       }
     },
     {
-      "baseSha": "",
+      "baseSha": "d7ddb8fb4b33da3311ea553bcf316ced11de879f",
       "id": "CR11",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -489,22 +496,78 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Latest stable pnpm 12 patch migration"
+      "ownership": [
+        ".github/workflows/ci.yml",
+        ".npmrc",
+        "README.md",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-07-controlled-rebuild-cr11-pnpm-12.md",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tasks/done.md",
+        "tasks/in-progress.md",
+        "tooling/rebuild-verification.test.ts",
+        "tooling/rebuild-verification.ts"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "deliverables": [
+        "Latest stable pnpm 12 patch migration declared via packageManager, the CI setup-pnpm step, and README.md",
+        "pnpm-workspace.yaml as the home for virtualStoreDir, allowBuilds, overrides, and auditConfig now that pnpm 12 no longer reads package.json's \"pnpm\" block",
+        "A repo-wide, deterministic react/react-dom/@types/react/@types/react-dom pin so pnpm 12's peer-resolution algorithm cannot silently drift apps/mobile off its Expo SDK 53-verified version",
+        "Controlled-rebuild verifier maps pnpm-workspace.yaml and .npmrc to gates",
+        "CR11 implementation plan and controlled-rebuild evidence"
+      ],
+      "checks": [
+        "test \"$(pnpm --version)\" = \"12.3.4\"",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the pnpm 12 target refresh and the CR11 start (2026-09-06)",
+        "Controller approval before publication",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller pre-approved the pnpm 12 target refresh and the CR11 start in the 2026-09-06 handoff.",
+          "commitSha": "6f0a71738514c203af03602328a623c6f3db7739",
+          "recordedAt": "2026-09-07T01:15:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR 170 opened.",
+          "commitSha": "afb305a20acb41925a149e7bc5b5a0e605906bfd",
+          "recordedAt": "2026-09-07T01:15:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/170"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 14 selected gates on pnpm 12.3.4 with evidence set 97ea50bc0c98e1c37efbaee8d731f13286b38d2101d3637d014856e15e220017.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm12/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "762e23cc0f386c666fece16c047f872feb6107ac",
+          "recordedAt": "2026-09-07T02:04:51.482Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr11-pnpm-12-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/170",
       "mergeSha": "",
       "supersededBy": null,
       "target": {
         "product": "pnpm",
         "constraint": "12",
         "selection": "latest-stable-patch",
-        "resolvedVersion": ""
+        "resolvedVersion": "12.3.4"
       }
     },
     {

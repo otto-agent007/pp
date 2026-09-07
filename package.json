@@ -2,7 +2,7 @@
   "name": "pest-patrol-os",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@12.3.4",
   "engines": {
     "node": ">=24.20.0"
   },
@@ -50,29 +50,5 @@
     "typescript-eslint": "^8.69.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.11"
-  },
-  "pnpm": {
-    "overrides": {
-      "@expo/cli>undici": "^6.28.0",
-      "@expo/server>undici": "^7.29.0",
-      "@expo/xcpretty>js-yaml": "^4.3.1",
-      "@istanbuljs/load-nyc-config>js-yaml": "^3.15.1",
-      "cosmiconfig>js-yaml": "^3.15.1",
-      "minimatch@3.1.5>brace-expansion": "^1.1.18",
-      "minimatch@9.0.9>brace-expansion": "^2.1.4",
-      "nanoid": "^3.3.18",
-      "postcss": "^8.5.23",
-      "shell-quote": "^1.10.0",
-      "tar": "^7.5.22",
-      "xcode>uuid": "^11.1.1",
-      "next>sharp": "^0.35.4"
-    },
-    "auditConfig": {
-      "ignoreGhsas": [
-        "GHSA-5p2g-fcmc-qvqq",
-        "GHSA-w3rx-r6r6-pgpr",
-        "GHSA-vcc3-ghjq-m6fr"
-      ]
-    }
   }
 }

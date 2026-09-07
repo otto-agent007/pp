@@ -182,6 +182,17 @@ describe("controlled rebuild verification gate selection", () => {
     ]);
   });
 
+  it("maps pnpm-workspace.yaml and .npmrc to the security baseline and docs/config gates", () => {
+    expect(
+      selectVerificationGates(["pnpm-workspace.yaml"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm security:baseline"]);
+    expect(
+      selectVerificationGates([".npmrc"], []).map((gate) => gate.command),
+    ).toEqual(["git diff --check", "pnpm security:baseline"]);
+  });
+
   it("accepts standing slice ownership during recovery gate selection", () => {
     const commands = selectVerificationGates(
       [
