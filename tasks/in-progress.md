@@ -10,14 +10,15 @@
 - PR [#168](https://github.com/otto-agent007/pp/pull/168) re-sequenced the
   graph so the platform chain (CR10, CR11, CR12, CR13, CR14, CR15) runs
   before the CR01-CR09 architecture refactor.
-- CR10 (Node 24.20.0), CR11 (pnpm 12.3.4), and CR12 (Next.js 16.3.4) are
-  `done`; details are in `tasks/done.md`.
-- CR13 (Expo SDK 54) is `running` on `codex/rebuild-cr13-expo-54-v1`, draft PR
-  [#176](https://github.com/otto-agent007/pp/pull/176), target frozen at
-  `expo@54.0.37`, base `b5ce59feffd664319167567d3dcdca95cf9d3b25`. It also
-  moves the repo-wide React pin to 19.1.0, which `react-native@0.81.5`
-  requires. Merge and the `rebuild/cr13-source` tag remain controller gates.
-  CR14 (SDK 55) and CR15 (SDK 56 to 57, floor 57.0.9) follow.
+- CR10 (Node 24.20.0), CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), and CR13
+  (Expo SDK 54.0.37) are `done`; details are in `tasks/done.md`.
+- CR14 (Expo SDK 55) is next in `preferredPrOrder`, and needs a controller
+  target refresh and promotion approval before it starts. CR15 (SDK 56 to 57,
+  floor 57.0.9) follows. Expect the same shape as CR13: read the target set
+  from `expo/bundledNativeModules.json` on the `sdk-55` branch, expect the
+  repo-wide React pin to move again, and treat `pnpm build` plus the native
+  gate as the load-bearing checks — `pnpm test` mocks `react-native` and
+  proves nothing about the hop.
 - Known follow-up carried out of CR12: 16 `eslint-plugin-react-hooks` v7
   findings in `apps/web` (13 `set-state-in-effect`, 2 `purity`, 1 `use-memo`)
   are tracked warnings, not fixes. Clearing them changes component behaviour
