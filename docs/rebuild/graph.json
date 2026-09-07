@@ -540,7 +540,7 @@
         {
           "kind": "approval",
           "summary": "Controller pre-approved the pnpm 12 target refresh and the CR11 start in the 2026-09-06 handoff.",
-          "commitSha": "d7ddb8fb4b33da3311ea553bcf316ced11de879f",
+          "commitSha": "6f0a71738514c203af03602328a623c6f3db7739",
           "recordedAt": "2026-09-07T01:15:00Z"
         },
         {
