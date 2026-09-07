@@ -135,11 +135,12 @@ Babel and Hermes for both platforms), Expo Doctor, and the two prebuilds.
       `@types/react-dom` overrides to the 19.1 line.
 - [x] Rewrite `apps/mobile/metro.config.js` onto SDK 54's defaults, preserving
       the `tools/` exclusion by appending rather than replacing.
-- [ ] Run every declared check on the migrated tree and record the
-      `pnpm rebuild:verify` evidence set on the node.
-- [ ] Run Expo Doctor and both prebuilds in a disposable clean checkout and
+- [x] Run every declared check on the migrated tree and record the
+      `pnpm rebuild:verify` evidence set on the node (15/15 gates PASS,
+      evidence set `2d36c811…`).
+- [x] Run Expo Doctor and both prebuilds in a disposable clean checkout and
       record commit-bound command evidence.
-- [ ] Open the draft PR and record it on the node; controller merge approval
+- [x] Open the draft PR and record it on the node; controller merge approval
       and the `rebuild/cr13-source` tag remain open.
 
 ## Declared checks

@@ -756,27 +756,35 @@
         },
         {
           "kind": "command",
-          "summary": "Expo Doctor passed 18/18 checks in a disposable clean checkout at the implementation commit.",
+          "summary": "Expo Doctor passed 18/18 checks in a disposable clean checkout at the final implementation commit.",
           "command": "npx expo-doctor@1.20.4",
           "exitCode": 0,
-          "commitSha": "f0de9c023b8f26bff7a6e47ac67bf622f16f835b",
-          "recordedAt": "2026-09-07T19:56:50Z"
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:02Z"
         },
         {
           "kind": "command",
-          "summary": "Clean no-install iOS prebuild generated apps/mobile/ios in a disposable clean checkout at the implementation commit; the generated tree is an evidence input and is not committed.",
+          "summary": "Clean no-install iOS prebuild generated apps/mobile/ios in a disposable clean checkout at the final implementation commit; the generated tree is an evidence input and is not committed.",
           "command": "npx expo prebuild --platform ios --no-install",
           "exitCode": 0,
-          "commitSha": "f0de9c023b8f26bff7a6e47ac67bf622f16f835b",
-          "recordedAt": "2026-09-07T19:56:50Z"
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:02Z"
         },
         {
           "kind": "command",
-          "summary": "Clean no-install Android prebuild generated apps/mobile/android in a disposable clean checkout at the implementation commit; the generated tree is an evidence input and is not committed.",
+          "summary": "Clean no-install Android prebuild generated apps/mobile/android in a disposable clean checkout at the final implementation commit; the generated tree is an evidence input and is not committed.",
           "command": "npx expo prebuild --platform android --no-install",
           "exitCode": 0,
-          "commitSha": "f0de9c023b8f26bff7a6e47ac67bf622f16f835b",
-          "recordedAt": "2026-09-07T19:56:50Z"
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:02Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 15/15 gates, evidence set 2d36c811.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:34Z"
         },
         {
           "kind": "github",
