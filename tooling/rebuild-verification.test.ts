@@ -77,6 +77,63 @@ function createRecoveryFixture(
   return { graphPath, mergeSha, repository };
 }
 
+/**
+ * A running slice whose branch has merged the default branch forward, where the
+ * default branch meanwhile gained a path the slice does not own.
+ */
+function createUpdatedFromDefaultBranchFixture() {
+  const repository = mkdtempSync(join(tmpdir(), "pp-rebuild-running-"));
+  const graphDirectory = mkdtempSync(join(tmpdir(), "pp-rebuild-graph-"));
+  temporaryDirectories.push(repository, graphDirectory);
+  git(repository, ["init", "-b", "main"]);
+  git(repository, ["config", "user.email", "tests@example.com"]);
+  git(repository, ["config", "user.name", "Rebuild Tests"]);
+  writeFileSync(
+    join(repository, "package.json"),
+    JSON.stringify({ packageManager: "pnpm@9.15.4" }),
+  );
+  mkdirSync(join(repository, "tasks"), { recursive: true });
+  writeFileSync(join(repository, "tasks/in-progress.md"), "base\n");
+  git(repository, ["add", "package.json", "tasks/in-progress.md"]);
+  git(repository, ["commit", "-m", "base"]);
+  const baseSha = git(repository, ["rev-parse", "HEAD"]);
+
+  git(repository, ["checkout", "-b", "codex/slice-v1"]);
+  writeFileSync(join(repository, "tasks/in-progress.md"), "slice\n");
+  git(repository, ["add", "tasks/in-progress.md"]);
+  git(repository, ["commit", "-m", "slice work"]);
+
+  // The default branch moves on with a path no gate maps.
+  git(repository, ["checkout", "main"]);
+  mkdirSync(join(repository, "tools/other/src"), { recursive: true });
+  writeFileSync(join(repository, "tools/other/src/client.ts"), "export {};\n");
+  git(repository, ["add", "tools/other/src/client.ts"]);
+  git(repository, ["commit", "-m", "unrelated tooling change"]);
+
+  git(repository, ["checkout", "codex/slice-v1"]);
+  git(repository, ["merge", "main", "-m", "Merge branch 'main' into slice"]);
+
+  const graphPath = join(graphDirectory, "graph.json");
+  writeFileSync(
+    graphPath,
+    JSON.stringify({
+      repository: { slug: "example/repo", defaultBranch: "main" },
+      nodes: [
+        {
+          baseSha,
+          checks: ["git diff --check"],
+          id: "CR99",
+          kind: "slice",
+          mergeSha: "",
+          ownership: ["tasks/in-progress.md"],
+          status: "running",
+        },
+      ],
+    }),
+  );
+  return { baseSha, graphPath, repository };
+}
+
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { force: true, recursive: true });
@@ -408,6 +465,32 @@ describe("controlled rebuild gate classification", () => {
         packageManager: "'/opt/pnpm'",
       }),
     ).toBe("'/opt/pnpm' test");
+  });
+});
+
+describe("controlled rebuild running-slice gate selection", () => {
+  it("ignores default-branch changes merged into the slice branch", () => {
+    const fixture = createUpdatedFromDefaultBranchFixture();
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = runRebuildVerificationCli(
+        ["--graph", fixture.graphPath],
+        fixture.repository,
+        {},
+      );
+      const output = log.mock.calls.flat().join("\n");
+
+      expect(output).not.toContain(
+        "UNMAPPED changed path: tools/other/src/client.ts",
+      );
+      expect(exitCode).toBe(0);
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
   });
 });
 
