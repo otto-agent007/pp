@@ -221,20 +221,42 @@ branch. Security, migration, provider, environment, preview, production, push,
 and PR decisions remain controller-approved boundaries. Never record secrets or
 privileged provider values as evidence.
 
-## Reconcile a merged slice immediately
+## Reconcile a merged slice before promoting the next one
 
-Reconcile a merged slice in its own control-plane pull request, as soon as it
-merges. Do not carry the reconciliation into the next slice's first commit.
+A slice's pull request becomes merged at the one moment when no pull request is
+open to record it, so the graph is necessarily one step behind for a while. That
+window is expected. Reconciliation records the merge SHA and moves the node to
+`done`; it may travel in the next slice's first commit, or in its own
+control-plane pull request when nothing else is queued.
 
-Between a slice's merge and its reconciliation the default branch's graph claims
-a running slice whose pull request is merged, and `pnpm rebuild:graph:reconcile`
-fails the default branch's own CI until the record catches up. Bundling that
-record into the successor holds the window open for the whole life of the next
-slice: CR10 and CR11 each left the default branch red for hours that way, and
-CR11's window also failed an unrelated pull request. A reconciliation-only PR
-names a slice that live GitHub state already shows as merged and promotes no
-future node, so it is a control-plane PR under the scheduling model above and
-may coexist with a running slice.
+The window is not urgent because nothing depends on the record being fresh
+until a dependent is promoted, and `pnpm rebuild:graph:check` already refuses
+that while the predecessor is not `done`. Reconciliation is therefore the first
+thing the next slice does, and promotion still never rests on a predecessor
+that is merely merged.
+
+Reconciliation does not turn the default branch red. When a running slice's
+pull request is merged **and** that merge commit is an ancestor of the default
+branch, the reconciler skips the node's remaining running-slice checks and says
+so on stdout. Those checks — base ancestry, changed-path ownership, evidence
+against HEAD — all ask whether the slice is still in flight, and none of them
+are answerable once it has merged and other work has landed on top. The node is
+validated in full, and more strictly, once it is recorded as `done`.
+
+Two neighbouring states stay hard errors, because neither is that window:
+
+- a pull request **closed without merging**, which moves the slice to `blocked`
+  as described above; and
+- a pull request reported merged whose merge commit **has not landed** on the
+  default branch, which means the recorded pull request is not the one that
+  produced the default branch's history.
+
+This replaces an earlier rule that required a dedicated reconciliation pull
+request immediately after every slice. That rule existed because the merged
+window used to fail the default branch's own CI: CR10 and CR11 each left it red
+for hours, and CR11's window also failed an unrelated pull request. The
+unrelated-pull-request half was fixed by treating an inherited graph as out of
+scope; this is the other half.
 
 A branch that leaves `docs/rebuild/graph.json` exactly as the default branch
 wrote it is not held to a running slice it merely inherited. The reconciler

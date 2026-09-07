@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  findMergedRunningSlices,
   runRebuildGraphReconcileCli,
   validateChangedPathOwnership,
   validateRepositoryClaims,
@@ -166,6 +167,59 @@ function createInheritedGraphFixture() {
   return { baseSha, directory, graphPath };
 }
 
+/**
+ * The default branch just after a slice merged, before its record caught up:
+ * CR00 is still `running`, its pull request is merged, and an unrelated commit
+ * the slice does not own has already landed on top of the merge.
+ */
+function createMergedRunningSliceFixture() {
+  const directory = mkdtempSync(join(tmpdir(), "rebuild-merged-running-"));
+  git(directory, ["init", "-b", "main"]);
+  git(directory, ["config", "user.email", "tests@example.com"]);
+  git(directory, ["config", "user.name", "Rebuild Tests"]);
+  mkdirSync(join(directory, "tooling"), { recursive: true });
+  writeFileSync(join(directory, "tooling", "check.ts"), "base\n", "utf8");
+  git(directory, ["add", "."]);
+  git(directory, ["commit", "-m", "base"]);
+  const baseSha = git(directory, ["rev-parse", "HEAD"]);
+
+  git(directory, ["switch", "-c", "codex/rebuild-test-v1"]);
+  writeFileSync(join(directory, "tooling", "check.ts"), "slice\n", "utf8");
+  git(directory, ["add", "."]);
+  git(directory, ["commit", "-m", "slice change"]);
+  const headSha = git(directory, ["rev-parse", "HEAD"]);
+
+  git(directory, ["switch", "main"]);
+  git(directory, ["merge", "--no-ff", "codex/rebuild-test-v1", "-m", "merge"]);
+  const mergeSha = git(directory, ["rev-parse", "HEAD"]);
+
+  // Unrelated work lands on top, outside the slice's ownership. While the
+  // slice was in flight this was an ownership error; now it is meaningless.
+  mkdirSync(join(directory, "tools", "other"), { recursive: true });
+  writeFileSync(join(directory, "tools", "other", "client.ts"), "x\n", "utf8");
+  const graph = runningGraph();
+  graph.nodes = graph.nodes.map((node) => ({
+    ...node,
+    baseSha,
+    branch: "codex/rebuild-test-v1",
+    evidence: [],
+  }));
+  const graphPath = join(directory, "graph.json");
+  writeFileSync(graphPath, JSON.stringify(graph), "utf8");
+  git(directory, ["add", "."]);
+  git(directory, ["commit", "-m", "unrelated work on top"]);
+
+  return {
+    baseSha,
+    directory,
+    graphPath,
+    headSha,
+    headTreeSha: git(directory, ["rev-parse", `${headSha}^{tree}`]),
+    mergeSha,
+    mergeTreeSha: git(directory, ["rev-parse", `${mergeSha}^{tree}`]),
+  };
+}
+
 function mockMergedPullRequest(
   fixture: ReturnType<typeof createSquashFixture>,
 ) {
@@ -293,11 +347,93 @@ describe("rebuild graph inherited from the default branch", () => {
     const facts: RepositoryFacts = {
       ...matchingFacts(),
       changedPaths: ["tools/other/src/client.ts"],
+      // The slice is genuinely in flight here. `matchingFacts` describes a
+      // merged pull request, which is now a skipped state, so this case has to
+      // say that the slice is still open for the ownership check to apply.
+      pullRequests: [{ url: PR_URL, state: "OPEN", mergeSha: null }],
       graphInheritedFromDefaultBranch: false,
     };
 
     expect(validateRepositoryClaims(runningGraph(), facts)).toContain(
       "changed path tools/other/src/client.ts is outside running-node ownership",
+    );
+  });
+});
+
+describe("rebuild graph running slice whose pull request already merged", () => {
+  /**
+   * The window between a slice merging and its record catching up. A pull
+   * request becomes MERGED when no pull request is open to record it, so the
+   * graph is necessarily one step behind. Failing that window is what forced a
+   * dedicated reconciliation pull request after every slice.
+   */
+  function mergedRunningFacts(overrides: Partial<RepositoryFacts> = {}) {
+    return {
+      ...matchingFacts({
+        // Paths that landed on the default branch after the slice merged, and
+        // that the slice does not own. While the slice was in flight this was
+        // a real error; once it has merged the question is meaningless.
+        changedPaths: ["tools/other/src/client.ts"],
+        existingCommits: [BASE_SHA, EVIDENCE_SHA, MERGE_SHA],
+        ancestorPairs: [{ ancestor: MERGE_SHA, descendant: "main" }],
+        pullRequests: [{ url: PR_URL, state: "MERGED", mergeSha: MERGE_SHA }],
+      }),
+      ...overrides,
+    };
+  }
+
+  it("accepts a running slice whose merge landed on the default branch", () => {
+    expect(
+      validateRepositoryClaims(runningGraph(), mergedRunningFacts()),
+    ).toEqual([]);
+  });
+
+  it("reports the slices whose record is behind", () => {
+    expect(
+      findMergedRunningSlices(runningGraph(), mergedRunningFacts()),
+    ).toEqual(["CR00"]);
+    expect(
+      findMergedRunningSlices(runningGraph(), mergedRunningFacts(), false),
+    ).toEqual([]);
+    expect(findMergedRunningSlices(doneGraph(), mergedRunningFacts())).toEqual(
+      [],
+    );
+  });
+
+  it("still rejects a merge that has not landed on the default branch", () => {
+    expect(
+      validateRepositoryClaims(
+        runningGraph(),
+        mergedRunningFacts({ ancestorPairs: [] }),
+      ),
+    ).toContain(
+      `running slice CR00 pull request is MERGED as ${MERGE_SHA}, which has not landed on main: ${PR_URL}`,
+    );
+  });
+
+  it("still rejects a merged pull request with no merge commit", () => {
+    expect(
+      validateRepositoryClaims(
+        runningGraph(),
+        mergedRunningFacts({
+          pullRequests: [{ url: PR_URL, state: "MERGED", mergeSha: null }],
+        }),
+      ),
+    ).toContain(
+      `running slice CR00 pull request is MERGED without a merge commit: ${PR_URL}`,
+    );
+  });
+
+  it("still rejects a pull request closed without merging", () => {
+    expect(
+      validateRepositoryClaims(
+        runningGraph(),
+        mergedRunningFacts({
+          pullRequests: [{ url: PR_URL, state: "CLOSED", mergeSha: null }],
+        }),
+      ),
+    ).toContain(
+      `running slice CR00 pull request is CLOSED, not OPEN: ${PR_URL}`,
     );
   });
 });
@@ -594,6 +730,66 @@ describe("rebuild graph repository claims", () => {
 });
 
 describe("rebuild graph reconciliation CLI", () => {
+  it("stays green on the default branch while a merged slice's record catches up", async () => {
+    const fixture = createMergedRunningSliceFixture();
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.endsWith("/pulls/146")) {
+          return new Response(
+            JSON.stringify({
+              head: { sha: fixture.headSha },
+              merged: true,
+              merge_commit_sha: fixture.mergeSha,
+              state: "closed",
+            }),
+            { status: 200 },
+          );
+        }
+        if (url.includes("/pulls/146/commits")) {
+          return new Response(JSON.stringify([{ sha: fixture.headSha }]), {
+            status: 200,
+          });
+        }
+        if (url.endsWith(`/git/commits/${fixture.headSha}`)) {
+          return new Response(
+            JSON.stringify({ tree: { sha: fixture.headTreeSha } }),
+            { status: 200 },
+          );
+        }
+        if (url.endsWith(`/git/commits/${fixture.mergeSha}`)) {
+          return new Response(
+            JSON.stringify({ tree: { sha: fixture.mergeTreeSha } }),
+            { status: 200 },
+          );
+        }
+        return new Response("not found", { status: 404 });
+      });
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        [fixture.graphPath],
+        fixture.directory,
+        { GITHUB_TOKEN: "test-token" },
+      );
+
+      expect(error).not.toHaveBeenCalled();
+      expect(exitCode).toBe(0);
+      expect(log.mock.calls.flat().join("\n")).toContain(
+        "Running-slice checks were skipped for CR00: the pull request has already merged",
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      error.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
+    }
+  });
+
   it("requires a durable source tag instead of a retained branch", async () => {
     const fixture = createSquashFixture();
     const error = vi
