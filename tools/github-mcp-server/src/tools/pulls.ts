@@ -4,6 +4,7 @@ import {
   getClient,
   handleApiError,
   resolveRepo,
+  repoSlug,
   formatDate,
   truncate,
 } from "../client.js";
@@ -74,7 +75,7 @@ Examples:
         if (params.base) query.base = params.base;
 
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/pulls`,
+          `/repos/${repoSlug(owner, repo)}/pulls`,
           { params: query }
         );
 
@@ -185,7 +186,7 @@ Examples:
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/pulls/${params.pull_number}`
+          `/repos/${repoSlug(owner, repo)}/pulls/${params.pull_number}`
         );
 
         const out = {
@@ -287,7 +288,7 @@ Examples:
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/pulls/${params.pull_number}/files`,
+          `/repos/${repoSlug(owner, repo)}/pulls/${params.pull_number}/files`,
           { params: { per_page: 100 } }
         );
 
@@ -370,12 +371,12 @@ Examples:
 
         // First get the PR to find the head SHA
         const { data: prData } = await getClient().get(
-          `/repos/${owner}/${repo}/pulls/${params.pull_number}`
+          `/repos/${repoSlug(owner, repo)}/pulls/${params.pull_number}`
         );
         const headSha = (prData.head as { sha: string }).sha;
 
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/commits/${headSha}/check-runs`,
+          `/repos/${repoSlug(owner, repo)}/commits/${encodeURIComponent(headSha)}/check-runs`,
           { params: { per_page: 100 } }
         );
 
@@ -487,7 +488,7 @@ Examples:
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().post(
-          `/repos/${owner}/${repo}/pulls`,
+          `/repos/${repoSlug(owner, repo)}/pulls`,
           {
             title: params.title,
             head: params.head,
@@ -555,7 +556,7 @@ Examples:
 
         // PR comments go through the issues comments API
         const { data } = await getClient().post(
-          `/repos/${owner}/${repo}/issues/${params.pull_number}/comments`,
+          `/repos/${repoSlug(owner, repo)}/issues/${params.pull_number}/comments`,
           { body: params.body }
         );
 

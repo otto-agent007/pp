@@ -4,6 +4,7 @@ import {
   getClient,
   handleApiError,
   resolveRepo,
+  repoSlug,
   decodeContent,
 } from "../client.js";
 import { CHARACTER_LIMIT, ResponseFormat } from "../constants.js";
@@ -63,7 +64,7 @@ Examples:
         if (params.ref) queryParams.ref = params.ref;
 
         const { data } = await getClient().get(
-          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeRepoPath(params.path)}`,
+          `/repos/${repoSlug(owner, repo)}/contents/${encodeRepoPath(params.path)}`,
           { params: queryParams }
         );
 
@@ -142,11 +143,10 @@ Examples:
         const queryParams: Record<string, string> = {};
         if (params.ref) queryParams.ref = params.ref;
 
-        const encodedOwner = encodeURIComponent(owner);
-        const encodedRepo = encodeURIComponent(repo);
+        const slug = repoSlug(owner, repo);
         const urlPath = params.path
-          ? `/repos/${encodedOwner}/${encodedRepo}/contents/${encodeRepoPath(params.path)}`
-          : `/repos/${encodedOwner}/${encodedRepo}/contents`;
+          ? `/repos/${slug}/contents/${encodeRepoPath(params.path)}`
+          : `/repos/${slug}/contents`;
 
         const { data } = await getClient().get(urlPath, {
           params: queryParams,
