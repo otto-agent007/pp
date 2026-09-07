@@ -1,5 +1,62 @@
 # Done
 
+## CR13 Expo SDK 54 migration
+
+- Base `b5ce59feffd664319167567d3dcdca95cf9d3b25` (CR12's reconciliation merge
+  commit on `main`), branch `codex/rebuild-cr13-expo-54-v1`, plan
+  `docs/superpowers/plans/2026-09-07-controlled-rebuild-cr13-expo-54.md`.
+- Frozen target Expo SDK `54.0.37`, the newest stable behind the `sdk-54`
+  dist-tag. The dependency set was read from `expo/bundledNativeModules.json`
+  on the `sdk-54` branch rather than inferred.
+- The app needed no code migration. `expo-router` v5 to v6 was the only major
+  among the Expo packages, and with a single route and no drawer none of its
+  changes reached the app; v6's reanimated, gesture-handler, react-native-web
+  and drawer peers are all declared optional, so the hop added no native
+  dependency. `react-native@0.81.5` is the first version in this chain to
+  publish `main` and a strict `exports` map, but nothing deep-imports
+  `react-native/...`. `app.json` was untouched.
+- The repo-wide React pin moved to `19.1.0`, which `react-native@0.81.5`
+  requires and SDK 54 pins exactly. React is pinned for the whole monorepo in
+  `pnpm-workspace.yaml`, so this retired the SDK 53 constraint CR12 had
+  recorded. `next@16.3.4` peers on `^19.0.0` and the UI packages declare
+  `^19.0.x` carets, so every project accepted it and the lockfile still
+  resolves a single `react@19.1.0`. Types moved to the matching 19.1 line.
+- `apps/mobile/metro.config.js` was rebuilt on SDK 54's defaults, which now
+  resolve the pnpm workspace natively. Two defects came out of that:
+  - The rewrite broke `expo export`. `pnpm-workspace.yaml` relocates pnpm's
+    virtual store to `<root>/.pnpm` through `virtualStoreDir`, and Expo's
+    default `watchFolders` cover `<root>/node_modules` and each workspace
+    project — none of which contain it — so every dependency symlink resolved
+    outside all watch folders. The old blanket `watchFolders = [workspaceRoot]`
+    had been covering that by accident. The store is now appended explicitly.
+    **Expo Doctor passed 18/18 on the version that could not build**, because
+    its check is that the defaults are a subset rather than equal; `pnpm build`
+    is what caught it.
+  - A separate pre-existing defect: the file assigned `resolver.blockList`,
+    silently replacing Expo's own default exclusions instead of adding to them.
+    The `tools/` exclusion is now appended and all three entries survive.
+- First slice to exercise the Expo native-build gate. From a disposable clean
+  checkout at `1f0fd3ef5d50f8f6bb261befa72645d90e0c840c`:
+  `pnpm install --frozen-lockfile`, `npx expo-doctor@1.20.4` (18/18), and
+  `npx expo prebuild --no-install` for both iOS and Android, all exit 0. The
+  generated native trees are evidence inputs and were not committed; the app
+  stays on continuous native generation.
+- Recorded for future Expo slices: `pnpm test` cannot prove a React Native
+  bump. All eleven mobile and `ui-native` test files mock `react-native` under
+  jsdom, so RN never loads. The load-bearing gates are `pnpm typecheck`,
+  `pnpm build`, Expo Doctor, and the prebuilds.
+- Controller approved the target refresh, the CR13 start, the repo-wide React
+  19.1 bump, and the Doctor-plus-prebuild evidence depth on 2026-09-07. Merged
+  as PR [#176](https://github.com/otto-agent007/pp/pull/176),
+  `fafd1fad6da169526d92ba5bb6f8632cef701ce3`, tagged `rebuild/cr13-source` at
+  its frozen head `fc6c238`; the merge commit's tree is identical to the tag's,
+  so nothing changed during the merge.
+- Verified with `pnpm rebuild:verify` (15/15 gates, evidence set
+  `2d36c811…`), `pnpm rebuild:graph:check`,
+  `pnpm rebuild:graph:reconcile -- --offline`, `pnpm install --frozen-lockfile`,
+  `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`,
+  `pnpm security:baseline`, `pnpm security:audit`, and `git diff --check`.
+
 ## CR12 Next.js 16 migration
 
 - Base `d9a84c44035185bfee00aa8ac3d8230349726c88` (CR11's merge commit on
