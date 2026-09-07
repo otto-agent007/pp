@@ -385,7 +385,7 @@
       "baseSha": "eee1726d2e78dc065db227474ff1419fc9bb97b8",
       "id": "CR10",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -439,7 +439,7 @@
         {
           "kind": "approval",
           "summary": "Controller approved platform-first sequencing, the Node 24.20.0 target refresh, and the CR10 start on 2026-09-06.",
-          "commitSha": "eee1726d2e78dc065db227474ff1419fc9bb97b8",
+          "commitSha": "97c2afd2fc1f0e73d3f6f92ef1b6fd8cfb41d15a",
           "recordedAt": "2026-09-06T22:28:03Z"
         },
         {
@@ -464,11 +464,18 @@
           "exitCode": 0,
           "commitSha": "a28d5d3f1d38c43a30010406d6aa47c78798b8ee",
           "recordedAt": "2026-09-06T23:50:35.196Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #169 merged as d7ddb8fb4b33da3311ea553bcf316ced11de879f.",
+          "commitSha": "21549f1dac66b3f49135ee38851474d44ce90500",
+          "recordedAt": "2026-09-07T00:53:33Z",
+          "url": "https://github.com/otto-agent007/pp/pull/169"
         }
       ],
       "branch": "codex/rebuild-cr10-node-24-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/169",
-      "mergeSha": "",
+      "mergeSha": "d7ddb8fb4b33da3311ea553bcf316ced11de879f",
       "supersededBy": null,
       "target": {
         "product": "node",

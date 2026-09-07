@@ -1,5 +1,27 @@
 # Done
 
+## CR10 Node 24 LTS migration
+
+- Base `eee1726d2e78dc065db227474ff1419fc9bb97b8` (head of re-sequencing PR
+  [#168](https://github.com/otto-agent007/pp/pull/168)), branch
+  `codex/rebuild-cr10-node-24-v1`, plan
+  `docs/superpowers/plans/2026-09-06-controlled-rebuild-cr10-node-24.md`.
+- Frozen target Node `24.20.0` via `.nvmrc`, CI `node-version-file`,
+  `engines.node >=24.20.0`, and `@types/node` on the 24 line. Vercel already
+  runs 24.x.
+- Fixed a reconciler defect found while landing this slice: the running-slice
+  changed-path ownership check diffed against the slice's original `baseSha`
+  instead of the current default branch, so merging `main` forward made
+  sibling PRs' already-merged changes look like out-of-ownership edits.
+- Controller approved platform-first sequencing, the target refresh, and the
+  CR10 start on 2026-09-06. Merged as PR
+  [#169](https://github.com/otto-agent007/pp/pull/169),
+  `d7ddb8fb4b33da3311ea553bcf316ced11de879f`, tagged `rebuild/cr10-source`.
+- Verified with `pnpm rebuild:verify` (15/15 gates), `pnpm rebuild:graph:check`,
+  `pnpm rebuild:graph:reconcile -- --offline`, `pnpm test`, `pnpm typecheck`,
+  `pnpm lint`, `pnpm build`, `pnpm security:baseline`, `pnpm security:audit`,
+  and `git diff --check`
+
 ## Repository Hygiene V1
 
 - Loosened every exact `pnpm.overrides` pin to a caret range so Dependabot and `pnpm update` can move those packages forward again; the pins were security floors, not compatibility locks. Moved `postcss` from 8.5.23 to 8.5.28 now that the override no longer blocks it.

@@ -1,17 +1,5 @@
 # In Progress
 
-## CR10 Node 24 LTS migration (running)
-
-- Base `eee1726d2e78dc065db227474ff1419fc9bb97b8` (head of re-sequencing PR
-  [#168](https://github.com/otto-agent007/pp/pull/168)), branch
-  `codex/rebuild-cr10-node-24-v1`, plan
-  `docs/superpowers/plans/2026-09-06-controlled-rebuild-cr10-node-24.md`.
-- Frozen target Node `24.20.0` via `.nvmrc`, CI `node-version-file`,
-  `engines.node >=24.20.0`, and `@types/node` on the 24 line. Vercel already
-  runs 24.x.
-- Controller approved platform-first sequencing, the target refresh, and the
-  CR10 start on 2026-09-06. Publication and merge remain controller gates.
-
 ## Controlled rebuild
 
 - CR00 is `done` (PR [#146](https://github.com/otto-agent007/pp/pull/146),
