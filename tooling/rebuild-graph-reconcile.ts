@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { posix, resolve, win32 } from "node:path";
+import { posix, relative, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { validateRebuildGraph } from "./rebuild-graph";
@@ -20,6 +20,12 @@ export type SliceSourceFact = {
 };
 
 export type RepositoryFacts = {
+  /**
+   * True when HEAD is not the default branch and its rebuild graph is byte for
+   * byte the default branch's. Such a tree cannot resolve a running slice it
+   * merely inherited, so it is not held to one.
+   */
+  graphInheritedFromDefaultBranch?: boolean;
   changedPaths: string[];
   existingCommits: string[];
   ancestorPairs: Array<{ ancestor: string; descendant: string }>;
@@ -203,6 +209,16 @@ function validateRepositoryClaimsWithOptions(
         );
       }
     } else if (node.kind === "slice" && node.status === "running") {
+      if (facts.graphInheritedFromDefaultBranch) {
+        // Every check below asks whether *this* branch is the running slice:
+        // its pull request open, its base an ancestor of HEAD, its evidence
+        // present, its changed paths within the slice's ownership. A branch
+        // that leaves the graph exactly as the default branch wrote it is not
+        // that slice and cannot make any of them true. Failing it reports a
+        // problem only the default branch can fix, and takes every unrelated
+        // pull request down with it.
+        continue;
+      }
       evidenceDescendant = "HEAD";
       if (checkPullRequests && node.pr.length > 0) {
         const pullRequest = pullRequests.get(node.pr);
@@ -289,6 +305,47 @@ function runGit(cwd: string, args: readonly string[]) {
   });
 }
 
+/**
+ * Whether this tree merely inherited its rebuild graph. True when HEAD is not
+ * the default branch's tip and the graph file is unchanged against it. A graph
+ * outside the repository, or one the default branch does not track, is treated
+ * as changed so a fixture or a new graph is still fully validated.
+ */
+function isGraphInheritedFromDefaultBranch(
+  cwd: string,
+  defaultBranchRef: string,
+  graphPath: string,
+) {
+  const head = runGit(cwd, ["rev-parse", "HEAD"]);
+  const base = runGit(cwd, ["rev-parse", defaultBranchRef]);
+  if (head.status !== 0 || base.status !== 0) {
+    return false;
+  }
+  if (head.stdout.trim() === base.stdout.trim()) {
+    return false;
+  }
+  const relativePath = relative(resolve(cwd), resolve(cwd, graphPath));
+  if (relativePath.length === 0 || relativePath.startsWith("..")) {
+    return false;
+  }
+  const tracked = runGit(cwd, [
+    "cat-file",
+    "-e",
+    `${defaultBranchRef}:${relativePath}`,
+  ]);
+  if (tracked.status !== 0) {
+    return false;
+  }
+  const diff = runGit(cwd, [
+    "diff",
+    "--name-only",
+    `${defaultBranchRef}...HEAD`,
+    "--",
+    relativePath,
+  ]);
+  return diff.status === 0 && diff.stdout.trim().length === 0;
+}
+
 function resolveDefaultBranchRef(cwd: string, defaultBranch: string) {
   for (const candidate of [`origin/${defaultBranch}`, defaultBranch]) {
     if (
@@ -309,9 +366,14 @@ function resolveSourceTagRef(cwd: string, nodeId: string) {
     : null;
 }
 
-function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
+function collectLocalRepositoryFacts(
+  graph: ReconciliationGraph,
+  cwd: string,
+  graphInheritedFromDefaultBranch = false,
+) {
   const errors: string[] = [];
   const facts: RepositoryFacts = {
+    graphInheritedFromDefaultBranch,
     changedPaths: [],
     existingCommits: [],
     ancestorPairs: [],
@@ -390,6 +452,9 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
   }> = [];
   for (const node of relevantNodes) {
     if (node.kind === "slice" && node.status === "running") {
+      if (facts.graphInheritedFromDefaultBranch) {
+        continue;
+      }
       requiredPairs.push({
         ancestor: node.baseSha,
         descendant: "HEAD",
@@ -668,7 +733,12 @@ export async function runRebuildGraphReconcileCli(
   }
 
   const typedGraph = graph as ReconciliationGraph;
-  const local = collectLocalRepositoryFacts(typedGraph, cwd);
+  const graphInherited = isGraphInheritedFromDefaultBranch(
+    cwd,
+    resolveDefaultBranchRef(cwd, typedGraph.repository.defaultBranch),
+    inputPath,
+  );
+  const local = collectLocalRepositoryFacts(typedGraph, cwd, graphInherited);
   let checkPullRequests = false;
   if (!offline) {
     const remote = await collectPullRequestFacts(typedGraph, environment);
@@ -713,6 +783,11 @@ export async function runRebuildGraphReconcileCli(
   }
 
   console.log(`Rebuild graph repository facts are valid: ${inputPath}`);
+  if (graphInherited) {
+    console.log(
+      "Running-slice checks were skipped: this branch's rebuild graph is inherited unchanged from the default branch.",
+    );
+  }
   if (offline) {
     console.log("Live pull-request checks were not requested (--offline).");
   }
