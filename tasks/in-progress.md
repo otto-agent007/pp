@@ -11,13 +11,26 @@
   graph so the platform chain (CR10, CR11, CR12, CR13, CR14, CR15) runs
   before the CR01-CR09 architecture refactor.
 - CR10 (Node 24.20.0), CR11 (pnpm 12.3.4), and CR12 (Next.js 16.3.4) are
-  `done`; details are in `tasks/done.md`. CR13 (Expo SDK 54) is next in
-  `preferredPrOrder`, and needs a controller target refresh and promotion
-  approval before it starts.
+  `done`; details are in `tasks/done.md`.
+- CR13 (Expo SDK 54) is `running` on `codex/rebuild-cr13-expo-54-v1`, draft PR
+  [#176](https://github.com/otto-agent007/pp/pull/176), target frozen at
+  `expo@54.0.37`, base `b5ce59feffd664319167567d3dcdca95cf9d3b25`. It also
+  moves the repo-wide React pin to 19.1.0, which `react-native@0.81.5`
+  requires. Merge and the `rebuild/cr13-source` tag remain controller gates.
+  CR14 (SDK 55) and CR15 (SDK 56 to 57, floor 57.0.9) follow.
 - Known follow-up carried out of CR12: 16 `eslint-plugin-react-hooks` v7
   findings in `apps/web` (13 `set-state-in-effect`, 2 `purity`, 1 `use-memo`)
   are tracked warnings, not fixes. Clearing them changes component behaviour
   and belongs in its own change.
+- Known follow-ups surfaced by CR13's prebuilds, both pre-existing and
+  behavioural, so tracked rather than changed inside a version migration:
+  `apps/mobile/app.json` declares no `ios.bundleIdentifier` or
+  `android.package`, so prebuild derives the placeholders
+  `com.anonymous.pest-patrol-os` and `com.anonymous.pestpatrolos`; real
+  identifiers are a product and provider decision needed before any store or
+  EAS build. And `userInterfaceStyle: "automatic"` is inert on Android without
+  `expo-system-ui`, which is not installed — adding it would switch dark mode
+  on.
 
 ## Repository security refresh (2026-09-05 to 2026-09-06)
 

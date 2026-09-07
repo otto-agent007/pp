@@ -695,10 +695,10 @@
       }
     },
     {
-      "baseSha": "",
+      "baseSha": "b5ce59feffd664319167567d3dcdca95cf9d3b25",
       "id": "CR13",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR12"
@@ -706,22 +706,103 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Expo SDK 54 one-SDK migration"
+      "ownership": [
+        "apps/mobile/metro.config.js",
+        "apps/mobile/package.json",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-07-controlled-rebuild-cr13-expo-54.md",
+        "packages/ui-native/package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tasks/in-progress.md"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "deliverables": [
+        "Expo SDK 54 one-SDK migration of apps/mobile, frozen at the latest stable release 54.0.37 and declared through its package manifest",
+        "The SDK 54 bundled dependency set for expo-router 6, expo-constants, expo-image-picker, expo-linking, expo-location, expo-secure-store, react-native 0.81.5, react-native-screens, react-native-safe-area-context and react-native-webview",
+        "The repo-wide react, react-dom, @types/react and @types/react-dom overrides moved to the 19.1 line, which react-native 0.81.5's peer range requires and every other workspace project accepts",
+        "packages/ui-native's react-native and React type devDependencies realigned with the SDK 54 set",
+        "apps/mobile/metro.config.js rebuilt on SDK 54's default config, with the tools/ exclusion appended to Expo's default blockList instead of replacing it",
+        "Expo native-build evidence: Expo Doctor and clean no-install prebuild for both iOS and Android from a disposable checkout",
+        "CR13 implementation plan and controlled-rebuild evidence"
+      ],
+      "checks": [
+        "node -e \"const v = require('./apps/mobile/node_modules/expo/package.json').version; if (v !== '54.0.37') { throw new Error(v) }\"",
+        "node -e \"const v = require('./apps/mobile/node_modules/react-native/package.json').version; if (v !== '0.81.5') { throw new Error(v) }\"",
+        "node -e \"const v = require('./apps/mobile/node_modules/react/package.json').version; if (v !== '19.1.0') { throw new Error(v) }\"",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the Expo SDK 54 target refresh and the CR13 start (2026-09-07)",
+        "Controller approval of moving the repo-wide React pin to 19.1.0, which react-native 0.81.5 requires and which reaches every workspace project (2026-09-07)",
+        "Controller approval of Expo Doctor plus clean two-platform prebuild as this slice's native-build evidence depth, with no EAS project or provider action (2026-09-07)",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved the Expo SDK 54.0.37 target refresh, the CR13 start, moving the repo-wide React pin to 19.1.0, and Expo Doctor plus clean two-platform prebuild as the native-build evidence depth on 2026-09-07.",
+          "commitSha": "f0de9c023b8f26bff7a6e47ac67bf622f16f835b",
+          "recordedAt": "2026-09-07T19:56:50Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Expo Doctor passed 18/18 checks in a disposable clean checkout at the final implementation commit.",
+          "command": "npx expo-doctor@1.20.4",
+          "exitCode": 0,
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:02Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean no-install iOS prebuild generated apps/mobile/ios in a disposable clean checkout at the final implementation commit; the generated tree is an evidence input and is not committed.",
+          "command": "npx expo prebuild --platform ios --no-install",
+          "exitCode": 0,
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:02Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean no-install Android prebuild generated apps/mobile/android in a disposable clean checkout at the final implementation commit; the generated tree is an evidence input and is not committed.",
+          "command": "npx expo prebuild --platform android --no-install",
+          "exitCode": 0,
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:02Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 15/15 gates, evidence set 2d36c811.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "1f0fd3ef5d50f8f6bb261befa72645d90e0c840c",
+          "recordedAt": "2026-09-07T20:02:34Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #176 opened for CR13 from codex/rebuild-cr13-expo-54-v1.",
+          "commitSha": "f0de9c023b8f26bff7a6e47ac67bf622f16f835b",
+          "recordedAt": "2026-09-07T19:56:50Z",
+          "url": "https://github.com/otto-agent007/pp/pull/176"
+        }
+      ],
+      "branch": "codex/rebuild-cr13-expo-54-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/176",
       "mergeSha": "",
       "supersededBy": null,
       "target": {
         "product": "expo",
         "constraint": "54",
         "selection": "exact-sdk-major",
-        "resolvedVersion": ""
+        "resolvedVersion": "54.0.37"
       }
     },
     {
