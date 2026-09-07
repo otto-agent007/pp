@@ -103,6 +103,8 @@ export function selectVerificationGates(
     if (
       path === "package.json" ||
       path === "pnpm-lock.yaml" ||
+      path === "pnpm-workspace.yaml" ||
+      path === ".npmrc" ||
       path.endsWith("/package.json")
     ) {
       matched = true;
@@ -125,7 +127,9 @@ export function selectVerificationGates(
       path === "README.md" ||
       path === ".nvmrc" ||
       path === "package.json" ||
-      path === "pnpm-lock.yaml"
+      path === "pnpm-lock.yaml" ||
+      path === "pnpm-workspace.yaml" ||
+      path === ".npmrc"
     ) {
       matched = true;
       commands.add("git diff --check");
