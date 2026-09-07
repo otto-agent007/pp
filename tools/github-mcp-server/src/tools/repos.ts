@@ -4,6 +4,7 @@ import {
   getClient,
   handleApiError,
   resolveRepo,
+  repoSlug,
   formatDate,
 } from "../client.js";
 import { ResponseFormat, DEFAULT_LIMIT, MAX_LIMIT } from "../constants.js";
@@ -51,7 +52,7 @@ Examples:
     async (params) => {
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
-        const { data } = await getClient().get(`/repos/${owner}/${repo}`);
+        const { data } = await getClient().get(`/repos/${repoSlug(owner, repo)}`);
 
         const out = {
           full_name: data.full_name as string,
@@ -138,7 +139,7 @@ Examples:
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/branches`,
+          `/repos/${repoSlug(owner, repo)}/branches`,
           { params: { per_page: params.limit, page: params.page } }
         );
 
@@ -228,7 +229,7 @@ Examples:
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/compare/${encodeURIComponent(params.base)}...${encodeURIComponent(params.head)}`
+          `/repos/${repoSlug(owner, repo)}/compare/${encodeURIComponent(params.base)}...${encodeURIComponent(params.head)}`
         );
 
         type CommitItem = { sha: string; commit: { message: string; author: { date: string } } };
