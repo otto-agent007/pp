@@ -658,6 +658,14 @@
           "exitCode": 0,
           "commitSha": "d56bc0a07a82337e4e1f75b4b2df4cf29b5fad80",
           "recordedAt": "2026-09-07T06:06:40.015Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 15 selected gates after updating from main, with evidence set b539efa91a0f3f782cbcd6a6ced87ec5183e1daf59c71f1a39217ce35bf7e2bd.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm12/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "559c8c17dd13f49a2e7cde395279107337d7622a",
+          "recordedAt": "2026-09-07T06:57:27.930Z"
         }
       ],
       "branch": "codex/rebuild-cr12-next-16-v1",

@@ -82,6 +82,21 @@ which ESLint 9 reports because flat config enables
 `reportUnusedDisableDirectives` by default. The explanatory comments survive;
 only the directives are gone.
 
+## A verifier defect found and fixed during this slice
+
+Bringing this branch up to date with `main` after #171 merged made
+`pnpm rebuild:verify` fail with six `MISSING` gates for the GitHub MCP server's
+files. The verifier derived a running slice's changed paths from the node's
+frozen `baseSha`, so every default-branch commit merged in after that point was
+re-attributed to the slice — and nothing maps `tools/**` to a gate.
+
+This is the same defect `41de254` fixed in the reconciler's ownership check
+during CR10; the verifier's gate selection kept the old base. It now resolves
+the default branch ref exactly as `tooling/rebuild-graph-reconcile.ts` does.
+Post-merge recovery still verifies from its merge SHA, which is what that mode
+means. Added test-first with a fixture that merges the default branch into a
+slice branch.
+
 ## Tasks
 
 - [x] Reconcile CR11 as `done` (status, `mergeSha`, evidence, task tracker).
@@ -99,7 +114,8 @@ only the directives are gone.
       config files to the lint and docs/config gates; tests first.
 - [x] Run every declared check on the migrated tree and record the
       `pnpm rebuild:verify` evidence set on the node (15/15 gates PASS,
-      evidence set `3e81ae8c…`).
+      evidence set `3e81ae8c…`; re-run after updating from main as
+      `b539efa9…`).
 - [x] Open the draft PR and record it on the node; controller merge approval
       and the `rebuild/cr12-source` tag remain open.
 
