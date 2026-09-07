@@ -80,6 +80,16 @@ export function resolveRepo(
   return { owner: resolvedOwner, repo: resolvedRepo };
 }
 
+/**
+ * Encode an owner/repo pair for interpolation into an API path. Either half can
+ * come from a tool argument or an environment variable, so a value containing
+ * `/`, `?`, or `#` would otherwise reshape the request into a different
+ * endpoint than the caller asked for.
+ */
+export function repoSlug(owner: string, repo: string): string {
+  return `${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+}
+
 /** Decode base64 file content returned by the GitHub contents API. */
 export function decodeContent(encoded: string): string {
   return Buffer.from(encoded, "base64").toString("utf-8");

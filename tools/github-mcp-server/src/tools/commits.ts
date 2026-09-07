@@ -4,6 +4,7 @@ import {
   getClient,
   handleApiError,
   resolveRepo,
+  repoSlug,
   formatDate,
 } from "../client.js";
 import { ResponseFormat, DEFAULT_LIMIT, MAX_LIMIT } from "../constants.js";
@@ -76,7 +77,7 @@ Examples:
         if (params.since) query.since = params.since;
 
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/commits`,
+          `/repos/${repoSlug(owner, repo)}/commits`,
           { params: query }
         );
 
@@ -172,7 +173,7 @@ Examples:
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/commits/${params.sha}`
+          `/repos/${repoSlug(owner, repo)}/commits/${encodeURIComponent(params.sha)}`
         );
 
         type FileItem = {

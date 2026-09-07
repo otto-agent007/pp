@@ -4,6 +4,7 @@ import {
   getClient,
   handleApiError,
   resolveRepo,
+  repoSlug,
   formatDate,
 } from "../client.js";
 import { ResponseFormat, DEFAULT_LIMIT, MAX_LIMIT } from "../constants.js";
@@ -71,7 +72,7 @@ Returns: Issue number, title, state, labels, assignees, and dates.`,
         if (params.assignee) query.assignee = params.assignee;
 
         const { data } = await getClient().get(
-          `/repos/${owner}/${repo}/issues`,
+          `/repos/${repoSlug(owner, repo)}/issues`,
           { params: query }
         );
 
@@ -180,7 +181,7 @@ Returns: Issue number and URL.`,
       try {
         const { owner, repo } = resolveRepo(params.owner, params.repo);
         const { data } = await getClient().post(
-          `/repos/${owner}/${repo}/issues`,
+          `/repos/${repoSlug(owner, repo)}/issues`,
           {
             title: params.title,
             body: params.body ?? "",
