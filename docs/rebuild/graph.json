@@ -650,6 +650,14 @@
           "commitSha": "7c43acdd98fbc41b406471ae5be8b63539de9131",
           "recordedAt": "2026-09-07T06:20:00Z",
           "url": "https://github.com/otto-agent007/pp/pull/173"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 15 selected gates on Next.js 16.3.4 with evidence set 3e81ae8cef9a3d079c0cd4d1fc2a2f2af41d6c9606328da93d77e0433bda5f8a.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm12/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "d56bc0a07a82337e4e1f75b4b2df4cf29b5fad80",
+          "recordedAt": "2026-09-07T06:06:40.015Z"
         }
       ],
       "branch": "codex/rebuild-cr12-next-16-v1",
