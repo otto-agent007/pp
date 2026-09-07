@@ -1,5 +1,65 @@
 # Done
 
+## CR12 Next.js 16 migration
+
+- Base `d9a84c44035185bfee00aa8ac3d8230349726c88` (CR11's merge commit on
+  `main`), branch `codex/rebuild-cr12-next-16-v1`, plan
+  `docs/superpowers/plans/2026-09-07-controlled-rebuild-cr12-next-16.md`.
+- Frozen target Next.js `16.3.4`. The app itself needed no migration: `params`
+  and `searchParams` were already `Promise`-typed and awaited, and it uses no
+  `next/image`, `next/cache`, `cookies()`/`headers()`, middleware, parallel
+  routes, AMP, or runtime config. React stayed on CR11's repo-wide `19.0.0`
+  pin, so `apps/mobile`'s Expo SDK 53 constraint was untouched.
+- Turbopack became the production bundler, adopted rather than pinned back with
+  `--webpack`; there was no custom webpack config to migrate.
+- Next 16 removes `next lint` and `eslint-config-next@16` requires ESLint 9, so
+  all ten workspace projects moved to ESLint 9.39.5 flat config: one root
+  `eslint.config.mjs` inherited through ESLint's ancestor lookup, plus a small
+  `apps/web` config for Next's rules. 9.39.5 is the ceiling — the React,
+  import, and jsx-a11y plugins peer-cap at `^9`.
+- `eslint-plugin-react-hooks@7` reported 16 pre-existing findings across 12
+  components (13 `set-state-in-effect`, 2 `purity`, 1 `use-memo`). They are
+  real anti-patterns, but fixing them changes component behaviour, so they are
+  tracked warnings rather than silenced or rewritten inside a version
+  migration. Two genuine findings were fixed: an unused `_nodeEnv` argument and
+  two `react/no-danger` directives that suppressed nothing.
+- Fixed a verifier defect found while landing this slice: gate selection
+  derived a running slice's changed paths from the frozen `baseSha`, so
+  default-branch commits merged in afterwards were re-attributed to the slice.
+  It now resolves the default branch ref the way the reconciler does — the same
+  defect `41de254` fixed for the reconciler during CR10.
+- Controller approved the target refresh, the CR12 start, the ESLint 9 scope,
+  and adopting Turbopack on 2026-09-07. Merged as PR
+  [#173](https://github.com/otto-agent007/pp/pull/173),
+  `1362c14d4fcf4baa40dc605fbcd9d2fabfdcc61a`, tagged `rebuild/cr12-source`.
+- Verified with `pnpm rebuild:verify` (15/15 gates), `pnpm rebuild:graph:check`,
+  `pnpm rebuild:graph:reconcile -- --offline`, `pnpm install --frozen-lockfile`,
+  `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`,
+  `pnpm security:baseline`, `pnpm security:audit`, and `git diff --check`
+
+## Reconciler and verifier hygiene
+
+- Unrelated branches are no longer held to a running slice they inherited. The
+  reconciler detects a `docs/rebuild/graph.json` byte-identical to the default
+  branch's and skips that node's pull-request state, base ancestry, evidence,
+  and ownership checks, logging that it did. The default branch and any
+  graph-changing branch are still validated in full, so an outstanding
+  reconciliation still turns `main` red.
+- `docs/rebuild/README.md` now requires reconciling a merged slice immediately
+  in its own control-plane PR, replacing "the first commit of a new slice
+  reconciles its predecessor" — the wording that left `main` red for hours
+  after both #169 and #170.
+- Shipped as PRs [#172](https://github.com/otto-agent007/pp/pull/172) and
+  [#174](https://github.com/otto-agent007/pp/pull/174).
+
+## GitHub MCP server URL encoding
+
+- Closed the last deferred item from the 2026-09-05 security audit: a
+  `repoSlug()` helper now encodes owner and repo for all 15 repo-scoped API
+  paths across the five tool modules, and the caller-supplied commit `sha` and
+  PR head SHA interpolated into paths are encoded too. PR
+  [#171](https://github.com/otto-agent007/pp/pull/171).
+
 ## CR11 pnpm 12 migration
 
 - Base `d7ddb8fb4b33da3311ea553bcf316ced11de879f` (CR10's merge commit on
