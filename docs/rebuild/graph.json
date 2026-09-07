@@ -549,6 +549,14 @@
           "commitSha": "afb305a20acb41925a149e7bc5b5a0e605906bfd",
           "recordedAt": "2026-09-07T01:15:00Z",
           "url": "https://github.com/otto-agent007/pp/pull/170"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 14 selected gates on pnpm 12.3.4 with evidence set 97ea50bc0c98e1c37efbaee8d731f13286b38d2101d3637d014856e15e220017.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm12/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "762e23cc0f386c666fece16c047f872feb6107ac",
+          "recordedAt": "2026-09-07T02:04:51.482Z"
         }
       ],
       "branch": "codex/rebuild-cr11-pnpm-12-v1",
