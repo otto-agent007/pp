@@ -37,6 +37,73 @@ function sourceTagRef(nodeId: string) {
   return `refs/tags/rebuild/${nodeId.toLowerCase()}-source`;
 }
 
+/**
+ * Whether a running slice's pull request has already merged and landed on the
+ * default branch.
+ *
+ * A pull request becomes MERGED at the one moment when no pull request is open
+ * to record it, so the graph is necessarily one step behind at that point. The
+ * window is expected rather than a defect: nothing depends on the record being
+ * fresh until the next slice is promoted, and `pnpm rebuild:graph:check`
+ * already refuses to promote a dependent while this node is not done. Treating
+ * it as a failure is what forced a separate reconciliation pull request after
+ * every slice, and turned the default branch red until it merged.
+ *
+ * A merge that has not landed is a different thing entirely and stays an
+ * error, as does a pull request closed without merging.
+ */
+function isMergedAndLanded(
+  pullRequest: PullRequestFact | undefined,
+  defaultBranch: string,
+  isAncestor: (ancestor: string, descendant: string) => boolean,
+) {
+  if (!pullRequest || pullRequest.state !== "MERGED") {
+    return false;
+  }
+  const mergeSha = pullRequest.mergeSha ?? "";
+  return mergeSha.length > 0 && isAncestor(mergeSha, defaultBranch);
+}
+
+/**
+ * Running slices whose pull request has already merged into the default
+ * branch, so the caller can report that the record is behind without failing.
+ */
+export function findMergedRunningSlices(
+  graph: unknown,
+  facts: RepositoryFacts,
+  checkPullRequests = true,
+): string[] {
+  if (!checkPullRequests || validateRebuildGraph(graph).length > 0) {
+    return [];
+  }
+  const graphRecord = graph as {
+    repository: { defaultBranch: string };
+    nodes: Array<{ id: string; kind: string; pr: string; status: string }>;
+  };
+  const pullRequests = new Map(facts.pullRequests.map((pr) => [pr.url, pr]));
+  const ancestorPairs = new Set(
+    facts.ancestorPairs.map(
+      ({ ancestor, descendant }) => `${ancestor}\u0000${descendant}`,
+    ),
+  );
+  const isAncestor = (ancestor: string, descendant: string) =>
+    ancestorPairs.has(`${ancestor}\u0000${descendant}`);
+
+  return graphRecord.nodes
+    .filter(
+      (node) =>
+        node.kind === "slice" &&
+        node.status === "running" &&
+        node.pr.length > 0 &&
+        isMergedAndLanded(
+          pullRequests.get(node.pr),
+          graphRecord.repository.defaultBranch,
+          isAncestor,
+        ),
+    )
+    .map((node) => node.id);
+}
+
 function isRepositoryRelativePath(value: string) {
   return (
     value.length > 0 &&
@@ -219,19 +286,41 @@ function validateRepositoryClaimsWithOptions(
         // pull request down with it.
         continue;
       }
-      evidenceDescendant = "HEAD";
       if (checkPullRequests && node.pr.length > 0) {
         const pullRequest = pullRequests.get(node.pr);
         if (!pullRequest) {
           errors.push(
             `running slice ${node.id} pull request does not exist: ${node.pr}`,
           );
+        } else if (pullRequest.state === "MERGED") {
+          // The record is one step behind, which is expected. Every remaining
+          // check below asks whether this slice is still in flight — its base
+          // an ancestor of HEAD, its changed paths inside its ownership, its
+          // evidence an ancestor of HEAD — and none of them are answerable
+          // once the slice has merged and other work has landed on top. The
+          // node is validated in full, and more strictly, once it is recorded
+          // as done.
+          const mergeSha = pullRequest.mergeSha ?? "";
+          if (mergeSha.length === 0) {
+            errors.push(
+              `running slice ${node.id} pull request is MERGED without a merge commit: ${node.pr}`,
+            );
+          } else if (
+            !isAncestor(mergeSha, graphRecord.repository.defaultBranch)
+          ) {
+            errors.push(
+              `running slice ${node.id} pull request is MERGED as ${mergeSha}, which has not landed on ${graphRecord.repository.defaultBranch}: ${node.pr}`,
+            );
+          } else {
+            continue;
+          }
         } else if (pullRequest.state !== "OPEN") {
           errors.push(
             `running slice ${node.id} pull request is ${pullRequest.state}, not OPEN: ${node.pr}`,
           );
         }
       }
+      evidenceDescendant = "HEAD";
       if (!existingCommits.has(node.baseSha)) {
         errors.push(
           `running slice ${node.id} base SHA does not exist: ${node.baseSha}`,
@@ -541,6 +630,67 @@ function collectLocalRepositoryFacts(
   return { errors: [...new Set(errors)].sort(), facts };
 }
 
+/**
+ * Ancestry for a merged pull request's merge commit.
+ *
+ * The local pass cannot know this pair: a running node records no merge SHA of
+ * its own, so the SHA only arrives with the live pull-request facts. Without it
+ * a merged running slice looks like a merge that never landed.
+ */
+function appendMergedRunningSliceAncestry(
+  graph: ReconciliationGraph,
+  facts: RepositoryFacts,
+  cwd: string,
+) {
+  const errors: string[] = [];
+  const defaultBranchRef = resolveDefaultBranchRef(
+    cwd,
+    graph.repository.defaultBranch,
+  );
+  const pullRequests = new Map(facts.pullRequests.map((pr) => [pr.url, pr]));
+  const known = new Set(
+    facts.ancestorPairs.map(
+      ({ ancestor, descendant }) => `${ancestor}\u0000${descendant}`,
+    ),
+  );
+  for (const node of graph.nodes) {
+    if (
+      node.kind !== "slice" ||
+      node.status !== "running" ||
+      node.pr.length === 0
+    ) {
+      continue;
+    }
+    const pullRequest = pullRequests.get(node.pr);
+    if (!pullRequest || pullRequest.state !== "MERGED") {
+      continue;
+    }
+    const mergeSha = pullRequest.mergeSha ?? "";
+    const key = `${mergeSha}\u0000${graph.repository.defaultBranch}`;
+    if (mergeSha.length === 0 || known.has(key)) {
+      continue;
+    }
+    const result = runGit(cwd, [
+      "merge-base",
+      "--is-ancestor",
+      mergeSha,
+      defaultBranchRef,
+    ]);
+    if (result.status === 0) {
+      facts.ancestorPairs.push({
+        ancestor: mergeSha,
+        descendant: graph.repository.defaultBranch,
+      });
+      known.add(key);
+    } else if (result.status !== 1) {
+      errors.push(
+        `unable to test ancestry ${mergeSha} -> ${graph.repository.defaultBranch}`,
+      );
+    }
+  }
+  return errors;
+}
+
 async function collectPullRequestFacts(
   graph: ReconciliationGraph,
   environment: NodeJS.ProcessEnv,
@@ -744,6 +894,9 @@ export async function runRebuildGraphReconcileCli(
     const remote = await collectPullRequestFacts(typedGraph, environment);
     local.errors.push(...remote.errors);
     local.facts.pullRequests = remote.pullRequests;
+    local.errors.push(
+      ...appendMergedRunningSliceAncestry(typedGraph, local.facts, cwd),
+    );
     const localSources = new Map(
       local.facts.sliceSources.map((source) => [source.url, source]),
     );
@@ -786,6 +939,16 @@ export async function runRebuildGraphReconcileCli(
   if (graphInherited) {
     console.log(
       "Running-slice checks were skipped: this branch's rebuild graph is inherited unchanged from the default branch.",
+    );
+  }
+  const mergedRunning = findMergedRunningSlices(
+    graph,
+    local.facts,
+    checkPullRequests,
+  );
+  if (mergedRunning.length > 0) {
+    console.log(
+      `Running-slice checks were skipped for ${mergedRunning.join(", ")}: the pull request has already merged, so the graph record is one step behind. Record the slice as done before promoting a dependent.`,
     );
   }
   if (offline) {
