@@ -488,7 +488,7 @@
       "baseSha": "d7ddb8fb4b33da3311ea553bcf316ced11de879f",
       "id": "CR11",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -557,11 +557,18 @@
           "exitCode": 0,
           "commitSha": "762e23cc0f386c666fece16c047f872feb6107ac",
           "recordedAt": "2026-09-07T02:04:51.482Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #170 merged as d9a84c44035185bfee00aa8ac3d8230349726c88.",
+          "commitSha": "fe7c62bef742fd1ab956fe0ee152f032e3d40f20",
+          "recordedAt": "2026-09-07T02:32:17Z",
+          "url": "https://github.com/otto-agent007/pp/pull/170"
         }
       ],
       "branch": "codex/rebuild-cr11-pnpm-12-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/170",
-      "mergeSha": "",
+      "mergeSha": "d9a84c44035185bfee00aa8ac3d8230349726c88",
       "supersededBy": null,
       "target": {
         "product": "pnpm",
