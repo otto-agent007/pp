@@ -193,6 +193,27 @@ describe("controlled rebuild verification gate selection", () => {
     ).toEqual(["git diff --check", "pnpm security:baseline"]);
   });
 
+  it("maps ESLint flat and legacy config files to the lint and docs/config gates", () => {
+    expect(
+      selectVerificationGates(["eslint.config.mjs"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm lint"]);
+    expect(
+      selectVerificationGates([".eslintrc.cjs"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm lint"]);
+  });
+
+  it("maps a workspace project's ESLint config to the lint gate as well as its package gates", () => {
+    expect(
+      selectVerificationGates(["apps/web/eslint.config.mjs"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm lint", "pnpm test"]);
+  });
+
   it("accepts standing slice ownership during recovery gate selection", () => {
     const commands = selectVerificationGates(
       [

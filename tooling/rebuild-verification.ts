@@ -134,6 +134,11 @@ export function selectVerificationGates(
       matched = true;
       commands.add("git diff --check");
     }
+    if (/(?:^|\/)(?:eslint\.config\.[cm]?js|\.eslintrc(?:\.[cm]?js|\.json|\.ya?ml)?)$/.test(path)) {
+      matched = true;
+      commands.add("pnpm lint");
+      commands.add("git diff --check");
+    }
     if (path === ".nvmrc") {
       matched = true;
       commands.add(
