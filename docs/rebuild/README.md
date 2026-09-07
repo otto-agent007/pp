@@ -217,10 +217,33 @@ The next controller cycle reads live GitHub state, reconciles the merge and
 source evidence into the graph, and only then promotes a dependent slice.
 
 Start every slice from its intended base on a fresh correctly named `codex/*`
-branch. The first commit of a new slice reconciles its predecessor. Security,
-migration, provider, environment, preview, production, push, and PR decisions
-remain controller-approved boundaries. Never record secrets or privileged
-provider values as evidence.
+branch. Security, migration, provider, environment, preview, production, push,
+and PR decisions remain controller-approved boundaries. Never record secrets or
+privileged provider values as evidence.
+
+## Reconcile a merged slice immediately
+
+Reconcile a merged slice in its own control-plane pull request, as soon as it
+merges. Do not carry the reconciliation into the next slice's first commit.
+
+Between a slice's merge and its reconciliation the default branch's graph claims
+a running slice whose pull request is merged, and `pnpm rebuild:graph:reconcile`
+fails the default branch's own CI until the record catches up. Bundling that
+record into the successor holds the window open for the whole life of the next
+slice: CR10 and CR11 each left the default branch red for hours that way, and
+CR11's window also failed an unrelated pull request. A reconciliation-only PR
+names a slice that live GitHub state already shows as merged and promotes no
+future node, so it is a control-plane PR under the scheduling model above and
+may coexist with a running slice.
+
+A branch that leaves `docs/rebuild/graph.json` exactly as the default branch
+wrote it is not held to a running slice it merely inherited. The reconciler
+skips that node's pull-request state, base ancestry, evidence, and ownership
+checks for such a branch and logs that it did, because none of them are
+answerable there and failing them takes down every unrelated pull request. The
+default branch itself, and any branch that does change the graph, are still
+validated in full, so an outstanding reconciliation still turns the default
+branch red.
 
 ## Architecture destination
 
