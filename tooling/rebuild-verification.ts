@@ -122,11 +122,19 @@ export function selectVerificationGates(
       path.startsWith(".github/") ||
       path.startsWith(".codex/") ||
       path === "AGENTS.md" ||
+      path === "README.md" ||
+      path === ".nvmrc" ||
       path === "package.json" ||
       path === "pnpm-lock.yaml"
     ) {
       matched = true;
       commands.add("git diff --check");
+    }
+    if (path === ".nvmrc") {
+      matched = true;
+      commands.add(
+        "node -e \"const pinned = require('node:fs').readFileSync('.nvmrc', 'utf8').trim(); if (process.version !== 'v' + pinned) { throw new Error(process.version + ' is not v' + pinned) }\"",
+      );
     }
     if (!matched) {
       commands.add(`UNMAPPED changed path: ${path}`);

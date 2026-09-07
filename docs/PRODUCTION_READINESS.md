@@ -230,7 +230,7 @@ Latest hardening status:
    - `OPENAI_API_KEY` (optional, server-only compliance RAG)
    - `OPENAI_COMPLIANCE_EMBEDDING_MODEL` (optional compliance RAG model override)
 4. Keep `apps/web/vercel.json` with the deployed web app so `/api/automation/scheduler` runs daily at 05:00 UTC.
-5. Use Node 20.x.
+5. Use Node 24.x (`.nvmrc` pins 24.20.0).
 6. Build command: `corepack pnpm build`.
 7. Install command: `corepack pnpm install --frozen-lockfile`.
 8. Deploy a preview, then run the smoke tests below.

@@ -407,7 +407,7 @@ function collectLocalRepositoryFacts(graph: ReconciliationGraph, cwd: string) {
         "diff",
         "--name-only",
         "--diff-filter=ACMR",
-        `${node.baseSha}...HEAD`,
+        `${defaultBranchRef}...HEAD`,
       ]);
       if (diff.status === 0) {
         facts.changedPaths.push(

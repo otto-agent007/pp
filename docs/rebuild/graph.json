@@ -382,10 +382,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "eee1726d2e78dc065db227474ff1419fc9bb97b8",
       "id": "CR10",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -393,22 +393,88 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Node 24 LTS migration"
+      "ownership": [
+        ".github/workflows/ci.yml",
+        ".nvmrc",
+        "README.md",
+        "apps/web/package.json",
+        "docs/PRODUCTION_READINESS.md",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-06-controlled-rebuild-cr10-node-24.md",
+        "package.json",
+        "packages/api-client/package.json",
+        "pnpm-lock.yaml",
+        "tasks/in-progress.md",
+        "tooling/rebuild-graph-reconcile.test.ts",
+        "tooling/rebuild-graph-reconcile.ts",
+        "tooling/rebuild-verification.test.ts",
+        "tooling/rebuild-verification.ts"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "deliverables": [
+        "Node 24.20.0 LTS frozen as the repository runtime via .nvmrc, the CI setup-node step, and engines.node",
+        "@types/node on the 24 line for the web app, api-client, and the root peer resolution",
+        "Runtime guidance in README.md and docs/PRODUCTION_READINESS.md updated to Node 24",
+        "Controlled-rebuild verifier maps .nvmrc and the root README.md to gates, including a runtime check that the verifier runs on the pinned Node version",
+        "CR10 implementation plan and controlled-rebuild evidence"
+      ],
+      "checks": [
+        "node -e \"if (process.version !== 'v24.20.0') { throw new Error(process.version) }\"",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of platform-first sequencing, the Node 24.20.0 target refresh, and the CR10 start (2026-09-06)",
+        "Controller approval before publication",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved platform-first sequencing, the Node 24.20.0 target refresh, and the CR10 start on 2026-09-06.",
+          "commitSha": "eee1726d2e78dc065db227474ff1419fc9bb97b8",
+          "recordedAt": "2026-09-06T22:28:03Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR 169 opened.",
+          "commitSha": "62207736d06ef169b20721e62f0a061036e4126c",
+          "recordedAt": "2026-09-06T22:28:03Z",
+          "url": "https://github.com/otto-agent007/pp/pull/169"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 14 selected gates on Node 24.20.0 with evidence set 8366bf24eeebcc595103fc838c43ce666f7dec0c9eac4ec4186a42f9e0e318fa.",
+          "command": "pnpm rebuild:verify -- --package-manager /tmp/claude-1000/-mnt-2TBHDD-pp/1fbd063c-d7f7-4afa-9e31-27f1cafac637/scratchpad/pnpm-tool/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "23cc38f5f7b1a7f3508ed438dfb76b0cf0cbd1b4",
+          "recordedAt": "2026-09-06T22:32:52.902Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Mechanical rebuild verification passed all 15 selected gates on Node 24.20.0 after updating from main, with evidence set 8f819cbc49eb32b787f8f95ec15553edc01e8d12d59f55c214a9abef625969e3.",
+          "command": "pnpm rebuild:verify -- --package-manager /home/user1/pp-tools/pnpm9/node_modules/.bin/pnpm",
+          "exitCode": 0,
+          "commitSha": "a28d5d3f1d38c43a30010406d6aa47c78798b8ee",
+          "recordedAt": "2026-09-06T23:50:35.196Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr10-node-24-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/169",
       "mergeSha": "",
       "supersededBy": null,
       "target": {
         "product": "node",
         "constraint": "24",
         "selection": "lts-major",
-        "resolvedVersion": ""
+        "resolvedVersion": "24.20.0"
       }
     },
     {

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -72,6 +72,44 @@ function createSquashFixture() {
     mergeSha,
     sourceTreeSha,
   };
+}
+
+function createRunningSliceMergeFixture() {
+  const directory = mkdtempSync(join(tmpdir(), "rebuild-running-merge-"));
+  git(directory, ["init", "-b", "main"]);
+  git(directory, ["config", "user.email", "tests@example.com"]);
+  git(directory, ["config", "user.name", "Rebuild Tests"]);
+  mkdirSync(join(directory, "tooling"), { recursive: true });
+  writeFileSync(join(directory, "tooling", "check.ts"), "base\n", "utf8");
+  git(directory, ["add", "."]);
+  git(directory, ["commit", "-m", "base"]);
+  const baseSha = git(directory, ["rev-parse", "HEAD"]);
+
+  git(directory, ["switch", "-c", "codex/rebuild-test-v1"]);
+  writeFileSync(join(directory, "tooling", "check.ts"), "slice change\n", "utf8");
+  git(directory, ["add", "."]);
+  git(directory, ["commit", "-m", "slice's own change"]);
+
+  git(directory, ["switch", "main"]);
+  mkdirSync(join(directory, "docs"), { recursive: true });
+  writeFileSync(join(directory, "docs", "other.md"), "sibling change\n", "utf8");
+  git(directory, ["add", "."]);
+  git(directory, ["commit", "-m", "sibling PR already merged to main"]);
+
+  git(directory, ["switch", "codex/rebuild-test-v1"]);
+  git(directory, ["merge", "main", "--no-edit"]);
+
+  const graph = runningGraph();
+  graph.nodes = graph.nodes.map((node) => ({
+    ...node,
+    baseSha,
+    branch: "codex/rebuild-test-v1",
+    evidence: [],
+  }));
+  const graphPath = join(directory, "graph.json");
+  writeFileSync(graphPath, JSON.stringify(graph), "utf8");
+
+  return { baseSha, directory, graphPath };
 }
 
 function mockMergedPullRequest(
@@ -681,6 +719,30 @@ describe("rebuild graph reconciliation CLI", () => {
     } finally {
       error.mockRestore();
       rmSync(fixtureDirectory, { force: true, recursive: true });
+    }
+  });
+
+  it("does not diagnose a sibling PR's already-merged changes as a running slice ownership violation", async () => {
+    const fixture = createRunningSliceMergeFixture();
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = await runRebuildGraphReconcileCli(
+        ["--offline", fixture.graphPath],
+        fixture.directory,
+        {},
+      );
+
+      expect(error.mock.calls.flat().join("\n")).not.toContain(
+        "is outside running-node ownership",
+      );
+      expect(exitCode).toBe(0);
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+      rmSync(fixture.directory, { force: true, recursive: true });
     }
   });
 });
