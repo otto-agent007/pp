@@ -581,7 +581,7 @@
       "baseSha": "d9a84c44035185bfee00aa8ac3d8230349726c88",
       "id": "CR12",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR10",
@@ -674,11 +674,18 @@
           "exitCode": 0,
           "commitSha": "8943041b186d8111c7cd15bf20aa98f481b2f384",
           "recordedAt": "2026-09-07T08:14:42.279Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #173 merged as 1362c14d4fcf4baa40dc605fbcd9d2fabfdcc61a.",
+          "commitSha": "b8ef88c75a8838184b230d94fd201f3fce5a301e",
+          "recordedAt": "2026-09-07T08:27:19Z",
+          "url": "https://github.com/otto-agent007/pp/pull/173"
         }
       ],
       "branch": "codex/rebuild-cr12-next-16-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/173",
-      "mergeSha": "",
+      "mergeSha": "1362c14d4fcf4baa40dc605fbcd9d2fabfdcc61a",
       "supersededBy": null,
       "target": {
         "product": "next",
