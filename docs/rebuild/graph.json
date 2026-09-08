@@ -813,10 +813,10 @@
       }
     },
     {
-      "baseSha": "",
+      "baseSha": "8322fd1cc55587db3e33e2297c216d88729e4df2",
       "id": "CR14",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR12",
@@ -825,22 +825,96 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Expo SDK 55 one-SDK migration"
+      "ownership": [
+        "apps/mobile/app.json",
+        "apps/mobile/package.json",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-07-controlled-rebuild-cr14-expo-55.md",
+        "packages/ui-native/package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tasks/in-progress.md"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "deliverables": [
+        "Expo SDK 55 one-SDK migration of apps/mobile, frozen at the latest stable release 55.0.31 and declared through its package manifest",
+        "The SDK 55 bundled dependency set, whose Expo packages renumber to SDK-aligned majors with no intermediate releases, plus react-native 0.83.10 (Expo pairs SDK 55 with 0.83, skipping 0.82)",
+        "The repo-wide react, react-dom, @types/react and @types/react-dom overrides moved to the 19.2 line, which react-native 0.83.10's peer range requires and every other workspace project accepts",
+        "packages/ui-native's react-native and React type devDependencies realigned with the SDK 55 set",
+        "newArchEnabled removed from apps/mobile/app.json, which SDK 55 drops from the config schema because the new architecture is now unconditional",
+        "Two accepted-risk audit advisories dropped from ignoreGhsas after SDK 55's dependency tree stopped resolving their paths",
+        "Expo native-build evidence: Expo Doctor and clean no-install prebuild for both iOS and Android from a disposable checkout",
+        "CR14 implementation plan and controlled-rebuild evidence"
+      ],
+      "checks": [
+        "node -e \"const v = require('./apps/mobile/node_modules/expo/package.json').version; if (v !== '55.0.31') { throw new Error(v) }\"",
+        "node -e \"const v = require('./apps/mobile/node_modules/react-native/package.json').version; if (v !== '0.83.10') { throw new Error(v) }\"",
+        "node -e \"const v = require('./apps/mobile/node_modules/react/package.json').version; if (v !== '19.2.0') { throw new Error(v) }\"",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the Expo SDK 55 target refresh and the CR14 start, on the same terms as CR13 (2026-09-07)",
+        "Controller approval of moving the repo-wide React pin to 19.2.0, which react-native 0.83.10 requires and which reaches every workspace project (2026-09-07)",
+        "Controller approval of Expo Doctor plus clean two-platform prebuild as this slice's native-build evidence depth, with no EAS project or provider action (2026-09-07)",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved the Expo SDK 55.0.31 target refresh and the CR14 start on the same terms as CR13, including the repo-wide React 19.2.0 pin and the Doctor-plus-prebuild native-build evidence depth, on 2026-09-07.",
+          "commitSha": "6d71a48bd9e53880ff4b6d85de9cebd179c6abff",
+          "recordedAt": "2026-09-08T00:03:28Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Expo Doctor passed 20/20 checks in a disposable clean checkout at the implementation commit.",
+          "command": "npx expo-doctor@1.20.4",
+          "exitCode": 0,
+          "commitSha": "6d71a48bd9e53880ff4b6d85de9cebd179c6abff",
+          "recordedAt": "2026-09-08T00:02:23Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean no-install iOS prebuild generated apps/mobile/ios in a disposable clean checkout at the implementation commit; the generated tree is an evidence input and is not committed.",
+          "command": "npx expo prebuild --platform ios --no-install",
+          "exitCode": 0,
+          "commitSha": "6d71a48bd9e53880ff4b6d85de9cebd179c6abff",
+          "recordedAt": "2026-09-08T00:02:23Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean no-install Android prebuild generated apps/mobile/android in a disposable clean checkout at the implementation commit; the generated tree is an evidence input and is not committed.",
+          "command": "npx expo prebuild --platform android --no-install",
+          "exitCode": 0,
+          "commitSha": "6d71a48bd9e53880ff4b6d85de9cebd179c6abff",
+          "recordedAt": "2026-09-08T00:02:23Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #179 opened for CR14 from codex/rebuild-cr14-expo-55-v1.",
+          "commitSha": "6d71a48bd9e53880ff4b6d85de9cebd179c6abff",
+          "recordedAt": "2026-09-08T00:03:28Z",
+          "url": "https://github.com/otto-agent007/pp/pull/179"
+        }
+      ],
+      "branch": "codex/rebuild-cr14-expo-55-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/179",
       "mergeSha": "",
       "supersededBy": null,
       "target": {
         "product": "expo",
         "constraint": "55",
         "selection": "exact-sdk-major",
-        "resolvedVersion": ""
+        "resolvedVersion": "55.0.31"
       }
     },
     {
