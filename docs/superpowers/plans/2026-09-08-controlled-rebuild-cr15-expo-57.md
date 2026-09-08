@@ -129,9 +129,12 @@ so the ordering was a mechanical dependency rather than a preference.
 - [x] Pin `@react-native/metro-config` and `react-native-worklets` so the
       `react-native` duplicate collapses.
 - [x] Record the accepted `tsconfck` peer mismatch.
-- [ ] Run every declared check and record the `pnpm rebuild:verify` evidence set.
-- [ ] Run Expo Doctor and both prebuilds in a disposable clean checkout.
-- [ ] Open the draft PR and record it on the node.
+- [x] Run every declared check and record the `pnpm rebuild:verify` evidence set
+      (15/15 gates PASS, evidence set `d6bf463c…`).
+- [x] Run Expo Doctor and both prebuilds in a disposable clean checkout
+      (21/21, both platforms exit 0).
+- [x] Open the draft PR and record it on the node; controller merge approval and
+      the `rebuild/cr15-source` tag remain open.
 
 ## Declared checks
 
