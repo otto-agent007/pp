@@ -151,6 +151,25 @@ durable identity and state, restart replay, retry and backoff, queue
 execution — into `packages/sync`, and removes the exception. Only then is the
 domain package pure.
 
+### The moved use cases carry debt of their own
+
+`application` may depend only on `domain` and `types`, but the use cases CR04
+moves still call adapters. Relocating them therefore creates a second forbidden
+edge rather than resolving one, and it cannot be avoided inside CR04: ports need
+implementations, implementations belong in `api-client`, and `api-client` is
+CR05's to own.
+
+So CR04 records an `application-to-api-client` exception expiring in **CR05**,
+which is the slice that defines the provider-independent ports, implements them
+in `api-client`, selects them at the composition roots, and removes the
+exception. The debt is deliberate, scheduled, and machine-checked, in the same
+way CR01 recorded the two it inherited.
+
+One provider type crosses the seam meanwhile: `AuthSupabaseClient` is
+`SupabaseClient` from `@supabase/supabase-js`, threaded through nineteen
+signatures in four modules. CR04 preserves those signatures so the move stays
+behaviour-preserving; retiring the provider type is part of CR05's port work.
+
 The exception named CR09 until this was reconciled; CR09 owns only `apps`, so
 it could never have removed a `packages/domain` import.
 

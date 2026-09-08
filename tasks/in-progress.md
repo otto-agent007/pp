@@ -40,6 +40,16 @@
   947 lines — reach an adapter; the other 5,542 exported lines are policy that
   stays. The seam runs inside modules, not between them, so the extraction is a
   filleting job rather than a file move.
+- **CR04 cannot be a mechanical move alone.** `@pest-patrol/application` may
+  depend only on `domain` and `types`, but all 98 moving functions call
+  `@pest-patrol/api-client`, so relocating them creates a second forbidden edge.
+  It cannot be avoided inside CR04: ports need implementations, implementations
+  belong in `packages/api-client`, and that package is CR05's. So CR04 records
+  an `application-to-api-client` exception expiring in **CR05**, which defines
+  the ports, implements them, wires the composition roots and removes the
+  exception. `AuthSupabaseClient` — `SupabaseClient` from `@supabase/supabase-js`,
+  threaded through 19 signatures in 4 modules — is preserved through CR04 so the
+  move stays behaviour-preserving, and retired as part of CR05's port work.
 - Two corrections came out of that scoping. CR04 must repoint the **18 app
   files** that import a moved symbol, in the same change, because the domain
   barrel cannot re-export from `packages/application` without inverting the

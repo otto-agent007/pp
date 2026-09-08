@@ -501,10 +501,11 @@
         "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
-        "Application ports and use cases",
-        "Adapter orchestration lifted out of thirteen packages/domain modules into packages/application behind ports, leaving each module's policy in place",
+        "packages/application created, with its boundary-policy entry promoted from planned to required",
+        "Adapter orchestration lifted out of thirteen packages/domain modules into packages/application, leaving each module's policy in place",
         "The eighteen app files importing a moved symbol repointed at packages/application in the same change",
-        "The domain-to-api-client exception narrowed to offlineSync, the only remaining occurrence, with removal reassigned to CR06"
+        "The domain-to-api-client exception narrowed to offlineSync, the only remaining occurrence, with removal reassigned to CR06",
+        "A new application-to-api-client exception, expiring in CR05, recording that the moved use cases still call adapters directly because packages/application may not depend on packages/api-client"
       ],
       "checks": [],
       "approvals": [],
@@ -529,10 +530,14 @@
       ],
       "ownership": [
         "packages/api-client",
+        "packages/application",
         "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
-        "API-client demo and Supabase adapters"
+        "API-client demo and Supabase adapters",
+        "Provider-independent ports defined in packages/application, with their implementations in packages/api-client and selection at the app composition roots",
+        "Removal of the application-to-api-client exception CR04 records",
+        "Removal of the api-client-domain-manifest exception"
       ],
       "checks": [],
       "approvals": [],
