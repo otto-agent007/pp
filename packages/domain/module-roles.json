@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "forbiddenInPolicy": [
+    "@pest-patrol/api-client",
+    "@supabase/supabase-js",
+    "@supabase/ssr",
+    "stripe"
+  ],
+  "policyModules": [
+    "closeoutBillingRules",
+    "customerLedger",
+    "demoReadiness",
+    "demoSeedData",
+    "demoSmokePreflight",
+    "demoWorkflowFixtures",
+    "estimateConversion",
+    "homeCommandCenter",
+    "jobClassification",
+    "mobileWorkModes",
+    "offlineQueue",
+    "productionReadiness",
+    "providerReadiness",
+    "safeLogging",
+    "serviceBillingCatalog",
+    "wdoEscrowClearance"
+  ],
+  "orchestrationModules": [
+    "auth",
+    "automation",
+    "closeouts",
+    "compliance",
+    "customers",
+    "forms",
+    "geofencing",
+    "inventory",
+    "jobs",
+    "media",
+    "offlineSync",
+    "payments",
+    "technicianLicenses",
+    "technicians"
+  ]
+}
