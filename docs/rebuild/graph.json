@@ -136,7 +136,7 @@
       "baseSha": "f5e2df896fb79446e5a8f6dcb601375bfeb6e7cd",
       "id": "CR01",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -220,11 +220,18 @@
           "exitCode": 0,
           "commitSha": "64e1f240e00a3405e9e3b5b9f9fcdd21dc44e19d",
           "recordedAt": "2026-09-08T02:20:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #184 merged as 1c1cf2546a70023d4e160bcdf21ae93f0736a54a; the Rebuild source tag workflow published rebuild/cr01-source automatically at the canonical head.",
+          "commitSha": "26ab25215e8bdeecb52aa0ab545e174571faf25a",
+          "recordedAt": "2026-09-08T03:52:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/184"
         }
       ],
       "branch": "codex/rebuild-cr01-foundation-v2",
       "pr": "https://github.com/otto-agent007/pp/pull/184",
-      "mergeSha": "",
+      "mergeSha": "1c1cf2546a70023d4e160bcdf21ae93f0736a54a",
       "supersededBy": null,
       "target": null
     },
