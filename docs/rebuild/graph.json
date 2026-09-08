@@ -816,7 +816,7 @@
       "baseSha": "8322fd1cc55587db3e33e2297c216d88729e4df2",
       "id": "CR14",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR12",
@@ -912,11 +912,18 @@
           "exitCode": 0,
           "commitSha": "7b3e3fae93418d9075b4453b0e50ce69f845e364",
           "recordedAt": "2026-09-08T00:04:28Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #179 merged as 92fb2c8d1d5b44ff0c34c4b6d09becc71752876a.",
+          "commitSha": "f3994ce395dfbe762585413609a2aa4810616094",
+          "recordedAt": "2026-09-08T01:12:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/179"
         }
       ],
       "branch": "codex/rebuild-cr14-expo-55-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/179",
-      "mergeSha": "",
+      "mergeSha": "92fb2c8d1d5b44ff0c34c4b6d09becc71752876a",
       "supersededBy": null,
       "target": {
         "product": "expo",
