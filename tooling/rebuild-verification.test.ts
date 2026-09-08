@@ -263,6 +263,27 @@ describe("controlled rebuild verification gate selection", () => {
     ).toEqual(["git diff --check", "pnpm lint"]);
   });
 
+  it("maps TypeScript project configs to the typecheck and docs/config gates", () => {
+    expect(
+      selectVerificationGates(["tsconfig.tooling.json"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm typecheck"]);
+    expect(
+      selectVerificationGates(["tsconfig.base.json"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm typecheck"]);
+  });
+
+  it("maps a workspace project's TypeScript config to the typecheck gate as well as its package gates", () => {
+    expect(
+      selectVerificationGates(["apps/web/tsconfig.json"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm test", "pnpm typecheck"]);
+  });
+
   it("maps a workspace project's ESLint config to the lint gate as well as its package gates", () => {
     expect(
       selectVerificationGates(["apps/web/eslint.config.mjs"], []).map(
