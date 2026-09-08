@@ -35,13 +35,19 @@
 - CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
   `packages/domain/module-roles.json` now declares 16 policy and 14
   orchestration modules and `moduleRoles.test.ts` guards the declaration.
-- **CR04 is next and is the largest slice in this stretch.** It creates
-  `packages/application`, lifts the orchestration out of the 14 declared
-  orchestration modules (9,644 lines) behind ports, makes `packages/domain`
-  genuinely pure, and removes the `domain-to-api-client` exception. CR03 left it
-  a worklist rather than a grep, and the module-roles guard turns each completed
-  extraction into a required manifest edit. It needs its own controller
-  promotion decision.
+- **CR04 was scoped on 2026-09-08 and is smaller than CR03's framing implied.**
+  The 14 orchestration modules export 450 declarations, but only 98 of them —
+  947 lines — reach an adapter; the other 5,542 exported lines are policy that
+  stays. The seam runs inside modules, not between them, so the extraction is a
+  filleting job rather than a file move.
+- Two corrections came out of that scoping. CR04 must repoint the **18 app
+  files** that import a moved symbol, in the same change, because the domain
+  barrel cannot re-export from `packages/application` without inverting the
+  dependency — so those paths are now in CR04's ownership. And `offlineSync` is
+  41% of the moving code but is a `sync` concern by `docs/architecture.md`'s own
+  responsibilities, so it moves to **CR06**, which now also removes the
+  `domain-to-api-client` exception. CR04 narrows that exception rather than
+  removing it.
 - **CR03 and CR04 were re-scoped on 2026-09-08**, because CR03's one-line
   deliverable "Pure domain package" could not be met by CR03. Fourteen of
   `packages/domain`'s thirty production modules import `@pest-patrol/api-client`

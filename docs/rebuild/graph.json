@@ -478,15 +478,33 @@
         "CR00"
       ],
       "ownership": [
+        "apps/mobile/src/store/useAssignedJobs.ts",
+        "apps/mobile/src/store/useAuth.ts",
+        "apps/mobile/src/store/useChemicalInventory.ts",
+        "apps/web/app/admin-auth-context.tsx",
+        "apps/web/app/api/automation/scheduler/manual/route.ts",
+        "apps/web/app/api/automation/scheduler/route.ts",
+        "apps/web/app/technician-web-auth-context.tsx",
+        "apps/web/hooks/useAutomation.ts",
+        "apps/web/hooks/useCloseouts.ts",
+        "apps/web/hooks/useCompliance.ts",
+        "apps/web/hooks/useCustomerPortal.ts",
+        "apps/web/hooks/useCustomerPortalAccess.ts",
+        "apps/web/hooks/useCustomers.ts",
+        "apps/web/hooks/useGeofencing.ts",
+        "apps/web/hooks/useInventory.ts",
+        "apps/web/hooks/useJobs.ts",
+        "apps/web/hooks/usePayments.ts",
+        "apps/web/hooks/useTechnicians.ts",
         "packages/application",
         "packages/domain",
         "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
         "Application ports and use cases",
-        "Adapter orchestration lifted out of packages/domain into packages/application behind ports",
-        "Pure domain package: packages/domain reaches zero provider and adapter imports",
-        "Removal of the domain-to-api-client boundary exception"
+        "Adapter orchestration lifted out of thirteen packages/domain modules into packages/application behind ports, leaving each module's policy in place",
+        "The eighteen app files importing a moved symbol repointed at packages/application in the same change",
+        "The domain-to-api-client exception narrowed to offlineSync, the only remaining occurrence, with removal reassigned to CR06"
       ],
       "checks": [],
       "approvals": [],
@@ -538,10 +556,16 @@
         "CR00"
       ],
       "ownership": [
-        "packages/sync"
+        "apps/mobile/src/store/useQueueSync.ts",
+        "packages/domain",
+        "packages/sync",
+        "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
-        "Durable offline mutation queue"
+        "Durable offline mutation queue",
+        "offlineSync's adapter orchestration lifted out of packages/domain into packages/sync, the last domain module reaching an adapter",
+        "Pure domain package: packages/domain reaches zero provider and adapter imports",
+        "Removal of the domain-to-api-client boundary exception"
       ],
       "checks": [],
       "approvals": [

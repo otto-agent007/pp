@@ -134,10 +134,25 @@ by the responsibilities above they are use cases and belong in
 
 That package does not exist until CR04, so the coupling cannot clear before
 CR04 exists to receive it. CR03 therefore records and guards the seam — which
-modules are pure policy and which orchestrate adapters — and **CR04** lifts the
-orchestration through that seam, removes the exception, and is what makes the
-domain package pure. The exception named CR09 until this was reconciled; CR09
-owns only `apps`, so it could never have removed a `packages/domain` import.
+modules are pure policy and which orchestrate adapters — in
+[`packages/domain/module-roles.json`](../packages/domain/module-roles.json).
+
+The seam runs *inside* modules, not between them. Those fourteen modules export
+450 declarations, and only 98 of them — 947 lines — reach an adapter; the other
+5,542 exported lines are policy that stays. So the extraction is a filleting
+job, not a file move, and every module keeps its rules.
+
+It takes two slices, because one of the fourteen is not application work.
+**CR04** lifts thirteen modules' orchestration into `packages/application`,
+repoints the eighteen app files that import a moved symbol, and narrows the
+`domain-to-api-client` exception to what remains. **CR06** lifts `offlineSync`
+— 41% of the moving code, and by the responsibilities above a `sync` concern:
+durable identity and state, restart replay, retry and backoff, queue
+execution — into `packages/sync`, and removes the exception. Only then is the
+domain package pure.
+
+The exception named CR09 until this was reconciled; CR09 owns only `apps`, so
+it could never have removed a `packages/domain` import.
 
 Use the [controlled rebuild runbook](rebuild/README.md) for scheduler,
 lifecycle, verification, and publication rules.
