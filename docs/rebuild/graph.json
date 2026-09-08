@@ -239,7 +239,7 @@
       "baseSha": "47fdc35ae0169d0c2c88cd399626794682fd230a",
       "id": "CR02",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR01"
@@ -350,11 +350,18 @@
           "exitCode": 0,
           "commitSha": "50c9729b0ab36f31849f14f048510d741c868a9a",
           "recordedAt": "2026-09-08T04:36:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #186 merged as 5df669242b1683711778ab8e97f5ad4c1760bce7; the Rebuild source tag workflow published rebuild/cr02-source automatically at the canonical head.",
+          "commitSha": "7a2f2a69a2126e6d7bd48f03141680f486fb5ebe",
+          "recordedAt": "2026-09-08T04:43:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/186"
         }
       ],
       "branch": "codex/rebuild-cr02-types-contexts-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/186",
-      "mergeSha": "",
+      "mergeSha": "5df669242b1683711778ab8e97f5ad4c1760bce7",
       "supersededBy": null,
       "target": null
     },

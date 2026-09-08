@@ -1,5 +1,72 @@
 # Done
 
+## CR02 bounded-context shared types
+
+- Base `47fdc35ae0169d0c2c88cd399626794682fd230a`, branch
+  `codex/rebuild-cr02-types-contexts-v1`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr02-types-contexts.md`,
+  design spec
+  `docs/superpowers/specs/2026-09-08-controlled-rebuild-cr02-types-contexts-design.md`.
+- Splits `packages/types`' single 1370-line `index.ts` — 175 exported
+  declarations covering every context in the product at once — into twenty
+  bounded-context modules, named from the vocabulary `packages/domain` and
+  `packages/api-client` already use. `index.ts` becomes an explicit re-export
+  barrel, so all 174 consumer import sites resolve unchanged and no consumer
+  file moved.
+- **The partition was derived from the cross-reference graph between the 175
+  declarations, not from their names.** Three groupings that look obvious from
+  the prefixes produce module cycles:
+  - `Invoice` and `PaymentRecord` reference each other, so invoices and
+    payments share `payments.ts` rather than splitting.
+  - `JobPurpose`, `JobServiceCadence` and `JobBillingDisposition` are catalog
+    vocabulary that jobs *consume*. Reading the `Job*` prefix as job-owned
+    produces a jobs/catalog cycle; placing them with the offering catalog
+    leaves `serviceBillingCatalog.ts` dependency-free.
+  - Provider readiness is its own three-symbol module, because leaving it in
+    `automation.ts` forces `portal -> automation` while the portal's delivery
+    provider is needed back the other way.
+  The resulting graph is acyclic, with seven dependency-free modules at the
+  base and `closeouts.ts` / `offlineQueue.ts` as sinks.
+- Every declaration moved byte-identical, verified by parsing declaration text
+  out of both revisions and comparing, not by reading the diff. The package
+  still declares no runtime value at all, so it emits nothing and every import
+  of it remains erased — which is why `pnpm typecheck` across the 124 consumer
+  files, not `pnpm test`, is the compatibility proof.
+- `packages/types/publicSurface.test.ts` is the package's first test. It reads
+  source text with the TypeScript compiler API — type-only exports are invisible
+  to `typeof import`, so a type-level assertion cannot do this job — and freezes
+  the 175-name surface, asserts the context modules partition it without
+  overlap, asserts the barrel re-exports each module's own declarations, and
+  asserts no file declares a runtime value. **Both failure injections were run
+  and both fail the suite with exit 1**: dropping `JobMediaInput` from the
+  barrel, and declaring `JobMediaType` in two modules.
+- Two corrections the plan needed, both found by running the gates rather than
+  by review, and both recorded in the plan document:
+  - The package needs `"types": ["node"]` in its own `tsconfig.json`. The guard
+    reads files, and `pnpm-workspace.yaml` relocates the store to
+    `<root>/.pnpm`, outside the default type-root walk, so `tsc` reports TS2591
+    even with the devDependency declared and the symlink present.
+    `packages/api-client/tsconfig.json` and `tsconfig.tooling.json` already
+    carry the identical field for the same reason.
+  - `@types/node` becomes a devDependency at `^24.13.3`, the version the root,
+    `apps/web` and `packages/api-client` already pin. It was already resolved in
+    the lockfile, so the change is a new importer entry, not a new package.
+    `packages/types` still ships no runtime code and no runtime dependency.
+- Subpath entry points were deliberately declined. Every one of the 174 real
+  import sites uses the bare specifier, and the only two subpath specifiers in
+  the repository are fixtures inside `tooling/architecture-boundaries.test.ts`.
+  Supporting them would mean satisfying `tsc`, Next.js, Metro and vitest
+  resolution for a capability no consumer asks for.
+- Merged as PR [#186](https://github.com/otto-agent007/pp/pull/186),
+  `5df669242b1683711778ab8e97f5ad4c1760bce7`; the `Rebuild source tag` workflow
+  published `rebuild/cr02-source` automatically at the canonical head
+  `7a2f2a6`.
+- Verified with `pnpm rebuild:verify` (14/14 gates, evidence set `4f203fee`) and
+  the full 13-check gate set, including `pnpm architecture:check` still
+  reporting 9 packages and 2 matched exceptions — the split reached for no new
+  workspace dependency, which `@pest-patrol/types`' empty allowlist would have
+  rejected.
+
 ## CR01 executable architecture foundation
 
 - Base `f5e2df896fb79446e5a8f6dcb601375bfeb6e7cd`, branch
