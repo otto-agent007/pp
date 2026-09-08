@@ -39,26 +39,41 @@
   not chosen: `api-client -> application` plus the surviving
   `domain -> api-client` closes a cycle that turbo refuses, so CR05 could not
   have completed otherwise.
-- **CR06 (durable queue relocation) is `running`** on
-  `codex/rebuild-cr06-sync-v1`. It moves `offlineSync.ts` and its test from
-  `packages/application` into `packages/sync`, byte-identical apart from one
-  import line each, and promotes `packages/sync` from `planned` to `required`
-  in the boundary policy. One app consumer changes,
-  `apps/mobile/src/store/useQueueSync.ts`, importing one symbol.
-- CR06 measurement found the **sixth** instance of the recurring defect class,
-  and the first a gate would have caught unaided: the node owned
-  `apps/mobile/src/store/useQueueSync.ts` but not `apps/mobile/package.json`,
-  and a source import with no matching manifest dependency is a
-  `missing-manifest-dependency` violation. Ownership was corrected before the
-  move. It also found that four of the six test dimensions
-  `docs/architecture.md` requires of CR06 were unaddressed by the suite it
-  inherited; `packages/sync/durability.test.ts` covers them, and each assertion
-  was proved by injecting a fault that makes it fail.
+- CR06 (durable queue relocation) is `done`; its summary is in `tasks/done.md`.
+  The queue lives in `packages/sync`, which is now `required` rather than
+  `planned`, and `pnpm architecture:check` reports 11 packages and zero
+  exceptions.
 - **Deliberately not in CR06:** CR04's `mutationOutcome.ts` retry-budget and
   terminal-failure semantics are still unused, and the queue is their natural
   consumer. Wiring them in is behavioural change on top of a move, so it gets
-  its own slice where a queue regression stays attributable.
-- CR07, CR09 and CR18 remain, and each needs its own controller promotion
+  its own slice where a queue regression stays attributable. That slice is not
+  on the graph yet.
+- **CR07 was measured on 2026-09-08 and is next.** A compiled prototype — the
+  mapping added, `OfflineQueueItem` discriminated by action — produced 94
+  unique type errors. Fixing the three mechanical causes underneath them
+  (`packages/domain/offlineQueue.ts`'s pass-through `TPayload` generics, one
+  generic in `packages/application/mutationOutcome.ts`, and the
+  `MobileOfflinePayload = Record<string, unknown>` alias in the mobile store)
+  took it to **27, every one of them in a test file**. No production source
+  outside those three places needs to change, and `packages/sync`,
+  `packages/api-client` and `apps/web` need no change at all.
+- The 27 are 17 tests across 6 files that build a payload not matching its
+  action — `{ job_id }` for a `job_status_update`, `{ job_id, local_uri }` for
+  a `photo_upload`. That is the drift the mapping exists to catch, and it was
+  invisible because every payload interface extends `Record<string, unknown>`.
+  Two of the 17 build an invalid payload *deliberately*, to exercise the
+  runtime guards; they keep working through one named escape-hatch builder
+  rather than inline casts.
+- **CR07 is types only.** The mobile store's `hydrate()` reads the persisted
+  queue with an unchecked cast, and discriminating the item type makes that
+  cast a stronger claim about data an older app version wrote. Validating it is
+  behaviour, so it is now a **CR09 deliverable** rather than an unrecorded
+  assumption, and CR07 changes no behaviour at all.
+- Measuring CR07 found the **seventh** instance of the recurring defect class:
+  the node owned `packages/domain`, `packages/sync` and `packages/types`, and
+  the compiled prototype reached `packages/application` and three
+  `apps/mobile` files it did not own. Ownership was corrected at scoping.
+- CR09 and CR18 remain after CR07, and each needs its own controller promotion
   decision. CR02 added the qualifier that matters for the type-level packages:
   `pnpm test` is load-bearing only where a package has runtime behaviour, and
   for one that emits nothing the real compatibility proof is `pnpm typecheck`
@@ -97,8 +112,10 @@
   `OfflineQueueAction` values and seven `*QueuePayload` types exist with nothing
   relating them, `OfflineQueueItem` defaults `TPayload` to
   `Record<string, unknown>`, and `packages/domain/offlineQueue.ts` hand-carves
-  two actions out of its label map with `Exclude<…>`, which silently omits any
-  action added later.
+  two actions out of its label map with `Exclude<…>`. Nothing errors when an
+  eighth action is added: `tsconfig.base.json` sets `strict` but not
+  `noUncheckedIndexedAccess`, so the missing label reads as `string` and
+  arrives as `undefined` at runtime.
 - **CR09 is deliberately open-ended**, not unscoped: it records the approval
   `decompose into parallel write-tasks at promotion`, and the graph validator
   already supports `kind: "task"` nodes. Do not "fix" its single deliverable by

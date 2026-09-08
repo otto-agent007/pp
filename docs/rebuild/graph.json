@@ -820,7 +820,7 @@
       "baseSha": "bc543ac27d7f3c1382b23e7df871082cea8ab134",
       "id": "CR06",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR05"
@@ -861,7 +861,8 @@
         "git diff --check"
       ],
       "approvals": [
-        "Controller scoping of CR06 on 2026-09-08: a pure relocation, with CR04's mutationOutcome semantics left unwired so that a queue regression stays attributable to one change or the other"
+        "Controller scoping of CR06 on 2026-09-08: a pure relocation, with CR04's mutationOutcome semantics left unwired so that a queue regression stays attributable to one change or the other",
+        "Controller merge approval per the runbook merge authorization checklist"
       ],
       "evidence": [
         {
@@ -920,11 +921,18 @@
           "exitCode": 0,
           "commitSha": "b2d9570255d97a8ed13423a7345ed0904beca71a",
           "recordedAt": "2026-09-08T12:35:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #197 merged as 0e591ee59f1c9dac97468f09e0e947a376b9cb31; the Rebuild source tag workflow published rebuild/cr06-source automatically at the canonical head bcb121e, confirmed rather than assumed.",
+          "commitSha": "bcb121e946c026bd02643e116b83a1e0ebaf210b",
+          "recordedAt": "2026-09-08T19:40:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/197"
         }
       ],
       "branch": "codex/rebuild-cr06-sync-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/197",
-      "mergeSha": "",
+      "mergeSha": "0e591ee59f1c9dac97468f09e0e947a376b9cb31",
       "supersededBy": null,
       "target": null
     },
@@ -942,19 +950,46 @@
         "CR00"
       ],
       "ownership": [
+        "apps/mobile/src/components/JobStatusControls.test.tsx",
+        "apps/mobile/src/store/useOfflineQueue.test.ts",
+        "apps/mobile/src/store/useOfflineQueue.ts",
+        "docs/architecture.md",
+        "packages/application/mutationOutcome.ts",
         "packages/domain",
         "packages/sync",
-        "packages/types"
+        "packages/types",
+        "tasks/done.md"
       ],
       "deliverables": [
         "Type and offline-sync integration boundary",
         "A single source-of-truth mapping from OfflineQueueAction to its payload type, so the seven actions and seven payload envelopes cannot drift apart",
         "OfflineQueueItem discriminated by action rather than defaulting TPayload to Record<string, unknown>",
-        "Retirement of the hand-maintained Exclude<OfflineQueueAction, ...> label map in packages/domain/offlineQueue.ts, which silently omits any newly added action"
+        "Retirement of the hand-maintained Exclude<OfflineQueueAction, ...> label map in packages/domain/offlineQueue.ts, which silently omits any newly added action",
+        "Test fixtures corrected so every queue payload matches its action, with one named escape hatch for the two tests that deliberately exercise the runtime guards against an untrusted payload",
+        "The frozen public surface in packages/types/publicSurface.test.ts updated for the new mapping type, since CR02's guard requires exact equality"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run packages/types/publicSurface.test.ts",
+        "pnpm exec vitest run packages/domain/",
+        "pnpm exec vitest run packages/sync/",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
-        "Scoped on 2026-09-08 from the measured gap: seven queue actions and seven payload types exist with nothing relating them, and OfflineQueueItem's TPayload default erases the pairing"
+        "Scoped on 2026-09-08 from the measured gap: seven queue actions and seven payload types exist with nothing relating them, and OfflineQueueItem's TPayload default erases the pairing",
+        "Controller scoping of CR07 on 2026-09-08: types only. The unchecked cast in the mobile store's hydrate stays as it is, and validating the persisted queue becomes a CR09 deliverable, so this slice changes no behaviour",
+        "Controller scoping of CR07 on 2026-09-08: the two tests that deliberately build an invalid payload keep working through one named escape-hatch builder rather than inline casts, so the intent stays reviewable in one place",
+        "Ownership widened on 2026-09-08 from measurement: a compiled prototype showed the change reaches packages/application and three apps/mobile files, none of which CR07 owned"
       ],
       "evidence": [],
       "branch": "",
@@ -1013,7 +1048,8 @@
       "deliverables": [
         "Application composition preparation and applications as the composition and UI boundary",
         "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09",
-        "Removal of the module-level supabase singleton in packages/api-client, so provider selection at the composition roots covers every adapter rather than only the injected-client ones"
+        "Removal of the module-level supabase singleton in packages/api-client, so provider selection at the composition roots covers every adapter rather than only the injected-client ones",
+        "Validation of the persisted offline queue where apps/mobile reads it back, so a stored item is checked against the action-to-payload mapping rather than cast, with a recorded decision for an item that no longer matches. CR07 established the mapping and deliberately left this cast in place"
       ],
       "checks": [],
       "approvals": [
