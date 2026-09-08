@@ -28,6 +28,7 @@
     "media",
     "mobileWorkModes",
     "offlineQueue",
+    "offlineSync",
     "payments",
     "productionReadiness",
     "providerReadiness",
@@ -37,7 +38,5 @@
     "technicians",
     "wdoEscrowClearance"
   ],
-  "orchestrationModules": [
-    "offlineSync"
-  ]
+  "orchestrationModules": []
 }

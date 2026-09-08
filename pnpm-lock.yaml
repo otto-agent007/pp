@@ -357,6 +357,12 @@ importers:
 
   packages/api-client:
     dependencies:
+      '@pest-patrol/application':
+        specifier: workspace:*
+        version: link:../application
+      '@pest-patrol/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@pest-patrol/types':
         specifier: workspace:*
         version: link:../types
@@ -373,9 +379,6 @@ importers:
 
   packages/application:
     dependencies:
-      '@pest-patrol/api-client':
-        specifier: workspace:*
-        version: link:../api-client
       '@pest-patrol/domain':
         specifier: workspace:*
         version: link:../domain
@@ -392,9 +395,6 @@ importers:
 
   packages/domain:
     dependencies:
-      '@pest-patrol/api-client':
-        specifier: workspace:*
-        version: link:../api-client
       '@pest-patrol/types':
         specifier: workspace:*
         version: link:../types

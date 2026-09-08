@@ -6,6 +6,8 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "dependencies": {
+    "@pest-patrol/application": "workspace:*",
+    "@pest-patrol/domain": "workspace:*",
     "@pest-patrol/types": "workspace:*",
     "@supabase/supabase-js": "^2.115.0"
   },

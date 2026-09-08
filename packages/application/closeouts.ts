@@ -1,21 +1,11 @@
+import type { CloseoutsPort } from "./ports";
 import type {
   CustomerPortalAccessInput,
   CustomerPortalSendInput,
   CustomerPortalUpgradeIntentInput,
   CustomerPortalUpgradeIntentResult,
 } from "@pest-patrol/types";
-import {
-  createCustomerPortalAccessTokenRecord,
-  getCustomerPortalProviderStatusRecord,
-  listCloseoutCaptureSummaryRecords,
-  listCustomerPortalAccessTokenEventRecords,
-  listCustomerPortalAccessTokenRecords,
-  listCustomerPortalBillingRecords,
-  listCustomerPortalCloseoutRecords,
-  requestCustomerPortalUpgradeIntentRecord,
-  revokeCustomerPortalAccessTokenRecord,
-  sendCustomerPortalAccessTokenRecord,
-} from "@pest-patrol/api-client";
+
 import {
   validateCustomerPortalAccessInput,
   validateCustomerPortalAccessTokenId,
@@ -24,70 +14,70 @@ import {
   validateCustomerPortalUpgradeIntentInput,
 } from "@pest-patrol/domain";
 
-export async function getCustomerPortalProviderStatus() {
-  return getCustomerPortalProviderStatusRecord();
+export async function getCustomerPortalProviderStatus(port: CloseoutsPort) {
+  return port.getCustomerPortalProviderStatusRecord();
 }
 
 export async function listCustomerPortalCloseouts(
-  customerId: string,
+  port: CloseoutsPort, customerId: string,
 ) {
-  return listCustomerPortalCloseoutRecords(
+  return port.listCustomerPortalCloseoutRecords(
     validateCustomerPortalCustomerId(customerId),
   );
 }
 
-export async function listCloseoutCaptureSummaries(jobIds: string[]) {
-  return listCloseoutCaptureSummaryRecords(jobIds);
+export async function listCloseoutCaptureSummaries(port: CloseoutsPort, jobIds: string[]) {
+  return port.listCloseoutCaptureSummaryRecords(jobIds);
 }
 
 export async function listCustomerPortalBilling(
-  customerId: string,
+  port: CloseoutsPort, customerId: string,
 ) {
-  return listCustomerPortalBillingRecords(
+  return port.listCustomerPortalBillingRecords(
     validateCustomerPortalCustomerId(customerId),
   );
 }
 
 export async function requestCustomerPortalUpgradeIntent(
-  customerId: string,
+  port: CloseoutsPort, customerId: string,
   input: CustomerPortalUpgradeIntentInput,
 ): Promise<CustomerPortalUpgradeIntentResult> {
-  return requestCustomerPortalUpgradeIntentRecord(
+  return port.requestCustomerPortalUpgradeIntentRecord(
     validateCustomerPortalCustomerId(customerId),
     validateCustomerPortalUpgradeIntentInput(input),
   );
 }
 
-export async function listCustomerPortalAccessTokens(customerId: string) {
-  return listCustomerPortalAccessTokenRecords(
+export async function listCustomerPortalAccessTokens(port: CloseoutsPort, customerId: string) {
+  return port.listCustomerPortalAccessTokenRecords(
     validateCustomerPortalCustomerId(customerId),
   );
 }
 
-export async function listCustomerPortalAccessTokenEvents(id: string) {
-  return listCustomerPortalAccessTokenEventRecords(
+export async function listCustomerPortalAccessTokenEvents(port: CloseoutsPort, id: string) {
+  return port.listCustomerPortalAccessTokenEventRecords(
     validateCustomerPortalAccessTokenId(id),
   );
 }
 
 export async function createCustomerPortalAccessToken(
-  input: CustomerPortalAccessInput,
+  port: CloseoutsPort, input: CustomerPortalAccessInput,
 ) {
-  return createCustomerPortalAccessTokenRecord(
+  return port.createCustomerPortalAccessTokenRecord(
     validateCustomerPortalAccessInput(input),
   );
 }
 
-export async function revokeCustomerPortalAccessToken(id: string) {
-  return revokeCustomerPortalAccessTokenRecord(
+export async function revokeCustomerPortalAccessToken(port: CloseoutsPort, id: string) {
+  return port.revokeCustomerPortalAccessTokenRecord(
     validateCustomerPortalAccessTokenId(id),
   );
 }
 
 export async function sendCustomerPortalAccessToken(
-  input: CustomerPortalSendInput,
+  port: CloseoutsPort, input: CustomerPortalSendInput,
 ) {
-  return sendCustomerPortalAccessTokenRecord(
+  return port.sendCustomerPortalAccessTokenRecord(
     validateCustomerPortalSendInput(input),
   );
 }

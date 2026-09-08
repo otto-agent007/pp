@@ -21,6 +21,10 @@ import {
   revokeLocalDemoPortalAccessToken,
   sendLocalDemoPortalAccessToken,
 } from "./localDemoData";
+import { createCloseoutsAdapter } from "@pest-patrol/api-client";
+
+const closeoutsPort = createCloseoutsAdapter();
+
 
 export const customerPortalAccessTokensQueryKey = (customerId: string) =>
   ["customer-portal-access-tokens", customerId] as const;
@@ -39,7 +43,7 @@ export function useCustomerPortalAccessTokens(customerId: string) {
 
       return fixtures
         ? (fixtures.portalAccessTokensByCustomerId[customerId] ?? [])
-        : listCustomerPortalAccessTokens(customerId);
+        : listCustomerPortalAccessTokens(closeoutsPort, customerId);
     },
   });
 }
@@ -56,7 +60,7 @@ export function useCustomerPortalAccessTokenEvents(tokenId: string | null) {
               fixtures.portalAccessTokenEventsByTokenId[tokenId ?? ""] ?? [],
             truncated_before: null,
           }
-        : listCustomerPortalAccessTokenEvents(tokenId ?? "");
+        : listCustomerPortalAccessTokenEvents(closeoutsPort, tokenId ?? "");
     },
     enabled: Boolean(tokenId),
   });
@@ -67,7 +71,7 @@ export function useCustomerPortalProviderStatus() {
     queryKey: customerPortalProviderStatusQueryKey(),
     queryFn: () =>
       getLocalDemoFixtures()?.portalProviderStatus ??
-      getCustomerPortalProviderStatus(),
+      getCustomerPortalProviderStatus(closeoutsPort),
   });
 }
 
@@ -78,7 +82,7 @@ export function useCreateCustomerPortalAccessToken() {
     mutationFn: (input: CustomerPortalAccessInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoPortalAccessToken(input))
-        : createCustomerPortalAccessToken(input),
+        : createCustomerPortalAccessToken(closeoutsPort, input),
     onSuccess: (grant: CustomerPortalAccessGrant) => {
       void queryClient.invalidateQueries({
         queryKey: customerPortalAccessTokensQueryKey(grant.customer_id),
@@ -94,7 +98,7 @@ export function useRevokeCustomerPortalAccessToken(customerId: string) {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(revokeLocalDemoPortalAccessToken(id))
-        : revokeCustomerPortalAccessToken(id),
+        : revokeCustomerPortalAccessToken(closeoutsPort, id),
     onMutate: async (id) => {
       const queryKey = customerPortalAccessTokensQueryKey(customerId);
       await queryClient.cancelQueries({ queryKey });
@@ -139,6 +143,6 @@ export function useSendCustomerPortalAccessToken() {
     mutationFn: (input: CustomerPortalSendInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(sendLocalDemoPortalAccessToken(input))
-        : sendCustomerPortalAccessToken(input),
+        : sendCustomerPortalAccessToken(closeoutsPort, input),
   });
 }

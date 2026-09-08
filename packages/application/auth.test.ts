@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   establishPasswordRecoverySession,
@@ -8,6 +8,7 @@ import {
   updateCurrentUserPassword,
   validateTechnicianAccess,
 } from "./auth";
+import type { AuthPort } from "./ports";
 import { validateAdminAccess, validateAdminProfile } from "@pest-patrol/domain";
 
 const now = "2026-05-05T00:00:00Z";
@@ -18,6 +19,41 @@ const session = {
   token_type: "bearer",
   user: { id: "user-1" },
 } as never;
+
+/**
+ * A stub port, in place of a fake Supabase client.
+ *
+ * These tests previously reached through the adapter into `client.auth.*`,
+ * which meant a use-case test could only run by knowing how the provider is
+ * called. With a port between them the use case is testable on its own, and
+ * whether the adapter maps correctly onto Supabase belongs to
+ * `packages/api-client`'s own tests.
+ */
+function createStubPort(role = "admin") {
+  return {
+    getCurrentAuthRecord: vi.fn(),
+    resetPasswordForEmailRecord: vi.fn().mockResolvedValue(undefined),
+    setPasswordRecoverySessionRecord: vi.fn().mockResolvedValue(session),
+    signInWithPasswordRecord: vi.fn().mockResolvedValue({
+      session,
+      profile: { id: "user-1", role, created_at: now, updated_at: now },
+    }),
+    signOutRecord: vi.fn().mockResolvedValue(undefined),
+    updatePasswordRecord: vi.fn().mockResolvedValue({ id: "user-1" }),
+  };
+}
+
+// The stub is structurally a port; this fails to compile if it drifts.
+const _shapeCheck: (p: ReturnType<typeof createStubPort>) => AuthPort<never> = (
+  p,
+) => p;
+void _shapeCheck;
+
+let port: ReturnType<typeof createStubPort>;
+
+beforeEach(() => {
+  port = createStubPort();
+});
 
 describe("auth use cases", () => {
   it("returns null for missing role records", () => {
@@ -52,151 +88,71 @@ describe("auth use cases", () => {
     ).toThrow("Technician access is required");
   });
 
-  it("requests password reset through the api client", async () => {
-    const resetPasswordForEmail = vi.fn().mockResolvedValue({ error: null });
-    const client = {
-      auth: { resetPasswordForEmail },
-    } as never;
-
-    await requestPasswordReset(client, {
+  it("requests a password reset through its port", async () => {
+    await requestPasswordReset(port, {
       email: " ADMIN@example.COM ",
       redirectTo: "https://app.example.com/auth/update-password",
     });
 
-    expect(resetPasswordForEmail).toHaveBeenCalledWith("admin@example.com", {
-      redirectTo: "https://app.example.com/auth/update-password",
-    });
+    expect(port.resetPasswordForEmailRecord).toHaveBeenCalledWith(
+      "admin@example.com",
+      "https://app.example.com/auth/update-password",
+    );
   });
 
-  it("establishes password recovery sessions through the api client", async () => {
-    const setSession = vi.fn().mockResolvedValue({
-      data: { session },
-      error: null,
-    });
-    const client = {
-      auth: { setSession },
-    } as never;
-
-    await establishPasswordRecoverySession(client, {
+  it("establishes a password recovery session through its port", async () => {
+    await establishPasswordRecoverySession(port, {
       accessToken: " token ",
       refreshToken: " refresh ",
     });
 
-    expect(setSession).toHaveBeenCalledWith({
-      access_token: "token",
-      refresh_token: "refresh",
-    });
+    expect(port.setPasswordRecoverySessionRecord).toHaveBeenCalledWith(
+      "token",
+      "refresh",
+    );
   });
 
-  it("updates the current user password through the api client", async () => {
-    const updateUser = vi.fn().mockResolvedValue({
-      data: { user: { id: "user-1" } },
-      error: null,
-    });
-    const client = {
-      auth: { updateUser },
-    } as never;
-
-    await updateCurrentUserPassword(client, {
+  it("updates the current user password through its port", async () => {
+    await updateCurrentUserPassword(port, {
       password: "new-password",
       confirmPassword: "new-password",
     });
 
-    expect(updateUser).toHaveBeenCalledWith({ password: "new-password" });
+    expect(port.updatePasswordRecord).toHaveBeenCalledWith("new-password");
   });
 
   it("signs out a wrong-role admin session before surfacing the access error", async () => {
-    const signInWithPassword = vi.fn().mockResolvedValue({
-      data: { session },
-      error: null,
-    });
-    const signOut = vi.fn().mockResolvedValue({ error: null });
-    const single = vi.fn().mockResolvedValue({
-      data: {
-        id: "user-1",
-        role: "technician",
-        created_at: now,
-        updated_at: now,
-      },
-      error: null,
-    });
-    const client = {
-      auth: { signInWithPassword, signOut },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single,
-      }),
-    } as never;
+    port = createStubPort("technician");
 
     await expect(
-      signInAdmin(client, { email: "tech@example.com", password: "password" }),
+      signInAdmin(port, { email: "tech@example.com", password: "password" }),
     ).rejects.toThrow("Admin or dispatcher access is required");
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(port.signOutRecord).toHaveBeenCalledTimes(1);
   });
 
   it("signs out a wrong-role technician session before surfacing the access error", async () => {
-    const signInWithPassword = vi.fn().mockResolvedValue({
-      data: { session },
-      error: null,
-    });
-    const signOut = vi.fn().mockResolvedValue({ error: null });
-    const single = vi.fn().mockResolvedValue({
-      data: {
-        id: "user-1",
-        role: "admin",
-        created_at: now,
-        updated_at: now,
-      },
-      error: null,
-    });
-    const client = {
-      auth: { signInWithPassword, signOut },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single,
-      }),
-    } as never;
+    port = createStubPort("admin");
 
     await expect(
-      signInTechnician(client, { email: "admin@example.com", password: "password" }),
+      signInTechnician(port, {
+        email: "admin@example.com",
+        password: "password",
+      }),
     ).rejects.toThrow("Technician access is required");
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(port.signOutRecord).toHaveBeenCalledTimes(1);
   });
 
   it("does not sign out when role validation succeeds", async () => {
-    const signInWithPassword = vi.fn().mockResolvedValue({
-      data: { session },
-      error: null,
-    });
-    const signOut = vi.fn().mockResolvedValue({ error: null });
-    const single = vi.fn().mockResolvedValue({
-      data: {
-        id: "user-1",
-        role: "admin",
-        created_at: now,
-        updated_at: now,
-      },
-      error: null,
-    });
-    const client = {
-      auth: { signInWithPassword, signOut },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single,
-      }),
-    } as never;
+    port = createStubPort("technician");
 
-    const record = await signInAdmin(client, {
-      email: "admin@example.com",
+    const record = await signInTechnician(port, {
+      email: "tech@example.com",
       password: "password",
     });
 
-    expect(record).toMatchObject({ profile: { role: "admin" } });
-    expect(signOut).not.toHaveBeenCalled();
+    expect(record?.profile.role).toBe("technician");
+    expect(port.signOutRecord).not.toHaveBeenCalled();
   });
 });

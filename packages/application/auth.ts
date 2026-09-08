@@ -1,15 +1,4 @@
-import {
-  getCurrentAuthRecord,
-  resetPasswordForEmailRecord,
-  setPasswordRecoverySessionRecord,
-  signInWithPasswordRecord,
-  signOutRecord,
-  updatePasswordRecord,
-} from "@pest-patrol/api-client";
-import type {
-  AuthSupabaseClient,
-  TechnicianAuthRecord,
-} from "@pest-patrol/api-client";
+import type { AuthPort, AuthRecord } from "./ports";
 import {
   LoginInput,
   PasswordRecoverySessionInput,
@@ -24,7 +13,9 @@ import {
   validateTechnicianLoginInput,
 } from "@pest-patrol/domain";
 
-export function validateTechnicianAccess(record: TechnicianAuthRecord | null) {
+export function validateTechnicianAccess<TSession>(
+  record: AuthRecord<TSession> | null,
+) {
   if (!record) {
     return null;
   }
@@ -36,21 +27,20 @@ export function validateTechnicianAccess(record: TechnicianAuthRecord | null) {
   return record;
 }
 
-export async function getCurrentTechnicianAuth(client: AuthSupabaseClient) {
-  return validateTechnicianAccess(await getCurrentAuthRecord(client));
+export async function getCurrentTechnicianAuth<TSession>(port: AuthPort<TSession>) {
+  return validateTechnicianAccess(await port.getCurrentAuthRecord());
 }
 
-export async function getCurrentAdminAuth(client: AuthSupabaseClient) {
-  return validateAdminAccess(await getCurrentAuthRecord(client));
+export async function getCurrentAdminAuth<TSession>(port: AuthPort<TSession>) {
+  return validateAdminAccess(await port.getCurrentAuthRecord());
 }
 
-export async function signInTechnician(
-  client: AuthSupabaseClient,
+export async function signInTechnician<TSession>(
+  port: AuthPort<TSession>,
   input: TechnicianLoginInput,
 ) {
   const normalized = validateTechnicianLoginInput(input);
-  const record = await signInWithPasswordRecord(
-    client,
+  const record = await port.signInWithPasswordRecord(
     normalized.email,
     normalized.password,
   );
@@ -58,18 +48,17 @@ export async function signInTechnician(
   try {
     return validateTechnicianAccess(record);
   } catch (error) {
-    await signOutRecord(client);
+    await port.signOutRecord();
     throw error;
   }
 }
 
-export async function signInAdmin(
-  client: AuthSupabaseClient,
+export async function signInAdmin<TSession>(
+  port: AuthPort<TSession>,
   input: LoginInput,
 ) {
   const normalized = validateAdminLoginInput(input);
-  const record = await signInWithPasswordRecord(
-    client,
+  const record = await port.signInWithPasswordRecord(
     normalized.email,
     normalized.password,
   );
@@ -77,50 +66,48 @@ export async function signInAdmin(
   try {
     return validateAdminAccess(record);
   } catch (error) {
-    await signOutRecord(client);
+    await port.signOutRecord();
     throw error;
   }
 }
 
-export async function signOutTechnician(client: AuthSupabaseClient) {
-  await signOutRecord(client);
+export async function signOutTechnician<TSession>(port: AuthPort<TSession>) {
+  await port.signOutRecord();
 }
 
-export async function signOutAdmin(client: AuthSupabaseClient) {
-  await signOutRecord(client);
+export async function signOutAdmin<TSession>(port: AuthPort<TSession>) {
+  await port.signOutRecord();
 }
 
-export async function requestPasswordReset(
-  client: AuthSupabaseClient,
+export async function requestPasswordReset<TSession>(
+  port: AuthPort<TSession>,
   input: PasswordResetRequestInput,
 ) {
   const normalized = validatePasswordResetRequestInput(input);
 
-  await resetPasswordForEmailRecord(
-    client,
+  await port.resetPasswordForEmailRecord(
     normalized.email,
     normalized.redirectTo,
   );
 }
 
-export async function establishPasswordRecoverySession(
-  client: AuthSupabaseClient,
+export async function establishPasswordRecoverySession<TSession>(
+  port: AuthPort<TSession>,
   input: PasswordRecoverySessionInput,
 ) {
   const normalized = validatePasswordRecoverySessionInput(input);
 
-  await setPasswordRecoverySessionRecord(
-    client,
+  await port.setPasswordRecoverySessionRecord(
     normalized.accessToken,
     normalized.refreshToken,
   );
 }
 
-export async function updateCurrentUserPassword(
-  client: AuthSupabaseClient,
+export async function updateCurrentUserPassword<TSession>(
+  port: AuthPort<TSession>,
   input: PasswordUpdateInput,
 ) {
   const normalized = validatePasswordUpdateInput(input);
 
-  await updatePasswordRecord(client, normalized.password);
+  await port.updatePasswordRecord(normalized.password);
 }

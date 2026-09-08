@@ -4,6 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { createServiceRoleSupabaseClient } from "../../_lib/server-auth";
+import { createAutomationAdapter } from "@pest-patrol/api-client";
 
 export const runtime = "nodejs";
 
@@ -57,9 +58,10 @@ async function runScheduler(request: Request) {
 
   try {
     const client = createServiceRoleSupabaseClient();
+    const automationPort = createAutomationAdapter(client);
     const startedAt = new Date().toISOString();
     const now = new URL(request.url).searchParams.get("now") ?? undefined;
-    const result = await runAutomationSchedulerForClient(client, now);
+    const result = await runAutomationSchedulerForClient(automationPort, now);
     await createAutomationSchedulerRunRecord(
       {
         status: "success",

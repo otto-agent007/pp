@@ -4,6 +4,10 @@ import { create } from "zustand";
 
 import { mobileSupabase } from "../lib/supabase";
 import { useOfflineQueue } from "./useOfflineQueue";
+import { createJobsAdapter } from "@pest-patrol/api-client";
+
+const jobsPort = createJobsAdapter(mobileSupabase);
+
 
 type AssignedJobsStatus = "idle" | "loading" | "ready" | "error";
 
@@ -30,7 +34,7 @@ export const useAssignedJobs = create<AssignedJobsState>((set) => ({
     set({ error: null, status: "loading" });
 
     try {
-      const jobs = await listAssignedTechnicianJobs(mobileSupabase);
+      const jobs = await listAssignedTechnicianJobs(jobsPort);
 
       set({
         error: null,

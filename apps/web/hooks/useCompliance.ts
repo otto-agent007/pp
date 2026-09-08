@@ -19,6 +19,10 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAdminAuth } from "../app/admin-auth-context";
 import { getLocalDemoFixtures } from "./localDemoData";
+import { createComplianceAdapter } from "@pest-patrol/api-client";
+
+const compliancePort = createComplianceAdapter();
+
 
 export const complianceSourcesQueryKey = ["compliance-sources"] as const;
 export const complianceDocumentsQueryKey = ["compliance-documents"] as const;
@@ -64,28 +68,28 @@ async function requestComplianceAdvisory(
 export function useComplianceSources() {
   return useQuery<ComplianceSource[]>({
     queryKey: complianceSourcesQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceSources()),
+    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceSources(compliancePort)),
   });
 }
 
 export function useComplianceDocuments() {
   return useQuery<ComplianceDocument[]>({
     queryKey: complianceDocumentsQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceDocuments()),
+    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceDocuments(compliancePort)),
   });
 }
 
 export function useComplianceChunks() {
   return useQuery<ComplianceChunk[]>({
     queryKey: complianceChunksQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceChunks()),
+    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceChunks(compliancePort)),
   });
 }
 
 export function useComplianceAdvisoryAudits() {
   return useQuery<ComplianceAdvisoryAudit[]>({
     queryKey: complianceAdvisoryAuditsQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceAdvisoryAudits()),
+    queryFn: () => (getLocalDemoFixtures() ? [] : listComplianceAdvisoryAudits(compliancePort)),
   });
 }
 

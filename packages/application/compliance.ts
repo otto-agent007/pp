@@ -1,12 +1,4 @@
-import {
-  createComplianceAdvisoryAuditRecord,
-  listComplianceAdvisoryAuditRecords,
-  listComplianceChunkRecords,
-  listComplianceDocumentRecords,
-  listComplianceSourceRecords,
-  searchComplianceChunkRecords,
-} from "@pest-patrol/api-client";
-import type { AuthSupabaseClient } from "@pest-patrol/api-client";
+import type { CompliancePort } from "./ports";
 import type {
   ComplianceAdvisory,
   ComplianceAdvisoryAudit,
@@ -15,26 +7,26 @@ import type {
 } from "@pest-patrol/types";
 import { ComplianceChunkSearchInput } from "@pest-patrol/domain";
 
-export async function listComplianceSources() {
-  return listComplianceSourceRecords();
+export async function listComplianceSources(port: CompliancePort) {
+  return port.listComplianceSourceRecords();
 }
 
-export async function listComplianceDocuments() {
-  return listComplianceDocumentRecords();
+export async function listComplianceDocuments(port: CompliancePort) {
+  return port.listComplianceDocumentRecords();
 }
 
-export async function listComplianceChunks() {
-  return listComplianceChunkRecords();
+export async function listComplianceChunks(port: CompliancePort) {
+  return port.listComplianceChunkRecords();
 }
 
 export async function searchComplianceChunks(
-  input: ComplianceChunkSearchInput,
+  port: CompliancePort, input: ComplianceChunkSearchInput,
 ) {
-  return searchComplianceChunkRecords(input);
+  return port.searchComplianceChunkRecords(input);
 }
 
-export async function listComplianceAdvisoryAudits() {
-  return listComplianceAdvisoryAuditRecords();
+export async function listComplianceAdvisoryAudits(port: CompliancePort) {
+  return port.listComplianceAdvisoryAuditRecords();
 }
 
 export async function createComplianceAdvisoryAudit(
@@ -46,7 +38,7 @@ export async function createComplianceAdvisoryAudit(
     status: ComplianceAdvisoryStatus;
     workflow: ComplianceWorkflow;
   },
-  client?: AuthSupabaseClient,
+  port: CompliancePort,
 ): Promise<ComplianceAdvisoryAudit> {
-  return createComplianceAdvisoryAuditRecord(input, client);
+  return port.createComplianceAdvisoryAuditRecord(input);
 }

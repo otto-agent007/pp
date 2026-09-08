@@ -1,13 +1,4 @@
-import {
-  archiveChemicalInventoryRecord,
-  createChemicalInventoryRecord,
-  createChemicalLogRecord,
-  listChemicalInventoryRecords,
-  listChemicalLogRecords,
-  listJobChemicalLogRecords,
-  updateChemicalInventoryRecord,
-} from "@pest-patrol/api-client";
-import type { AuthSupabaseClient } from "@pest-patrol/api-client";
+import type { InventoryPort } from "./ports";
 import type {
   ChemicalInventoryInput,
   ChemicalLogInput,
@@ -18,52 +9,52 @@ import {
   validateChemicalLogInput,
 } from "@pest-patrol/domain";
 
-export async function listChemicalInventory() {
-  return listChemicalInventoryRecords();
+export async function listChemicalInventory(port: InventoryPort) {
+  return port.listChemicalInventoryRecords();
 }
 
-export async function listChemicalInventoryForClient(client: AuthSupabaseClient) {
-  return listChemicalInventoryRecords(client);
+export async function listChemicalInventoryForClient(port: InventoryPort) {
+  return port.listChemicalInventoryRecords();
 }
 
-export async function createChemicalInventory(input: ChemicalInventoryInput) {
-  return createChemicalInventoryRecord(validateChemicalInventoryInput(input));
+export async function createChemicalInventory(port: InventoryPort, input: ChemicalInventoryInput) {
+  return port.createChemicalInventoryRecord(validateChemicalInventoryInput(input));
 }
 
-export async function updateChemicalInventory(id: string, input: ChemicalInventoryInput) {
-  return updateChemicalInventoryRecord(id, validateChemicalInventoryInput(input));
+export async function updateChemicalInventory(port: InventoryPort, id: string, input: ChemicalInventoryInput) {
+  return port.updateChemicalInventoryRecord(id, validateChemicalInventoryInput(input));
 }
 
-export async function archiveChemicalInventory(id: string) {
-  return archiveChemicalInventoryRecord(id);
+export async function archiveChemicalInventory(port: InventoryPort, id: string) {
+  return port.archiveChemicalInventoryRecord(id);
 }
 
-export async function listChemicalLogs() {
-  return listChemicalLogRecords();
+export async function listChemicalLogs(port: InventoryPort) {
+  return port.listChemicalLogRecords();
 }
 
-export async function listChemicalLogsForClient(client: AuthSupabaseClient) {
-  return listChemicalLogRecords(client);
+export async function listChemicalLogsForClient(port: InventoryPort) {
+  return port.listChemicalLogRecords();
 }
 
-export async function listJobChemicalLogs(jobId: string) {
-  return listJobChemicalLogRecords(requireNonEmpty(jobId, "Job"));
+export async function listJobChemicalLogs(port: InventoryPort, jobId: string) {
+  return port.listJobChemicalLogRecords(requireNonEmpty(jobId, "Job"));
 }
 
 export async function listJobChemicalLogsForClient(
   jobId: string,
-  client: AuthSupabaseClient,
+  port: InventoryPort,
 ) {
-  return listJobChemicalLogRecords(requireNonEmpty(jobId, "Job"), client);
+  return port.listJobChemicalLogRecords(requireNonEmpty(jobId, "Job"));
 }
 
-export async function createChemicalLog(input: ChemicalLogInput) {
-  return createChemicalLogRecord(validateChemicalLogInput(input));
+export async function createChemicalLog(port: InventoryPort, input: ChemicalLogInput) {
+  return port.createChemicalLogRecord(validateChemicalLogInput(input));
 }
 
 export async function createChemicalLogForClient(
   input: ChemicalLogInput,
-  client: AuthSupabaseClient,
+  port: InventoryPort,
 ) {
-  return createChemicalLogRecord(validateChemicalLogInput(input), client);
+  return port.createChemicalLogRecord(validateChemicalLogInput(input));
 }

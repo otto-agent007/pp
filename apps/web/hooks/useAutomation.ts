@@ -30,6 +30,10 @@ import type {
 } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLocalDemoFixtures } from "./localDemoData";
+import { createAutomationAdapter } from "@pest-patrol/api-client";
+
+const automationPort = createAutomationAdapter();
+
 
 export const automationRulesQueryKey = ["automation-rules"] as const;
 export const automationSchedulerRunsQueryKey = [
@@ -46,7 +50,7 @@ export const notificationProviderStatusQueryKey = [
 export function useAutomationRules() {
   return useQuery({
     queryKey: automationRulesQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listAutomationRules()),
+    queryFn: () => (getLocalDemoFixtures() ? [] : listAutomationRules(automationPort)),
   });
 }
 
@@ -54,7 +58,7 @@ export function useAutomationSchedulerRuns() {
   return useQuery({
     queryKey: automationSchedulerRunsQueryKey,
     queryFn: () =>
-      getLocalDemoFixtures() ? [] : listAutomationSchedulerRuns(),
+      getLocalDemoFixtures() ? [] : listAutomationSchedulerRuns(automationPort),
   });
 }
 
@@ -62,7 +66,7 @@ export function useRunAutomationScheduler() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: runAutomationSchedulerManual,
+    mutationFn: () => runAutomationSchedulerManual(automationPort),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: automationSchedulerRunsQueryKey,
@@ -75,7 +79,7 @@ export function useRunAutomationScheduler() {
 export function useNotificationEvents() {
   return useQuery({
     queryKey: notificationEventsQueryKey,
-    queryFn: () => (getLocalDemoFixtures() ? [] : listNotificationEvents()),
+    queryFn: () => (getLocalDemoFixtures() ? [] : listNotificationEvents(automationPort)),
   });
 }
 
@@ -83,7 +87,7 @@ export function useNotificationTemplates() {
   return useQuery({
     queryKey: notificationTemplatesQueryKey,
     queryFn: () =>
-      getLocalDemoFixtures() ? [] : listNotificationTemplates(),
+      getLocalDemoFixtures() ? [] : listNotificationTemplates(automationPort),
   });
 }
 
@@ -97,7 +101,7 @@ export function useNotificationProviderStatus() {
             webhook_configured: false,
             webhook_secret_configured: false,
           }
-        : getNotificationProviderStatus(),
+        : getNotificationProviderStatus(automationPort),
   });
 }
 
@@ -105,7 +109,7 @@ export function useCreateAutomationRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: AutomationRuleInput) => createAutomationRule(input),
+    mutationFn: (input: AutomationRuleInput) => createAutomationRule(automationPort, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: automationRulesQueryKey });
     },
@@ -122,7 +126,7 @@ export function useUpdateAutomationRuleStatus() {
     }: {
       id: string;
       status: AutomationRuleStatus;
-    }) => updateAutomationRuleStatus(id, status),
+    }) => updateAutomationRuleStatus(automationPort, id, status),
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: automationRulesQueryKey });
       const previous =
@@ -154,7 +158,7 @@ export function useUpdateAutomationRule() {
     }: {
       id: string;
       input: AutomationRuleInput;
-    }) => updateAutomationRule(id, input),
+    }) => updateAutomationRule(automationPort, id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: automationRulesQueryKey });
     },
@@ -165,7 +169,7 @@ export function useCreateNotificationEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: NotificationEventInput) => createNotificationEvent(input),
+    mutationFn: (input: NotificationEventInput) => createNotificationEvent(automationPort, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: notificationEventsQueryKey });
     },
@@ -177,7 +181,7 @@ export function useCreateNotificationTemplate() {
 
   return useMutation({
     mutationFn: (input: NotificationTemplateInput) =>
-      createNotificationTemplate(input),
+      createNotificationTemplate(automationPort, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: notificationTemplatesQueryKey,
@@ -196,7 +200,7 @@ export function useUpdateNotificationTemplate() {
     }: {
       id: string;
       input: NotificationTemplateInput;
-    }) => updateNotificationTemplate(id, input),
+    }) => updateNotificationTemplate(automationPort, id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: notificationTemplatesQueryKey,
@@ -209,7 +213,7 @@ export function useArchiveNotificationTemplate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: archiveNotificationTemplate,
+    mutationFn: (id: string) => archiveNotificationTemplate(automationPort, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: notificationTemplatesQueryKey,
@@ -222,7 +226,7 @@ export function useRestoreNotificationTemplate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: restoreNotificationTemplate,
+    mutationFn: (id: string) => restoreNotificationTemplate(automationPort, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: notificationTemplatesQueryKey,
@@ -235,7 +239,7 @@ export function useMarkNotificationEventHandled() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: markNotificationEventHandled,
+    mutationFn: (id: string) => markNotificationEventHandled(automationPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: notificationEventsQueryKey });
       const previous =
@@ -271,7 +275,7 @@ export function useDismissNotificationEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: dismissNotificationEvent,
+    mutationFn: (id: string) => dismissNotificationEvent(automationPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: notificationEventsQueryKey });
       const previous =
@@ -303,7 +307,7 @@ export function useSendNotificationEventDelivery() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: sendNotificationEventDelivery,
+    mutationFn: (id: string) => sendNotificationEventDelivery(automationPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: notificationEventsQueryKey });
       const previous =
@@ -339,7 +343,7 @@ export function useSendNotificationBulkDelivery() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: sendNotificationEventDeliveries,
+    mutationFn: (ids: string[]) => sendNotificationEventDeliveries(automationPort, ids),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: notificationEventsQueryKey });
     },

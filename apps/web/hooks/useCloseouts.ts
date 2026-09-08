@@ -10,6 +10,18 @@ import {
 import type { Job } from "@pest-patrol/types";
 import { useQuery } from "@tanstack/react-query";
 import { getLocalDemoFixtures } from "./localDemoData";
+import {
+  createCloseoutsAdapter,
+  createFormsAdapter,
+  createInventoryAdapter,
+  createMediaAdapter,
+} from "@pest-patrol/api-client";
+
+const closeoutsPort = createCloseoutsAdapter();
+const formsPort = createFormsAdapter();
+const inventoryPort = createInventoryAdapter();
+const mediaPort = createMediaAdapter();
+
 
 export const closeoutFormsQueryKey = (jobId: string) =>
   ["closeout-forms", jobId] as const;
@@ -33,7 +45,7 @@ export function useCloseoutCaptureSummaries(jobIds: string[]) {
         ? fixtures.closeoutSummaries.filter((summary) =>
             uniqueJobIds.includes(summary.jobId),
           )
-        : listCloseoutCaptureSummaries(uniqueJobIds);
+        : listCloseoutCaptureSummaries(closeoutsPort, uniqueJobIds);
     },
   });
 }
@@ -50,7 +62,7 @@ export function useJobCloseoutReview(job: Job | null) {
         ? fixtures.formSubmissions.filter(
             (submission) => submission.job_id === jobId,
           )
-        : listJobFormSubmissions(jobId);
+        : listJobFormSubmissions(formsPort, jobId);
     },
   });
   const logsQuery = useQuery({
@@ -61,7 +73,7 @@ export function useJobCloseoutReview(job: Job | null) {
 
       return fixtures
         ? fixtures.chemicalLogs.filter((log) => log.job_id === jobId)
-        : listJobChemicalLogs(jobId);
+        : listJobChemicalLogs(inventoryPort, jobId);
     },
   });
   const mediaQuery = useQuery({
@@ -72,7 +84,7 @@ export function useJobCloseoutReview(job: Job | null) {
 
       return fixtures
         ? fixtures.media.filter((item) => item.job_id === jobId)
-        : listJobMedia(jobId);
+        : listJobMedia(mediaPort, jobId);
     },
   });
 

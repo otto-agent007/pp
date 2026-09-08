@@ -25,6 +25,16 @@ import {
   listLocalDemoTechnicianLicenses,
   updateLocalDemoTechnicianLicense,
 } from "./localDemoData";
+import {
+  createJobsAdapter,
+  createTechnicianLicensesAdapter,
+  createTechniciansAdapter,
+} from "@pest-patrol/api-client";
+
+const jobsPort = createJobsAdapter();
+const technicianLicensesPort = createTechnicianLicensesAdapter();
+const techniciansPort = createTechniciansAdapter();
+
 
 export const techniciansQueryKey = ["technicians"] as const;
 export const technicianDirectoryQueryKey = ["technician-directory"] as const;
@@ -33,7 +43,7 @@ export const technicianLicensesQueryKey = ["technician-licenses"] as const;
 export function useTechnicians() {
   return useQuery({
     queryKey: techniciansQueryKey,
-    queryFn: () => getLocalDemoFixtures()?.technicians ?? listTechnicians(),
+    queryFn: () => getLocalDemoFixtures()?.technicians ?? listTechnicians(jobsPort),
   });
 }
 
@@ -41,7 +51,7 @@ export function useTechnicianDirectory() {
   return useQuery({
     queryKey: technicianDirectoryQueryKey,
     queryFn: () =>
-      getLocalDemoFixtures()?.technicians ?? listTechnicianDirectory(),
+      getLocalDemoFixtures()?.technicians ?? listTechnicianDirectory(techniciansPort),
   });
 }
 
@@ -53,7 +63,7 @@ export function useTechnicianLicenses(technicianId?: string) {
     queryFn: () =>
       getLocalDemoFixtures()
         ? Promise.resolve(listLocalDemoTechnicianLicenses(technicianId))
-        : listTechnicianLicenses(technicianId),
+        : listTechnicianLicenses(technicianLicensesPort, technicianId),
   });
   const schemaUnavailable = isTechnicianLicenseSchemaUnavailableError(
     query.error,
@@ -76,7 +86,7 @@ export function useCreateTechnicianLicense() {
     mutationFn: (input: TechnicianLicenseInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoTechnicianLicense(input))
-        : createTechnicianLicense(input),
+        : createTechnicianLicense(technicianLicensesPort, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: technicianLicensesQueryKey,
@@ -98,7 +108,7 @@ export function useUpdateTechnicianLicense() {
     }) =>
       getLocalDemoFixtures()
         ? Promise.resolve(updateLocalDemoTechnicianLicense(id, input))
-        : updateTechnicianLicense(id, input),
+        : updateTechnicianLicense(technicianLicensesPort, id, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: technicianLicensesQueryKey,
@@ -114,7 +124,7 @@ export function useArchiveTechnicianLicense() {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(archiveLocalDemoTechnicianLicense(id))
-        : archiveTechnicianLicense(id),
+        : archiveTechnicianLicense(technicianLicensesPort, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: technicianLicensesQueryKey,
@@ -130,7 +140,7 @@ export function useInviteTechnician() {
     mutationFn: (input: TechnicianInviteInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(inviteLocalDemoTechnician(input))
-        : inviteTechnician(input),
+        : inviteTechnician(techniciansPort, input),
     onSuccess: (result) => {
       queryClient.setQueryData<TechnicianProfile[]>(
         technicianDirectoryQueryKey,

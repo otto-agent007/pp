@@ -1,5 +1,4 @@
-import { listJobGeofenceEventRecords } from "@pest-patrol/api-client";
-
-export async function listJobGeofenceEvents() {
-  return listJobGeofenceEventRecords();
+import type { GeofencingPort } from "./ports";
+export async function listJobGeofenceEvents(port: GeofencingPort) {
+  return port.listJobGeofenceEventRecords();
 }

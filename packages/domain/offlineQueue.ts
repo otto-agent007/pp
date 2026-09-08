@@ -64,7 +64,7 @@ const sensitiveProofActions = new Set<OfflineQueueAction>([
   "signature_capture",
 ]);
 
-function timestamp(value?: string) {
+export function timestamp(value?: string) {
   return value ?? new Date().toISOString();
 }
 

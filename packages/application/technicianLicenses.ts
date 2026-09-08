@@ -1,30 +1,25 @@
-import {
-  archiveTechnicianLicenseRecord,
-  createTechnicianLicenseRecord,
-  listTechnicianLicenseRecords,
-  updateTechnicianLicenseRecord,
-} from "@pest-patrol/api-client";
+import type { TechnicianLicensesPort } from "./ports";
 import type { TechnicianLicenseInput } from "@pest-patrol/types";
 import { validateTechnicianLicenseInput } from "@pest-patrol/domain";
 
-export function listTechnicianLicenses(technicianId?: string) {
-  return listTechnicianLicenseRecords(technicianId);
+export function listTechnicianLicenses(port: TechnicianLicensesPort, technicianId?: string) {
+  return port.listTechnicianLicenseRecords(technicianId);
 }
 
-export function createTechnicianLicense(input: TechnicianLicenseInput) {
-  return createTechnicianLicenseRecord(validateTechnicianLicenseInput(input));
+export function createTechnicianLicense(port: TechnicianLicensesPort, input: TechnicianLicenseInput) {
+  return port.createTechnicianLicenseRecord(validateTechnicianLicenseInput(input));
 }
 
 export function updateTechnicianLicense(
-  id: string,
+  port: TechnicianLicensesPort, id: string,
   input: TechnicianLicenseInput,
 ) {
-  return updateTechnicianLicenseRecord(
+  return port.updateTechnicianLicenseRecord(
     id,
     validateTechnicianLicenseInput(input),
   );
 }
 
-export function archiveTechnicianLicense(id: string) {
-  return archiveTechnicianLicenseRecord(id);
+export function archiveTechnicianLicense(port: TechnicianLicensesPort, id: string) {
+  return port.archiveTechnicianLicenseRecord(id);
 }

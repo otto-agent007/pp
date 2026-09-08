@@ -7,6 +7,10 @@ import {
   updateCurrentUserPassword,
 } from "@pest-patrol/application";
 import { useState } from "react";
+import { createAuthAdapter } from "@pest-patrol/api-client";
+
+const authPort = createAuthAdapter(supabase);
+
 
 type TechnicianWebAuthStatus = "signed_in" | "signed_out" | "loading";
 
@@ -23,7 +27,7 @@ export function useTechnicianWebAuth() {
     refreshToken: string,
   ) {
     setError(null);
-    await establishPasswordRecoverySession(supabase, {
+    await establishPasswordRecoverySession(authPort, {
       accessToken,
       refreshToken,
     });
@@ -34,7 +38,7 @@ export function useTechnicianWebAuth() {
     setStatus("loading");
 
     try {
-      await signInTechnician(supabase, { email, password });
+      await signInTechnician(authPort, { email, password });
       setStatus("signed_in");
     } catch (signInError) {
       setError(errorMessage(signInError));
@@ -47,7 +51,7 @@ export function useTechnicianWebAuth() {
     setError(null);
 
     try {
-      await updateCurrentUserPassword(supabase, { password, confirmPassword });
+      await updateCurrentUserPassword(authPort, { password, confirmPassword });
     } catch (updateError) {
       setError(errorMessage(updateError));
       throw updateError;

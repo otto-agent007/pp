@@ -61,6 +61,9 @@ async function renderAuthProbe(
   const deactivateLocalDemoFixtureSession = vi.fn();
 
   vi.doMock("@pest-patrol/api-client", () => ({
+    // the context builds its port from this factory; the mocked application
+    // functions below are what the test actually asserts against
+    createAuthAdapter: () => ({}) as never,
     getDemoSeedStatusRecord,
     isDemoLoginRefreshUnavailableError,
     refreshDemoLoginSeedRecord,

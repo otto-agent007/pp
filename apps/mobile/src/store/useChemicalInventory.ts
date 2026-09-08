@@ -3,6 +3,10 @@ import type { ChemicalInventoryItem } from "@pest-patrol/types";
 import { create } from "zustand";
 
 import { mobileSupabase } from "../lib/supabase";
+import { createInventoryAdapter } from "@pest-patrol/api-client";
+
+const inventoryPort = createInventoryAdapter(mobileSupabase);
+
 
 type ChemicalInventoryStatus = "idle" | "loading" | "ready" | "error";
 
@@ -24,7 +28,7 @@ export const useChemicalInventory = create<ChemicalInventoryState>((set) => ({
     set({ error: null, status: "loading" });
 
     try {
-      const items = await listChemicalInventoryForClient(mobileSupabase);
+      const items = await listChemicalInventoryForClient(inventoryPort);
 
       set({
         error: null,

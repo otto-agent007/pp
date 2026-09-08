@@ -22,6 +22,10 @@ import {
   getLocalDemoFixtures,
   updateLocalDemoInventoryItem,
 } from "./localDemoData";
+import { createInventoryAdapter } from "@pest-patrol/api-client";
+
+const inventoryPort = createInventoryAdapter();
+
 
 export const chemicalInventoryQueryKey = ["chemical-inventory"] as const;
 export const chemicalLogsQueryKey = ["chemical-logs"] as const;
@@ -58,14 +62,14 @@ function makeOptimisticChemicalLog(input: ChemicalLogInput): ChemicalLog {
 export function useChemicalInventory() {
   return useQuery({
     queryKey: chemicalInventoryQueryKey,
-    queryFn: () => getLocalDemoFixtures()?.inventory ?? listChemicalInventory(),
+    queryFn: () => getLocalDemoFixtures()?.inventory ?? listChemicalInventory(inventoryPort),
   });
 }
 
 export function useChemicalLogs() {
   return useQuery({
     queryKey: chemicalLogsQueryKey,
-    queryFn: () => getLocalDemoFixtures()?.chemicalLogs ?? listChemicalLogs(),
+    queryFn: () => getLocalDemoFixtures()?.chemicalLogs ?? listChemicalLogs(inventoryPort),
   });
 }
 
@@ -76,7 +80,7 @@ export function useCreateChemicalInventory() {
     mutationFn: (input: ChemicalInventoryInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoInventoryItem(input))
-        : createChemicalInventory(input),
+        : createChemicalInventory(inventoryPort, input),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey });
       const previous =
@@ -118,7 +122,7 @@ export function useUpdateChemicalInventory() {
     }) =>
       getLocalDemoFixtures()
         ? Promise.resolve(updateLocalDemoInventoryItem(id, input))
-        : updateChemicalInventory(id, input),
+        : updateChemicalInventory(inventoryPort, id, input),
     onMutate: async ({ id, input }) => {
       await queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey });
       const previous =
@@ -163,7 +167,7 @@ export function useArchiveChemicalInventory() {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(archiveLocalDemoInventoryItem(id))
-        : archiveChemicalInventory(id),
+        : archiveChemicalInventory(inventoryPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey });
       const previous =
@@ -201,7 +205,7 @@ export function useCreateChemicalLog() {
     mutationFn: (input: ChemicalLogInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoChemicalLog(input))
-        : createChemicalLog(input),
+        : createChemicalLog(inventoryPort, input),
     onMutate: async (input) => {
       await Promise.all([
         queryClient.cancelQueries({ queryKey: chemicalInventoryQueryKey }),
