@@ -1,4 +1,4 @@
-import type { OfflineSyncPort } from "./ports";
+import type { OfflineSyncPort } from "@pest-patrol/application";
 import type {
   QueueProcessResult,
   QueueProcessSummary,

@@ -104,18 +104,6 @@ export type {
   MutationOutcomePolicy,
 } from "./mutationOutcome";
 export {
-  processArrivalNotificationQueueItem,
-  processChemicalLogQueueItem,
-  processFormSubmissionQueueItem,
-  processFormSubmissionQueueItems,
-  processGeofenceEventQueueItem,
-  processJobStatusUpdateQueueItem,
-  processOfflineQueueItem,
-  processOfflineQueueItems,
-  processPhotoUploadQueueItem,
-  processSignatureCaptureQueueItem,
-} from "./offlineSync";
-export {
   createInvoice,
   createInvoicePaymentLink,
   getStripePaymentProviderStatus,

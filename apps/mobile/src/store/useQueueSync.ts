@@ -1,4 +1,4 @@
-import { processOfflineQueueItems } from "@pest-patrol/application";
+import { processOfflineQueueItems } from "@pest-patrol/sync";
 import { createOfflineSyncAdapter } from "@pest-patrol/api-client";
 import { create } from "zustand";
 

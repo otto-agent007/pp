@@ -94,7 +94,7 @@
     {
       "name": "@pest-patrol/sync",
       "path": "packages/sync",
-      "state": "planned",
+      "state": "required",
       "allowedDependencies": [
         {
           "name": "@pest-patrol/application",

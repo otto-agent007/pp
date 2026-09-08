@@ -817,10 +817,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "bc543ac27d7f3c1382b23e7df871082cea8ab134",
       "id": "CR06",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR05"
@@ -829,10 +829,13 @@
         "CR00"
       ],
       "ownership": [
+        "apps/mobile/package.json",
         "apps/mobile/src/store/useQueueSync.ts",
+        "docs/architecture.md",
         "packages/application",
         "packages/domain",
         "packages/sync",
+        "tasks/done.md",
         "tooling/architecture-boundaries.json",
         "tsconfig.base.json"
       ],
@@ -841,13 +844,86 @@
         "The queue relocated from packages/application into packages/sync as a pure move, with packages/sync promoted from planned to required in the boundary policy",
         "Package-local tests for durable identity and state, persistence, restart replay, retry and backoff scheduling, durable transitions, and stable identity across retry, as docs/architecture.md requires of CR06"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run packages/sync/",
+        "pnpm exec vitest run packages/application/",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "Controller scoping of CR06 on 2026-09-08: a pure relocation, with CR04's mutationOutcome semantics left unwired so that a queue regression stays attributable to one change or the other"
       ],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "evidence": [
+        {
+          "kind": "review",
+          "summary": "Measurement before the move found two defects in CR06's own specification. Its ownership named apps/mobile/src/store/useQueueSync.ts but not apps/mobile/package.json, and a source import with no matching manifest dependency is a missing-manifest-dependency violation, so the slice could not have landed as declared; the reconciler enforces changed-path ownership for the running slice, making this the first instance of this recurring defect class that an existing gate would have caught unaided. And four of the six test dimensions docs/architecture.md requires of CR06 were unaddressed by the suite it inherited: restart replay, persistence, durable transitions, and stable identity across retry.",
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The relocation is a move, not a rewrite: rename-detected diff statistics show both files changing by one insertion and one deletion each, the import of OfflineSyncPort from @pest-patrol/application rather than a sibling module. packages/domain is untouched by the slice.",
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "Every assertion in packages/sync/durability.test.ts was proved by injection: eight faults, each making at least one named test fail. Dropping skipped items from the returned array and returning a copy rather than the same object each failed four tests; minting a fresh id on retry and not counting attempts each failed three; scheduling backoff from enqueue time failed two; treating a failed item as still ready, dropping last_error, and leaving updated_at unchanged each failed one. The sixth injection caught nothing on the first pass, because the record test asserted the field set and a spread of the previous item keeps the key while losing the reason; the test now asserts the reloaded values.",
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The architecture boundary checker reports 11 workspace packages and zero exceptions, with packages/sync promoted from planned to required.",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The full suite passes 10/10 tasks with the queue relocated: sync 29, application 19, domain 335, web 426, api-client 109, mobile 79.",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Typecheck passes 11/11 across the workspace with packages/sync added, verified by exit code rather than by grepping output.",
+          "command": "pnpm typecheck",
+          "exitCode": 0,
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #197 opened for CR06.",
+          "commitSha": "36c22d5a3a94ca3fa29aecf17f8f6ba338fa8d03",
+          "recordedAt": "2026-09-08T12:20:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/197"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 15/15 gates, evidence set 73b48de8.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "b2d9570255d97a8ed13423a7345ed0904beca71a",
+          "recordedAt": "2026-09-08T12:35:00Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr06-sync-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/197",
       "mergeSha": "",
       "supersededBy": null,
       "target": null

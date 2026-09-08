@@ -1,0 +1,23 @@
+{
+  "name": "@pest-patrol/sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@pest-patrol/application": "workspace:*",
+    "@pest-patrol/domain": "workspace:*",
+    "@pest-patrol/types": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint \"**/*.ts\"",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^6.0.3"
+  }
+}
