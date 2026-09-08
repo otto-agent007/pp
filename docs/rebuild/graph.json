@@ -442,6 +442,14 @@
           "commitSha": "57d4a542b6eb75a653ab90c6919a1824922d0580",
           "recordedAt": "2026-09-08T06:00:00Z",
           "url": "https://github.com/otto-agent007/pp/pull/189"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 14/14 gates, evidence set e0792858.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "002a6a73dcac3c2e21c257d7e6eb8f80b2ba1373",
+          "recordedAt": "2026-09-08T06:05:00Z"
         }
       ],
       "branch": "codex/rebuild-cr03-domain-seam-v1",
