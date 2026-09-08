@@ -87,9 +87,22 @@ Add `"test": "vitest run"` to `packages/types/package.json` scripts, matching
 without it the guard would exist but never run.
 
 **Prove the guard fires.** Per the runbook lesson from CR13, a gate wired in but
-never invoked looks identical to a passing one. Delete one export from the
-barrel, confirm a non-zero exit naming the missing symbol, then restore it.
-Repeat for a duplicated declaration across two modules. Record both.
+never invoked looks identical to a passing one. Both injections were run and
+both failed the suite with exit code 1:
+
+- dropping `JobMediaInput` from the barrel's `./media` re-export failed two
+  assertions, naming the missing symbol and the module it belongs to;
+- declaring `JobMediaType` in `inventory.ts` as well as `media.ts` failed the
+  disjointness assertion with `JobMediaType is declared in both inventory.ts
+  and media.ts`.
+
+The suite returned to 4/4 green after each injection was reverted.
+
+One implementation note the injections forced: the test resolves its own
+directory from `expect.getState().testPath`, not from `import.meta.url` and not
+from `process.cwd()`. The jsdom environment rewrites `import.meta.url` to a
+non-`file:` document URL, and cwd differs between a root `vitest run` and the
+per-project run turbo performs inside `packages/types`.
 
 ### 4. Gates
 
@@ -120,19 +133,38 @@ docs/superpowers/plans/2026-09-08-controlled-rebuild-cr02-types-contexts.md
 docs/superpowers/specs/2026-09-08-controlled-rebuild-cr02-types-contexts-design.md
 packages/types/*.ts
 packages/types/package.json
+packages/types/tsconfig.json
+pnpm-lock.yaml
 tasks/in-progress.md
 ```
 
-`packages/types/tsconfig.json` needs no change: it already includes `**/*.ts`,
-so the new modules and the test are covered without edit.
+### Two corrections to this plan, found by running the gates
+
+This plan originally claimed the slice would touch neither
+`packages/types/tsconfig.json` nor any dependency. Both were wrong, and
+`pnpm typecheck` is what said so.
+
+**The package needs `"types": ["node"]`.** The guard reads source text, so it
+imports `node:fs` and `node:path`, and `tsc` would not resolve `@types/node`
+without the explicit `types` field — `pnpm-workspace.yaml` relocates the real
+store to `<root>/.pnpm`, which the default type-root walk never reaches. Both
+`packages/api-client/tsconfig.json` and `tsconfig.tooling.json` already carry
+the identical field for the same reason, so this follows the repository's
+existing shape rather than inventing one.
+
+**`@types/node` becomes a devDependency of the package,** at `^24.13.3`, the
+version the root, `apps/web`, and `packages/api-client` already pin. It is
+already resolved in the lockfile, so the change is three lines: a new importer
+entry, not a new package. `packages/types` still ships no runtime code and no
+runtime dependency.
 
 ## What this slice does not touch
 
-No consumer file, no other package, no lockfile, no dependency, and neither
-recorded boundary exception — `api-client-domain-manifest` still expires in CR05
-and `domain-to-api-client` in CR09. If any consumer edit turns out to be
-required, that is a finding to report before proceeding, not a change to absorb:
-it would mean the barrel is not actually compatible.
+No consumer file, no other package, no runtime dependency, and neither recorded
+boundary exception — `api-client-domain-manifest` still expires in CR05 and
+`domain-to-api-client` in CR09. If any consumer edit turns out to be required,
+that is a finding to report before proceeding, not a change to absorb: it would
+mean the barrel is not actually compatible. None was.
 
 ## Follow-ups this slice deliberately leaves
 
