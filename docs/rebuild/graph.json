@@ -381,7 +381,9 @@
         "packages/domain"
       ],
       "deliverables": [
-        "Pure domain package"
+        "Declared split of packages/domain into pure policy modules and adapter-orchestrating modules",
+        "Executable guard that a module declared pure never gains a provider or adapter import",
+        "A recorded extraction boundary for CR04 to lift through, rather than one inferred at extraction time"
       ],
       "checks": [],
       "approvals": [],
@@ -405,10 +407,15 @@
         "CR00"
       ],
       "ownership": [
-        "packages/application"
+        "packages/application",
+        "packages/domain",
+        "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
-        "Application ports and use cases"
+        "Application ports and use cases",
+        "Adapter orchestration lifted out of packages/domain into packages/application behind ports",
+        "Pure domain package: packages/domain reaches zero provider and adapter imports",
+        "Removal of the domain-to-api-client boundary exception"
       ],
       "checks": [],
       "approvals": [],
@@ -432,7 +439,8 @@
         "CR00"
       ],
       "ownership": [
-        "packages/api-client"
+        "packages/api-client",
+        "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
         "API-client demo and Supabase adapters"

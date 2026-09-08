@@ -31,7 +31,23 @@
   behaviour, and for one that emits nothing the real compatibility proof is
   `pnpm typecheck` across its consumers. Two debt exceptions expire inside
   these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
-  in CR09.
+  in CR04.
+- **CR03 and CR04 were re-scoped on 2026-09-08**, because CR03's one-line
+  deliverable "Pure domain package" could not be met by CR03. Fourteen of
+  `packages/domain`'s thirty production modules import `@pest-patrol/api-client`
+  for 80 distinct symbols — `AuthSupabaseClient` plus 79 `*Record` adapter
+  functions. That is use-case orchestration, which belongs in
+  `@pest-patrol/application`; but that package is created by CR04, and CR04
+  depends on CR03. CR03 now records and guards the seam, and CR04 lifts the
+  orchestration through it and removes the exception. Detail is in
+  `docs/architecture.md`.
+- The same change fixed a latent defect the re-scope surfaced: **an exception's
+  removal node must own every path the exception names**, and neither removal
+  node did. Promoting CR05 failed `pnpm architecture:check` with one error and
+  CR09 with seventeen; both were invisible because the check only runs once the
+  removal node reaches `ready`. CR04 and CR05 now own
+  `tooling/architecture-boundaries.json`, and `domain-to-api-client` points at
+  CR04, which owns `packages/domain`. Promoting CR04, CR05 or CR09 now passes.
 - Known follow-up left by CR02: `packages/types` exposes no subpath entry
   points, so a consumer cannot address a context directly as
   `@pest-patrol/types/jobs`. No consumer wants to today, and supporting it

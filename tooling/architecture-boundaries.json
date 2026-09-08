@@ -394,8 +394,8 @@
         "section": "dependencies",
         "versionSpecifier": "workspace:*"
       },
-      "removeIn": "CR09",
-      "reason": "CR08 removes the legacy domain dependency on the API client."
+      "removeIn": "CR04",
+      "reason": "CR04 lifts the adapter orchestration out of packages/domain into packages/application behind ports, which is what removes this edge. CR09 was recorded before the platform chain was re-sequenced ahead of the architecture refactor, and owns only apps/, so it could never have removed a packages/domain import. The prior reason text still named CR08, superseded into CR09 during the CR00 recovery."
     }
   ]
 }
