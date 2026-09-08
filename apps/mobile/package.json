@@ -16,6 +16,7 @@
     "@pest-patrol/application": "workspace:*",
     "@pest-patrol/domain": "workspace:*",
     "@pest-patrol/i18n": "workspace:*",
+    "@pest-patrol/sync": "workspace:*",
     "@pest-patrol/types": "workspace:*",
     "@pest-patrol/ui-native": "workspace:*",
     "@pest-patrol/ui-tokens": "workspace:*",

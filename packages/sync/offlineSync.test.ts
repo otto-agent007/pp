@@ -21,7 +21,7 @@ import {
   processPhotoUploadQueueItem,
   processSignatureCaptureQueueItem,
 } from "./offlineSync";
-import type { OfflineSyncPort } from "./ports";
+import type { OfflineSyncPort } from "@pest-patrol/application";
 
 const now = "2026-05-05T20:00:00.000Z";
 

@@ -29,6 +29,9 @@
       "@pest-patrol/i18n": [
         "./packages/i18n/index.ts"
       ],
+      "@pest-patrol/sync": [
+        "./packages/sync/index.ts"
+      ],
       "@pest-patrol/types": [
         "./packages/types/index.ts"
       ],
