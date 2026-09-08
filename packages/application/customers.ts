@@ -6,11 +6,18 @@ export async function listCustomers(port: CustomersPort) {
   return port.listCustomerRecords();
 }
 
-export async function createCustomer(port: CustomersPort, input: CustomerInput) {
+export async function createCustomer(
+  port: CustomersPort,
+  input: CustomerInput,
+) {
   return port.createCustomerRecord(validateCustomerInput(input));
 }
 
-export async function updateCustomer(port: CustomersPort, id: string, input: CustomerInput) {
+export async function updateCustomer(
+  port: CustomersPort,
+  id: string,
+  input: CustomerInput,
+) {
   return port.updateCustomerRecord(id, validateCustomerInput(input));
 }
 

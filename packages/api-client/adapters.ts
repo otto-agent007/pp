@@ -153,61 +153,97 @@ export function createAuthAdapter(
 ): AuthPort<Session> {
   return {
     getCurrentAuthRecord: () => getCurrentAuthRecord(client),
-    resetPasswordForEmailRecord: (email, redirectTo) => resetPasswordForEmailRecord(client, email, redirectTo),
-    setPasswordRecoverySessionRecord: (accessToken, refreshToken) => setPasswordRecoverySessionRecord(client, accessToken, refreshToken),
-    signInWithPasswordRecord: (email, password) => signInWithPasswordRecord(client, email, password),
+    resetPasswordForEmailRecord: (email, redirectTo) =>
+      resetPasswordForEmailRecord(client, email, redirectTo),
+    setPasswordRecoverySessionRecord: (accessToken, refreshToken) =>
+      setPasswordRecoverySessionRecord(client, accessToken, refreshToken),
+    signInWithPasswordRecord: (email, password) =>
+      signInWithPasswordRecord(client, email, password),
     signOutRecord: () => signOutRecord(client),
     updatePasswordRecord: (password) => updatePasswordRecord(client, password),
   };
 }
 
-export function createAutomationAdapter(client: SupabaseLikeClient = supabase): AutomationPort {
+export function createAutomationAdapter(
+  client: SupabaseLikeClient = supabase,
+): AutomationPort {
   return {
     createAutomationRuleRecord: (input) => createAutomationRuleRecord(input),
-    createGeneratedNotificationEventRecord: (input) => createGeneratedNotificationEventRecord(input, client),
-    createNotificationEventRecord: (input) => createNotificationEventRecord(input),
-    createNotificationTemplateRecord: (input) => createNotificationTemplateRecord(input),
+    createGeneratedNotificationEventRecord: (input) =>
+      createGeneratedNotificationEventRecord(input, client),
+    createNotificationEventRecord: (input) =>
+      createNotificationEventRecord(input),
+    createNotificationTemplateRecord: (input) =>
+      createNotificationTemplateRecord(input),
     dismissNotificationEventRecord: (id) => dismissNotificationEventRecord(id),
-    getNotificationProviderStatusRecord: () => getNotificationProviderStatusRecord(),
+    getNotificationProviderStatusRecord: () =>
+      getNotificationProviderStatusRecord(),
     listAutomationRuleRecords: () => listAutomationRuleRecords(client),
-    listAutomationSchedulerJobRecords: () => listAutomationSchedulerJobRecords(client),
-    listAutomationSchedulerRunRecords: () => listAutomationSchedulerRunRecords(client),
+    listAutomationSchedulerJobRecords: () =>
+      listAutomationSchedulerJobRecords(client),
+    listAutomationSchedulerRunRecords: () =>
+      listAutomationSchedulerRunRecords(client),
     listNotificationEventRecords: () => listNotificationEventRecords(),
     listNotificationTemplateRecords: () => listNotificationTemplateRecords(),
-    markNotificationEventHandledRecord: (id) => markNotificationEventHandledRecord(id),
-    runAutomationSchedulerManualRecord: () => runAutomationSchedulerManualRecord(),
-    sendNotificationEventDeliveriesRecord: (ids) => sendNotificationEventDeliveriesRecord(ids),
-    sendNotificationEventDeliveryRecord: (id) => sendNotificationEventDeliveryRecord(id),
-    updateAutomationRuleRecord: (id, input) => updateAutomationRuleRecord(id, input),
-    updateAutomationRuleStatusRecord: (id, status) => updateAutomationRuleStatusRecord(id, status),
-    updateNotificationTemplateRecord: (id, input) => updateNotificationTemplateRecord(id, input),
-    updateNotificationTemplateStatusRecord: (id, status) => updateNotificationTemplateStatusRecord(id, status),
+    markNotificationEventHandledRecord: (id) =>
+      markNotificationEventHandledRecord(id),
+    runAutomationSchedulerManualRecord: () =>
+      runAutomationSchedulerManualRecord(),
+    sendNotificationEventDeliveriesRecord: (ids) =>
+      sendNotificationEventDeliveriesRecord(ids),
+    sendNotificationEventDeliveryRecord: (id) =>
+      sendNotificationEventDeliveryRecord(id),
+    updateAutomationRuleRecord: (id, input) =>
+      updateAutomationRuleRecord(id, input),
+    updateAutomationRuleStatusRecord: (id, status) =>
+      updateAutomationRuleStatusRecord(id, status),
+    updateNotificationTemplateRecord: (id, input) =>
+      updateNotificationTemplateRecord(id, input),
+    updateNotificationTemplateStatusRecord: (id, status) =>
+      updateNotificationTemplateStatusRecord(id, status),
   };
 }
 
-export function createCloseoutsAdapter(client: SupabaseLikeClient = supabase): CloseoutsPort {
+export function createCloseoutsAdapter(
+  client: SupabaseLikeClient = supabase,
+): CloseoutsPort {
   return {
-    createCustomerPortalAccessTokenRecord: (input) => createCustomerPortalAccessTokenRecord(input),
-    getCustomerPortalProviderStatusRecord: () => getCustomerPortalProviderStatusRecord(),
-    listCloseoutCaptureSummaryRecords: (jobIds) => listCloseoutCaptureSummaryRecords(jobIds, client),
-    listCustomerPortalAccessTokenEventRecords: (id) => listCustomerPortalAccessTokenEventRecords(id),
-    listCustomerPortalAccessTokenRecords: (customerId) => listCustomerPortalAccessTokenRecords(customerId),
-    listCustomerPortalBillingRecords: (customerId) => listCustomerPortalBillingRecords(customerId),
-    listCustomerPortalCloseoutRecords: (customerId) => listCustomerPortalCloseoutRecords(customerId),
-    requestCustomerPortalUpgradeIntentRecord: (customerId, input) => requestCustomerPortalUpgradeIntentRecord(customerId, input),
-    revokeCustomerPortalAccessTokenRecord: (id) => revokeCustomerPortalAccessTokenRecord(id),
-    sendCustomerPortalAccessTokenRecord: (input) => sendCustomerPortalAccessTokenRecord(input),
+    createCustomerPortalAccessTokenRecord: (input) =>
+      createCustomerPortalAccessTokenRecord(input),
+    getCustomerPortalProviderStatusRecord: () =>
+      getCustomerPortalProviderStatusRecord(),
+    listCloseoutCaptureSummaryRecords: (jobIds) =>
+      listCloseoutCaptureSummaryRecords(jobIds, client),
+    listCustomerPortalAccessTokenEventRecords: (id) =>
+      listCustomerPortalAccessTokenEventRecords(id),
+    listCustomerPortalAccessTokenRecords: (customerId) =>
+      listCustomerPortalAccessTokenRecords(customerId),
+    listCustomerPortalBillingRecords: (customerId) =>
+      listCustomerPortalBillingRecords(customerId),
+    listCustomerPortalCloseoutRecords: (customerId) =>
+      listCustomerPortalCloseoutRecords(customerId),
+    requestCustomerPortalUpgradeIntentRecord: (customerId, input) =>
+      requestCustomerPortalUpgradeIntentRecord(customerId, input),
+    revokeCustomerPortalAccessTokenRecord: (id) =>
+      revokeCustomerPortalAccessTokenRecord(id),
+    sendCustomerPortalAccessTokenRecord: (input) =>
+      sendCustomerPortalAccessTokenRecord(input),
   };
 }
 
-export function createComplianceAdapter(client: SupabaseLikeClient = supabase): CompliancePort {
+export function createComplianceAdapter(
+  client: SupabaseLikeClient = supabase,
+): CompliancePort {
   return {
-    createComplianceAdvisoryAuditRecord: (input) => createComplianceAdvisoryAuditRecord(input, client),
-    listComplianceAdvisoryAuditRecords: () => listComplianceAdvisoryAuditRecords(client),
+    createComplianceAdvisoryAuditRecord: (input) =>
+      createComplianceAdvisoryAuditRecord(input, client),
+    listComplianceAdvisoryAuditRecords: () =>
+      listComplianceAdvisoryAuditRecords(client),
     listComplianceChunkRecords: () => listComplianceChunkRecords(client),
     listComplianceDocumentRecords: () => listComplianceDocumentRecords(client),
     listComplianceSourceRecords: () => listComplianceSourceRecords(client),
-    searchComplianceChunkRecords: (input) => searchComplianceChunkRecords(input, client),
+    searchComplianceChunkRecords: (input) =>
+      searchComplianceChunkRecords(input, client),
   };
 }
 
@@ -220,75 +256,109 @@ export function createCustomersAdapter(): CustomersPort {
   };
 }
 
-export function createFormsAdapter(client: SupabaseLikeClient = supabase): FormsPort {
+export function createFormsAdapter(
+  client: SupabaseLikeClient = supabase,
+): FormsPort {
   return {
-    createJobFormSubmissionRecord: (input) => createJobFormSubmissionRecord(input, client),
+    createJobFormSubmissionRecord: (input) =>
+      createJobFormSubmissionRecord(input, client),
     listActiveFormTemplateRecords: () => listActiveFormTemplateRecords(client),
-    listCustomerPortalFormSubmissionRecords: (customerId) => listCustomerPortalFormSubmissionRecords(customerId, client),
-    listJobFormSubmissionRecords: (jobId) => listJobFormSubmissionRecords(jobId, client),
+    listCustomerPortalFormSubmissionRecords: (customerId) =>
+      listCustomerPortalFormSubmissionRecords(customerId, client),
+    listJobFormSubmissionRecords: (jobId) =>
+      listJobFormSubmissionRecords(jobId, client),
   };
 }
 
-export function createGeofencingAdapter(client: SupabaseLikeClient = supabase): GeofencingPort {
+export function createGeofencingAdapter(
+  client: SupabaseLikeClient = supabase,
+): GeofencingPort {
   return {
     listJobGeofenceEventRecords: () => listJobGeofenceEventRecords(client),
   };
 }
 
-export function createInventoryAdapter(client: SupabaseLikeClient = supabase): InventoryPort {
+export function createInventoryAdapter(
+  client: SupabaseLikeClient = supabase,
+): InventoryPort {
   return {
     archiveChemicalInventoryRecord: (id) => archiveChemicalInventoryRecord(id),
-    createChemicalInventoryRecord: (input) => createChemicalInventoryRecord(input),
+    createChemicalInventoryRecord: (input) =>
+      createChemicalInventoryRecord(input),
     createChemicalLogRecord: (input) => createChemicalLogRecord(input, client),
     listChemicalInventoryRecords: () => listChemicalInventoryRecords(client),
     listChemicalLogRecords: () => listChemicalLogRecords(client),
-    listJobChemicalLogRecords: (jobId) => listJobChemicalLogRecords(jobId, client),
-    updateChemicalInventoryRecord: (id, input) => updateChemicalInventoryRecord(id, input),
+    listJobChemicalLogRecords: (jobId) =>
+      listJobChemicalLogRecords(jobId, client),
+    updateChemicalInventoryRecord: (id, input) =>
+      updateChemicalInventoryRecord(id, input),
   };
 }
 
-export function createJobsAdapter(client: SupabaseLikeClient = supabase): JobsPort {
+export function createJobsAdapter(
+  client: SupabaseLikeClient = supabase,
+): JobsPort {
   return {
     cancelJobRecord: (id) => cancelJobRecord(id),
     createJobRecord: (input) => createJobRecord(input),
-    listAssignedTechnicianJobRecords: () => listAssignedTechnicianJobRecords(client),
-    listCustomerPortalJobRecords: (customerId) => listCustomerPortalJobRecords(customerId, client),
+    listAssignedTechnicianJobRecords: () =>
+      listAssignedTechnicianJobRecords(client),
+    listCustomerPortalJobRecords: (customerId) =>
+      listCustomerPortalJobRecords(customerId, client),
     listJobRecords: () => listJobRecords(client),
-    listTechnicianProfileRecords: (status) => listTechnicianProfileRecords(status, client),
+    listTechnicianProfileRecords: (status) =>
+      listTechnicianProfileRecords(status, client),
     updateJobRecord: (id, input) => updateJobRecord(id, input),
   };
 }
 
-export function createMediaAdapter(client: SupabaseLikeClient = supabase): MediaPort {
+export function createMediaAdapter(
+  client: SupabaseLikeClient = supabase,
+): MediaPort {
   return {
-    listCustomerPortalMediaRecords: (customerId) => listCustomerPortalMediaRecords(customerId, client),
+    listCustomerPortalMediaRecords: (customerId) =>
+      listCustomerPortalMediaRecords(customerId, client),
     listJobMediaRecords: (jobId) => listJobMediaRecords(jobId, client),
   };
 }
 
-export function createPaymentsAdapter(client: SupabaseLikeClient = supabase): PaymentsPort {
+export function createPaymentsAdapter(
+  client: SupabaseLikeClient = supabase,
+): PaymentsPort {
   return {
-    createInvoicePaymentLinkRecord: (input) => createInvoicePaymentLinkRecord(input),
+    createInvoicePaymentLinkRecord: (input) =>
+      createInvoicePaymentLinkRecord(input),
     createInvoiceRecord: (input) => createInvoiceRecord(input),
-    getStripePaymentProviderStatusRecord: () => getStripePaymentProviderStatusRecord(),
+    getStripePaymentProviderStatusRecord: () =>
+      getStripePaymentProviderStatusRecord(),
     listInvoiceRecords: () => listInvoiceRecords(),
-    updateInvoiceStatusRecord: (id, status) => updateInvoiceStatusRecord(id, status, client),
+    updateInvoiceStatusRecord: (id, status) =>
+      updateInvoiceStatusRecord(id, status, client),
   };
 }
 
-export function createTechnicianLicensesAdapter(client: SupabaseLikeClient = supabase): TechnicianLicensesPort {
+export function createTechnicianLicensesAdapter(
+  client: SupabaseLikeClient = supabase,
+): TechnicianLicensesPort {
   return {
-    archiveTechnicianLicenseRecord: (id) => archiveTechnicianLicenseRecord(id, client),
-    createTechnicianLicenseRecord: (input) => createTechnicianLicenseRecord(input, client),
-    listTechnicianLicenseRecords: (technicianId) => listTechnicianLicenseRecords(technicianId, client),
-    updateTechnicianLicenseRecord: (id, input) => updateTechnicianLicenseRecord(id, input, client),
+    archiveTechnicianLicenseRecord: (id) =>
+      archiveTechnicianLicenseRecord(id, client),
+    createTechnicianLicenseRecord: (input) =>
+      createTechnicianLicenseRecord(input, client),
+    listTechnicianLicenseRecords: (technicianId) =>
+      listTechnicianLicenseRecords(technicianId, client),
+    updateTechnicianLicenseRecord: (id, input) =>
+      updateTechnicianLicenseRecord(id, input, client),
   };
 }
 
-export function createTechniciansAdapter(client: SupabaseLikeClient = supabase): TechniciansPort {
+export function createTechniciansAdapter(
+  client: SupabaseLikeClient = supabase,
+): TechniciansPort {
   return {
     inviteTechnicianRecord: (input) => inviteTechnicianRecord(input),
-    listTechnicianProfileRecords: (status) => listTechnicianProfileRecords(status, client),
+    listTechnicianProfileRecords: (status) =>
+      listTechnicianProfileRecords(status, client),
   };
 }
 
@@ -304,8 +374,14 @@ export function createOfflineSyncAdapter(
     createJobGeofenceEventRecord: (input) =>
       createJobGeofenceEventRecord(input, client),
     updateAssignedTechnicianJobStatusRecord: (id, status, previousStatus) =>
-      updateAssignedTechnicianJobStatusRecord(client, id, status, previousStatus),
+      updateAssignedTechnicianJobStatusRecord(
+        client,
+        id,
+        status,
+        previousStatus,
+      ),
     uploadJobPhotoRecord: (input) => uploadJobPhotoRecord(input, client),
-    uploadJobSignatureRecord: (input) => uploadJobSignatureRecord(input, client),
+    uploadJobSignatureRecord: (input) =>
+      uploadJobSignatureRecord(input, client),
   };
 }

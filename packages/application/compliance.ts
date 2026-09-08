@@ -20,7 +20,8 @@ export async function listComplianceChunks(port: CompliancePort) {
 }
 
 export async function searchComplianceChunks(
-  port: CompliancePort, input: ComplianceChunkSearchInput,
+  port: CompliancePort,
+  input: ComplianceChunkSearchInput,
 ) {
   return port.searchComplianceChunkRecords(input);
 }

@@ -6,6 +6,9 @@ export async function listTechnicianDirectory(port: TechniciansPort) {
   return port.listTechnicianProfileRecords();
 }
 
-export async function inviteTechnician(port: TechniciansPort, input: TechnicianInviteInput) {
+export async function inviteTechnician(
+  port: TechniciansPort,
+  input: TechnicianInviteInput,
+) {
   return port.inviteTechnicianRecord(validateTechnicianInviteInput(input));
 }

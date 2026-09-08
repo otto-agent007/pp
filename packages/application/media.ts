@@ -5,6 +5,11 @@ export async function listJobMedia(port: MediaPort, jobId: string) {
   return port.listJobMediaRecords(requireNonEmpty(jobId, "Job"));
 }
 
-export async function listCustomerPortalMedia(port: MediaPort, customerId: string) {
-  return port.listCustomerPortalMediaRecords(requireNonEmpty(customerId, "Customer"));
+export async function listCustomerPortalMedia(
+  port: MediaPort,
+  customerId: string,
+) {
+  return port.listCustomerPortalMediaRecords(
+    requireNonEmpty(customerId, "Customer"),
+  );
 }

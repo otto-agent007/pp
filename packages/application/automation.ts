@@ -25,12 +25,16 @@ export async function listAutomationSchedulerRuns(port: AutomationPort) {
   return port.listAutomationSchedulerRunRecords();
 }
 
-export async function createAutomationRule(port: AutomationPort, input: AutomationRuleInput) {
+export async function createAutomationRule(
+  port: AutomationPort,
+  input: AutomationRuleInput,
+) {
   return port.createAutomationRuleRecord(validateAutomationRuleInput(input));
 }
 
 export async function updateAutomationRule(
-  port: AutomationPort, id: string,
+  port: AutomationPort,
+  id: string,
   input: AutomationRuleInput,
 ) {
   return port.updateAutomationRuleRecord(
@@ -40,7 +44,8 @@ export async function updateAutomationRule(
 }
 
 export async function updateAutomationRuleStatus(
-  port: AutomationPort, id: string,
+  port: AutomationPort,
+  id: string,
   status: AutomationRuleStatus,
 ) {
   return port.updateAutomationRuleStatusRecord(
@@ -58,7 +63,8 @@ export async function listNotificationTemplates(port: AutomationPort) {
 }
 
 export async function createNotificationTemplate(
-  port: AutomationPort, input: NotificationTemplateInput,
+  port: AutomationPort,
+  input: NotificationTemplateInput,
 ) {
   return port.createNotificationTemplateRecord(
     validateNotificationTemplateInput(input),
@@ -66,7 +72,8 @@ export async function createNotificationTemplate(
 }
 
 export async function updateNotificationTemplate(
-  port: AutomationPort, id: string,
+  port: AutomationPort,
+  id: string,
   input: NotificationTemplateInput,
 ) {
   return port.updateNotificationTemplateRecord(
@@ -75,34 +82,58 @@ export async function updateNotificationTemplate(
   );
 }
 
-export async function archiveNotificationTemplate(port: AutomationPort, id: string) {
+export async function archiveNotificationTemplate(
+  port: AutomationPort,
+  id: string,
+) {
   return port.updateNotificationTemplateStatusRecord(
     requireNonEmpty(id, "Notification template"),
     "archived",
   );
 }
 
-export async function restoreNotificationTemplate(port: AutomationPort, id: string) {
+export async function restoreNotificationTemplate(
+  port: AutomationPort,
+  id: string,
+) {
   return port.updateNotificationTemplateStatusRecord(
     requireNonEmpty(id, "Notification template"),
     "active",
   );
 }
 
-export async function createNotificationEvent(port: AutomationPort, input: NotificationEventInput) {
-  return port.createNotificationEventRecord(validateNotificationEventInput(input));
+export async function createNotificationEvent(
+  port: AutomationPort,
+  input: NotificationEventInput,
+) {
+  return port.createNotificationEventRecord(
+    validateNotificationEventInput(input),
+  );
 }
 
-export async function markNotificationEventHandled(port: AutomationPort, id: string) {
-  return port.markNotificationEventHandledRecord(validateNotificationEventId(id));
+export async function markNotificationEventHandled(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.markNotificationEventHandledRecord(
+    validateNotificationEventId(id),
+  );
 }
 
-export async function dismissNotificationEvent(port: AutomationPort, id: string) {
+export async function dismissNotificationEvent(
+  port: AutomationPort,
+  id: string,
+) {
   return port.dismissNotificationEventRecord(validateNotificationEventId(id));
 }
 
-export async function sendNotificationEventDelivery(port: AutomationPort, id: string) {
-  return port.sendNotificationEventDeliveryRecord(validateNotificationEventId(id));
+export async function sendNotificationEventDelivery(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.sendNotificationEventDeliveryRecord(
+    validateNotificationEventId(id),
+  );
 }
 
 export async function getNotificationProviderStatus(port: AutomationPort) {
@@ -110,7 +141,8 @@ export async function getNotificationProviderStatus(port: AutomationPort) {
 }
 
 export async function sendNotificationEventDeliveries(
-  port: AutomationPort, ids: string[],
+  port: AutomationPort,
+  ids: string[],
 ): Promise<NotificationBulkDeliveryResult> {
   const normalizedIds = ids.map((id) => validateNotificationEventId(id));
 
@@ -142,7 +174,8 @@ export async function runAutomationSchedulerForClient(
   let skippedDuplicates = 0;
 
   for (const notification of plan.notifications) {
-    const event = await port.createGeneratedNotificationEventRecord(notification);
+    const event =
+      await port.createGeneratedNotificationEventRecord(notification);
 
     if (event) {
       created += 1;

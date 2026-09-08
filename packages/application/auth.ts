@@ -27,7 +27,9 @@ export function validateTechnicianAccess<TSession>(
   return record;
 }
 
-export async function getCurrentTechnicianAuth<TSession>(port: AuthPort<TSession>) {
+export async function getCurrentTechnicianAuth<TSession>(
+  port: AuthPort<TSession>,
+) {
   return validateTechnicianAccess(await port.getCurrentAuthRecord());
 }
 

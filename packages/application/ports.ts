@@ -124,11 +124,13 @@ export interface NotificationBulkDeliveryRecordResult {
   sent_count: number;
 }
 
-
 export interface AuthPort<TSession = unknown> {
   getCurrentAuthRecord(): Promise<AuthRecord<TSession> | null>;
   resetPasswordForEmailRecord(email: string, redirectTo: string): Promise<void>;
-  setPasswordRecoverySessionRecord(accessToken: string, refreshToken: string): Promise<TSession>;
+  setPasswordRecoverySessionRecord(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<TSession>;
   signInWithPasswordRecord(
     email: string,
     password: string,
@@ -138,10 +140,18 @@ export interface AuthPort<TSession = unknown> {
 }
 
 export interface AutomationPort {
-  createAutomationRuleRecord(input: AutomationRuleInput): Promise<AutomationRule>;
-  createGeneratedNotificationEventRecord(input: NotificationEventInput): Promise<NotificationEvent | null>;
-  createNotificationEventRecord(input: NotificationEventInput): Promise<NotificationEvent>;
-  createNotificationTemplateRecord(input: NotificationTemplateInput): Promise<NotificationTemplate>;
+  createAutomationRuleRecord(
+    input: AutomationRuleInput,
+  ): Promise<AutomationRule>;
+  createGeneratedNotificationEventRecord(
+    input: NotificationEventInput,
+  ): Promise<NotificationEvent | null>;
+  createNotificationEventRecord(
+    input: NotificationEventInput,
+  ): Promise<NotificationEvent>;
+  createNotificationTemplateRecord(
+    input: NotificationTemplateInput,
+  ): Promise<NotificationTemplate>;
   dismissNotificationEventRecord(id: string): Promise<NotificationEvent>;
   getNotificationProviderStatusRecord(): Promise<NotificationProviderStatus>;
   listAutomationRuleRecords(): Promise<AutomationRule[]>;
@@ -151,34 +161,71 @@ export interface AutomationPort {
   listNotificationTemplateRecords(): Promise<NotificationTemplate[]>;
   markNotificationEventHandledRecord(id: string): Promise<NotificationEvent>;
   runAutomationSchedulerManualRecord(): Promise<AutomationSchedulerManualRun>;
-  sendNotificationEventDeliveriesRecord(ids: string[]): Promise<NotificationBulkDeliveryRecordResult>;
+  sendNotificationEventDeliveriesRecord(
+    ids: string[],
+  ): Promise<NotificationBulkDeliveryRecordResult>;
   sendNotificationEventDeliveryRecord(id: string): Promise<NotificationEvent>;
-  updateAutomationRuleRecord(id: string, input: AutomationRuleInput): Promise<AutomationRule>;
-  updateAutomationRuleStatusRecord(id: string, status: AutomationRuleStatus): Promise<AutomationRule>;
-  updateNotificationTemplateRecord(id: string, input: NotificationTemplateInput): Promise<NotificationTemplate>;
-  updateNotificationTemplateStatusRecord(id: string, status: NotificationTemplateStatus): Promise<NotificationTemplate>;
+  updateAutomationRuleRecord(
+    id: string,
+    input: AutomationRuleInput,
+  ): Promise<AutomationRule>;
+  updateAutomationRuleStatusRecord(
+    id: string,
+    status: AutomationRuleStatus,
+  ): Promise<AutomationRule>;
+  updateNotificationTemplateRecord(
+    id: string,
+    input: NotificationTemplateInput,
+  ): Promise<NotificationTemplate>;
+  updateNotificationTemplateStatusRecord(
+    id: string,
+    status: NotificationTemplateStatus,
+  ): Promise<NotificationTemplate>;
 }
 
 export interface CloseoutsPort {
-  createCustomerPortalAccessTokenRecord(input: CustomerPortalAccessInput): Promise<CustomerPortalAccessGrant>;
+  createCustomerPortalAccessTokenRecord(
+    input: CustomerPortalAccessInput,
+  ): Promise<CustomerPortalAccessGrant>;
   getCustomerPortalProviderStatusRecord(): Promise<CustomerPortalProviderStatus>;
-  listCloseoutCaptureSummaryRecords(jobIds: string[]): Promise<CloseoutCaptureSummary[]>;
-  listCustomerPortalAccessTokenEventRecords(id: string): Promise<CustomerPortalAccessTokenEventListResponse>;
-  listCustomerPortalAccessTokenRecords(customerId: string): Promise<CustomerPortalAccessTokenSummary[]>;
-  listCustomerPortalBillingRecords(customerId: string): Promise<CustomerPortalInvoice[]>;
-  listCustomerPortalCloseoutRecords(customerId: string): Promise<CustomerPortalCloseout[]>;
-  requestCustomerPortalUpgradeIntentRecord(customerId: string, input: CustomerPortalUpgradeIntentInput): Promise<CustomerPortalUpgradeIntentResult>;
-  revokeCustomerPortalAccessTokenRecord(id: string): Promise<CustomerPortalAccessTokenSummary>;
-  sendCustomerPortalAccessTokenRecord(input: CustomerPortalSendInput): Promise<CustomerPortalSendResult>;
+  listCloseoutCaptureSummaryRecords(
+    jobIds: string[],
+  ): Promise<CloseoutCaptureSummary[]>;
+  listCustomerPortalAccessTokenEventRecords(
+    id: string,
+  ): Promise<CustomerPortalAccessTokenEventListResponse>;
+  listCustomerPortalAccessTokenRecords(
+    customerId: string,
+  ): Promise<CustomerPortalAccessTokenSummary[]>;
+  listCustomerPortalBillingRecords(
+    customerId: string,
+  ): Promise<CustomerPortalInvoice[]>;
+  listCustomerPortalCloseoutRecords(
+    customerId: string,
+  ): Promise<CustomerPortalCloseout[]>;
+  requestCustomerPortalUpgradeIntentRecord(
+    customerId: string,
+    input: CustomerPortalUpgradeIntentInput,
+  ): Promise<CustomerPortalUpgradeIntentResult>;
+  revokeCustomerPortalAccessTokenRecord(
+    id: string,
+  ): Promise<CustomerPortalAccessTokenSummary>;
+  sendCustomerPortalAccessTokenRecord(
+    input: CustomerPortalSendInput,
+  ): Promise<CustomerPortalSendResult>;
 }
 
 export interface CompliancePort {
-  createComplianceAdvisoryAuditRecord(input: ComplianceAdvisoryAuditInput): Promise<ComplianceAdvisoryAudit>;
+  createComplianceAdvisoryAuditRecord(
+    input: ComplianceAdvisoryAuditInput,
+  ): Promise<ComplianceAdvisoryAudit>;
   listComplianceAdvisoryAuditRecords(): Promise<ComplianceAdvisoryAudit[]>;
   listComplianceChunkRecords(): Promise<ComplianceChunk[]>;
   listComplianceDocumentRecords(): Promise<ComplianceDocument[]>;
   listComplianceSourceRecords(): Promise<ComplianceSource[]>;
-  searchComplianceChunkRecords(input: ComplianceChunkSearchInput): Promise<ComplianceChunk[]>;
+  searchComplianceChunkRecords(
+    input: ComplianceChunkSearchInput,
+  ): Promise<ComplianceChunk[]>;
 }
 
 export interface CustomersPort {
@@ -189,9 +236,13 @@ export interface CustomersPort {
 }
 
 export interface FormsPort {
-  createJobFormSubmissionRecord(input: JobFormSubmissionInput): Promise<JobFormSubmission>;
+  createJobFormSubmissionRecord(
+    input: JobFormSubmissionInput,
+  ): Promise<JobFormSubmission>;
   listActiveFormTemplateRecords(): Promise<FormTemplate[]>;
-  listCustomerPortalFormSubmissionRecords(customerId: string): Promise<CustomerPortalFormSubmission[]>;
+  listCustomerPortalFormSubmissionRecords(
+    customerId: string,
+  ): Promise<CustomerPortalFormSubmission[]>;
   listJobFormSubmissionRecords(jobId: string): Promise<JobFormSubmission[]>;
 }
 
@@ -201,26 +252,37 @@ export interface GeofencingPort {
 
 export interface InventoryPort {
   archiveChemicalInventoryRecord(id: string): Promise<ChemicalInventoryItem>;
-  createChemicalInventoryRecord(input: ChemicalInventoryInput): Promise<ChemicalInventoryItem>;
+  createChemicalInventoryRecord(
+    input: ChemicalInventoryInput,
+  ): Promise<ChemicalInventoryItem>;
   createChemicalLogRecord(input: ChemicalLogInput): Promise<ChemicalLog>;
   listChemicalInventoryRecords(): Promise<ChemicalInventoryItem[]>;
   listChemicalLogRecords(): Promise<ChemicalLog[]>;
   listJobChemicalLogRecords(jobId: string): Promise<ChemicalLog[]>;
-  updateChemicalInventoryRecord(id: string, input: ChemicalInventoryInput): Promise<ChemicalInventoryItem>;
+  updateChemicalInventoryRecord(
+    id: string,
+    input: ChemicalInventoryInput,
+  ): Promise<ChemicalInventoryItem>;
 }
 
 export interface JobsPort {
   cancelJobRecord(id: string): Promise<Job>;
   createJobRecord(input: JobInput): Promise<Job>;
   listAssignedTechnicianJobRecords(): Promise<Job[]>;
-  listCustomerPortalJobRecords(customerId: string): Promise<CustomerPortalJob[]>;
+  listCustomerPortalJobRecords(
+    customerId: string,
+  ): Promise<CustomerPortalJob[]>;
   listJobRecords(): Promise<Job[]>;
-  listTechnicianProfileRecords(status?: TechnicianStatus | undefined): Promise<TechnicianProfile[]>;
+  listTechnicianProfileRecords(
+    status?: TechnicianStatus | undefined,
+  ): Promise<TechnicianProfile[]>;
   updateJobRecord(id: string, input: JobInput): Promise<Job>;
 }
 
 export interface MediaPort {
-  listCustomerPortalMediaRecords(customerId: string): Promise<CustomerPortalMedia[]>;
+  listCustomerPortalMediaRecords(
+    customerId: string,
+  ): Promise<CustomerPortalMedia[]>;
   listJobMediaRecords(jobId: string): Promise<JobMedia[]>;
 }
 
@@ -253,21 +315,37 @@ export interface OfflineSyncPort {
 }
 
 export interface PaymentsPort {
-  createInvoicePaymentLinkRecord(input: InvoicePaymentLinkInput): Promise<Invoice>;
+  createInvoicePaymentLinkRecord(
+    input: InvoicePaymentLinkInput,
+  ): Promise<Invoice>;
   createInvoiceRecord(input: InvoiceInput): Promise<Invoice>;
   getStripePaymentProviderStatusRecord(): Promise<StripePaymentProviderStatus>;
   listInvoiceRecords(): Promise<Invoice[]>;
-  updateInvoiceStatusRecord(id: string, status: InvoiceStatus): Promise<Invoice>;
+  updateInvoiceStatusRecord(
+    id: string,
+    status: InvoiceStatus,
+  ): Promise<Invoice>;
 }
 
 export interface TechnicianLicensesPort {
   archiveTechnicianLicenseRecord(id: string): Promise<TechnicianLicense>;
-  createTechnicianLicenseRecord(input: TechnicianLicenseInput): Promise<TechnicianLicense>;
-  listTechnicianLicenseRecords(technicianId?: string | undefined): Promise<TechnicianLicense[]>;
-  updateTechnicianLicenseRecord(id: string, input: TechnicianLicenseInput): Promise<TechnicianLicense>;
+  createTechnicianLicenseRecord(
+    input: TechnicianLicenseInput,
+  ): Promise<TechnicianLicense>;
+  listTechnicianLicenseRecords(
+    technicianId?: string | undefined,
+  ): Promise<TechnicianLicense[]>;
+  updateTechnicianLicenseRecord(
+    id: string,
+    input: TechnicianLicenseInput,
+  ): Promise<TechnicianLicense>;
 }
 
 export interface TechniciansPort {
-  inviteTechnicianRecord(input: TechnicianInviteInput): Promise<TechnicianInviteResult>;
-  listTechnicianProfileRecords(status?: TechnicianStatus | undefined): Promise<TechnicianProfile[]>;
+  inviteTechnicianRecord(
+    input: TechnicianInviteInput,
+  ): Promise<TechnicianInviteResult>;
+  listTechnicianProfileRecords(
+    status?: TechnicianStatus | undefined,
+  ): Promise<TechnicianProfile[]>;
 }

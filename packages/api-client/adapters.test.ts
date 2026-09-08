@@ -82,7 +82,10 @@ describe("auth adapter mapping", () => {
     });
 
     await expect(
-      createAuthAdapter(client).resetPasswordForEmailRecord("a@b.c", "https://x"),
+      createAuthAdapter(client).resetPasswordForEmailRecord(
+        "a@b.c",
+        "https://x",
+      ),
     ).rejects.toThrow("provider unavailable");
   });
 
@@ -101,7 +104,9 @@ describe("auth adapter mapping", () => {
     await port.setPasswordRecoverySessionRecord("access", "refresh");
 
     expect(calls.setSession).toHaveBeenCalledTimes(2);
-    expect(calls.setSession.mock.calls[0]).toEqual(calls.setSession.mock.calls[1]);
+    expect(calls.setSession.mock.calls[0]).toEqual(
+      calls.setSession.mock.calls[1],
+    );
   });
 });
 

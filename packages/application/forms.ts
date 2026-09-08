@@ -13,14 +13,18 @@ export async function listJobFormSubmissions(port: FormsPort, jobId: string) {
   return port.listJobFormSubmissionRecords(requireNonEmpty(jobId, "Job"));
 }
 
-export async function listCustomerPortalFormSubmissions(port: FormsPort, customerId: string) {
+export async function listCustomerPortalFormSubmissions(
+  port: FormsPort,
+  customerId: string,
+) {
   return port.listCustomerPortalFormSubmissionRecords(
     requireNonEmpty(customerId, "Customer"),
   );
 }
 
 export async function createJobFormSubmission(
-  port: FormsPort, input: JobFormSubmissionInput,
+  port: FormsPort,
+  input: JobFormSubmissionInput,
   template: FormTemplate,
 ) {
   return port.createJobFormSubmissionRecord(

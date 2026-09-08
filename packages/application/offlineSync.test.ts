@@ -187,9 +187,9 @@ function createStubPort() {
 let port: ReturnType<typeof createStubPort>;
 
 // The stub is structurally a port; this line fails to compile if it drifts.
-const _portShapeCheck: (p: ReturnType<typeof createStubPort>) => OfflineSyncPort = (
-  p,
-) => p;
+const _portShapeCheck: (
+  p: ReturnType<typeof createStubPort>,
+) => OfflineSyncPort = (p) => p;
 void _portShapeCheck;
 
 beforeEach(() => {
@@ -204,13 +204,11 @@ describe("offline sync use cases", () => {
       now,
     });
 
-    expect(port.createJobFormSubmissionRecord).toHaveBeenCalledWith(
-      {
-        job_id: "job-1",
-        template_id: "template-1",
-        form_data: { target_pests: "Ants" },
-      },
-    );
+    expect(port.createJobFormSubmissionRecord).toHaveBeenCalledWith({
+      job_id: "job-1",
+      template_id: "template-1",
+      form_data: { target_pests: "Ants" },
+    });
     expect(item.status).toBe("synced");
     expect(item.last_error).toBeNull();
   });
@@ -256,9 +254,13 @@ describe("offline sync use cases", () => {
       {} as never,
     );
 
-    const item = await processJobStatusUpdateQueueItem(port, statusQueueItem(), {
-      now,
-    });
+    const item = await processJobStatusUpdateQueueItem(
+      port,
+      statusQueueItem(),
+      {
+        now,
+      },
+    );
 
     expect(port.updateAssignedTechnicianJobStatusRecord).toHaveBeenCalledWith(
       "job-1",
@@ -273,10 +275,14 @@ describe("offline sync use cases", () => {
       new Error("Network unavailable"),
     );
 
-    const item = await processJobStatusUpdateQueueItem(port, statusQueueItem(), {
-      now,
-      retryDelayMs: 60_000,
-    });
+    const item = await processJobStatusUpdateQueueItem(
+      port,
+      statusQueueItem(),
+      {
+        now,
+        retryDelayMs: 60_000,
+      },
+    );
 
     expect(item).toMatchObject({
       attempts: 1,
@@ -293,14 +299,12 @@ describe("offline sync use cases", () => {
       now,
     });
 
-    expect(port.createChemicalLogRecord).toHaveBeenCalledWith(
-      {
-        job_id: "job-1",
-        chemical_id: "chemical-1",
-        amount_used: 1.5,
-        notes: "Kitchen baseboards",
-      },
-    );
+    expect(port.createChemicalLogRecord).toHaveBeenCalledWith({
+      job_id: "job-1",
+      chemical_id: "chemical-1",
+      amount_used: 1.5,
+      notes: "Kitchen baseboards",
+    });
     expect(item.status).toBe("synced");
   });
 
@@ -329,18 +333,16 @@ describe("offline sync use cases", () => {
       now,
     });
 
-    expect(port.uploadJobPhotoRecord).toHaveBeenCalledWith(
-      {
-        job_id: "job-1",
-        local_uri: "file:///photo.jpg",
-        file_name: "photo.jpg",
-        content_type: "image/jpeg",
-        storage_bucket: "job-media",
-        storage_path: "job-1/photo.jpg",
-        description: "Kitchen",
-        captured_at: now,
-      },
-    );
+    expect(port.uploadJobPhotoRecord).toHaveBeenCalledWith({
+      job_id: "job-1",
+      local_uri: "file:///photo.jpg",
+      file_name: "photo.jpg",
+      content_type: "image/jpeg",
+      storage_bucket: "job-media",
+      storage_path: "job-1/photo.jpg",
+      description: "Kitchen",
+      captured_at: now,
+    });
     expect(item.status).toBe("synced");
     expect(item.payload).toEqual({
       job_id: "job-1",
@@ -354,9 +356,7 @@ describe("offline sync use cases", () => {
   });
 
   it("retries temporary photo upload sync failures", async () => {
-    port.uploadJobPhotoRecord.mockRejectedValueOnce(
-      new Error("Upload failed"),
-    );
+    port.uploadJobPhotoRecord.mockRejectedValueOnce(new Error("Upload failed"));
 
     const item = await processPhotoUploadQueueItem(port, photoQueueItem(), {
       now,
@@ -375,22 +375,24 @@ describe("offline sync use cases", () => {
   it("syncs signature captures with the authenticated client", async () => {
     port.uploadJobSignatureRecord.mockResolvedValueOnce({} as never);
 
-    const item = await processSignatureCaptureQueueItem(port, signatureQueueItem(), {
-      now,
-    });
-
-    expect(port.uploadJobSignatureRecord).toHaveBeenCalledWith(
+    const item = await processSignatureCaptureQueueItem(
+      port,
+      signatureQueueItem(),
       {
-        job_id: "job-1",
-        local_uri: "data:image/png;base64,signature",
-        file_name: "signature.png",
-        content_type: "image/png",
-        storage_bucket: "job-media",
-        storage_path: "job-1/signature.png",
-        signer_name: "Jamie Customer",
-        captured_at: now,
+        now,
       },
     );
+
+    expect(port.uploadJobSignatureRecord).toHaveBeenCalledWith({
+      job_id: "job-1",
+      local_uri: "data:image/png;base64,signature",
+      file_name: "signature.png",
+      content_type: "image/png",
+      storage_bucket: "job-media",
+      storage_path: "job-1/signature.png",
+      signer_name: "Jamie Customer",
+      captured_at: now,
+    });
     expect(item.status).toBe("synced");
     expect(item.payload).toEqual({
       job_id: "job-1",
@@ -408,10 +410,14 @@ describe("offline sync use cases", () => {
       new Error("Signature upload failed"),
     );
 
-    const item = await processSignatureCaptureQueueItem(port, signatureQueueItem(), {
-      now,
-      retryDelayMs: 90_000,
-    });
+    const item = await processSignatureCaptureQueueItem(
+      port,
+      signatureQueueItem(),
+      {
+        now,
+        retryDelayMs: 90_000,
+      },
+    );
 
     expect(item).toMatchObject({
       attempts: 1,
@@ -427,23 +433,25 @@ describe("offline sync use cases", () => {
   it("syncs geofence events with the authenticated client", async () => {
     port.createJobGeofenceEventRecord.mockResolvedValueOnce({} as never);
 
-    const item = await processGeofenceEventQueueItem(port, geofenceQueueItem(), {
-      now,
-    });
-
-    expect(port.createJobGeofenceEventRecord).toHaveBeenCalledWith(
+    const item = await processGeofenceEventQueueItem(
+      port,
+      geofenceQueueItem(),
       {
-        job_id: "job-1",
-        event_type: "arrival",
-        latitude: 33.8121,
-        longitude: -117.919,
-        accuracy_m: 12,
-        distance_m: 80,
-        within_radius: true,
-        client_event_id: "00000000-0000-4000-8000-000000000201",
-        captured_at: now,
+        now,
       },
     );
+
+    expect(port.createJobGeofenceEventRecord).toHaveBeenCalledWith({
+      job_id: "job-1",
+      event_type: "arrival",
+      latitude: 33.8121,
+      longitude: -117.919,
+      accuracy_m: 12,
+      distance_m: 80,
+      within_radius: true,
+      client_event_id: "00000000-0000-4000-8000-000000000201",
+      captured_at: now,
+    });
     expect(item.status).toBe("synced");
   });
 
@@ -482,7 +490,9 @@ describe("offline sync use cases", () => {
         {} as never,
       );
 
-      const item = await processArrivalNotificationQueueItem(port, arrivalQueueItem(decision),
+      const item = await processArrivalNotificationQueueItem(
+        port,
+        arrivalQueueItem(decision),
         {
           now,
         },
@@ -510,10 +520,14 @@ describe("offline sync use cases", () => {
       new Error("Location event failed"),
     );
 
-    const item = await processGeofenceEventQueueItem(port, geofenceQueueItem(), {
-      now,
-      retryDelayMs: 90_000,
-    });
+    const item = await processGeofenceEventQueueItem(
+      port,
+      geofenceQueueItem(),
+      {
+        now,
+        retryDelayMs: 90_000,
+      },
+    );
 
     expect(item).toMatchObject({
       attempts: 1,
@@ -534,33 +548,44 @@ describe("offline sync use cases", () => {
       status: "retrying" as const,
     };
 
-    expect(hasReadyFormSubmissionQueueItems([syncedSignature, retrying], now)).toBe(
-      false,
-    );
-    expect(hasReadyJobStatusUpdateQueueItems([statusQueueItem()], now)).toBe(true);
-    expect(hasReadyChemicalLogQueueItems([chemicalQueueItem()], now)).toBe(true);
-    expect(hasReadyPhotoUploadQueueItems([photoQueueItem()], now)).toBe(true);
-    expect(hasReadySignatureCaptureQueueItems([signatureQueueItem()], now)).toBe(
+    expect(
+      hasReadyFormSubmissionQueueItems([syncedSignature, retrying], now),
+    ).toBe(false);
+    expect(hasReadyJobStatusUpdateQueueItems([statusQueueItem()], now)).toBe(
       true,
     );
-    expect(hasReadyGeofenceEventQueueItems([geofenceQueueItem()], now)).toBe(true);
+    expect(hasReadyChemicalLogQueueItems([chemicalQueueItem()], now)).toBe(
+      true,
+    );
+    expect(hasReadyPhotoUploadQueueItems([photoQueueItem()], now)).toBe(true);
+    expect(
+      hasReadySignatureCaptureQueueItems([signatureQueueItem()], now),
+    ).toBe(true);
+    expect(hasReadyGeofenceEventQueueItems([geofenceQueueItem()], now)).toBe(
+      true,
+    );
     expect(
       hasReadyArrivalNotificationQueueItems([arrivalQueueItem()], now),
     ).toBe(true);
     expect(
-      hasReadyOfflineQueueItems([
-        syncedSignature,
-        retrying,
-        statusQueueItem(),
-        chemicalQueueItem(),
-        photoQueueItem(),
-        signatureQueueItem(),
-        geofenceQueueItem(),
-        arrivalQueueItem(),
-      ], now),
+      hasReadyOfflineQueueItems(
+        [
+          syncedSignature,
+          retrying,
+          statusQueueItem(),
+          chemicalQueueItem(),
+          photoQueueItem(),
+          signatureQueueItem(),
+          geofenceQueueItem(),
+          arrivalQueueItem(),
+        ],
+        now,
+      ),
     ).toBe(true);
 
-    const result = await processFormSubmissionQueueItems(port, [syncedSignature, retrying],
+    const result = await processFormSubmissionQueueItems(
+      port,
+      [syncedSignature, retrying],
       {
         now,
       },

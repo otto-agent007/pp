@@ -47,7 +47,8 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unable to sync queue item";
 }
 
-export async function processFormSubmissionQueueItem(port: OfflineSyncPort, 
+export async function processFormSubmissionQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -90,7 +91,8 @@ export async function processFormSubmissionQueueItem(port: OfflineSyncPort,
   }
 }
 
-export async function processJobStatusUpdateQueueItem(port: OfflineSyncPort, 
+export async function processJobStatusUpdateQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -137,7 +139,8 @@ export async function processJobStatusUpdateQueueItem(port: OfflineSyncPort,
   }
 }
 
-export async function processChemicalLogQueueItem(port: OfflineSyncPort, 
+export async function processChemicalLogQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -180,7 +183,8 @@ export async function processChemicalLogQueueItem(port: OfflineSyncPort,
   }
 }
 
-export async function processPhotoUploadQueueItem(port: OfflineSyncPort, 
+export async function processPhotoUploadQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -223,7 +227,8 @@ export async function processPhotoUploadQueueItem(port: OfflineSyncPort,
   }
 }
 
-export async function processSignatureCaptureQueueItem(port: OfflineSyncPort, 
+export async function processSignatureCaptureQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -266,7 +271,8 @@ export async function processSignatureCaptureQueueItem(port: OfflineSyncPort,
   }
 }
 
-export async function processGeofenceEventQueueItem(port: OfflineSyncPort, 
+export async function processGeofenceEventQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -326,9 +332,7 @@ function buildArrivalNotificationInput(
 
   const isSkipped = payload.decision === "skip";
   const template = getCustomerSafeNotificationTemplate(
-    payload.decision === "delay_5_min"
-      ? "arrival_delayed"
-      : "arrival_send_now",
+    payload.decision === "delay_5_min" ? "arrival_delayed" : "arrival_send_now",
   );
 
   return {
@@ -349,7 +353,8 @@ function buildArrivalNotificationInput(
   };
 }
 
-export async function processArrivalNotificationQueueItem(port: OfflineSyncPort, 
+export async function processArrivalNotificationQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -394,7 +399,8 @@ export async function processArrivalNotificationQueueItem(port: OfflineSyncPort,
   }
 }
 
-export async function processOfflineQueueItem(port: OfflineSyncPort, 
+export async function processOfflineQueueItem(
+  port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
@@ -429,7 +435,8 @@ export async function processOfflineQueueItem(port: OfflineSyncPort,
   return item;
 }
 
-export async function processOfflineQueueItems(port: OfflineSyncPort, 
+export async function processOfflineQueueItems(
+  port: OfflineSyncPort,
   items: OfflineQueueItem[],
   options: QueueProcessOptions,
 ): Promise<QueueProcessResult> {
@@ -468,7 +475,8 @@ export async function processOfflineQueueItems(port: OfflineSyncPort,
   };
 }
 
-export async function processFormSubmissionQueueItems(port: OfflineSyncPort, 
+export async function processFormSubmissionQueueItems(
+  port: OfflineSyncPort,
   items: OfflineQueueItem[],
   options: QueueProcessOptions,
 ) {

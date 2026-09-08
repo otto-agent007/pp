@@ -7,12 +7,17 @@ import {
   validateJobInput,
 } from "@pest-patrol/domain";
 
-export async function changeJobStatus(port: JobsPort, job: Job, status: JobStatus) {
+export async function changeJobStatus(
+  port: JobsPort,
+  job: Job,
+  status: JobStatus,
+) {
   return port.updateJobRecord(job.id, jobToInput(job, { status }));
 }
 
 export async function assignJobTechnician(
-  port: JobsPort, job: Job,
+  port: JobsPort,
+  job: Job,
   assignedTechId?: string | null,
 ) {
   return port.updateJobRecord(
@@ -29,8 +34,13 @@ export async function listAssignedTechnicianJobs(port: JobsPort) {
   return port.listAssignedTechnicianJobRecords();
 }
 
-export async function listCustomerPortalJobs(port: JobsPort, customerId: string) {
-  return port.listCustomerPortalJobRecords(requireNonEmpty(customerId, "Customer"));
+export async function listCustomerPortalJobs(
+  port: JobsPort,
+  customerId: string,
+) {
+  return port.listCustomerPortalJobRecords(
+    requireNonEmpty(customerId, "Customer"),
+  );
 }
 
 export async function createJob(port: JobsPort, input: JobInput) {

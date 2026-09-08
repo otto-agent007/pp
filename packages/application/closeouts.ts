@@ -19,19 +19,24 @@ export async function getCustomerPortalProviderStatus(port: CloseoutsPort) {
 }
 
 export async function listCustomerPortalCloseouts(
-  port: CloseoutsPort, customerId: string,
+  port: CloseoutsPort,
+  customerId: string,
 ) {
   return port.listCustomerPortalCloseoutRecords(
     validateCustomerPortalCustomerId(customerId),
   );
 }
 
-export async function listCloseoutCaptureSummaries(port: CloseoutsPort, jobIds: string[]) {
+export async function listCloseoutCaptureSummaries(
+  port: CloseoutsPort,
+  jobIds: string[],
+) {
   return port.listCloseoutCaptureSummaryRecords(jobIds);
 }
 
 export async function listCustomerPortalBilling(
-  port: CloseoutsPort, customerId: string,
+  port: CloseoutsPort,
+  customerId: string,
 ) {
   return port.listCustomerPortalBillingRecords(
     validateCustomerPortalCustomerId(customerId),
@@ -39,7 +44,8 @@ export async function listCustomerPortalBilling(
 }
 
 export async function requestCustomerPortalUpgradeIntent(
-  port: CloseoutsPort, customerId: string,
+  port: CloseoutsPort,
+  customerId: string,
   input: CustomerPortalUpgradeIntentInput,
 ): Promise<CustomerPortalUpgradeIntentResult> {
   return port.requestCustomerPortalUpgradeIntentRecord(
@@ -48,34 +54,45 @@ export async function requestCustomerPortalUpgradeIntent(
   );
 }
 
-export async function listCustomerPortalAccessTokens(port: CloseoutsPort, customerId: string) {
+export async function listCustomerPortalAccessTokens(
+  port: CloseoutsPort,
+  customerId: string,
+) {
   return port.listCustomerPortalAccessTokenRecords(
     validateCustomerPortalCustomerId(customerId),
   );
 }
 
-export async function listCustomerPortalAccessTokenEvents(port: CloseoutsPort, id: string) {
+export async function listCustomerPortalAccessTokenEvents(
+  port: CloseoutsPort,
+  id: string,
+) {
   return port.listCustomerPortalAccessTokenEventRecords(
     validateCustomerPortalAccessTokenId(id),
   );
 }
 
 export async function createCustomerPortalAccessToken(
-  port: CloseoutsPort, input: CustomerPortalAccessInput,
+  port: CloseoutsPort,
+  input: CustomerPortalAccessInput,
 ) {
   return port.createCustomerPortalAccessTokenRecord(
     validateCustomerPortalAccessInput(input),
   );
 }
 
-export async function revokeCustomerPortalAccessToken(port: CloseoutsPort, id: string) {
+export async function revokeCustomerPortalAccessToken(
+  port: CloseoutsPort,
+  id: string,
+) {
   return port.revokeCustomerPortalAccessTokenRecord(
     validateCustomerPortalAccessTokenId(id),
   );
 }
 
 export async function sendCustomerPortalAccessToken(
-  port: CloseoutsPort, input: CustomerPortalSendInput,
+  port: CloseoutsPort,
+  input: CustomerPortalSendInput,
 ) {
   return port.sendCustomerPortalAccessTokenRecord(
     validateCustomerPortalSendInput(input),

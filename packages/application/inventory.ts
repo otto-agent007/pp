@@ -17,15 +17,30 @@ export async function listChemicalInventoryForClient(port: InventoryPort) {
   return port.listChemicalInventoryRecords();
 }
 
-export async function createChemicalInventory(port: InventoryPort, input: ChemicalInventoryInput) {
-  return port.createChemicalInventoryRecord(validateChemicalInventoryInput(input));
+export async function createChemicalInventory(
+  port: InventoryPort,
+  input: ChemicalInventoryInput,
+) {
+  return port.createChemicalInventoryRecord(
+    validateChemicalInventoryInput(input),
+  );
 }
 
-export async function updateChemicalInventory(port: InventoryPort, id: string, input: ChemicalInventoryInput) {
-  return port.updateChemicalInventoryRecord(id, validateChemicalInventoryInput(input));
+export async function updateChemicalInventory(
+  port: InventoryPort,
+  id: string,
+  input: ChemicalInventoryInput,
+) {
+  return port.updateChemicalInventoryRecord(
+    id,
+    validateChemicalInventoryInput(input),
+  );
 }
 
-export async function archiveChemicalInventory(port: InventoryPort, id: string) {
+export async function archiveChemicalInventory(
+  port: InventoryPort,
+  id: string,
+) {
   return port.archiveChemicalInventoryRecord(id);
 }
 
@@ -48,7 +63,10 @@ export async function listJobChemicalLogsForClient(
   return port.listJobChemicalLogRecords(requireNonEmpty(jobId, "Job"));
 }
 
-export async function createChemicalLog(port: InventoryPort, input: ChemicalLogInput) {
+export async function createChemicalLog(
+  port: InventoryPort,
+  input: ChemicalLogInput,
+) {
   return port.createChemicalLogRecord(validateChemicalLogInput(input));
 }
 

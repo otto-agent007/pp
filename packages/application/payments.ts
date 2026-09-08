@@ -22,7 +22,10 @@ export async function voidInvoice(port: PaymentsPort, id: string) {
   return port.updateInvoiceStatusRecord(requireNonEmpty(id, "Invoice"), "void");
 }
 
-export async function createInvoicePaymentLink(port: PaymentsPort, invoice: Invoice) {
+export async function createInvoicePaymentLink(
+  port: PaymentsPort,
+  invoice: Invoice,
+) {
   if (!invoice.line_items || invoice.line_items.length === 0) {
     throw new Error("Invoice line items are required");
   }
