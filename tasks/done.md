@@ -1,5 +1,67 @@
 # Done
 
+## CR14 Expo SDK 55 migration
+
+- Base `8322fd1cc55587db3e33e2297c216d88729e4df2`, branch
+  `codex/rebuild-cr14-expo-55-v1`, plan
+  `docs/superpowers/plans/2026-09-07-controlled-rebuild-cr14-expo-55.md`.
+- Frozen target Expo SDK `55.0.31`.
+- **The version numbers overstated the hop.** SDK 55 renumbers every Expo
+  package so its major matches the SDK: `expo-router` 6 to 55, `expo-constants`
+  18 to 55, `expo-location` 19 to 55, `expo-image-picker` 17 to 55,
+  `expo-linking` 8 to 55, `expo-secure-store` 15 to 55. Checked against the
+  registry rather than assumed — none published any intermediate major, so
+  `expo-router@6.0.24` is followed directly by `expo-router@55.0.0`.
+- React Native moved 0.81.5 to 0.83.10. Expo pairs SDK 55 with 0.83 directly,
+  so 0.82 was skipped and two React Native minors landed in one slice.
+- The repo-wide React pin moved to 19.2.0, which `react-native@0.83.10`
+  requires. `next@16.3.4` peers on `^19.0.0`, so `apps/web` absorbed it and the
+  lockfile still resolved a single `react@19.2.0`.
+- One real config break: SDK 55 removes `newArchEnabled` from the app config
+  schema because the new architecture is now unconditional, and expo-doctor
+  rejects it as an unknown property rather than ignoring it. Removed from
+  `app.json`; nothing changed at runtime, since the app already set it to the
+  only value SDK 55 offers. Doctor went to 20/20.
+- Two accepted-risk audit advisories were dropped from `ignoreGhsas`. Under SDK
+  55's tree only `GHSA-vcc3-ghjq-m6fr` still resolved, verified by re-running
+  `pnpm audit` with the ignore list stripped. A stale ignore silently
+  suppresses the advisory if a later dependency reintroduces it.
+- `metro.config.js` needed no change; CR13's relocated-virtual-store fix still
+  held.
+- Merged as PR [#179](https://github.com/otto-agent007/pp/pull/179),
+  `92fb2c8d1d5b44ff0c34c4b6d09becc71752876a`, tagged `rebuild/cr14-source` at
+  its frozen head `f3994ce`; the merge commit's tree matched the tag's.
+- **First slice to merge without turning the default branch red.** PR #178's
+  reconciler change treats a merged-but-unrecorded running slice as an expected
+  window; CI logged `Running-slice checks were skipped for CR14` and stayed
+  green, so no separate reconciliation pull request was needed. This
+  reconciliation travels in CR15's first commit instead.
+- Verified with `pnpm rebuild:verify` (15/15 gates, evidence set `a2a82e82`),
+  Expo Doctor 20/20, clean no-install prebuild for both platforms, plus
+  `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`,
+  `pnpm security:baseline`, `pnpm security:audit`, and `git diff --check`.
+
+## Control-plane fixes during the platform chain
+
+- PR [#178](https://github.com/otto-agent007/pp/pull/178) stopped a merged
+  slice failing the default branch. The reconciler had treated "pull request is
+  MERGED" on a running node as indistinguishable from "closed without merging",
+  which forced a dedicated reconciliation PR after CR12 (#175) and CR13 (#177).
+  It now splits three ways: merged with the merge commit an ancestor of the
+  default branch is the expected window and skips the node's remaining
+  running-slice checks; a merge that has not landed, a merged PR with no merge
+  commit, and a PR closed unmerged all stay errors. Local fact collection had to
+  learn one extra ancestry pair, since a running node records no merge SHA of
+  its own — caught by a CLI-level test, not the unit tests.
+- PR [#180](https://github.com/otto-agent007/pp/pull/180) put `tooling/` under
+  `pnpm typecheck` and `pnpm lint` for the first time. Both gates delegate to
+  turbo, which runs per workspace project, and `tooling/` is not one — so the
+  reconciler and verifier that gate every slice were never typechecked, and
+  `tsx` strips types without checking them. Typechecking the directory found two
+  real errors, including a test that passed `env` in the wrong object and so
+  read the real `process.env` instead of an isolated one. Root `tsconfig*.json`
+  files also gained a gate mapping; they previously reported `UNMAPPED`.
+
 ## CR13 Expo SDK 54 migration
 
 - Base `b5ce59feffd664319167567d3dcdca95cf9d3b25` (CR12's reconciliation merge
