@@ -133,10 +133,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "f5e2df896fb79446e5a8f6dcb601375bfeb6e7cd",
       "id": "CR01",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR00"
@@ -144,15 +144,78 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Controlled rebuild foundation slice"
+      "ownership": [
+        "docs/DECISIONS.md",
+        "docs/PATTERNS.md",
+        "docs/architecture.md",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-08-25-controlled-rebuild-cr01-foundation.md",
+        "docs/superpowers/specs/2026-08-25-controlled-rebuild-cr01-foundation-design.md",
+        "package.json",
+        "tasks/in-progress.md",
+        "tooling/architecture-boundaries.json",
+        "tooling/architecture-boundaries.test.ts",
+        "tooling/architecture-boundaries.ts"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "deliverables": [
+        "Canonical package responsibility and dependency-direction contract",
+        "Executable manifest and TypeScript source boundary checker, wired in as pnpm architecture:check",
+        "Exact expiring debt exceptions assigned to CR05 and CR09",
+        "CR01 implementation plan, design specification, and controlled-rebuild handoff"
+      ],
+      "checks": [
+        "pnpm exec vitest run tooling/architecture-boundaries.test.ts",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the written specification before implementation (2026-08-25, carried forward from the original CR01 branch)",
+        "Controller approval to re-establish CR01 on a fresh branch off the closed platform chain rather than rebase the stale one (2026-09-08)",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved re-establishing CR01 on a fresh branch off the closed platform chain, carrying #148's content across unchanged rather than rebasing it, on 2026-09-08.",
+          "commitSha": "af43de30671dd0a0fbaed7696f9e53d07ae0711a",
+          "recordedAt": "2026-09-08T03:11:20Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The architecture boundary checker passes against the live workspace: 9 packages, 2 matched exceptions.",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "commitSha": "af43de30671dd0a0fbaed7696f9e53d07ae0711a",
+          "recordedAt": "2026-09-08T03:11:20Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The boundary checker's own suite passes 112/112.",
+          "command": "pnpm exec vitest run tooling/architecture-boundaries.test.ts",
+          "exitCode": 0,
+          "commitSha": "af43de30671dd0a0fbaed7696f9e53d07ae0711a",
+          "recordedAt": "2026-09-08T03:11:20Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #184 opened for CR01, replacing the stale #148.",
+          "commitSha": "af43de30671dd0a0fbaed7696f9e53d07ae0711a",
+          "recordedAt": "2026-09-08T03:11:20Z",
+          "url": "https://github.com/otto-agent007/pp/pull/184"
+        }
+      ],
+      "branch": "codex/rebuild-cr01-foundation-v2",
+      "pr": "https://github.com/otto-agent007/pp/pull/184",
       "mergeSha": "",
       "supersededBy": null,
       "target": null
