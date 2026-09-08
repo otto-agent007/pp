@@ -20,11 +20,12 @@
     "demo:smoke": "tsx tooling/demo-smoke-preflight.ts",
     "lint": "tsx tooling/no-hardcoded-hex.ts && eslint \"tooling/**/*.ts\" && turbo lint",
     "tokens:no-hardcoded-hex": "tsx tooling/no-hardcoded-hex.ts",
-    "test": "vitest run tooling/compliance-ingest.test.ts tooling/security-baseline-check.test.ts tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts && turbo test",
+    "test": "vitest run tooling/compliance-ingest.test.ts tooling/security-baseline-check.test.ts tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts tooling/rebuild-source-tag.test.ts && turbo test",
     "typecheck": "tsc -p tsconfig.tooling.json && turbo typecheck",
     "format": "prettier --write .",
     "rebuild:graph:check": "node --import tsx tooling/rebuild-graph.ts",
     "rebuild:graph:reconcile": "node --import tsx tooling/rebuild-graph-reconcile.ts",
+    "rebuild:source-tag": "node --import tsx tooling/rebuild-source-tag.ts",
     "rebuild:verify": "node --import tsx tooling/rebuild-verification.ts",
     "security:audit": "pnpm audit",
     "security:baseline": "tsx tooling/security-baseline-check.ts"

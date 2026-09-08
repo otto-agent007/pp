@@ -1,0 +1,116 @@
+# Publishes a controlled-rebuild slice's immutable source tag when its pull
+# request merges.
+#
+# docs/rebuild/README.md requires the tag `rebuild/<slice>-source` at the
+# canonical pull-request head before a slice may be recorded `done`. Offline
+# reconciliation reconstructs a merged slice's provenance from that tag and
+# never from a retained branch, so it has to survive branch deletion. Doing it
+# by hand was the last manual step left after a slice merged.
+#
+# The tag is immutable: this workflow creates it and never moves it. If the tag
+# already exists at a different commit the job fails loudly rather than
+# rewriting recorded history.
+name: Rebuild source tag
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    # Only a merged pull request from a branch in this repository. A fork's
+    # token is read-only, and a slice branch is always local, so this also
+    # keeps the write-permission job off untrusted heads.
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The base branch already contains this merge, so its graph is the one
+          # that names the running slice. The pull request head is never checked
+          # out: this job holds contents:write and reads no code from the branch
+          # it is tagging.
+          ref: ${{ github.event.pull_request.base.ref }}
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 12.3.4
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve the slice source tag
+        id: resolve
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          result="$(pnpm --silent rebuild:source-tag "$PR_URL" "$HEAD_REF")"
+          if [ -z "$result" ]; then
+            echo "ref=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "node=${result%% *}" >> "$GITHUB_OUTPUT"
+          echo "ref=${result##* }" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the immutable source tag
+        if: steps.resolve.outputs.ref != ''
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          TAG_REF: ${{ steps.resolve.outputs.ref }}
+          TAG_NODE: ${{ steps.resolve.outputs.node }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const ref = process.env.TAG_REF;
+            const sha = process.env.HEAD_SHA;
+            const node = process.env.TAG_NODE;
+            const short = ref.replace(/^refs\//, "");
+
+            let existing = null;
+            try {
+              const found = await github.rest.git.getRef({
+                ...context.repo,
+                ref: ref.replace(/^refs\//, ""),
+              });
+              existing = found.data.object.sha;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+
+            if (existing === sha) {
+              core.info(`${short} already points at ${sha}; nothing to do.`);
+              return;
+            }
+            if (existing) {
+              core.setFailed(
+                `${short} already exists at ${existing}, refusing to move it to ${sha}. ` +
+                  `A source tag is immutable; resolve this by hand.`,
+              );
+              return;
+            }
+
+            await github.rest.git.createRef({ ...context.repo, ref, sha });
+            core.info(`Published ${short} for ${node} at ${sha}.`);
+            await core.summary
+              .addHeading("Rebuild source tag published")
+              .addRaw(`\`${short}\` → \`${sha}\` for **${node}**.`)
+              .write();

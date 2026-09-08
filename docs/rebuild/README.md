@@ -16,9 +16,19 @@ ancestry and the running slice's changed paths against its ownership. CI runs
 live reconciliation with full history and a read-only GitHub token. Live
 GitHub state wins over stale tracked state.
 
-Before marking a slice `done`, create and push the immutable lightweight tag
-`rebuild/<lowercase-slice-id>-source` at the canonical pull-request head. For
-example, CR00 uses `rebuild/cr00-source`. Never move or reuse a source tag.
+Before marking a slice `done`, the immutable lightweight tag
+`rebuild/<lowercase-slice-id>-source` must exist at the canonical pull-request
+head. For example, CR00 uses `rebuild/cr00-source`. Never move or reuse a source
+tag.
+
+The `Rebuild source tag` workflow publishes it automatically when a slice's pull
+request merges. It matches the merged pull request against the running slice by
+**both** its URL and its head branch, because between a slice merging and its
+record catching up the default branch still names that slice as running, and a
+control-plane pull request merged in that window would otherwise look like it.
+The workflow creates the tag and never moves it: if the tag already exists at a
+different commit it fails rather than rewriting recorded history. Publish by
+hand only if that workflow did not run.
 Ordinary clones fetch tags, so completed-slice evidence remains available after
 GitHub deletes the source branch. Missing tags fail both offline and live
 reconciliation; fetch tags or use live reconciliation to diagnose the recorded
@@ -207,8 +217,10 @@ Before merging a slice or recovery PR:
    with reproducible evidence.
 4. Require all repository ruleset checks to be green and record controller
    approval for that PR to merge.
-5. For a normal slice, publish the immutable source tag at the frozen canonical
-   PR head before later recording the node as done.
+5. For a normal slice, confirm the immutable source tag exists at the frozen
+   canonical PR head before later recording the node as done. The
+   `Rebuild source tag` workflow publishes it on merge; confirm rather than
+   assume, and publish by hand if the workflow did not run.
 
 Recorded controller merge approval plus green required checks constitutes merge
 authorization. Enable GitHub auto-merge under that authorization; do not issue
