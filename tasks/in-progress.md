@@ -12,19 +12,16 @@
   before the CR01-CR09 architecture refactor.
 - CR10 (Node 24.20.0), CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), and CR13
   (Expo SDK 54.0.37) are `done`; details are in `tasks/done.md`.
-- CR14 (Expo SDK 55) is `running` on `codex/rebuild-cr14-expo-55-v1`, draft PR
-  [#179](https://github.com/otto-agent007/pp/pull/179), target frozen at
-  `expo@55.0.31`, base `8322fd1cc55587db3e33e2297c216d88729e4df2`. It moves the
-  repo-wide React pin to 19.2.0 and React Native to 0.83.10 (Expo skips 0.82).
-  Merge and the `rebuild/cr14-source` tag remain controller gates. It is the
-  first slice under PR [#178](https://github.com/otto-agent007/pp/pull/178)'s
-  rule, so it carries no separate reconciliation PR.
-- CR15 (SDK 56 to 57, floor 57.0.9) follows and needs its own controller target
-  refresh and promotion approval. Expect the CR13/CR14 shape: read the target
-  set from `expo/bundledNativeModules.json` on the `sdk-57` branch, expect the
-  repo-wide React pin to move again, and treat `pnpm build` plus the native
-  gate as the load-bearing checks — `pnpm test` mocks `react-native` and proves
-  nothing about the hop.
+- CR14 (Expo SDK 55.0.31) is `done`; its summary is in `tasks/done.md`. This
+  slice's first commit carries that reconciliation, which is the workflow PR
+  [#178](https://github.com/otto-agent007/pp/pull/178) enabled — no separate
+  reconciliation pull request was needed.
+- CR15 (Expo SDK 57.0.20) is the last node in the platform chain. It runs as a
+  single 55-to-57 hop rather than the 56-then-57 pair the graph originally
+  described, on controller approval after a scouting trial proved the end state
+  green. Skipping SDK 56 is an accepted risk: the app uses continuous native
+  generation, so nothing native is carried across, though `expo-secure-store`'s
+  persisted keychain data is the one thing the trial could not exercise.
 - Known follow-up carried out of CR12: 16 `eslint-plugin-react-hooks` v7
   findings in `apps/web` (13 `set-state-in-effect`, 2 `purity`, 1 `use-memo`)
   are tracked warnings, not fixes. Clearing them changes component behaviour
