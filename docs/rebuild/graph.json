@@ -466,10 +466,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "b98e6f6388051193f258d2e35bc9be0611418b57",
       "id": "CR04",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR03"
@@ -478,11 +478,15 @@
         "CR00"
       ],
       "ownership": [
+        "apps/mobile/package.json",
         "apps/mobile/src/store/useAssignedJobs.ts",
         "apps/mobile/src/store/useAuth.ts",
         "apps/mobile/src/store/useChemicalInventory.ts",
+        "apps/web/app/admin-auth-context.test.tsx",
         "apps/web/app/admin-auth-context.tsx",
+        "apps/web/app/api/automation/scheduler/manual/route.test.ts",
         "apps/web/app/api/automation/scheduler/manual/route.ts",
+        "apps/web/app/api/automation/scheduler/route.test.ts",
         "apps/web/app/api/automation/scheduler/route.ts",
         "apps/web/app/technician-web-auth-context.tsx",
         "apps/web/hooks/useAutomation.ts",
@@ -496,9 +500,49 @@
         "apps/web/hooks/useJobs.ts",
         "apps/web/hooks/usePayments.ts",
         "apps/web/hooks/useTechnicians.ts",
-        "packages/application",
-        "packages/domain",
-        "tooling/architecture-boundaries.json"
+        "apps/web/package.json",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-08-controlled-rebuild-cr04-application.md",
+        "docs/superpowers/specs/2026-09-08-controlled-rebuild-cr04-application-design.md",
+        "packages/application/auth.test.ts",
+        "packages/application/auth.ts",
+        "packages/application/automation.ts",
+        "packages/application/closeouts.ts",
+        "packages/application/compliance.ts",
+        "packages/application/customers.ts",
+        "packages/application/forms.ts",
+        "packages/application/geofencing.ts",
+        "packages/application/index.ts",
+        "packages/application/inventory.ts",
+        "packages/application/jobs.ts",
+        "packages/application/media.ts",
+        "packages/application/mutationOutcome.test.ts",
+        "packages/application/mutationOutcome.ts",
+        "packages/application/package.json",
+        "packages/application/payments.ts",
+        "packages/application/technicianLicenses.ts",
+        "packages/application/technicians.ts",
+        "packages/application/tsconfig.json",
+        "packages/domain/auth.test.ts",
+        "packages/domain/auth.ts",
+        "packages/domain/automation.ts",
+        "packages/domain/closeouts.ts",
+        "packages/domain/compliance.ts",
+        "packages/domain/customers.ts",
+        "packages/domain/forms.ts",
+        "packages/domain/geofencing.ts",
+        "packages/domain/index.ts",
+        "packages/domain/inventory.ts",
+        "packages/domain/jobs.ts",
+        "packages/domain/media.ts",
+        "packages/domain/module-roles.json",
+        "packages/domain/payments.ts",
+        "packages/domain/technicianLicenses.ts",
+        "packages/domain/technicians.ts",
+        "pnpm-lock.yaml",
+        "tasks/in-progress.md",
+        "tooling/architecture-boundaries.json",
+        "tsconfig.base.json"
       ],
       "deliverables": [
         "packages/application created, with its boundary-policy entry promoted from planned to required",
@@ -508,11 +552,66 @@
         "A new application-to-api-client exception, expiring in CR05, recording that the moved use cases still call adapters directly because packages/application may not depend on packages/api-client",
         "Provider-independent conflict and terminal-failure semantics, with policy tests, as docs/architecture.md requires of CR04"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "checks": [
+        "pnpm exec vitest run packages/application/",
+        "pnpm exec vitest run packages/domain/moduleRoles.test.ts",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller scoping of CR04 from measurement on 2026-09-08, merged as PRs #191 and #192, including the choice of a temporary application-to-api-client exception over full ports in this slice and the choice to preserve the AuthSupabaseClient signatures",
+        "Controller direction to continue through implementation after the scoping landed (2026-09-08)",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "The controller scoped CR04 from measurement and chose the temporary exception over full ports, and preserving the provider type over abstracting it, then directed implementation to proceed.",
+          "commitSha": "651ed47ddc2e163d68be3741e1b49eb32f069940",
+          "recordedAt": "2026-09-08T08:00:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The full suite passes 9/9 projects with runtime behaviour relocated across a package boundary: web 426/426, mobile 79/79, application 19/19.",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "commitSha": "651ed47ddc2e163d68be3741e1b49eb32f069940",
+          "recordedAt": "2026-09-08T08:00:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The architecture boundary checker reports 10 workspace packages and 3 matched exceptions: application is required, domain-to-api-client is narrowed to offlineSync, and application-to-api-client is recorded against CR05.",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "commitSha": "651ed47ddc2e163d68be3741e1b49eb32f069940",
+          "recordedAt": "2026-09-08T08:00:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "Completeness was checked both ways: the exported name set of each of the 13 modules before the move equals the union of its domain and application halves afterwards (422 symbols, zero lost), and no module still reaches an adapter. CR03's module-roles guard failed before reclassification, as designed.",
+          "commitSha": "651ed47ddc2e163d68be3741e1b49eb32f069940",
+          "recordedAt": "2026-09-08T08:00:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #193 opened for CR04.",
+          "commitSha": "651ed47ddc2e163d68be3741e1b49eb32f069940",
+          "recordedAt": "2026-09-08T08:00:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/193"
+        }
+      ],
+      "branch": "codex/rebuild-cr04-application-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/193",
       "mergeSha": "",
       "supersededBy": null,
       "target": null

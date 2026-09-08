@@ -35,6 +35,13 @@
 - CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
   `packages/domain/module-roles.json` now declares 16 policy and 14
   orchestration modules and `moduleRoles.test.ts` guards the declaration.
+- CR04 (application layer) is `running` on `codex/rebuild-cr04-application-v1`,
+  draft PR [#193](https://github.com/otto-agent007/pp/pull/193), awaiting
+  controller merge approval. `packages/application` now holds the 88 declarations
+  that reached an adapter, `packages/domain` has thirteen fewer orchestration
+  modules, and `mutationOutcome.ts` supplies the conflict and terminal-failure
+  semantics `docs/architecture.md` requires. The move creates an
+  `application-to-api-client` exception expiring in CR05.
 - **CR04 was scoped on 2026-09-08 and is smaller than CR03's framing implied.**
   The 14 orchestration modules export 450 declarations, but only 98 of them —
   947 lines — reach an adapter; the other 5,542 exported lines are policy that
