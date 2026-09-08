@@ -32,6 +32,15 @@
   `pnpm typecheck` across its consumers. Two debt exceptions expire inside
   these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
   in CR04.
+- CR03 (domain purity seam) is `running` on
+  `codex/rebuild-cr03-domain-seam-v1`, draft PR
+  [#189](https://github.com/otto-agent007/pp/pull/189), awaiting controller
+  merge approval. `packages/domain/module-roles.json` declares 16 policy and 14
+  orchestration modules and `moduleRoles.test.ts` guards the declaration, so a
+  policy module cannot silently acquire an adapter import and an emptied
+  orchestration module cannot stay misfiled during CR04's extraction. It
+  changes no import: `pnpm architecture:check` still reports two matched
+  exceptions.
 - **CR03 and CR04 were re-scoped on 2026-09-08**, because CR03's one-line
   deliverable "Pure domain package" could not be met by CR03. Fourteen of
   `packages/domain`'s thirty production modules import `@pest-patrol/api-client`
