@@ -43,11 +43,26 @@
   The queue lives in `packages/sync`, which is now `required` rather than
   `planned`, and `pnpm architecture:check` reports 11 packages and zero
   exceptions.
-- **Deliberately not in CR06:** CR04's `mutationOutcome.ts` retry-budget and
-  terminal-failure semantics are still unused, and the queue is their natural
-  consumer. Wiring them in is behavioural change on top of a move, so it gets
-  its own slice where a queue regression stays attributable. That slice is not
-  on the graph yet.
+- **CR19 is that slice**, and it exists now. CR04's `mutationOutcome.ts`
+  retry-budget and terminal-failure semantics have no consumer; the queue is
+  their natural one. CR05 and CR06 each put the wiring off, correctly and for
+  the same reason — behavioural change on top of a move makes a regression
+  unattributable — but each recorded it only as a sentence, so nothing owned
+  it and every following slice rediscovered it.
+- **The graph now refuses a deferral that is only a sentence.** A node carries
+  an optional `defers: { to, summary }[]`, the validator checks the
+  destination is live and not already finished, and it reads the node's own
+  prose: a deliverable or approval that says work is deferred, left unwired,
+  or belongs to a later slice, with no `defers` entry, is an error naming the
+  sentence. Running it against the graph as it stood found exactly two, both
+  real — CR05's deferred singleton removal and CR06's unwired
+  `mutationOutcome` — and no false positives across nineteen nodes.
+- A structural alternative was measured and rejected: flagging exported names
+  with no consumer outside their package would have caught `mutationOutcome`,
+  but it flags **321** names workspace-wide (250 in `packages/domain` alone,
+  and 25 in the `packages/types` surface CR02 deliberately froze). A library
+  exporting more than today's callers use is normal, so that check is noise
+  rather than signal here.
 - **CR07 was measured on 2026-09-08 and is next.** A compiled prototype — the
   mapping added, `OfflineQueueItem` discriminated by action — produced 94
   unique type errors. Fixing the three mechanical causes underneath them

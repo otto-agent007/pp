@@ -1043,6 +1043,176 @@ describe("controlled rebuild graph validator", () => {
     ).toEqual([]);
   });
 
+  it("requires a node that defers work in prose to record where it went", () => {
+    // The failure this catches: CR05 and CR06 each put off wiring
+    // mutationOutcome into the queue, in an approval string and nowhere else.
+    // No node owned it, no gate asked for it, and each following slice
+    // rediscovered it.
+    const errors = errorsFor(
+      graphWith({
+        nodes: [
+          nodeWith({
+            id: "CR01",
+            parent: null,
+            approvals: ["the singleton is wrapped, with removal deferred"],
+          }),
+        ],
+        preferredPrOrder: ["CR01", "CR13", "CR14", "CR15", "CR16"],
+      }),
+    );
+
+    expect(errors).toContain(
+      'node CR01 defers work in prose but records no defers entry: "the singleton is wrapped, with removal deferred"',
+    );
+  });
+
+  it("accepts prose deferral once the handoff is recorded", () => {
+    const base = graphWith();
+    expect(
+      validateRebuildGraph({
+        ...base,
+        nodes: [
+          ...base.nodes,
+          nodeWith({
+            id: "CR01",
+            approvals: ["the singleton is wrapped, with removal deferred"],
+            defers: [{ to: "CR02", summary: "removing the singleton" }],
+          }),
+          nodeWith({ id: "CR02" }),
+        ],
+        preferredPrOrder: [
+          "CR00",
+          "CR01",
+          "CR02",
+          "CR13",
+          "CR14",
+          "CR15",
+          "CR16",
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it("rejects a deferral that names no live destination", () => {
+    const errors = errorsFor(
+      graphWith({
+        nodes: [
+          nodeWith({
+            id: "CR01",
+            parent: null,
+            defers: [
+              { to: "CR01", summary: "itself" },
+              { to: "CR99", summary: "a node that does not exist" },
+              { to: "CR02", summary: "an abandoned node" },
+              { to: "CR03", summary: "a node superseded into nothing" },
+            ],
+          }),
+          nodeWith({
+            id: "CR02",
+            parent: null,
+            status: "abandoned",
+            evidence: ["abandoned"],
+          }),
+          nodeWith({
+            id: "CR03",
+            parent: null,
+            status: "superseded",
+            supersededBy: "CR03",
+            evidence: ["superseded"],
+          }),
+        ],
+        preferredPrOrder: [
+          "CR01",
+          "CR02",
+          "CR03",
+          "CR13",
+          "CR14",
+          "CR15",
+          "CR16",
+        ],
+      }),
+    );
+
+    expect(errors).toContain("node CR01 cannot defer work to itself");
+    expect(errors).toContain("node CR01 defers work to missing node CR99");
+    expect(errors).toContain("node CR01 defers work to abandoned node CR02");
+    expect(errors).toContain(
+      "node CR01 defers work to CR03, which is superseded into nothing",
+    );
+  });
+
+  it("refuses to hand work to a node that has already finished", () => {
+    const finished = {
+      nodes: [
+        nodeWith({
+          id: "CR01",
+          parent: null,
+          defers: [{ to: "CR02", summary: "work nobody will now pick up" }],
+        }),
+        doneSliceWith({ id: "CR02", parent: null }),
+      ],
+      preferredPrOrder: ["CR01", "CR02", "CR13", "CR14", "CR15", "CR16"],
+    };
+
+    expect(errorsFor(graphWith(finished))).toContain(
+      "node CR01 defers work to CR02, which is already done",
+    );
+
+    // A node that is itself done recording where it handed work off is
+    // history, not a promise, so it stays legal.
+    expect(
+      errorsFor(
+        graphWith({
+          ...finished,
+          nodes: [
+            doneSliceWith({
+              id: "CR01",
+              parent: null,
+              defers: [{ to: "CR02", summary: "what CR02 went on to do" }],
+            }),
+            doneSliceWith({ id: "CR02", parent: null }),
+          ],
+        }),
+      ),
+    ).not.toContain("defers work to CR02");
+  });
+
+  it("rejects malformed deferral records", () => {
+    const errors = errorsFor(
+      graphWith({
+        nodes: [
+          nodeWith({ id: "CR01", parent: null, defers: "CR02" }),
+          nodeWith({
+            id: "CR02",
+            parent: null,
+            defers: [
+              "CR03",
+              { to: "   ", summary: "no destination" },
+              { to: "CR03", summary: "  " },
+            ],
+          }),
+          nodeWith({ id: "CR03", parent: null }),
+        ],
+        preferredPrOrder: [
+          "CR01",
+          "CR02",
+          "CR03",
+          "CR13",
+          "CR14",
+          "CR15",
+          "CR16",
+        ],
+      }),
+    );
+
+    expect(errors).toContain("node CR01 defers must be an array");
+    expect(errors).toContain(
+      "node CR02 deferral 0 must be a structured deferral record",
+    );
+    expect(errors).toContain("node CR02 deferral 1 to must name a node");
+    expect(errors).toContain("node CR02 deferral 2 summary must be non-empty");
+  });
+
   it("uses an optional path and prints every validation error from the CLI", () => {
     const directory = mkdtempSync(join(tmpdir(), "pp-rebuild-graph-"));
     temporaryDirectories.push(directory);

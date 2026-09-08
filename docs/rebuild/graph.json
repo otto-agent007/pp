@@ -17,6 +17,7 @@
     "CR05",
     "CR06",
     "CR07",
+    "CR19",
     "CR08",
     "CR09",
     "CR18"
@@ -814,7 +815,13 @@
       "pr": "https://github.com/otto-agent007/pp/pull/195",
       "mergeSha": "0784f842ff0125d307010fe9eaba53957daf060e",
       "supersededBy": null,
-      "target": null
+      "target": null,
+      "defers": [
+        {
+          "to": "CR09",
+          "summary": "Removing the import-time supabase singleton in packages/api-client, so provider selection at a composition root covers every adapter rather than only the injected-client ones"
+        }
+      ]
     },
     {
       "baseSha": "bc543ac27d7f3c1382b23e7df871082cea8ab134",
@@ -934,7 +941,13 @@
       "pr": "https://github.com/otto-agent007/pp/pull/197",
       "mergeSha": "0e591ee59f1c9dac97468f09e0e947a376b9cb31",
       "supersededBy": null,
-      "target": null
+      "target": null,
+      "defers": [
+        {
+          "to": "CR19",
+          "summary": "Wiring CR04's mutation outcome semantics into the durable queue's retry path, which CR06 left unwired so a queue regression would stay attributable to the move or to the behaviour change, but not both"
+        }
+      ]
     },
     {
       "baseSha": "",
@@ -996,7 +1009,13 @@
       "pr": "",
       "mergeSha": "",
       "supersededBy": null,
-      "target": null
+      "target": null,
+      "defers": [
+        {
+          "to": "CR09",
+          "summary": "Validating the persisted offline queue where apps/mobile reads it back, rather than casting, which CR07 leaves alone because it changes behaviour and CR07 is types only"
+        }
+      ]
     },
     {
       "baseSha": "",
@@ -1845,6 +1864,43 @@
       ],
       "checks": [],
       "approvals": [],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR19",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR06"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "docs/architecture.md",
+        "packages/api-client",
+        "packages/application",
+        "packages/sync",
+        "tasks/done.md"
+      ],
+      "deliverables": [
+        "The durable queue's retry path decided by packages/application's mutation outcome semantics rather than by its own maxAttempts budget alone, so a conflict, an ambiguous response and a terminal failure are distinguished where the queue acts on them",
+        "Adapters mapping a provider failure onto a MutationFailureReason, so the queue is handed a reason rather than inferring one from an error message string",
+        "Tests that a replay after an ambiguous response reuses the intent's existing identity, and that a terminal outcome stops the queue retrying rather than spending the remaining budget"
+      ],
+      "checks": [],
+      "approvals": [
+        "Recorded on 2026-09-08 after CR05 and CR06 each put it off: CR04 defined the semantics in packages/application/mutationOutcome.ts, nothing consumes them, and the handoff existed only in prose until this node",
+        "Ownership here is a first cut from what is true today and must be re-measured before promotion, as every slice in this chain has had to be. CR07 and CR09 both move code this slice touches",
+        "Making terminal failures visible to the technician and offering recovery is CR09's, not this node's. This slice decides outcomes; CR09 presents them"
+      ],
       "evidence": [],
       "branch": "",
       "pr": "",
