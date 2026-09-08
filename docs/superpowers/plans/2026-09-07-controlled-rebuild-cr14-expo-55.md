@@ -108,11 +108,12 @@ Babel and Hermes for both platforms), Expo Doctor, and the two prebuilds.
 - [x] Move the repo-wide React overrides to the 19.2 line.
 - [x] Remove `newArchEnabled` from `apps/mobile/app.json`.
 - [x] Drop the two audit ignores SDK 55's tree made stale.
-- [ ] Run every declared check on the migrated tree and record the
-      `pnpm rebuild:verify` evidence set on the node.
-- [ ] Run Expo Doctor and both prebuilds in a disposable clean checkout and
+- [x] Run every declared check on the migrated tree and record the
+      `pnpm rebuild:verify` evidence set on the node (15/15 gates PASS,
+      evidence set `a2a82e82…`).
+- [x] Run Expo Doctor and both prebuilds in a disposable clean checkout and
       record commit-bound command evidence.
-- [ ] Open the draft PR and record it on the node; controller merge approval
+- [x] Open the draft PR and record it on the node; controller merge approval
       and the `rebuild/cr14-source` tag remain open.
 
 ## Declared checks

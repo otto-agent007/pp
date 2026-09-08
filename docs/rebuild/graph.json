@@ -904,6 +904,14 @@
           "commitSha": "6d71a48bd9e53880ff4b6d85de9cebd179c6abff",
           "recordedAt": "2026-09-08T00:03:28Z",
           "url": "https://github.com/otto-agent007/pp/pull/179"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 15/15 gates, evidence set a2a82e82.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "7b3e3fae93418d9075b4453b0e50ce69f845e364",
+          "recordedAt": "2026-09-08T00:04:28Z"
         }
       ],
       "branch": "codex/rebuild-cr14-expo-55-v1",
