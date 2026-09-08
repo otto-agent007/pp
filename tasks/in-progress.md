@@ -40,6 +40,42 @@
   `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
   supplies the conflict and terminal-failure semantics `docs/architecture.md`
   requires.
+- CR05 (ports and adapters) is `running` on `codex/rebuild-cr05-ports-v1`,
+  draft PR [#195](https://github.com/otto-agent007/pp/pull/195), awaiting
+  controller merge approval. Thirteen ports and 77 methods now sit between
+  `packages/application` and `packages/api-client`, and
+  **`pnpm architecture:check` reports zero exceptions** for the first time since
+  CR01 recorded them.
+- **The dependency direction now matches `docs/architecture.md` exactly:**
+  `types` depends on nothing, `domain` on `types`, `application` on
+  `domain` + `types`, `api-client` on `application` + `domain` + `types`.
+- CR05 absorbed `offlineSync`, which CR04 had deferred to CR06. That was forced,
+  not chosen: `api-client -> application` plus the surviving
+  `domain -> api-client` closes a cycle that turbo refuses, so CR05 could not
+  have completed otherwise. CR06 is now a relocation of the durable queue from
+  `packages/application` into `packages/sync` using these ports.
+- Two scope corrections came out of measuring CR05. The app surface was counted
+  as five composition roots and is really **twenty files**, because removing the
+  exception requires *every* use case to take a port, not only the fifteen that
+  threaded a client. And the `supabase` singleton means composition-root
+  selection is genuine for the adapters that accept a client and nominal for the
+  47 that close over it — **CR09 removes it**, which is a recorded deliverable.
+- CR05-CR09 follow and each need their own controller promotion decision. They
+  change application code, so `pnpm architecture:check` holds their dependency
+  directions honest. CR02 added the qualifier that matters for the type-level
+  packages: `pnpm test` is load-bearing only where a package has runtime
+  behaviour, and for one that emits nothing the real compatibility proof is
+  `pnpm typecheck` across its consumers. Two debt exceptions expire inside
+  these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
+  in CR06.
+- CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
+  `packages/domain/module-roles.json` now declares 16 policy and 14
+  orchestration modules and `moduleRoles.test.ts` guards the declaration.
+- CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
+  `packages/application` now holds the 88 declarations that reached an adapter,
+  `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
+  supplies the conflict and terminal-failure semantics `docs/architecture.md`
+  requires.
 - **CR05 was scoped on 2026-09-08 and is next.** Measured: the port surface is
   **76 adapter functions and 2 provider types** across 13 application modules,
   so 13 ports, one per bounded context. Ports are passed as a parameter, so

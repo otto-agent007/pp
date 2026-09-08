@@ -146,3 +146,19 @@ export {
   validateDemoSeedExecution,
 } from "./demoSeed";
 export type { DemoSeedSummary, DemoSeedSupabaseClient } from "./demoSeed";
+export {
+  createAuthAdapter,
+  createAutomationAdapter,
+  createCloseoutsAdapter,
+  createComplianceAdapter,
+  createCustomersAdapter,
+  createFormsAdapter,
+  createGeofencingAdapter,
+  createInventoryAdapter,
+  createJobsAdapter,
+  createMediaAdapter,
+  createOfflineSyncAdapter,
+  createPaymentsAdapter,
+  createTechnicianLicensesAdapter,
+  createTechniciansAdapter,
+} from "./adapters";

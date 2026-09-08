@@ -8,6 +8,10 @@ import type { Session, Subscription } from "@supabase/supabase-js";
 import { create } from "zustand";
 
 import { mobileSupabase } from "../lib/supabase";
+import { createAuthAdapter } from "@pest-patrol/api-client";
+
+const authPort = createAuthAdapter(mobileSupabase);
+
 
 type AuthStatus = "loading" | "signed_in" | "signed_out";
 
@@ -40,7 +44,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ error: null, status: "loading" });
 
     try {
-      const record = await getCurrentTechnicianAuth(mobileSupabase);
+      const record = await getCurrentTechnicianAuth(authPort);
 
       set({
         error: null,
@@ -63,7 +67,7 @@ export const useAuth = create<AuthState>((set, get) => ({
         return;
       }
 
-      void getCurrentTechnicianAuth(mobileSupabase)
+      void getCurrentTechnicianAuth(authPort)
         .then((record) => {
           set({
             error: null,
@@ -88,7 +92,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ error: null, status: "loading" });
 
     try {
-      const record = await signInTechnician(mobileSupabase, { email, password });
+      const record = await signInTechnician(authPort, { email, password });
 
       if (!record) {
         throw new Error("Unable to start session");
@@ -113,7 +117,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ error: null, status: "loading" });
 
     try {
-      await signOutTechnician(mobileSupabase);
+      await signOutTechnician(authPort);
       set({ error: null, profile: null, session: null, status: "signed_out" });
     } catch (error) {
       set({

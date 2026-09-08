@@ -7,6 +7,9 @@ const createAutomationSchedulerRunRecord = vi.fn();
 let serviceClient: { from: ReturnType<typeof vi.fn> };
 
 vi.mock("@pest-patrol/api-client", () => ({
+  // the route builds its port from this factory; capturing the client it
+  // binds is what proves the service-role client still reaches the scheduler
+  createAutomationAdapter: (client: unknown) => ({ boundClient: client }) as never,
   createAutomationSchedulerRunRecord: (
     input: unknown,
     client: unknown,
@@ -15,9 +18,9 @@ vi.mock("@pest-patrol/api-client", () => ({
 
 vi.mock("@pest-patrol/application", () => ({
   runAutomationSchedulerForClient: (
-    client: unknown,
+    port: unknown,
     now: string | undefined,
-  ) => runAutomationSchedulerForClient(client, now),
+  ) => runAutomationSchedulerForClient(port, now),
 }));
 
 vi.mock("../../_lib/server-auth", () => ({
@@ -74,7 +77,7 @@ describe("automation scheduler route", () => {
     expect(response.status).toBe(200);
     expect(body.created).toBe(1);
     expect(runAutomationSchedulerForClient).toHaveBeenCalledWith(
-      serviceClient,
+      { boundClient: serviceClient },
       "2026-05-06T12:00:00.000Z",
     );
     expect(createAutomationSchedulerRunRecord).toHaveBeenCalledWith(
@@ -134,7 +137,7 @@ describe("automation scheduler route", () => {
     expect(response.status).toBe(200);
     expect(body.created).toBe(1);
     expect(runAutomationSchedulerForClient).toHaveBeenCalledWith(
-      serviceClient,
+      { boundClient: serviceClient },
       "2026-05-06T12:00:00.000Z",
     );
   });

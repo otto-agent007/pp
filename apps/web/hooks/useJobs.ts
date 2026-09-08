@@ -27,6 +27,10 @@ import {
   updateLocalDemoJob,
   updateLocalDemoJobStatus,
 } from "./localDemoData";
+import { createJobsAdapter } from "@pest-patrol/api-client";
+
+const jobsPort = createJobsAdapter();
+
 export { techniciansQueryKey, useTechnicians } from "./useTechnicians";
 
 export const jobsQueryKey = ["jobs"] as const;
@@ -59,7 +63,7 @@ function makeOptimisticJob(input: JobInput): Job {
 export function useJobs() {
   return useQuery({
     queryKey: jobsQueryKey,
-    queryFn: () => getLocalDemoFixtures()?.jobs ?? listJobs(),
+    queryFn: () => getLocalDemoFixtures()?.jobs ?? listJobs(jobsPort),
   });
 }
 
@@ -70,7 +74,7 @@ export function useCreateJob() {
     mutationFn: (input: JobInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoJob(input))
-        : createJob(input),
+        : createJob(jobsPort, input),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: jobsQueryKey });
       const previous = queryClient.getQueryData<Job[]>(jobsQueryKey) ?? [];
@@ -125,7 +129,7 @@ export function useUpdateJob() {
     mutationFn: ({ id, input }: { id: string; input: JobInput }) =>
       getLocalDemoFixtures()
         ? Promise.resolve(updateLocalDemoJob(id, input))
-        : updateJob(id, input),
+        : updateJob(jobsPort, id, input),
     onMutate: async ({ id, input }) => {
       await queryClient.cancelQueries({ queryKey: jobsQueryKey });
       const previous = queryClient.getQueryData<Job[]>(jobsQueryKey) ?? [];
@@ -163,7 +167,7 @@ export function useCancelJob() {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(cancelLocalDemoJob(id))
-        : cancelJob(id),
+        : cancelJob(jobsPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: jobsQueryKey });
       const previous = queryClient.getQueryData<Job[]>(jobsQueryKey) ?? [];
@@ -198,7 +202,7 @@ export function useChangeJobStatus() {
     mutationFn: ({ job, status }: { job: Job; status: JobStatus }) =>
       getLocalDemoFixtures()
         ? Promise.resolve(updateLocalDemoJobStatus(job, status))
-        : changeJobStatus(job, status),
+        : changeJobStatus(jobsPort, job, status),
     onMutate: async ({ job, status }) => {
       await queryClient.cancelQueries({ queryKey: jobsQueryKey });
       const previous = queryClient.getQueryData<Job[]>(jobsQueryKey) ?? [];
@@ -239,7 +243,7 @@ export function useAssignJobTechnician() {
     }) =>
       getLocalDemoFixtures()
         ? Promise.resolve(assignLocalDemoJobTechnician(job, technicianId))
-        : assignJobTechnician(job, technicianId),
+        : assignJobTechnician(jobsPort, job, technicianId),
     onMutate: async ({ job, technicianId }) => {
       await queryClient.cancelQueries({ queryKey: jobsQueryKey });
       const previous = queryClient.getQueryData<Job[]>(jobsQueryKey) ?? [];

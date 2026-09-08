@@ -104,6 +104,18 @@ export type {
   MutationOutcomePolicy,
 } from "./mutationOutcome";
 export {
+  processArrivalNotificationQueueItem,
+  processChemicalLogQueueItem,
+  processFormSubmissionQueueItem,
+  processFormSubmissionQueueItems,
+  processGeofenceEventQueueItem,
+  processJobStatusUpdateQueueItem,
+  processOfflineQueueItem,
+  processOfflineQueueItems,
+  processPhotoUploadQueueItem,
+  processSignatureCaptureQueueItem,
+} from "./offlineSync";
+export {
   createInvoice,
   createInvoicePaymentLink,
   getStripePaymentProviderStatus,
@@ -111,6 +123,27 @@ export {
   markInvoicePaid,
   voidInvoice,
 } from "./payments";
+export type {
+  AuthPort,
+  AuthRecord,
+  AutomationPort,
+  AutomationSchedulerManualRun,
+  CloseoutsPort,
+  ComplianceAdvisoryAuditInput,
+  CompliancePort,
+  CustomersPort,
+  FormsPort,
+  GeofencingPort,
+  InventoryPort,
+  JobsPort,
+  MediaPort,
+  NotificationBulkDeliveryOutcome,
+  NotificationBulkDeliveryRecordResult,
+  OfflineSyncPort,
+  PaymentsPort,
+  TechnicianLicensesPort,
+  TechniciansPort,
+} from "./ports";
 export {
   archiveTechnicianLicense,
   createTechnicianLicense,

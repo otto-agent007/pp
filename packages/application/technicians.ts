@@ -1,14 +1,14 @@
-import {
-  inviteTechnicianRecord,
-  listTechnicianProfileRecords,
-} from "@pest-patrol/api-client";
+import type { TechniciansPort } from "./ports";
 import type { TechnicianInviteInput } from "@pest-patrol/types";
 import { validateTechnicianInviteInput } from "@pest-patrol/domain";
 
-export async function listTechnicianDirectory() {
-  return listTechnicianProfileRecords();
+export async function listTechnicianDirectory(port: TechniciansPort) {
+  return port.listTechnicianProfileRecords();
 }
 
-export async function inviteTechnician(input: TechnicianInviteInput) {
-  return inviteTechnicianRecord(validateTechnicianInviteInput(input));
+export async function inviteTechnician(
+  port: TechniciansPort,
+  input: TechnicianInviteInput,
+) {
+  return port.inviteTechnicianRecord(validateTechnicianInviteInput(input));
 }

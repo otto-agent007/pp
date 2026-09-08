@@ -31,6 +31,10 @@ import {
   isLocalDemoFixtureMode,
   resetLocalDemoFixtures,
 } from "../hooks/localDemoData";
+import { createAuthAdapter } from "@pest-patrol/api-client";
+
+const authPort = createAuthAdapter(supabase);
+
 
 type AdminAuthStatus = "loading" | "signed_in" | "signed_out";
 
@@ -213,7 +217,7 @@ export async function initializeAdminAuth() {
       return;
     }
 
-    const record = await getCurrentAdminAuth(supabase);
+    const record = await getCurrentAdminAuth(authPort);
 
     if (!record) {
       deactivateLocalDemoFixtureSession();
@@ -248,7 +252,7 @@ async function signIn(email: string, password: string) {
   });
 
   try {
-    const record = await signInAdmin(supabase, { email, password });
+    const record = await signInAdmin(authPort, { email, password });
 
     if (!record) {
       throw new Error("Unable to start admin session");
@@ -297,7 +301,7 @@ async function signOut() {
   let revokeError: string | null = null;
 
   try {
-    await signOutAdmin(supabase);
+    await signOutAdmin(authPort);
   } catch (error) {
     revokeError =
       "Sign out was not confirmed by the server. If you notice unexpected access, please sign out again.";
@@ -310,14 +314,14 @@ async function signOut() {
 }
 
 async function requestPasswordReset(email: string, redirectTo: string) {
-  await requestPasswordResetDomain(supabase, { email, redirectTo });
+  await requestPasswordResetDomain(authPort, { email, redirectTo });
 }
 
 async function startPasswordRecoverySession(
   accessToken: string,
   refreshToken: string,
 ) {
-  await establishPasswordRecoverySession(supabase, {
+  await establishPasswordRecoverySession(authPort, {
     accessToken,
     refreshToken,
   });
@@ -325,7 +329,7 @@ async function startPasswordRecoverySession(
 
 async function updatePassword(password: string, confirmPassword: string) {
   try {
-    await updateCurrentUserPassword(supabase, { password, confirmPassword });
+    await updateCurrentUserPassword(authPort, { password, confirmPassword });
     await initializeAdminAuth();
   } catch (error) {
     patchAuthState({ error: errorMessage(error) });

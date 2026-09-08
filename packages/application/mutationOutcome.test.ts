@@ -43,8 +43,12 @@ describe("mutation outcome policy", () => {
   it("requires user recovery exactly for terminal outcomes and conflicts", () => {
     expect(describeMutationOutcome("terminal").requiresUserRecovery).toBe(true);
     expect(describeMutationOutcome("conflict").requiresUserRecovery).toBe(true);
-    expect(describeMutationOutcome("retryable").requiresUserRecovery).toBe(false);
-    expect(describeMutationOutcome("ambiguous").requiresUserRecovery).toBe(false);
+    expect(describeMutationOutcome("retryable").requiresUserRecovery).toBe(
+      false,
+    );
+    expect(describeMutationOutcome("ambiguous").requiresUserRecovery).toBe(
+      false,
+    );
     expect(describeMutationOutcome("applied").requiresUserRecovery).toBe(false);
     expect(isTerminalOutcome("conflict")).toBe(true);
     expect(isTerminalOutcome("ambiguous")).toBe(false);
@@ -54,8 +58,15 @@ describe("mutation outcome policy", () => {
     // This is the rule that keeps one logical write from becoming two: any
     // outcome that leaves provider state uncertain or unchanged must replay
     // under the identity the intent already has.
-    for (const kind of ["conflict", "ambiguous", "retryable", "terminal"] as const) {
-      expect(describeMutationOutcome(kind).reusesIntentIdentity, kind).toBe(true);
+    for (const kind of [
+      "conflict",
+      "ambiguous",
+      "retryable",
+      "terminal",
+    ] as const) {
+      expect(describeMutationOutcome(kind).reusesIntentIdentity, kind).toBe(
+        true,
+      );
     }
 
     expect(describeMutationOutcome("applied").reusesIntentIdentity).toBe(false);
@@ -74,12 +85,12 @@ describe("mutation outcome policy", () => {
   it("turns a retryable failure terminal once the budget is spent", () => {
     const { maxAttempts } = DEFAULT_MUTATION_OUTCOME_POLICY;
 
-    expect(resolveMutationOutcome("network-unavailable", maxAttempts - 1).kind).toBe(
-      "retryable",
-    );
-    expect(resolveMutationOutcome("network-unavailable", maxAttempts).kind).toBe(
-      "terminal",
-    );
+    expect(
+      resolveMutationOutcome("network-unavailable", maxAttempts - 1).kind,
+    ).toBe("retryable");
+    expect(
+      resolveMutationOutcome("network-unavailable", maxAttempts).kind,
+    ).toBe("terminal");
     expect(
       resolveMutationOutcome("network-unavailable", maxAttempts)
         .requiresUserRecovery,
@@ -87,7 +98,9 @@ describe("mutation outcome policy", () => {
   });
 
   it("spends the budget on ambiguous responses too", () => {
-    expect(resolveMutationOutcome("ambiguous-response", 99).kind).toBe("terminal");
+    expect(resolveMutationOutcome("ambiguous-response", 99).kind).toBe(
+      "terminal",
+    );
   });
 
   it("never lets the budget rescue an already-terminal reason", () => {
@@ -99,14 +112,18 @@ describe("mutation outcome policy", () => {
   it("honours a caller-supplied budget", () => {
     const policy = { maxAttempts: 2 };
 
-    expect(resolveMutationOutcome("rate-limited", 1, policy).kind).toBe("retryable");
-    expect(resolveMutationOutcome("rate-limited", 2, policy).kind).toBe("terminal");
+    expect(resolveMutationOutcome("rate-limited", 1, policy).kind).toBe(
+      "retryable",
+    );
+    expect(resolveMutationOutcome("rate-limited", 2, policy).kind).toBe(
+      "terminal",
+    );
   });
 
   it("resolves the outcome for a queue item from its attempt count", () => {
-    expect(resolveQueueItemOutcome({ attempts: 1 }, "provider-unavailable").kind).toBe(
-      "retryable",
-    );
+    expect(
+      resolveQueueItemOutcome({ attempts: 1 }, "provider-unavailable").kind,
+    ).toBe("retryable");
     expect(
       resolveQueueItemOutcome(
         { attempts: DEFAULT_MUTATION_OUTCOME_POLICY.maxAttempts },

@@ -6,6 +6,7 @@ import {
   createServiceRoleSupabaseClient,
   getAdminAccess,
 } from "../../../_lib/server-auth";
+import { createAutomationAdapter } from "@pest-patrol/api-client";
 
 export const runtime = "nodejs";
 
@@ -18,9 +19,10 @@ export async function POST(request: Request) {
 
   try {
     const client = createServiceRoleSupabaseClient();
+    const automationPort = createAutomationAdapter(client);
     const startedAt = new Date().toISOString();
     const now = new URL(request.url).searchParams.get("now") ?? undefined;
-    const result = await runAutomationSchedulerForClient(client, now);
+    const result = await runAutomationSchedulerForClient(automationPort, now);
     const run = await createAutomationSchedulerRunRecord(
       {
         status: "success",

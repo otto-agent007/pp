@@ -1,24 +1,4 @@
-import {
-  createAutomationRuleRecord,
-  createGeneratedNotificationEventRecord,
-  createNotificationEventRecord,
-  createNotificationTemplateRecord,
-  dismissNotificationEventRecord,
-  getNotificationProviderStatusRecord,
-  listAutomationRuleRecords,
-  listAutomationSchedulerJobRecords,
-  listAutomationSchedulerRunRecords,
-  listNotificationEventRecords,
-  listNotificationTemplateRecords,
-  markNotificationEventHandledRecord,
-  runAutomationSchedulerManualRecord,
-  sendNotificationEventDeliveriesRecord,
-  sendNotificationEventDeliveryRecord,
-  updateAutomationRuleRecord,
-  updateAutomationRuleStatusRecord,
-  updateNotificationTemplateRecord,
-  updateNotificationTemplateStatusRecord,
-} from "@pest-patrol/api-client";
+import type { AutomationPort } from "./ports";
 import type {
   AutomationRuleInput,
   AutomationRuleStatus,
@@ -37,99 +17,131 @@ import {
   validateNotificationTemplateInput,
 } from "@pest-patrol/domain";
 
-export async function listAutomationRules() {
-  return listAutomationRuleRecords();
+export async function listAutomationRules(port: AutomationPort) {
+  return port.listAutomationRuleRecords();
 }
 
-export async function listAutomationSchedulerRuns() {
-  return listAutomationSchedulerRunRecords();
+export async function listAutomationSchedulerRuns(port: AutomationPort) {
+  return port.listAutomationSchedulerRunRecords();
 }
 
-export async function createAutomationRule(input: AutomationRuleInput) {
-  return createAutomationRuleRecord(validateAutomationRuleInput(input));
+export async function createAutomationRule(
+  port: AutomationPort,
+  input: AutomationRuleInput,
+) {
+  return port.createAutomationRuleRecord(validateAutomationRuleInput(input));
 }
 
 export async function updateAutomationRule(
+  port: AutomationPort,
   id: string,
   input: AutomationRuleInput,
 ) {
-  return updateAutomationRuleRecord(
+  return port.updateAutomationRuleRecord(
     requireNonEmpty(id, "Automation rule"),
     validateAutomationRuleInput(input),
   );
 }
 
 export async function updateAutomationRuleStatus(
+  port: AutomationPort,
   id: string,
   status: AutomationRuleStatus,
 ) {
-  return updateAutomationRuleStatusRecord(
+  return port.updateAutomationRuleStatusRecord(
     requireNonEmpty(id, "Automation rule"),
     statusForAutomationRule(status),
   );
 }
 
-export async function listNotificationEvents() {
-  return listNotificationEventRecords();
+export async function listNotificationEvents(port: AutomationPort) {
+  return port.listNotificationEventRecords();
 }
 
-export async function listNotificationTemplates() {
-  return listNotificationTemplateRecords();
+export async function listNotificationTemplates(port: AutomationPort) {
+  return port.listNotificationTemplateRecords();
 }
 
 export async function createNotificationTemplate(
+  port: AutomationPort,
   input: NotificationTemplateInput,
 ) {
-  return createNotificationTemplateRecord(
+  return port.createNotificationTemplateRecord(
     validateNotificationTemplateInput(input),
   );
 }
 
 export async function updateNotificationTemplate(
+  port: AutomationPort,
   id: string,
   input: NotificationTemplateInput,
 ) {
-  return updateNotificationTemplateRecord(
+  return port.updateNotificationTemplateRecord(
     requireNonEmpty(id, "Notification template"),
     validateNotificationTemplateInput(input),
   );
 }
 
-export async function archiveNotificationTemplate(id: string) {
-  return updateNotificationTemplateStatusRecord(
+export async function archiveNotificationTemplate(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.updateNotificationTemplateStatusRecord(
     requireNonEmpty(id, "Notification template"),
     "archived",
   );
 }
 
-export async function restoreNotificationTemplate(id: string) {
-  return updateNotificationTemplateStatusRecord(
+export async function restoreNotificationTemplate(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.updateNotificationTemplateStatusRecord(
     requireNonEmpty(id, "Notification template"),
     "active",
   );
 }
 
-export async function createNotificationEvent(input: NotificationEventInput) {
-  return createNotificationEventRecord(validateNotificationEventInput(input));
+export async function createNotificationEvent(
+  port: AutomationPort,
+  input: NotificationEventInput,
+) {
+  return port.createNotificationEventRecord(
+    validateNotificationEventInput(input),
+  );
 }
 
-export async function markNotificationEventHandled(id: string) {
-  return markNotificationEventHandledRecord(validateNotificationEventId(id));
+export async function markNotificationEventHandled(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.markNotificationEventHandledRecord(
+    validateNotificationEventId(id),
+  );
 }
 
-export async function dismissNotificationEvent(id: string) {
-  return dismissNotificationEventRecord(validateNotificationEventId(id));
+export async function dismissNotificationEvent(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.dismissNotificationEventRecord(validateNotificationEventId(id));
 }
 
-export async function sendNotificationEventDelivery(id: string) {
-  return sendNotificationEventDeliveryRecord(validateNotificationEventId(id));
+export async function sendNotificationEventDelivery(
+  port: AutomationPort,
+  id: string,
+) {
+  return port.sendNotificationEventDeliveryRecord(
+    validateNotificationEventId(id),
+  );
 }
 
-export async function getNotificationProviderStatus() {
-  return getNotificationProviderStatusRecord();
+export async function getNotificationProviderStatus(port: AutomationPort) {
+  return port.getNotificationProviderStatusRecord();
 }
 
 export async function sendNotificationEventDeliveries(
+  port: AutomationPort,
   ids: string[],
 ): Promise<NotificationBulkDeliveryResult> {
   const normalizedIds = ids.map((id) => validateNotificationEventId(id));
@@ -142,30 +154,28 @@ export async function sendNotificationEventDeliveries(
     };
   }
 
-  return sendNotificationEventDeliveriesRecord(normalizedIds);
+  return port.sendNotificationEventDeliveriesRecord(normalizedIds);
 }
 
-export async function runAutomationSchedulerManual() {
-  return runAutomationSchedulerManualRecord();
+export async function runAutomationSchedulerManual(port: AutomationPort) {
+  return port.runAutomationSchedulerManualRecord();
 }
 
 export async function runAutomationSchedulerForClient(
-  client: Parameters<typeof listAutomationSchedulerJobRecords>[0],
+  port: AutomationPort,
   now = new Date().toISOString(),
 ): Promise<AutomationSchedulerResult> {
   const [rules, jobs] = await Promise.all([
-    listAutomationRuleRecords(client),
-    listAutomationSchedulerJobRecords(client),
+    port.listAutomationRuleRecords(),
+    port.listAutomationSchedulerJobRecords(),
   ]);
   const plan = buildAutomationSchedulerPlan({ jobs, now, rules });
   let created = 0;
   let skippedDuplicates = 0;
 
   for (const notification of plan.notifications) {
-    const event = await createGeneratedNotificationEventRecord(
-      notification,
-      client,
-    );
+    const event =
+      await port.createGeneratedNotificationEventRecord(notification);
 
     if (event) {
       created += 1;

@@ -123,55 +123,39 @@ defines package allowlists and freezes the exact, expiring exceptions. Its
 artifacts for current exception facts and removal ownership; do not duplicate
 them in prose.
 
-### Where domain purity actually lands
+### Where domain purity actually landed
 
-`packages/domain` does not yet depend only on `types`. Fourteen of its thirty
-production modules import `@pest-patrol/api-client`, which the
-`domain-to-api-client` exception permits until its removal slice. Those modules
-are not domain rules reaching for a helper: they orchestrate adapter calls, so
-by the responsibilities above they are use cases and belong in
-`@pest-patrol/application`.
+`packages/domain` depends only on `@pest-patrol/types`, and
+`pnpm architecture:check` records **zero exceptions**. It took three slices, and
+the order was forced rather than chosen.
 
-That package does not exist until CR04, so the coupling cannot clear before
-CR04 exists to receive it. CR03 therefore records and guards the seam — which
-modules are pure policy and which orchestrate adapters — in
-[`packages/domain/module-roles.json`](../packages/domain/module-roles.json).
+CR03 declared and guarded the seam between pure policy and adapter
+orchestration, in [`module-roles.json`](../packages/domain/module-roles.json).
+It could not remove the coupling, because the orchestration had nowhere to go
+until `packages/application` existed and CR04 creates it.
 
-The seam runs *inside* modules, not between them. Those fourteen modules export
-450 declarations, and only 98 of them — 947 lines — reach an adapter; the other
-5,542 exported lines are policy that stays. So the extraction is a filleting
-job, not a file move, and every module keeps its rules.
+CR04 lifted 88 declarations through that seam — 21% of what those modules
+export, since the seam runs *inside* modules rather than between them. That move
+created a second forbidden edge rather than resolving one: the use cases still
+called adapters, and this package may not depend on `api-client`. CR04 recorded
+it as debt with an owner and a deadline.
 
-It takes two slices, because one of the fourteen is not application work.
-**CR04** lifts thirteen modules' orchestration into `packages/application`,
-repoints the eighteen app files that import a moved symbol, and narrows the
-`domain-to-api-client` exception to what remains. **CR06** lifts `offlineSync`
-— 41% of the moving code, and by the responsibilities above a `sync` concern:
-durable identity and state, restart replay, retry and backoff, queue
-execution — into `packages/sync`, and removes the exception. Only then is the
-domain package pure.
+CR05 paid it, by putting ports between them. It also absorbed `offlineSync`,
+which CR04 had deferred to CR06 as a `sync` concern. That reading was right
+about ownership and wrong about ordering: `api-client -> application` plus the
+surviving `domain -> api-client` closes a cycle, so CR05 could not complete
+while any domain module still reached an adapter.
 
-### The moved use cases carry debt of their own
+CR06 now relocates the durable queue from `packages/application` into
+`packages/sync` using those ports — a move, not another extraction.
 
-`application` may depend only on `domain` and `types`, but the use cases CR04
-moves still call adapters. Relocating them therefore creates a second forbidden
-edge rather than resolving one, and it cannot be avoided inside CR04: ports need
-implementations, implementations belong in `api-client`, and `api-client` is
-CR05's to own.
+### Provider selection is only half real until CR09
 
-So CR04 records an `application-to-api-client` exception expiring in **CR05**,
-which is the slice that defines the provider-independent ports, implements them
-in `api-client`, selects them at the composition roots, and removes the
-exception. The debt is deliberate, scheduled, and machine-checked, in the same
-way CR01 recorded the two it inherited.
-
-One provider type crosses the seam meanwhile: `AuthSupabaseClient` is
-`SupabaseClient` from `@supabase/supabase-js`, threaded through nineteen
-signatures in four modules. CR04 preserves those signatures so the move stays
-behaviour-preserving; retiring the provider type is part of CR05's port work.
-
-The exception named CR09 until this was reconciled; CR09 owns only `apps`, so
-it could never have removed a `packages/domain` import.
+`packages/api-client/supabase.ts` creates a client at import time from
+environment variables. Of its adapters, those that accept a client are genuinely
+selected at a composition root; the rest close over that singleton, so their
+"selection" is nominal. Removing it is a CR09 deliverable, and until then this
+distinction is a recorded limitation rather than an oversight.
 
 Use the [controlled rebuild runbook](rebuild/README.md) for scheduler,
 lifecycle, verification, and publication rules.

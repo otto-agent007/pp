@@ -14,6 +14,10 @@ import {
   getLocalDemoFixtures,
   updateLocalDemoCustomer,
 } from "./localDemoData";
+import { createCustomersAdapter } from "@pest-patrol/api-client";
+
+const customersPort = createCustomersAdapter();
+
 
 export const customersQueryKey = ["customers"] as const;
 
@@ -48,7 +52,7 @@ function makeOptimisticCustomer(input: CustomerInput): Customer {
 export function useCustomers() {
   return useQuery({
     queryKey: customersQueryKey,
-    queryFn: () => getLocalDemoFixtures()?.customers ?? listCustomers(),
+    queryFn: () => getLocalDemoFixtures()?.customers ?? listCustomers(customersPort),
   });
 }
 
@@ -59,7 +63,7 @@ export function useCreateCustomer() {
     mutationFn: (input: CustomerInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoCustomer(input))
-        : createCustomer(input),
+        : createCustomer(customersPort, input),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: customersQueryKey });
       const previous =
@@ -89,7 +93,7 @@ export function useUpdateCustomer() {
     mutationFn: ({ id, input }: { id: string; input: CustomerInput }) =>
       getLocalDemoFixtures()
         ? Promise.resolve(updateLocalDemoCustomer(id, input))
-        : updateCustomer(id, input),
+        : updateCustomer(customersPort, id, input),
     onMutate: async ({ id, input }) => {
       await queryClient.cancelQueries({ queryKey: customersQueryKey });
       const previous =
@@ -134,7 +138,7 @@ export function useArchiveCustomer() {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(archiveLocalDemoCustomer(id))
-        : archiveCustomer(id),
+        : archiveCustomer(customersPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: customersQueryKey });
       const previous =

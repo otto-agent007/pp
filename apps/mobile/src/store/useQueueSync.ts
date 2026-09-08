@@ -1,9 +1,12 @@
-import { processOfflineQueueItems } from "@pest-patrol/domain";
+import { processOfflineQueueItems } from "@pest-patrol/application";
+import { createOfflineSyncAdapter } from "@pest-patrol/api-client";
 import { create } from "zustand";
 
 import { mobileSupabase } from "../lib/supabase";
 import { useOfflineQueue } from "./useOfflineQueue";
 import { useSyncStatus } from "./useSyncStatus";
+
+const offlineSyncPort = createOfflineSyncAdapter(mobileSupabase);
 
 interface QueueSyncState {
   error: string | null;
@@ -35,8 +38,9 @@ export const useQueueSync = create<QueueSyncState>((set) => ({
 
     try {
       const result = await processOfflineQueueItems(
+        offlineSyncPort,
         useOfflineQueue.getState().items,
-        { client: mobileSupabase },
+        {},
       );
 
       useOfflineQueue.getState().replaceItems(result.items);

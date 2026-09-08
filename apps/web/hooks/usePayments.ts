@@ -17,6 +17,10 @@ import {
   markLocalDemoInvoicePaid,
   voidLocalDemoInvoice,
 } from "./localDemoData";
+import { createPaymentsAdapter } from "@pest-patrol/api-client";
+
+const paymentsPort = createPaymentsAdapter();
+
 
 export const invoicesQueryKey = ["invoices"] as const;
 export const paymentProviderStatusQueryKey = ["payment-provider-status"] as const;
@@ -24,14 +28,14 @@ export const paymentProviderStatusQueryKey = ["payment-provider-status"] as cons
 export function useInvoices() {
   return useQuery({
     queryKey: invoicesQueryKey,
-    queryFn: () => getLocalDemoFixtures()?.invoices ?? listInvoices(),
+    queryFn: () => getLocalDemoFixtures()?.invoices ?? listInvoices(paymentsPort),
   });
 }
 
 export function usePaymentProviderStatus() {
   return useQuery({
     queryKey: paymentProviderStatusQueryKey,
-    queryFn: () => getStripePaymentProviderStatus(),
+    queryFn: () => getStripePaymentProviderStatus(paymentsPort),
   });
 }
 
@@ -42,7 +46,7 @@ export function useCreateInvoice() {
     mutationFn: (input: InvoiceInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(createLocalDemoInvoice(input))
-        : createInvoice(input),
+        : createInvoice(paymentsPort, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: invoicesQueryKey });
     },
@@ -69,7 +73,7 @@ export function useCreateInvoicePaymentLink() {
         return Promise.resolve(updatedInvoice);
       }
 
-      return createInvoicePaymentLink(invoice);
+      return createInvoicePaymentLink(paymentsPort, invoice);
     },
     onMutate: async (invoice) => {
       await queryClient.cancelQueries({ queryKey: invoicesQueryKey });
@@ -101,7 +105,7 @@ export function useMarkInvoicePaid() {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(markLocalDemoInvoicePaid(id))
-        : markInvoicePaid(id),
+        : markInvoicePaid(paymentsPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: invoicesQueryKey });
       const previous =
@@ -132,7 +136,7 @@ export function useVoidInvoice() {
     mutationFn: (id: string) =>
       getLocalDemoFixtures()
         ? Promise.resolve(voidLocalDemoInvoice(id))
-        : voidInvoice(id),
+        : voidInvoice(paymentsPort, id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: invoicesQueryKey });
       const previous =

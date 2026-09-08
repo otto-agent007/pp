@@ -16,6 +16,10 @@ import {
   getLocalDemoFixtures,
   requestLocalDemoPortalUpgradeIntent,
 } from "./localDemoData";
+import { createCloseoutsAdapter } from "@pest-patrol/api-client";
+
+const closeoutsPort = createCloseoutsAdapter();
+
 
 export const customerPortalCloseoutsQueryKey = (customerId: string) =>
   ["customer-portal-closeouts", customerId] as const;
@@ -71,7 +75,7 @@ export function useCustomerPortalCloseouts(customerId: string) {
   const closeoutsQuery = useQuery({
     enabled: !fixtures,
     queryKey: customerPortalCloseoutsQueryKey(validCustomerId),
-    queryFn: () => listCustomerPortalCloseouts(validCustomerId),
+    queryFn: () => listCustomerPortalCloseouts(closeoutsPort, validCustomerId),
   });
 
   return {
@@ -95,7 +99,7 @@ export function useCustomerPortalBilling(customerId: string) {
   const billingQuery = useQuery({
     enabled: !fixtures,
     queryKey: customerPortalBillingQueryKey(validCustomerId),
-    queryFn: () => listCustomerPortalBilling(validCustomerId),
+    queryFn: () => listCustomerPortalBilling(closeoutsPort, validCustomerId),
   });
 
   return {
@@ -118,7 +122,7 @@ export function useCustomerPortalUpgradeIntent(customerId: string) {
         );
       }
 
-      return requestCustomerPortalUpgradeIntent(validCustomerId, input);
+      return requestCustomerPortalUpgradeIntent(closeoutsPort, validCustomerId, input);
     },
   });
 }
