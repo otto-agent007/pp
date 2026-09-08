@@ -469,7 +469,7 @@
       "baseSha": "b98e6f6388051193f258d2e35bc9be0611418b57",
       "id": "CR04",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR03"
@@ -616,11 +616,18 @@
           "exitCode": 0,
           "commitSha": "5d31b6c8914b867f12b8193cc9fc8c4a0789a4fb",
           "recordedAt": "2026-09-08T08:05:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #193 merged as b7278a8da10753edab6cde150addfe6d21ab1baf; the Rebuild source tag workflow published rebuild/cr04-source automatically at the canonical head.",
+          "commitSha": "82c963dd257331c0b4dc430d4cb6db5341d1f7ca",
+          "recordedAt": "2026-09-08T08:06:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/193"
         }
       ],
       "branch": "codex/rebuild-cr04-application-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/193",
-      "mergeSha": "",
+      "mergeSha": "b7278a8da10753edab6cde150addfe6d21ab1baf",
       "supersededBy": null,
       "target": null
     },
@@ -637,19 +644,29 @@
         "CR00"
       ],
       "ownership": [
+        "apps/mobile/src/store/useAssignedJobs.ts",
+        "apps/mobile/src/store/useAuth.ts",
+        "apps/mobile/src/store/useChemicalInventory.ts",
+        "apps/web/app/admin-auth-context.tsx",
+        "apps/web/app/technician-web-auth-context.tsx",
         "packages/api-client",
         "packages/application",
         "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
         "API-client demo and Supabase adapters",
-        "Provider-independent ports defined in packages/application, with their implementations in packages/api-client and selection at the app composition roots",
+        "Thirteen provider-independent ports in packages/application, one per bounded context, covering the 76 adapter functions the use cases call",
+        "Ports passed as a parameter, so signInAdmin(authPort, input) replaces signInAdmin(client, input) and AuthSupabaseClient is retired from packages/application",
+        "Port implementations in packages/api-client, selected at the five app composition roots that hold the provider client",
+        "The missing domain dependency added to the API-client manifest",
         "Removal of the application-to-api-client exception CR04 records",
         "Removal of the api-client-domain-manifest exception",
         "Adapter-mapping, stable-intent idempotency, and ambiguous-response replay tests, as docs/architecture.md requires of CR05"
       ],
       "checks": [],
-      "approvals": [],
+      "approvals": [
+        "Controller scoping of CR05 on 2026-09-08: ports passed as a parameter rather than a bound factory; the module-level supabase singleton wrapped rather than removed, with removal deferred to CR09"
+      ],
       "evidence": [],
       "branch": "",
       "pr": "",
@@ -777,7 +794,8 @@
       ],
       "deliverables": [
         "Application composition preparation and applications as the composition and UI boundary",
-        "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09"
+        "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09",
+        "Removal of the module-level supabase singleton in packages/api-client, so provider selection at the composition roots covers every adapter rather than only the injected-client ones"
       ],
       "checks": [],
       "approvals": [

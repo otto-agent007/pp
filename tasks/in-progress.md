@@ -24,64 +24,43 @@
   `tasks/done.md`. `packages/types` is now twenty context modules behind an
   explicit re-export barrel, and `packages/types/publicSurface.test.ts` freezes
   its 175-name public surface.
-- CR03-CR09 follow and each need their own controller promotion decision. They
+- CR05-CR09 follow and each need their own controller promotion decision. They
   change application code, so `pnpm architecture:check` holds their dependency
   directions honest. CR02 added the qualifier that matters for the type-level
   packages: `pnpm test` is load-bearing only where a package has runtime
   behaviour, and for one that emits nothing the real compatibility proof is
   `pnpm typecheck` across its consumers. Two debt exceptions expire inside
   these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
-  in CR04.
+  in CR06.
 - CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
   `packages/domain/module-roles.json` now declares 16 policy and 14
   orchestration modules and `moduleRoles.test.ts` guards the declaration.
-- CR04 (application layer) is `running` on `codex/rebuild-cr04-application-v1`,
-  draft PR [#193](https://github.com/otto-agent007/pp/pull/193), awaiting
-  controller merge approval. `packages/application` now holds the 88 declarations
-  that reached an adapter, `packages/domain` has thirteen fewer orchestration
-  modules, and `mutationOutcome.ts` supplies the conflict and terminal-failure
-  semantics `docs/architecture.md` requires. The move creates an
-  `application-to-api-client` exception expiring in CR05.
-- **CR04 was scoped on 2026-09-08 and is smaller than CR03's framing implied.**
-  The 14 orchestration modules export 450 declarations, but only 98 of them —
-  947 lines — reach an adapter; the other 5,542 exported lines are policy that
-  stays. The seam runs inside modules, not between them, so the extraction is a
-  filleting job rather than a file move.
-- **CR04 cannot be a mechanical move alone.** `@pest-patrol/application` may
-  depend only on `domain` and `types`, but all 98 moving functions call
-  `@pest-patrol/api-client`, so relocating them creates a second forbidden edge.
-  It cannot be avoided inside CR04: ports need implementations, implementations
-  belong in `packages/api-client`, and that package is CR05's. So CR04 records
-  an `application-to-api-client` exception expiring in **CR05**, which defines
-  the ports, implements them, wires the composition roots and removes the
-  exception. `AuthSupabaseClient` — `SupabaseClient` from
-  `@supabase/supabase-js`, threaded through 19 signatures in 4 modules — is
-  preserved through CR04 so the move stays behaviour-preserving, and retired as
-  part of CR05's port work.
-- Two corrections came out of that scoping. CR04 must repoint the **18 app
-  files** that import a moved symbol, in the same change, because the domain
-  barrel cannot re-export from `packages/application` without inverting the
-  dependency — so those paths are now in CR04's ownership. And `offlineSync` is
-  41% of the moving code but is a `sync` concern by `docs/architecture.md`'s own
-  responsibilities, so it moves to **CR06**, which now also removes the
-  `domain-to-api-client` exception. CR04 narrows that exception rather than
-  removing it.
-- **CR03 and CR04 were re-scoped on 2026-09-08**, because CR03's one-line
-  deliverable "Pure domain package" could not be met by CR03. Fourteen of
-  `packages/domain`'s thirty production modules import `@pest-patrol/api-client`
-  for 80 distinct symbols — `AuthSupabaseClient` plus 79 `*Record` adapter
-  functions. That is use-case orchestration, which belongs in
-  `@pest-patrol/application`; but that package is created by CR04, and CR04
-  depends on CR03. CR03 now records and guards the seam, and CR04 lifts the
-  orchestration through it and removes the exception. Detail is in
-  `docs/architecture.md`.
-- The same change fixed a latent defect the re-scope surfaced: **an exception's
-  removal node must own every path the exception names**, and neither removal
-  node did. Promoting CR05 failed `pnpm architecture:check` with one error and
-  CR09 with seventeen; both were invisible because the check only runs once the
-  removal node reaches `ready`. CR04 and CR05 now own
-  `tooling/architecture-boundaries.json`, and `domain-to-api-client` points at
-  CR04, which owns `packages/domain`. Promoting CR04, CR05 or CR09 now passes.
+- CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
+  `packages/application` now holds the 88 declarations that reached an adapter,
+  `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
+  supplies the conflict and terminal-failure semantics `docs/architecture.md`
+  requires.
+- **CR05 was scoped on 2026-09-08 and is next.** Measured: the port surface is
+  **76 adapter functions and 2 provider types** across 13 application modules,
+  so 13 ports, one per bounded context. Ports are passed as a parameter, so
+  `signInAdmin(authPort, input)` replaces `signInAdmin(client, input)` and
+  `AuthSupabaseClient` is retired from `packages/application`.
+- That scoping found the ownership gap for the **third** time: CR05 must change
+  the **5 app composition roots** that hold the provider client
+  (`admin-auth-context.tsx`, `technician-web-auth-context.tsx`, three mobile
+  stores), and owned none of them. Those paths are now in its ownership.
+- **The `supabase` singleton is wrapped, not removed, in CR05.**
+  `packages/api-client/supabase.ts` creates a client at import time from env
+  vars, and 47 of api-client's 109 adapters use it while 62 take an injected
+  client. Wrapping keeps CR05 bounded, but it means composition-root selection
+  is genuine only for those 62 until **CR09** removes the singleton — which is
+  now one of CR09's deliverables rather than an unrecorded assumption.
+- A latent defect the CR03/CR04 re-scoping surfaced, worth carrying:
+  **an exception's removal node must own every path the exception names**, and
+  neither removal node did. Promoting CR05 failed `pnpm architecture:check`
+  with one error and CR09 with seventeen; both were invisible because the check
+  only runs once the removal node reaches `ready`. Ownership was corrected on
+  every affected node, and promoting CR05, CR06 or CR09 now passes.
 - Known follow-up left by CR02: `packages/types` exposes no subpath entry
   points, so a consumer cannot address a context directly as
   `@pest-patrol/types/jobs`. No consumer wants to today, and supporting it
