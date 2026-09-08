@@ -1,5 +1,61 @@
 # Done
 
+## CR04 application layer
+
+- Base `b98e6f6388051193f258d2e35bc9be0611418b57`, branch
+  `codex/rebuild-cr04-application-v1`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr04-application.md`,
+  design spec
+  `docs/superpowers/specs/2026-09-08-controlled-rebuild-cr04-application-design.md`.
+- Creates `packages/application` and moves **88 declarations, 557 lines, out of
+  thirteen `packages/domain` modules** — 21% of what those modules export. The
+  seam runs inside modules, not between them: `customers.ts` is six pure
+  functions plus four one-to-three line adapter wrappers, and that shape repeats,
+  so every module keeps its rules. All thirteen end with zero adapter imports.
+- **CR03's guard proved itself.** Run before the reclassification it failed with
+  `auth is declared an orchestration module but imports no adapter; reclassify
+  it as policy rather than leaving it misfiled` — the third assertion doing
+  exactly the job it was built for, turning a completed extraction into a
+  required manifest edit. `module-roles.json` now lists 29 policy modules and
+  `offlineSync` alone as orchestration.
+- Two completeness checks bracketed the move. **Nothing lost:** the exported
+  name set of each module before equals the union of its domain and application
+  halves afterwards — 422 symbols, zero lost. That check caught two multi-line
+  re-export statements a single-line parser had dropped, in `compliance.ts` and
+  `payments.ts`. **Nothing left behind:** no module still reaches an adapter,
+  which is what let `domain-to-api-client` narrow to `offlineSync`'s three
+  occurrences.
+- **The move creates debt rather than resolving it.** `packages/application` may
+  depend only on `domain` and `types`, but all 88 moved functions call
+  `api-client`, so relocating them makes a second forbidden edge. It cannot be
+  avoided in CR04: ports need implementations, implementations belong in
+  `api-client`, and that package is CR05's. So `application-to-api-client` is
+  recorded with seventeen exact occurrences — generated from the checker's own
+  `collectWorkspaceArchitectureFacts`, not hand-written — expiring in CR05.
+- `mutationOutcome.ts` supplies the provider-independent conflict and
+  terminal-failure semantics `docs/architecture.md` requires of CR04, which
+  nothing in the repository provided: the queue could mark an item `failed`, but
+  nothing decided when retrying should stop and nothing separated a write that
+  lost a race from one that can never apply. Two rules carry it — every replay
+  reuses the intent's existing identity, so one logical write never becomes two;
+  and a retry budget converts persistence into visibility, so an exhausted
+  retryable failure becomes terminal and reaches the technician.
+- `pnpm test` was load-bearing for the first time in this stretch, and caught
+  three test files whose `vi.mock`/`vi.doMock` on `@pest-patrol/domain` kept
+  resolving after the move but stopped intercepting. `packages/domain/auth.test.ts`
+  is the only domain test covering moved code; eight of its seventeen `it` blocks
+  moved with it.
+- `AuthSupabaseClient` still threads a `SupabaseClient` through nineteen
+  signatures, preserved deliberately so the move stayed behaviour-preserving.
+  Retiring it is CR05's port work.
+- Merged as PR [#193](https://github.com/otto-agent007/pp/pull/193),
+  `b7278a8da10753edab6cde150addfe6d21ab1baf`; the `Rebuild source tag` workflow
+  published `rebuild/cr04-source` automatically at the canonical head `82c963d`.
+- Verified with `pnpm rebuild:verify` (15/15 gates, evidence set `e74a42b5`) and
+  the full gate set: `pnpm test` 9/9 projects (web 426/426, mobile 79/79,
+  application 19/19), and `pnpm architecture:check` reading 10 workspace
+  packages and 3 matched exceptions.
+
 ## CR03 domain purity seam
 
 - Base `d4199f73535ddd6fda4ab12407ec6fbad227ad79`, branch
