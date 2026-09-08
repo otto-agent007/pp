@@ -236,10 +236,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "47fdc35ae0169d0c2c88cd399626794682fd230a",
       "id": "CR02",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR01"
@@ -248,16 +248,104 @@
         "CR00"
       ],
       "ownership": [
-        "packages/types"
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-08-controlled-rebuild-cr02-types-contexts.md",
+        "docs/superpowers/specs/2026-09-08-controlled-rebuild-cr02-types-contexts-design.md",
+        "packages/types/apiRateLimits.ts",
+        "packages/types/automation.ts",
+        "packages/types/closeouts.ts",
+        "packages/types/compliance.ts",
+        "packages/types/customers.ts",
+        "packages/types/demoSeed.ts",
+        "packages/types/estimateConversion.ts",
+        "packages/types/forms.ts",
+        "packages/types/geofencing.ts",
+        "packages/types/index.ts",
+        "packages/types/inventory.ts",
+        "packages/types/jobClassification.ts",
+        "packages/types/jobs.ts",
+        "packages/types/media.ts",
+        "packages/types/offlineQueue.ts",
+        "packages/types/package.json",
+        "packages/types/payments.ts",
+        "packages/types/portal.ts",
+        "packages/types/providerReadiness.ts",
+        "packages/types/publicSurface.test.ts",
+        "packages/types/serviceBillingCatalog.ts",
+        "packages/types/technicianLicenses.ts",
+        "packages/types/technicians.ts",
+        "packages/types/tsconfig.json",
+        "pnpm-lock.yaml",
+        "tasks/in-progress.md"
       ],
       "deliverables": [
-        "Bounded-context shared types with compatibility exports"
+        "Bounded-context shared types with compatibility exports",
+        "Twenty context modules partitioning all 175 exported declarations, with an acyclic module dependency graph",
+        "An explicit re-export barrel that preserves the package's public surface, so no consumer import changes",
+        "publicSurface.test.ts, the package's first test, guarding the frozen surface and the partition",
+        "CR02 implementation plan and design specification"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "checks": [
+        "pnpm exec vitest run packages/types/publicSurface.test.ts",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the written CR02 specification before implementation (2026-09-08)",
+        "Controller decision that the compatibility surface is the root barrel only, with no subpath entry points (2026-09-08)",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "The controller approved promoting CR02 on the written specification and confirmed the barrel-only compatibility surface, declining subpath entry points, on 2026-09-08.",
+          "commitSha": "c5737d9cb8cca4584e61fa7cd63d0c1334fc64da",
+          "recordedAt": "2026-09-08T04:45:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The public-surface guard passes 4/4, and both failure injections fail it with exit code 1: dropping JobMediaInput from the barrel, and declaring JobMediaType in two modules.",
+          "command": "pnpm exec vitest run packages/types/publicSurface.test.ts",
+          "exitCode": 0,
+          "commitSha": "c5737d9cb8cca4584e61fa7cd63d0c1334fc64da",
+          "recordedAt": "2026-09-08T04:45:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Typecheck passes 9/9 workspace projects, which is the compatibility proof for the 124 files importing @pest-patrol/types.",
+          "command": "pnpm typecheck",
+          "exitCode": 0,
+          "commitSha": "c5737d9cb8cca4584e61fa7cd63d0c1334fc64da",
+          "recordedAt": "2026-09-08T04:45:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The architecture boundary checker still reports 9 packages and 2 matched exceptions, so the split reached for no new workspace dependency.",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "commitSha": "c5737d9cb8cca4584e61fa7cd63d0c1334fc64da",
+          "recordedAt": "2026-09-08T04:45:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #186 opened for CR02.",
+          "commitSha": "c5737d9cb8cca4584e61fa7cd63d0c1334fc64da",
+          "recordedAt": "2026-09-08T04:45:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/186"
+        }
+      ],
+      "branch": "codex/rebuild-cr02-types-contexts-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/186",
       "mergeSha": "",
       "supersededBy": null,
       "target": null
