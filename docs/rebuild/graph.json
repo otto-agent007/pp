@@ -933,10 +933,10 @@
       }
     },
     {
-      "baseSha": "",
+      "baseSha": "e49aae824706c57d6cb7f9a666ca03fb0fc81868",
       "id": "CR15",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR11",
@@ -945,22 +945,105 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
-      "deliverables": [
-        "Expo SDK 56-to-57 migration with a final SDK 57 floor of 57.0.9"
+      "ownership": [
+        "apps/mobile/package.json",
+        "apps/web/package.json",
+        "docs/rebuild/graph.json",
+        "docs/superpowers/plans/2026-09-08-controlled-rebuild-cr15-expo-57.md",
+        "package.json",
+        "packages/api-client/package.json",
+        "packages/domain/package.json",
+        "packages/i18n/package.json",
+        "packages/types/package.json",
+        "packages/ui-native/package.json",
+        "packages/ui-tokens/package.json",
+        "packages/ui/package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tasks/done.md",
+        "tasks/in-progress.md",
+        "tsconfig.base.json"
       ],
-      "checks": [],
-      "approvals": [],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "deliverables": [
+        "Expo SDK 57 migration of apps/mobile, frozen at 57.0.20, above the recorded 57.0.9 Hermes-fix floor, closing the controlled rebuild's platform chain",
+        "A single 55-to-57 hop rather than the 56-then-57 pair originally described, on controller approval after a scouting trial proved the end state green",
+        "react-native 0.86.3 and the SDK-aligned ~57.0.x Expo packages; React moves only a patch, 19.2.0 to 19.2.3",
+        "TypeScript 6.0.3 across every workspace project and tooling/, with tsconfig.base.json's deprecated baseUrl removed and its paths made relative",
+        "pnpm overrides pinning @react-native/metro-config and react-native-worklets, which collapses the react-native duplicate SDK 57's new doctor check reports",
+        "The tsconfck TypeScript 6 peer mismatch recorded in peerDependencyRules rather than left as a standing warning",
+        "CR14 reconciled as done in this slice's first commit, the workflow PR #178 enabled",
+        "CR15 implementation plan and controlled-rebuild evidence"
+      ],
+      "checks": [
+        "node -e \"const v = require('./apps/mobile/node_modules/expo/package.json').version; if (v !== '57.0.20') { throw new Error(v) }\"",
+        "node -e \"const v = require('./apps/mobile/node_modules/react-native/package.json').version; if (v !== '0.86.3') { throw new Error(v) }\"",
+        "node -e \"const v = require('./node_modules/typescript/package.json').version; if (v !== '6.0.3') { throw new Error(v) }\"",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
+      "approvals": [
+        "Controller approval of the Expo SDK 57 target refresh and the CR15 start (2026-09-08)",
+        "Controller approval of running CR15 as a single 55-to-57 hop rather than the 56-then-57 pair the graph originally described, accepting that SDK 56 is skipped without being installed (2026-09-08)",
+        "Controller approval of Expo Doctor plus clean two-platform prebuild as this slice's native-build evidence depth, with no EAS project or provider action (2026-09-08)",
+        "Controller merge approval per the runbook merge authorization checklist"
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved the Expo SDK 57.0.20 target refresh, the CR15 start, and running it as a single 55-to-57 hop after a scouting trial proved the end state green, on 2026-09-08.",
+          "commitSha": "e2e26663f027b2c6d2e83baf54af680702c49db3",
+          "recordedAt": "2026-09-08T01:49:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Expo Doctor passed 21/21 checks in a disposable clean checkout at the implementation commit.",
+          "command": "npx expo-doctor@1.20.4",
+          "exitCode": 0,
+          "commitSha": "e2e26663f027b2c6d2e83baf54af680702c49db3",
+          "recordedAt": "2026-09-08T01:48:01Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean no-install iOS prebuild generated apps/mobile/ios in a disposable clean checkout at the implementation commit; the generated tree is an evidence input and is not committed.",
+          "command": "npx expo prebuild --platform ios --no-install",
+          "exitCode": 0,
+          "commitSha": "e2e26663f027b2c6d2e83baf54af680702c49db3",
+          "recordedAt": "2026-09-08T01:48:01Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean no-install Android prebuild generated apps/mobile/android in a disposable clean checkout at the implementation commit; the generated tree is an evidence input and is not committed.",
+          "command": "npx expo prebuild --platform android --no-install",
+          "exitCode": 0,
+          "commitSha": "e2e26663f027b2c6d2e83baf54af680702c49db3",
+          "recordedAt": "2026-09-08T01:48:01Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #181 opened for CR15 from codex/rebuild-cr15-expo-57-v1.",
+          "commitSha": "e2e26663f027b2c6d2e83baf54af680702c49db3",
+          "recordedAt": "2026-09-08T01:49:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/181"
+        }
+      ],
+      "branch": "codex/rebuild-cr15-expo-57-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/181",
       "mergeSha": "",
       "supersededBy": null,
       "target": {
         "product": "expo",
         "constraint": "57",
         "selection": "exact-sdk-major",
-        "resolvedVersion": "57.0.9"
+        "resolvedVersion": "57.0.20"
       }
     },
     {
