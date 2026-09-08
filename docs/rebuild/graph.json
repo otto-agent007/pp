@@ -936,7 +936,7 @@
       "baseSha": "e49aae824706c57d6cb7f9a666ca03fb0fc81868",
       "id": "CR15",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR11",
@@ -1041,11 +1041,18 @@
           "exitCode": 0,
           "commitSha": "459a5dbab7666ce263065a9671b160bc8b567f46",
           "recordedAt": "2026-09-08T01:49:52Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #181 merged as ebddb1c8155ae9a948199f81cae46222e2a584b1, closing the controlled rebuild's platform chain.",
+          "commitSha": "fd878221a98077857611ff7dbc3f8f48fcd33e47",
+          "recordedAt": "2026-09-08T02:30:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/181"
         }
       ],
       "branch": "codex/rebuild-cr15-expo-57-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/181",
-      "mergeSha": "",
+      "mergeSha": "ebddb1c8155ae9a948199f81cae46222e2a584b1",
       "supersededBy": null,
       "target": {
         "product": "expo",

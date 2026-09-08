@@ -1,5 +1,62 @@
 # Done
 
+## CR15 Expo SDK 57 migration — platform chain closed
+
+- Base `e49aae824706c57d6cb7f9a666ca03fb0fc81868`, branch
+  `codex/rebuild-cr15-expo-57-v1`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr15-expo-57.md`.
+- Frozen target Expo SDK `57.0.20`, above the recorded 57.0.9 Hermes-fix floor.
+  React Native 0.83.10 to 0.86.3; React moved only a patch, 19.2.0 to 19.2.3.
+- **Ran as a single 55-to-57 hop** rather than the 56-then-57 pair the graph
+  originally described. The shape came from a scouting trial that built the
+  whole end state in a disposable clone and ran every gate against it, which is
+  what found the TypeScript 6 requirement, the exact tsconfig breakage, and two
+  unmet peers. Recorded as an accepted risk, not a verified result: SDK 56 was
+  never installed, and `expo-secure-store`'s persisted keychain data is the one
+  thing the trial could not exercise.
+- **TypeScript 6.0.3 across the workspace.** Its only breakage was
+  `tsconfig.base.json`'s `baseUrl` (deprecated, TS5101); removing it forced the
+  `paths` values to be relative (TS5090). `typescript-eslint@8.69.0` already
+  accepted `<6.1.0`, so no lint-toolchain churn — unlike CR12.
+- **A duplicate that was not what it looked like.** SDK 57's new
+  duplicate-native-module check (21 checks, up from 20) reported two physical
+  copies of `react-native@0.86.3`. Removing `react-native` from
+  `packages/ui-native`'s devDependencies did *not* fix it, because the copy
+  exists to satisfy its declared peer. The real cause was pnpm auto-install-peers
+  resolving `@react-native/metro-config` to 0.87.1 where 0.86.3 was wanted,
+  forking react-native's peer-resolution context. Pinning that and
+  `react-native-worklets` collapsed the duplicate; `ui-native` needed no change.
+- One accepted peer mismatch recorded in `peerDependencyRules.allowedVersions`:
+  `tsconfck` caps at `typescript ^5.0.0`, is the latest published version, and
+  `vite-tsconfig-paths` pins it.
+- Merged as PR [#181](https://github.com/otto-agent007/pp/pull/181),
+  `ebddb1c8155ae9a948199f81cae46222e2a584b1`, tagged `rebuild/cr15-source` at
+  its frozen head `fd87822`; the merge commit's tree matched the tag's.
+- Verified with `pnpm rebuild:verify` (15/15 gates, evidence set `d6bf463c`),
+  Expo Doctor 21/21, clean no-install prebuild for both platforms, plus the full
+  gate set.
+- **This closes the platform chain.** CR10 through CR15 are done; the next
+  frontier is CR01-CR09's architecture refactor.
+
+## Automated slice source tagging
+
+- PR [#182](https://github.com/otto-agent007/pp/pull/182) publishes a slice's
+  immutable `rebuild/<slice>-source` tag when its pull request merges, which was
+  the last manual step after a slice landed. CR10 through CR15 were tagged by
+  hand.
+- Matching requires both the pull request URL and the head branch. The branch is
+  not redundant: since #178 the default branch may name a slice `running` after
+  its pull request merged, so a control-plane pull request merged in that window
+  would otherwise resolve to the slice. That window was real — #180 merged while
+  the graph still named CR14 running — and the resolver was checked against it.
+- The tag stays immutable: absent means create, same commit means a quiet no-op
+  so re-runs are safe, and a different commit fails the job rather than
+  rewriting recorded history.
+- The job takes `contents: write`, so it is scoped: the workflow defaults to
+  `contents: read`, the write job runs only for a merged pull request whose head
+  is a branch in this repository, and it checks out the base branch rather than
+  the pull request head.
+
 ## CR14 Expo SDK 55 migration
 
 - Base `8322fd1cc55587db3e33e2297c216d88729e4df2`, branch

@@ -12,16 +12,21 @@
   before the CR01-CR09 architecture refactor.
 - CR10 (Node 24.20.0), CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), and CR13
   (Expo SDK 54.0.37) are `done`; details are in `tasks/done.md`.
-- CR14 (Expo SDK 55.0.31) is `done`; its summary is in `tasks/done.md`. This
-  slice's first commit carries that reconciliation, which is the workflow PR
-  [#178](https://github.com/otto-agent007/pp/pull/178) enabled — no separate
-  reconciliation pull request was needed.
-- CR15 (Expo SDK 57.0.20) is the last node in the platform chain. It runs as a
-  single 55-to-57 hop rather than the 56-then-57 pair the graph originally
-  described, on controller approval after a scouting trial proved the end state
-  green. Skipping SDK 56 is an accepted risk: the app uses continuous native
-  generation, so nothing native is carried across, though `expo-secure-store`'s
-  persisted keychain data is the one thing the trial could not exercise.
+- **The controlled rebuild's platform chain is closed.** CR10 (Node 24.20.0),
+  CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), CR13 (Expo SDK 54.0.37), CR14 (Expo
+  SDK 55.0.31) and CR15 (Expo SDK 57.0.20) are all `done`; details are in
+  `tasks/done.md`.
+- The next frontier is CR01-CR09's architecture refactor. CR01's draft PR
+  [#148](https://github.com/otto-agent007/pp/pull/148) predates the platform
+  chain, is conflicting, and has not been touched; it needs re-basing and a
+  fresh controller promotion decision before anything there restarts.
+- A slice now needs only controller merge approval to land. Three control-plane
+  changes removed the rest: PR
+  [#178](https://github.com/otto-agent007/pp/pull/178) (no reconciliation PR and
+  no red default branch), PR
+  [#180](https://github.com/otto-agent007/pp/pull/180) (`tooling/` typechecked
+  and linted), and PR [#182](https://github.com/otto-agent007/pp/pull/182)
+  (source tags published automatically on merge).
 - Known follow-up carried out of CR12: 16 `eslint-plugin-react-hooks` v7
   findings in `apps/web` (13 `set-state-in-effect`, 2 `purity`, 1 `use-memo`)
   are tracked warnings, not fixes. Clearing them changes component behaviour
