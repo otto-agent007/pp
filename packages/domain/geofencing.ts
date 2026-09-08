@@ -4,7 +4,6 @@ import type {
   JobGeofenceEventQueuePayload,
   JobGeofenceEventType,
 } from "@pest-patrol/types";
-import { listJobGeofenceEventRecords } from "@pest-patrol/api-client";
 
 export const DEFAULT_GEOFENCE_RADIUS_METERS = 150;
 
@@ -20,6 +19,7 @@ export interface JobGeofenceCheck {
 }
 
 export type DispatchLocationEvidenceState = "captured" | "missing";
+
 export type DispatchLocationEvidenceRadiusState =
   | "inside"
   | "outside"
@@ -317,8 +317,4 @@ export function createJobGeofenceEventQueuePayload(
     distance_m: normalized.distance_m ?? null,
     within_radius: normalized.within_radius ?? null,
   };
-}
-
-export async function listJobGeofenceEvents() {
-  return listJobGeofenceEventRecords();
 }

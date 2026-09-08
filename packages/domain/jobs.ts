@@ -1,20 +1,9 @@
-import {
-  cancelJobRecord,
-  createJobRecord,
-  listAssignedTechnicianJobRecords,
-  listCustomerPortalJobRecords,
-  listJobRecords,
-  listTechnicianProfileRecords,
-  updateJobRecord,
-} from "@pest-patrol/api-client";
-import type { AuthSupabaseClient } from "@pest-patrol/api-client";
 import type {
   Job,
   JobInput,
   JobStatus,
   OfflineQueueItem,
 } from "@pest-patrol/types";
-
 import { buildMobileJobWorkPlan } from "./demoReadiness";
 import type { MobileJobWorkPlanItem } from "./demoReadiness";
 import { buildDispatchLocationMapUrl } from "./geofencing";
@@ -24,6 +13,7 @@ import type { OfflineQueueJobTriage } from "./offlineQueue";
 import { applyJobClassificationToInput } from "./jobClassification";
 
 export type JobStatusFilter = JobStatus | "all";
+
 export type TechnicianFilter = "all" | "unassigned" | string;
 
 export interface DispatchCalendarDay {
@@ -38,8 +28,11 @@ export type DispatchRouteLocationState =
   | "ready";
 
 export type DispatchRouteStopStatusState = "active" | "canceled" | "completed";
+
 export type DispatchRouteEvidenceState = "complete" | "missing" | "partial";
+
 export type DispatchRouteRiskState = "at_risk" | "closed" | "on_track";
+
 export type DispatchRouteTriageFilter =
   | "all"
   | "at_risk"
@@ -131,6 +124,7 @@ export interface DispatchRouteGroupSummaryOptions {
 }
 
 export type DispatchStaticMapPointSource = "latest_gps" | "service_location";
+
 export type DispatchStaticMapMarkerTone =
   | "amber"
   | "emerald"
@@ -224,6 +218,7 @@ export interface MobileDailyRouteTimeline {
 
 const scheduleDateTimePattern =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/;
+
 const dispatchStaticMapBounds: DispatchStaticMapBounds = {
   east: -116.85,
   label: "San Diego County demo view",
@@ -231,10 +226,12 @@ const dispatchStaticMapBounds: DispatchStaticMapBounds = {
   south: 32.52,
   west: -117.3,
 };
+
 const dispatchStaticMapLandXPercent = {
   width: 58,
   west: 34,
 };
+
 const dispatchStaticMapMarkerTones: DispatchStaticMapMarkerTone[] = [
   "sky",
   "emerald",
@@ -243,7 +240,7 @@ const dispatchStaticMapMarkerTones: DispatchStaticMapMarkerTone[] = [
   "navy",
 ];
 
-function normalizeOptional(value?: string | null) {
+export function normalizeOptional(value?: string | null) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
 }
@@ -1379,46 +1376,4 @@ export function jobToInput(
     parent_job_id: job.parent_job_id,
     ...override,
   });
-}
-
-export async function changeJobStatus(job: Job, status: JobStatus) {
-  return updateJobRecord(job.id, jobToInput(job, { status }));
-}
-
-export async function assignJobTechnician(
-  job: Job,
-  assignedTechId?: string | null,
-) {
-  return updateJobRecord(
-    job.id,
-    jobToInput(job, { assigned_tech_id: normalizeOptional(assignedTechId) }),
-  );
-}
-
-export async function listJobs() {
-  return listJobRecords();
-}
-
-export async function listAssignedTechnicianJobs(client: AuthSupabaseClient) {
-  return listAssignedTechnicianJobRecords(client);
-}
-
-export async function listCustomerPortalJobs(customerId: string) {
-  return listCustomerPortalJobRecords(requireNonEmpty(customerId, "Customer"));
-}
-
-export async function createJob(input: JobInput) {
-  return createJobRecord(validateJobInput(input));
-}
-
-export async function updateJob(id: string, input: JobInput) {
-  return updateJobRecord(id, validateJobInput(input));
-}
-
-export async function cancelJob(id: string) {
-  return cancelJobRecord(id);
-}
-
-export async function listTechnicians() {
-  return listTechnicianProfileRecords("active");
 }

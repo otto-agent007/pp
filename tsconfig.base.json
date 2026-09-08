@@ -20,6 +20,9 @@
       "@pest-patrol/api-client": [
         "./packages/api-client/index.ts"
       ],
+      "@pest-patrol/application": [
+        "./packages/application/index.ts"
+      ],
       "@pest-patrol/domain": [
         "./packages/domain/index.ts"
       ],

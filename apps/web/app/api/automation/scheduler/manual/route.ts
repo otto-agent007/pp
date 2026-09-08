@@ -1,5 +1,5 @@
 import { createAutomationSchedulerRunRecord } from "@pest-patrol/api-client";
-import { runAutomationSchedulerForClient } from "@pest-patrol/domain";
+import { runAutomationSchedulerForClient } from "@pest-patrol/application";
 import { NextResponse } from "next/server";
 
 import {

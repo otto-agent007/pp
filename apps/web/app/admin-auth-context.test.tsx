@@ -73,10 +73,12 @@ async function renderAuthProbe(
   vi.doMock("@pest-patrol/domain", () => ({
     DEMO_SEED_ADMIN_EMAIL: "demo@email.com",
     buildDemoWorkflowFixtures: vi.fn(),
+    shouldUseLocalDemoFixtures: vi.fn().mockReturnValue(false),
+  }));
+  vi.doMock("@pest-patrol/application", () => ({
     establishPasswordRecoverySession: vi.fn(),
     getCurrentAdminAuth,
     requestPasswordReset: vi.fn(),
-    shouldUseLocalDemoFixtures: vi.fn().mockReturnValue(false),
     signInAdmin,
     signOutAdmin,
     updateCurrentUserPassword: vi.fn(),
@@ -148,6 +150,7 @@ describe("AdminAuthProvider demo login refresh", () => {
     vi.clearAllMocks();
     vi.doUnmock("@pest-patrol/api-client");
     vi.doUnmock("@pest-patrol/domain");
+    vi.doUnmock("@pest-patrol/application");
     vi.doUnmock("../hooks/localDemoData");
   });
 
@@ -233,6 +236,7 @@ describe("AdminAuthProvider sign-out", () => {
     vi.clearAllMocks();
     vi.doUnmock("@pest-patrol/api-client");
     vi.doUnmock("@pest-patrol/domain");
+    vi.doUnmock("@pest-patrol/application");
     vi.doUnmock("../hooks/localDemoData");
   });
 

@@ -1,9 +1,3 @@
-import {
-  archiveTechnicianLicenseRecord,
-  createTechnicianLicenseRecord,
-  listTechnicianLicenseRecords,
-  updateTechnicianLicenseRecord,
-} from "@pest-patrol/api-client";
 import type {
   ChemicalLog,
   Job,
@@ -61,11 +55,13 @@ const licenseTypes: TechnicianLicenseType[] = [
   "registered_company",
   "other",
 ];
+
 const licenseBranches: TechnicianLicenseBranch[] = [
   "branch_2",
   "branch_3",
   "general",
 ];
+
 const licenseStatuses: TechnicianLicenseStatus[] = [
   "active",
   "expired",
@@ -73,7 +69,9 @@ const licenseStatuses: TechnicianLicenseStatus[] = [
   "suspended",
   "unknown",
 ];
+
 const expiringSoonDays = 45;
+
 export const CHEMICAL_LOG_MISSING_TECHNICIAN_CREDENTIAL_COPY =
   "Technician credential cannot be verified because this chemical log does not include technician identity.";
 
@@ -336,26 +334,4 @@ export function getWdoCredentialReview(
   return review.status === "ready"
     ? { ...review, summary: "Branch 3 credential ready" }
     : { ...review, summary: "credential review required" };
-}
-
-export function listTechnicianLicenses(technicianId?: string) {
-  return listTechnicianLicenseRecords(technicianId);
-}
-
-export function createTechnicianLicense(input: TechnicianLicenseInput) {
-  return createTechnicianLicenseRecord(validateTechnicianLicenseInput(input));
-}
-
-export function updateTechnicianLicense(
-  id: string,
-  input: TechnicianLicenseInput,
-) {
-  return updateTechnicianLicenseRecord(
-    id,
-    validateTechnicianLicenseInput(input),
-  );
-}
-
-export function archiveTechnicianLicense(id: string) {
-  return archiveTechnicianLicenseRecord(id);
 }

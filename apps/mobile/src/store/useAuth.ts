@@ -2,7 +2,7 @@ import {
   getCurrentTechnicianAuth,
   signInTechnician,
   signOutTechnician,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type { UserProfile } from "@pest-patrol/types";
 import type { Session, Subscription } from "@supabase/supabase-js";
 import { create } from "zustand";

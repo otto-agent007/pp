@@ -7,7 +7,7 @@ import {
   listChemicalInventory,
   listChemicalLogs,
   updateChemicalInventory,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type {
   ChemicalInventoryInput,
   ChemicalInventoryItem,

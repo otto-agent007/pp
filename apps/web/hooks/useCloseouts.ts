@@ -1,12 +1,12 @@
 "use client";
 
+import { buildJobCloseoutReview } from "@pest-patrol/domain";
 import {
-  buildJobCloseoutReview,
   listCloseoutCaptureSummaries,
   listJobChemicalLogs,
   listJobFormSubmissions,
   listJobMedia,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type { Job } from "@pest-patrol/types";
 import { useQuery } from "@tanstack/react-query";
 import { getLocalDemoFixtures } from "./localDemoData";

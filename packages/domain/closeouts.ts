@@ -1,7 +1,7 @@
 import type {
   ChemicalLog,
+  CloseoutCaptureSummary,
   CustomerPortalAccessInput,
-  CustomerPortalSendInput,
   CustomerPortalAccessTokenEventSummary,
   CustomerPortalAccessTokenSummary,
   CustomerPortalCloseout,
@@ -9,29 +9,16 @@ import type {
   CustomerPortalInvoice,
   CustomerPortalJob,
   CustomerPortalMedia,
+  CustomerPortalSendInput,
   CustomerPortalUpgradeIntentInput,
-  CustomerPortalUpgradeIntentResult,
   CustomerPortalUpgradePlanId,
+  Invoice,
   Job,
   JobCloseoutReview,
   JobFormSubmission,
   JobMedia,
-  CloseoutCaptureSummary,
-  Invoice,
   NotificationEventInput,
 } from "@pest-patrol/types";
-import {
-  createCustomerPortalAccessTokenRecord,
-  getCustomerPortalProviderStatusRecord,
-  listCloseoutCaptureSummaryRecords,
-  listCustomerPortalAccessTokenEventRecords,
-  listCustomerPortalAccessTokenRecords,
-  listCustomerPortalCloseoutRecords,
-  revokeCustomerPortalAccessTokenRecord,
-  sendCustomerPortalAccessTokenRecord,
-  listCustomerPortalBillingRecords,
-  requestCustomerPortalUpgradeIntentRecord,
-} from "@pest-patrol/api-client";
 import { formatJobScheduleDateTime, getJobScheduleTime } from "./jobs";
 import type { DispatchLocationEvidence } from "./geofencing";
 
@@ -712,40 +699,6 @@ export function getCustomerPortalSendProviderStatusLabel(configured: boolean) {
     : "Portal delivery provider not configured";
 }
 
-export async function getCustomerPortalProviderStatus() {
-  return getCustomerPortalProviderStatusRecord();
-}
-
-export async function listCustomerPortalCloseouts(
-  customerId: string,
-) {
-  return listCustomerPortalCloseoutRecords(
-    validateCustomerPortalCustomerId(customerId),
-  );
-}
-
-export async function listCloseoutCaptureSummaries(jobIds: string[]) {
-  return listCloseoutCaptureSummaryRecords(jobIds);
-}
-
-export async function listCustomerPortalBilling(
-  customerId: string,
-) {
-  return listCustomerPortalBillingRecords(
-    validateCustomerPortalCustomerId(customerId),
-  );
-}
-
-export async function requestCustomerPortalUpgradeIntent(
-  customerId: string,
-  input: CustomerPortalUpgradeIntentInput,
-): Promise<CustomerPortalUpgradeIntentResult> {
-  return requestCustomerPortalUpgradeIntentRecord(
-    validateCustomerPortalCustomerId(customerId),
-    validateCustomerPortalUpgradeIntentInput(input),
-  );
-}
-
 export function getCustomerPortalAccessTokenState(
   token: CustomerPortalAccessTokenSummary,
   now = new Date(),
@@ -864,18 +817,6 @@ export function getCustomerPortalAccessTokenReadinessSummary(
   );
 }
 
-export async function listCustomerPortalAccessTokens(customerId: string) {
-  return listCustomerPortalAccessTokenRecords(
-    validateCustomerPortalCustomerId(customerId),
-  );
-}
-
-export async function listCustomerPortalAccessTokenEvents(id: string) {
-  return listCustomerPortalAccessTokenEventRecords(
-    validateCustomerPortalAccessTokenId(id),
-  );
-}
-
 export function getCustomerPortalAccessTokenEventLabel(
   event: CustomerPortalAccessTokenEventSummary,
 ) {
@@ -900,28 +841,6 @@ export function getCustomerPortalAccessTokenEventLabel(
   }
 
   return "Revoked";
-}
-
-export async function createCustomerPortalAccessToken(
-  input: CustomerPortalAccessInput,
-) {
-  return createCustomerPortalAccessTokenRecord(
-    validateCustomerPortalAccessInput(input),
-  );
-}
-
-export async function revokeCustomerPortalAccessToken(id: string) {
-  return revokeCustomerPortalAccessTokenRecord(
-    validateCustomerPortalAccessTokenId(id),
-  );
-}
-
-export async function sendCustomerPortalAccessToken(
-  input: CustomerPortalSendInput,
-) {
-  return sendCustomerPortalAccessTokenRecord(
-    validateCustomerPortalSendInput(input),
-  );
 }
 
 function toCustomerPortalJob(job: CustomerPortalJob): CustomerPortalJob {

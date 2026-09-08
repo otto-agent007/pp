@@ -1,10 +1,8 @@
-import {
-  archiveCustomerRecord,
-  createCustomerRecord,
-  listCustomerRecords,
-  updateCustomerRecord,
-} from "@pest-patrol/api-client";
-import type { Customer, CustomerInput, CustomerLocationInput } from "@pest-patrol/types";
+import type {
+  Customer,
+  CustomerInput,
+  CustomerLocationInput,
+} from "@pest-patrol/types";
 
 function normalizeOptional(value?: string | null) {
   const normalized = value?.trim();
@@ -86,20 +84,4 @@ export function filterCustomers(
 
     return searchable.includes(query);
   });
-}
-
-export async function listCustomers() {
-  return listCustomerRecords();
-}
-
-export async function createCustomer(input: CustomerInput) {
-  return createCustomerRecord(validateCustomerInput(input));
-}
-
-export async function updateCustomer(id: string, input: CustomerInput) {
-  return updateCustomerRecord(id, validateCustomerInput(input));
-}
-
-export async function archiveCustomer(id: string) {
-  return archiveCustomerRecord(id);
 }

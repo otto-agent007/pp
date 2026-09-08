@@ -1,4 +1,4 @@
-import { listChemicalInventoryForClient } from "@pest-patrol/domain";
+import { listChemicalInventoryForClient } from "@pest-patrol/application";
 import type { ChemicalInventoryItem } from "@pest-patrol/types";
 import { create } from "zustand";
 

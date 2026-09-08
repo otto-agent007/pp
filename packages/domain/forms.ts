@@ -1,9 +1,3 @@
-import {
-  createJobFormSubmissionRecord,
-  listCustomerPortalFormSubmissionRecords,
-  listActiveFormTemplateRecords,
-  listJobFormSubmissionRecords,
-} from "@pest-patrol/api-client";
 import type {
   FormDraft,
   FormField,
@@ -262,28 +256,5 @@ export function formDraftToSubmissionInput(
       form_data: draft.values,
     },
     template,
-  );
-}
-
-export async function listActiveFormTemplates() {
-  return listActiveFormTemplateRecords();
-}
-
-export async function listJobFormSubmissions(jobId: string) {
-  return listJobFormSubmissionRecords(requireNonEmpty(jobId, "Job"));
-}
-
-export async function listCustomerPortalFormSubmissions(customerId: string) {
-  return listCustomerPortalFormSubmissionRecords(
-    requireNonEmpty(customerId, "Customer"),
-  );
-}
-
-export async function createJobFormSubmission(
-  input: JobFormSubmissionInput,
-  template: FormTemplate,
-) {
-  return createJobFormSubmissionRecord(
-    validateFormSubmissionInput(input, template),
   );
 }

@@ -5,7 +5,7 @@ import {
   establishPasswordRecoverySession,
   signInTechnician,
   updateCurrentUserPassword,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import { useState } from "react";
 
 type TechnicianWebAuthStatus = "signed_in" | "signed_out" | "loading";

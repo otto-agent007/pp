@@ -1,14 +1,9 @@
-import {
-  inviteTechnicianRecord,
-  listTechnicianProfileRecords,
-} from "@pest-patrol/api-client";
 import type {
   Job,
   JobStatus,
   TechnicianInviteInput,
   TechnicianProfile,
 } from "@pest-patrol/types";
-
 import { getJobScheduleDateKey, getJobScheduleTime } from "./jobs";
 
 export type TechnicianRouteStatus =
@@ -189,12 +184,4 @@ export function buildTechnicianRouteLoadSummaries(
       current_job_id: routeStatus.currentJobId,
     };
   });
-}
-
-export async function listTechnicianDirectory() {
-  return listTechnicianProfileRecords();
-}
-
-export async function inviteTechnician(input: TechnicianInviteInput) {
-  return inviteTechnicianRecord(validateTechnicianInviteInput(input));
 }

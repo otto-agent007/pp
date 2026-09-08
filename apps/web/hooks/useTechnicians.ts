@@ -4,11 +4,11 @@ import {
   archiveTechnicianLicense,
   createTechnicianLicense,
   inviteTechnician,
-  listTechnicianLicenses,
   listTechnicianDirectory,
+  listTechnicianLicenses,
   listTechnicians,
   updateTechnicianLicense,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import { isTechnicianLicenseSchemaUnavailableError } from "@pest-patrol/api-client";
 import type {
   TechnicianLicense,

@@ -1,10 +1,3 @@
-import {
-  createInvoicePaymentLinkRecord,
-  createInvoiceRecord,
-  getStripePaymentProviderStatusRecord,
-  listInvoiceRecords,
-  updateInvoiceStatusRecord,
-} from "@pest-patrol/api-client";
 import type {
   CustomerPortalInvoice,
   CustomerPortalInvoiceLineItem,
@@ -32,7 +25,9 @@ export {
 } from "./closeoutBillingRules";
 
 export type InvoiceStatusFilter = InvoiceStatus | "all";
+
 export type CustomerPortalInvoiceStatusFilter = CustomerPortalInvoice["status"] | "all";
+
 export type InvoiceReconciliationStatus =
   | "draft"
   | "awaiting_payment"
@@ -308,10 +303,6 @@ export function normalizeInvoiceInput(input: InvoiceInput): InvoiceInput {
 
 export function validateInvoiceInput(input: InvoiceInput) {
   return normalizeInvoiceInput(input);
-}
-
-export function getStripePaymentProviderStatus() {
-  return getStripePaymentProviderStatusRecord();
 }
 
 export function buildInvoiceInputFromJob(
@@ -622,6 +613,7 @@ export function getInvoiceReconciliation(
 
 const markPaidConfirmation =
   "Confirm the customer paid outside provider sync before marking paid. This does not create a provider charge.";
+
 const voidConfirmation =
   "Void only if this invoice should leave active collection. Existing payment records remain audit history.";
 
@@ -868,30 +860,4 @@ export function getCustomerPortalInvoiceStatusLabel(
   status: CustomerPortalInvoice["status"],
 ) {
   return status === "paid" ? "Paid" : "Open";
-}
-
-export async function listInvoices() {
-  return listInvoiceRecords();
-}
-
-export async function createInvoice(input: InvoiceInput) {
-  return createInvoiceRecord(validateInvoiceInput(input));
-}
-
-export async function markInvoicePaid(id: string) {
-  return updateInvoiceStatusRecord(requireNonEmpty(id, "Invoice"), "paid");
-}
-
-export async function voidInvoice(id: string) {
-  return updateInvoiceStatusRecord(requireNonEmpty(id, "Invoice"), "void");
-}
-
-export async function createInvoicePaymentLink(invoice: Invoice) {
-  if (!invoice.line_items || invoice.line_items.length === 0) {
-    throw new Error("Invoice line items are required");
-  }
-
-  return createInvoicePaymentLinkRecord({
-    invoice_id: invoice.id,
-  });
 }
