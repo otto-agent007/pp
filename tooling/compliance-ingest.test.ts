@@ -76,13 +76,16 @@ describe("compliance ingestion CLI", () => {
     const result = await runComplianceIngestion(
       {
         dryRun: true,
+        // `env` is an ingestion *option*, not a dependency. It used to sit in
+        // the dependencies object below, where it was silently dropped and the
+        // run read the real process.env instead of an isolated one.
+        env: {},
         manifest,
         noEmbed: true,
       },
       {
         assertSchemaReady,
         createEmbedding,
-        env: {},
         readTextFile: async () =>
           "Application time product identity registration number amount and site guidance.",
         upsertChunks: vi.fn(),

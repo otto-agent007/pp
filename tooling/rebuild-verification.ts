@@ -139,6 +139,15 @@ export function selectVerificationGates(
       commands.add("pnpm lint");
       commands.add("git diff --check");
     }
+    // tsconfig.json, and the base//project variants that extend it. These sit
+    // at the repository root as well as inside workspace projects, and the
+    // root ones match no other rule, so without this a TypeScript config
+    // change reports UNMAPPED.
+    if (/(?:^|\/)tsconfig(?:\.[^/]+)?\.json$/.test(path)) {
+      matched = true;
+      commands.add("pnpm typecheck");
+      commands.add("git diff --check");
+    }
     if (path === ".nvmrc") {
       matched = true;
       commands.add(

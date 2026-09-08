@@ -189,7 +189,7 @@ describe("controlled rebuild graph validator", () => {
   });
 
   it("rejects a node missing a required control-plane field", () => {
-    const node = nodeWith();
+    const node: Partial<ReturnType<typeof nodeWith>> = nodeWith();
     delete node.approvals;
 
     expect(errorsFor(graphWith({ nodes: [node] }))).toContain(
