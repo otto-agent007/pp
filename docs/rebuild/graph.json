@@ -501,10 +501,12 @@
         "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
-        "Application ports and use cases",
-        "Adapter orchestration lifted out of thirteen packages/domain modules into packages/application behind ports, leaving each module's policy in place",
+        "packages/application created, with its boundary-policy entry promoted from planned to required",
+        "Adapter orchestration lifted out of thirteen packages/domain modules into packages/application, leaving each module's policy in place",
         "The eighteen app files importing a moved symbol repointed at packages/application in the same change",
-        "The domain-to-api-client exception narrowed to offlineSync, the only remaining occurrence, with removal reassigned to CR06"
+        "The domain-to-api-client exception narrowed to offlineSync, the only remaining occurrence, with removal reassigned to CR06",
+        "A new application-to-api-client exception, expiring in CR05, recording that the moved use cases still call adapters directly because packages/application may not depend on packages/api-client",
+        "Provider-independent conflict and terminal-failure semantics, with policy tests, as docs/architecture.md requires of CR04"
       ],
       "checks": [],
       "approvals": [],
@@ -529,10 +531,15 @@
       ],
       "ownership": [
         "packages/api-client",
+        "packages/application",
         "tooling/architecture-boundaries.json"
       ],
       "deliverables": [
-        "API-client demo and Supabase adapters"
+        "API-client demo and Supabase adapters",
+        "Provider-independent ports defined in packages/application, with their implementations in packages/api-client and selection at the app composition roots",
+        "Removal of the application-to-api-client exception CR04 records",
+        "Removal of the api-client-domain-manifest exception",
+        "Adapter-mapping, stable-intent idempotency, and ambiguous-response replay tests, as docs/architecture.md requires of CR05"
       ],
       "checks": [],
       "approvals": [],
@@ -565,7 +572,8 @@
         "Durable offline mutation queue",
         "offlineSync's adapter orchestration lifted out of packages/domain into packages/sync, the last domain module reaching an adapter",
         "Pure domain package: packages/domain reaches zero provider and adapter imports",
-        "Removal of the domain-to-api-client boundary exception"
+        "Removal of the domain-to-api-client boundary exception",
+        "Package-local tests for durable identity and state, persistence, restart replay, retry and backoff scheduling, durable transitions, and stable identity across retry, as docs/architecture.md requires of CR06"
       ],
       "checks": [],
       "approvals": [
@@ -591,12 +599,21 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
+      "ownership": [
+        "packages/domain",
+        "packages/sync",
+        "packages/types"
+      ],
       "deliverables": [
-        "Type and offline-sync integration boundary"
+        "Type and offline-sync integration boundary",
+        "A single source-of-truth mapping from OfflineQueueAction to its payload type, so the seven actions and seven payload envelopes cannot drift apart",
+        "OfflineQueueItem discriminated by action rather than defaulting TPayload to Record<string, unknown>",
+        "Retirement of the hand-maintained Exclude<OfflineQueueAction, ...> label map in packages/domain/offlineQueue.ts, which silently omits any newly added action"
       ],
       "checks": [],
-      "approvals": [],
+      "approvals": [
+        "Scoped on 2026-09-08 from the measured gap: seven queue actions and seven payload types exist with nothing relating them, and OfflineQueueItem's TPayload default erases the pairing"
+      ],
       "evidence": [],
       "branch": "",
       "pr": "",
@@ -652,7 +669,8 @@
         "apps"
       ],
       "deliverables": [
-        "Application composition preparation and applications as the composition and UI boundary"
+        "Application composition preparation and applications as the composition and UI boundary",
+        "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09"
       ],
       "checks": [],
       "approvals": [
@@ -1436,9 +1454,15 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [],
+      "ownership": [
+        "docs/rebuild/graph.json",
+        "tasks/done.md",
+        "tasks/in-progress.md"
+      ],
       "deliverables": [
-        "Cross-runtime compatibility, controlled rebuild completion, and final reconciliation"
+        "Cross-runtime compatibility, controlled rebuild completion, and final reconciliation",
+        "Evidence that every boundary exception has been removed and that no package remains in the planned policy state",
+        "Final graph reconciliation with every slice done and every source tag published"
       ],
       "checks": [],
       "approvals": [],
