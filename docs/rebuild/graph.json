@@ -817,10 +817,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "bc543ac27d7f3c1382b23e7df871082cea8ab134",
       "id": "CR06",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR05"
@@ -829,10 +829,13 @@
         "CR00"
       ],
       "ownership": [
+        "apps/mobile/package.json",
         "apps/mobile/src/store/useQueueSync.ts",
+        "docs/architecture.md",
         "packages/application",
         "packages/domain",
         "packages/sync",
+        "tasks/done.md",
         "tooling/architecture-boundaries.json",
         "tsconfig.base.json"
       ],
@@ -841,12 +844,27 @@
         "The queue relocated from packages/application into packages/sync as a pure move, with packages/sync promoted from planned to required in the boundary policy",
         "Package-local tests for durable identity and state, persistence, restart replay, retry and backoff scheduling, durable transitions, and stable identity across retry, as docs/architecture.md requires of CR06"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run packages/sync/",
+        "pnpm exec vitest run packages/application/",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "Controller scoping of CR06 on 2026-09-08: a pure relocation, with CR04's mutationOutcome semantics left unwired so that a queue regression stays attributable to one change or the other"
       ],
       "evidence": [],
-      "branch": "",
+      "branch": "codex/rebuild-cr06-sync-v1",
       "pr": "",
       "mergeSha": "",
       "supersededBy": null,

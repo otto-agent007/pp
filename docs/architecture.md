@@ -146,8 +146,19 @@ about ownership and wrong about ordering: `api-client -> application` plus the
 surviving `domain -> api-client` closes a cycle, so CR05 could not complete
 while any domain module still reached an adapter.
 
-CR06 now relocates the durable queue from `packages/application` into
-`packages/sync` using those ports — a move, not another extraction.
+CR06 relocated the durable queue from `packages/application` into
+`packages/sync` using those ports — a move, not another extraction. Both files
+travel byte-identical apart from one import line each, which rename-detected
+diff statistics show directly. `packages/sync` depends on `application`,
+`domain` and `types`; it never needs `api-client`, which is why this move became
+possible only after CR05 put the queue behind `OfflineSyncPort`.
+
+The relocation inherited a test suite that covered per-action mapping and
+backoff, and left four of the six dimensions above unaddressed: it never crossed
+a restart, never drove the plural entry point the mobile store calls, and never
+asserted that a replay is the same logical write as the attempt it repeats.
+CR06 added those, and required each to fail against an injected fault before
+recording it as covered.
 
 ### Provider selection is only half real until CR09
 

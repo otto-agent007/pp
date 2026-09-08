@@ -10,8 +10,6 @@
 - PR [#168](https://github.com/otto-agent007/pp/pull/168) re-sequenced the
   graph so the platform chain (CR10, CR11, CR12, CR13, CR14, CR15) runs
   before the CR01-CR09 architecture refactor.
-- CR10 (Node 24.20.0), CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), and CR13
-  (Expo SDK 54.0.37) are `done`; details are in `tasks/done.md`.
 - **The controlled rebuild's platform chain is closed.** CR10 (Node 24.20.0),
   CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), CR13 (Expo SDK 54.0.37), CR14 (Expo
   SDK 55.0.31) and CR15 (Expo SDK 57.0.20) are all `done`; details are in
@@ -24,111 +22,64 @@
   `tasks/done.md`. `packages/types` is now twenty context modules behind an
   explicit re-export barrel, and `packages/types/publicSurface.test.ts` freezes
   its 175-name public surface.
-- CR05-CR09 follow and each need their own controller promotion decision. They
-  change application code, so `pnpm architecture:check` holds their dependency
-  directions honest. CR02 added the qualifier that matters for the type-level
-  packages: `pnpm test` is load-bearing only where a package has runtime
-  behaviour, and for one that emits nothing the real compatibility proof is
-  `pnpm typecheck` across its consumers. Two debt exceptions expire inside
-  these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
-  in CR06.
 - CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
-  `packages/domain/module-roles.json` now declares 16 policy and 14
-  orchestration modules and `moduleRoles.test.ts` guards the declaration.
+  `packages/domain/module-roles.json` declares the seam between pure policy and
+  adapter orchestration, and `moduleRoles.test.ts` guards the declaration.
 - CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
-  `packages/application` now holds the 88 declarations that reached an adapter,
-  `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
-  supplies the conflict and terminal-failure semantics `docs/architecture.md`
-  requires.
+  `packages/application` holds the 88 declarations that reached an adapter, and
+  `mutationOutcome.ts` supplies the conflict and terminal-failure semantics
+  `docs/architecture.md` requires.
 - CR05 (ports and adapters) is `done`; its summary is in `tasks/done.md`.
-  **`pnpm architecture:check` reports zero exceptions**, and the package
-  dependency direction matches `docs/architecture.md` exactly.
-- **CR06 was measured on 2026-09-08 and is next.** It is a *relocation*, not an
-  extraction: CR05 already put the queue behind `OfflineSyncPort`, so
-  `packages/sync` never needs `api-client` — the edge that is not on its
-  allowlist and the one that blocked CR05. The surface is `offlineSync.ts` (10
-  functions, 484 lines) plus its 602-line test and **one** app consumer,
-  `apps/mobile/src/store/useQueueSync.ts`. A dependency-graph check with `sync`
-  added finds no cycle.
-- CR06 also promotes `packages/sync` from `planned` to `required` in the
-  boundary policy, the same promotion CR04 did for `packages/application`.
-- **Deliberately not in CR06:** CR04's `mutationOutcome.ts` retry-budget and
-  terminal-failure semantics are still unused, and the queue is their natural
-  consumer. Wiring them in is behavioural change on top of a move, so it gets
-  its own slice where a queue regression stays attributable.
-- CR05-CR09 follow and each need their own controller promotion decision. They
-  change application code, so `pnpm architecture:check` holds their dependency
-  directions honest. CR02 added the qualifier that matters for the type-level
-  packages: `pnpm test` is load-bearing only where a package has runtime
-  behaviour, and for one that emits nothing the real compatibility proof is
-  `pnpm typecheck` across its consumers. Two debt exceptions expire inside
-  these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
-  in CR06.
-- CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
-  `packages/domain/module-roles.json` now declares 16 policy and 14
-  orchestration modules and `moduleRoles.test.ts` guards the declaration.
-- CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
-  `packages/application` now holds the 88 declarations that reached an adapter,
-  `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
-  supplies the conflict and terminal-failure semantics `docs/architecture.md`
-  requires.
-- CR05 (ports and adapters) is `running` on `codex/rebuild-cr05-ports-v1`,
-  draft PR [#195](https://github.com/otto-agent007/pp/pull/195), awaiting
-  controller merge approval. Thirteen ports and 77 methods now sit between
-  `packages/application` and `packages/api-client`, and
-  **`pnpm architecture:check` reports zero exceptions** for the first time since
-  CR01 recorded them.
-- **The dependency direction now matches `docs/architecture.md` exactly:**
+  Thirteen ports and 77 methods sit between `packages/application` and
+  `packages/api-client`, **`pnpm architecture:check` reports zero exceptions**,
+  and the package dependency direction matches `docs/architecture.md` exactly:
   `types` depends on nothing, `domain` on `types`, `application` on
   `domain` + `types`, `api-client` on `application` + `domain` + `types`.
 - CR05 absorbed `offlineSync`, which CR04 had deferred to CR06. That was forced,
   not chosen: `api-client -> application` plus the surviving
   `domain -> api-client` closes a cycle that turbo refuses, so CR05 could not
-  have completed otherwise. CR06 is now a relocation of the durable queue from
-  `packages/application` into `packages/sync` using these ports.
-- Two scope corrections came out of measuring CR05. The app surface was counted
-  as five composition roots and is really **twenty files**, because removing the
-  exception requires *every* use case to take a port, not only the fifteen that
-  threaded a client. And the `supabase` singleton means composition-root
-  selection is genuine for the adapters that accept a client and nominal for the
-  47 that close over it — **CR09 removes it**, which is a recorded deliverable.
-- CR05-CR09 follow and each need their own controller promotion decision. They
-  change application code, so `pnpm architecture:check` holds their dependency
-  directions honest. CR02 added the qualifier that matters for the type-level
-  packages: `pnpm test` is load-bearing only where a package has runtime
-  behaviour, and for one that emits nothing the real compatibility proof is
-  `pnpm typecheck` across its consumers. Two debt exceptions expire inside
-  these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
-  in CR06.
-- CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
-  `packages/domain/module-roles.json` now declares 16 policy and 14
-  orchestration modules and `moduleRoles.test.ts` guards the declaration.
-- CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
-  `packages/application` now holds the 88 declarations that reached an adapter,
-  `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
-  supplies the conflict and terminal-failure semantics `docs/architecture.md`
-  requires.
-- **CR05 was scoped on 2026-09-08 and is next.** Measured: the port surface is
-  **76 adapter functions and 2 provider types** across 13 application modules,
-  so 13 ports, one per bounded context. Ports are passed as a parameter, so
-  `signInAdmin(authPort, input)` replaces `signInAdmin(client, input)` and
-  `AuthSupabaseClient` is retired from `packages/application`.
-- That scoping found the ownership gap for the **third** time: CR05 must change
-  the **5 app composition roots** that hold the provider client
-  (`admin-auth-context.tsx`, `technician-web-auth-context.tsx`, three mobile
-  stores), and owned none of them. Those paths are now in its ownership.
-- **The `supabase` singleton is wrapped, not removed, in CR05.**
+  have completed otherwise.
+- **CR06 (durable queue relocation) is `running`** on
+  `codex/rebuild-cr06-sync-v1`. It moves `offlineSync.ts` and its test from
+  `packages/application` into `packages/sync`, byte-identical apart from one
+  import line each, and promotes `packages/sync` from `planned` to `required`
+  in the boundary policy. One app consumer changes,
+  `apps/mobile/src/store/useQueueSync.ts`, importing one symbol.
+- CR06 measurement found the **sixth** instance of the recurring defect class,
+  and the first a gate would have caught unaided: the node owned
+  `apps/mobile/src/store/useQueueSync.ts` but not `apps/mobile/package.json`,
+  and a source import with no matching manifest dependency is a
+  `missing-manifest-dependency` violation. Ownership was corrected before the
+  move. It also found that four of the six test dimensions
+  `docs/architecture.md` requires of CR06 were unaddressed by the suite it
+  inherited; `packages/sync/durability.test.ts` covers them, and each assertion
+  was proved by injecting a fault that makes it fail.
+- **Deliberately not in CR06:** CR04's `mutationOutcome.ts` retry-budget and
+  terminal-failure semantics are still unused, and the queue is their natural
+  consumer. Wiring them in is behavioural change on top of a move, so it gets
+  its own slice where a queue regression stays attributable.
+- CR07, CR09 and CR18 remain, and each needs its own controller promotion
+  decision. CR02 added the qualifier that matters for the type-level packages:
+  `pnpm test` is load-bearing only where a package has runtime behaviour, and
+  for one that emits nothing the real compatibility proof is `pnpm typecheck`
+  across its consumers.
+- **The `supabase` singleton is wrapped, not removed.**
   `packages/api-client/supabase.ts` creates a client at import time from env
-  vars, and 47 of api-client's 109 adapters use it while 62 take an injected
-  client. Wrapping keeps CR05 bounded, but it means composition-root selection
-  is genuine only for those 62 until **CR09** removes the singleton — which is
-  now one of CR09's deliverables rather than an unrecorded assumption.
+  vars, so composition-root selection is genuine for the adapters that take a
+  client and nominal for the 47 that close over it. **CR09 removes it**, which
+  is a recorded deliverable rather than an unrecorded assumption.
 - A latent defect the CR03/CR04 re-scoping surfaced, worth carrying:
   **an exception's removal node must own every path the exception names**, and
   neither removal node did. Promoting CR05 failed `pnpm architecture:check`
   with one error and CR09 with seventeen; both were invisible because the check
   only runs once the removal node reaches `ready`. Ownership was corrected on
-  every affected node, and promoting CR05, CR06 or CR09 now passes.
+  every affected node.
+- A gap the CR06 promotion surfaced and did not close, because
+  `tooling/architecture-boundaries.ts` is not CR06's to edit: the checker errors
+  when a `required` package is **missing**, but says nothing when a `planned`
+  package **exists**. Nothing would have caught leaving `packages/sync` marked
+  `planned` after this move. It is dormant now — CR06 promoted the last
+  `planned` package — and becomes live again the moment another is added.
 - Known follow-up left by CR02: `packages/types` exposes no subpath entry
   points, so a consumer cannot address a context directly as
   `@pest-patrol/types/jobs`. No consumer wants to today, and supporting it
@@ -148,10 +99,10 @@
   `Record<string, unknown>`, and `packages/domain/offlineQueue.ts` hand-carves
   two actions out of its label map with `Exclude<…>`, which silently omits any
   action added later.
-- **CR06 and CR09 are deliberately open-ended**, not unscoped: each records the
-  approval `decompose into parallel write-tasks at promotion`, and the graph
-  validator already supports `kind: "task"` nodes. Do not "fix" their single
-  deliverables by guessing; decompose them at promotion as recorded.
+- **CR09 is deliberately open-ended**, not unscoped: it records the approval
+  `decompose into parallel write-tasks at promotion`, and the graph validator
+  already supports `kind: "task"` nodes. Do not "fix" its single deliverable by
+  guessing; decompose it at promotion as recorded.
 - A slice now needs only controller merge approval to land. Three control-plane
   changes removed the rest: PR
   [#178](https://github.com/otto-agent007/pp/pull/178) (no reconciliation PR and
