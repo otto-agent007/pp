@@ -1,5 +1,59 @@
 # Done
 
+## CR06 durable queue relocation
+
+- Base `bc543ac27d7f3c1382b23e7df871082cea8ab134`, branch
+  `codex/rebuild-cr06-sync-v1`, PR
+  [#197](https://github.com/otto-agent007/pp/pull/197), merge
+  `0e591ee59f1c9dac97468f09e0e947a376b9cb31`, source tag
+  `rebuild/cr06-source` at `bcb121e`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr06-sync.md`.
+- The durable offline queue moved from `packages/application` to
+  `packages/sync`, and `packages/sync` was promoted from `planned` to
+  `required` in the boundary policy. `pnpm architecture:check` reports 11
+  workspace packages and zero exceptions.
+- **It was a move, and the diff proves it.** Rename detection shows both files
+  changing by one insertion and one deletion each — `OfflineSyncPort` imported
+  from `@pest-patrol/application` rather than a sibling module.
+  `packages/domain` was untouched. One app consumer changed,
+  `apps/mobile/src/store/useQueueSync.ts`, importing one symbol.
+- The move was only possible because CR05 put the queue behind
+  `OfflineSyncPort`: `packages/sync` therefore never needs `api-client`, the
+  edge absent from its allowlist and the one that blocked CR05.
+- **Measurement found the sixth instance of the recurring defect class, and the
+  first an existing gate would have caught unaided.** CR06 owned
+  `apps/mobile/src/store/useQueueSync.ts` but not `apps/mobile/package.json`,
+  and a source import with no matching manifest dependency is a
+  `missing-manifest-dependency` violation. The reconciler enforces changed-path
+  ownership for the running slice, so this would have failed at the end of the
+  slice rather than the start.
+- **Four of the six test dimensions `docs/architecture.md` requires of CR06
+  were unaddressed** by the suite it inherited: restart replay, persistence,
+  durable transitions, and stable identity across retry. The inherited suite
+  covers one action at a time and never crosses a restart, never drives
+  `processOfflineQueueItems`, and never asserts a replay is the same logical
+  write as the attempt it repeats.
+- `packages/sync/durability.test.ts` adds twelve tests for those, persisting
+  through JSON between passes because an item that cannot survive that round
+  trip is not durable whatever it does in memory. Each was proved by injecting
+  a fault: dropping skipped items and returning a copy rather than the same
+  object each failed four tests; minting a fresh id on retry and not counting
+  attempts each failed three; scheduling backoff from enqueue time failed two;
+  treating a failed item as still ready, dropping `last_error`, and freezing
+  `updated_at` each failed one.
+- The sixth injection caught nothing on the first pass. The record test
+  asserted the field *set*, and a spread of the previous item keeps the key
+  while losing the reason; it now asserts the reloaded values.
+- **Deliberately not done:** CR04's `mutationOutcome.ts` retry-budget and
+  terminal-failure semantics stay unwired. The queue is their natural consumer,
+  but wiring them is behavioural change on top of a move.
+- **A gap recorded, not closed:** the boundary checker errors when a `required`
+  package is missing but says nothing when a `planned` package exists, so
+  nothing would have caught leaving `packages/sync` marked `planned`.
+  `tooling/architecture-boundaries.ts` is not CR06's to edit, and CR06 promoted
+  the last `planned` package, so the gap is dormant rather than fixed.
+- Clean-tree `pnpm rebuild:verify` PASS, 15/15 gates, evidence set `73b48de8`.
+
 ## CR05 ports and adapters
 
 - Base `b98e6f6388051193f258d2e35bc9be0611418b57`, branch

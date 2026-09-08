@@ -93,6 +93,31 @@ constraint to a released stable version at or above any recorded floor, record
 controller approval evidence, and freeze that exact version for the slice.
 Prereleases are forbidden.
 
+## Deferred work is an edge, not a sentence
+
+A slice that decides some of its work belongs to a later one records that on the
+node, in an optional `defers` array:
+
+```ts
+defers?: { to: string; summary: string }[];
+```
+
+`to` names a live node. It may not be the node itself, a node that does not
+exist, an abandoned node, or one superseded into nothing. A node that is not
+itself `done` may not defer into a node that is: that work would never be picked
+up. A `done` node pointing at a `done` node is history and stays legal.
+
+The validator also reads the node's own prose. If a deliverable or approval says
+work is deferred, left unwired, or belongs to a later slice, and the node
+records no `defers` entry, that is an error naming the sentence.
+
+This rule exists because of a specific failure. CR05 wrapped the `supabase`
+singleton and put removal off; CR06 moved the durable queue and left CR04's
+mutation outcome semantics unwired. Both decisions were correct and both were
+recorded only as sentences, so no node owned the work, no gate asked for it, and
+each following slice rediscovered it. Both are now edges, and the second one has
+a node.
+
 ## Evidence and repository facts
 
 Evidence is structured and commit-bound:

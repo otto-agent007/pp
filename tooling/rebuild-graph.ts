@@ -18,6 +18,18 @@ const TARGET_SELECTIONS = new Set([
   "stable-major",
   "exact-sdk-major",
 ]);
+/**
+ * Language that says work is being put off, in a node's own prose.
+ *
+ * A deferral written only in prose is invisible to everything downstream: no
+ * node owns the work, no gate asks for it, and the next slice rediscovers it as
+ * a surprise. When one of these phrases appears in a node's deliverables or
+ * approvals, the node must also carry a `defers` entry naming where the work
+ * went, so the graph records the handoff rather than the intention.
+ */
+const DEFERRAL_LANGUAGE =
+  /\b(deferred|defers|deferral|left unwired|its own slice|a later slice|a future slice)\b/i;
+
 const REQUIRED_NODE_FIELDS = [
   "baseSha",
   "id",
@@ -50,6 +62,7 @@ type GraphNode = {
   deliverables: unknown;
   checks: unknown;
   approvals: unknown;
+  defers: unknown;
   evidence: unknown;
   branch: unknown;
   pr: unknown;
@@ -421,6 +434,30 @@ export function validateRebuildGraph(value: unknown): string[] {
         }
       });
     }
+    if ("defers" in rawNode) {
+      if (!Array.isArray(rawNode.defers)) {
+        errors.push(`${label} defers must be an array`);
+      } else {
+        rawNode.defers.forEach((entry, deferralIndex) => {
+          const deferralLabel = `${label} deferral ${deferralIndex}`;
+          if (!isRecord(entry)) {
+            errors.push(
+              `${deferralLabel} must be a structured deferral record`,
+            );
+            return;
+          }
+          if (typeof entry.to !== "string" || entry.to.trim() === "") {
+            errors.push(`${deferralLabel} to must name a node`);
+          }
+          if (
+            typeof entry.summary !== "string" ||
+            entry.summary.trim() === ""
+          ) {
+            errors.push(`${deferralLabel} summary must be non-empty`);
+          }
+        });
+      }
+    }
     for (const field of ["baseSha", "branch", "pr", "mergeSha"] as const) {
       if (typeof rawNode[field] !== "string") {
         errors.push(`${label} ${field} must be a string`);
@@ -476,6 +513,7 @@ export function validateRebuildGraph(value: unknown): string[] {
         deliverables: rawNode.deliverables,
         checks: rawNode.checks,
         approvals: rawNode.approvals,
+        defers: rawNode.defers,
         evidence: rawNode.evidence,
         branch: rawNode.branch,
         pr: rawNode.pr,
@@ -514,6 +552,54 @@ export function validateRebuildGraph(value: unknown): string[] {
       } else if (!nodesById.has(conflict)) {
         errors.push(`node ${node.id} references missing conflict ${conflict}`);
       }
+    }
+
+    const deferrals = Array.isArray(node.defers) ? node.defers : [];
+    for (const entry of deferrals) {
+      if (!isRecord(entry) || typeof entry.to !== "string") {
+        continue;
+      }
+      if (entry.to === node.id) {
+        errors.push(`node ${node.id} cannot defer work to itself`);
+        continue;
+      }
+      const deferralTarget = nodesById.get(entry.to);
+      if (deferralTarget === undefined) {
+        errors.push(`node ${node.id} defers work to missing node ${entry.to}`);
+        continue;
+      }
+      const resolvedTarget = resolveSupersededNode(deferralTarget, nodesById);
+      if (resolvedTarget === undefined) {
+        errors.push(
+          `node ${node.id} defers work to ${entry.to}, which is superseded into nothing`,
+        );
+        continue;
+      }
+      if (resolvedTarget.status === "abandoned") {
+        errors.push(
+          `node ${node.id} defers work to abandoned node ${resolvedTarget.id}`,
+        );
+        continue;
+      }
+      // A finished node cannot take on new work. Recording that a node which is
+      // itself done handed work to one that has since finished is history, and
+      // stays legal; a live node pointing at a done node is a deferral nothing
+      // will ever pick up.
+      if (resolvedTarget.status === "done" && node.status !== "done") {
+        errors.push(
+          `node ${node.id} defers work to ${resolvedTarget.id}, which is already done`,
+        );
+      }
+    }
+
+    const proseDeferrals = [
+      ...(isStringArray(node.deliverables) ? node.deliverables : []),
+      ...(isStringArray(node.approvals) ? node.approvals : []),
+    ].filter((entry) => DEFERRAL_LANGUAGE.test(entry));
+    if (proseDeferrals.length > 0 && deferrals.length === 0) {
+      errors.push(
+        `node ${node.id} defers work in prose but records no defers entry: ${JSON.stringify(proseDeferrals[0])}`,
+      );
     }
     if (node.status === "superseded") {
       if (node.supersededBy === null || node.supersededBy.length === 0) {
