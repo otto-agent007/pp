@@ -123,5 +123,21 @@ defines package allowlists and freezes the exact, expiring exceptions. Its
 artifacts for current exception facts and removal ownership; do not duplicate
 them in prose.
 
+### Where domain purity actually lands
+
+`packages/domain` does not yet depend only on `types`. Fourteen of its thirty
+production modules import `@pest-patrol/api-client`, which the
+`domain-to-api-client` exception permits until its removal slice. Those modules
+are not domain rules reaching for a helper: they orchestrate adapter calls, so
+by the responsibilities above they are use cases and belong in
+`@pest-patrol/application`.
+
+That package does not exist until CR04, so the coupling cannot clear before
+CR04 exists to receive it. CR03 therefore records and guards the seam — which
+modules are pure policy and which orchestrate adapters — and **CR04** lifts the
+orchestration through that seam, removes the exception, and is what makes the
+domain package pure. The exception named CR09 until this was reconciled; CR09
+owns only `apps`, so it could never have removed a `packages/domain` import.
+
 Use the [controlled rebuild runbook](rebuild/README.md) for scheduler,
 lifecycle, verification, and publication rules.
