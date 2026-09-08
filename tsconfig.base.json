@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
@@ -12,15 +16,28 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "baseUrl": ".",
     "paths": {
-      "@pest-patrol/api-client": ["packages/api-client/index.ts"],
-      "@pest-patrol/domain": ["packages/domain/index.ts"],
-      "@pest-patrol/i18n": ["packages/i18n/index.ts"],
-      "@pest-patrol/types": ["packages/types/index.ts"],
-      "@pest-patrol/ui": ["packages/ui/index.tsx"],
-      "@pest-patrol/ui-native": ["packages/ui-native/index.tsx"],
-      "@pest-patrol/ui-tokens": ["packages/ui-tokens/index.ts"]
+      "@pest-patrol/api-client": [
+        "./packages/api-client/index.ts"
+      ],
+      "@pest-patrol/domain": [
+        "./packages/domain/index.ts"
+      ],
+      "@pest-patrol/i18n": [
+        "./packages/i18n/index.ts"
+      ],
+      "@pest-patrol/types": [
+        "./packages/types/index.ts"
+      ],
+      "@pest-patrol/ui": [
+        "./packages/ui/index.tsx"
+      ],
+      "@pest-patrol/ui-native": [
+        "./packages/ui-native/index.tsx"
+      ],
+      "@pest-patrol/ui-tokens": [
+        "./packages/ui-tokens/index.ts"
+      ]
     }
   }
 }
