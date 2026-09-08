@@ -1,5 +1,59 @@
 # Done
 
+## CR03 domain purity seam
+
+- Base `d4199f73535ddd6fda4ab12407ec6fbad227ad79`, branch
+  `codex/rebuild-cr03-domain-seam-v1`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr03-domain-seam.md`,
+  design spec
+  `docs/superpowers/specs/2026-09-08-controlled-rebuild-cr03-domain-seam-design.md`.
+- **This slice deliberately makes no import change.** CR03 was re-scoped by PR
+  [#188](https://github.com/otto-agent007/pp/pull/188) because its original
+  deliverable, "Pure domain package", was unreachable from CR03: fourteen of
+  `packages/domain`'s thirty production modules import `@pest-patrol/api-client`
+  for eighty distinct symbols, that orchestration belongs in
+  `@pest-patrol/application`, and CR04 both creates that package and depends on
+  CR03. The purity outcome moved to CR04; CR03 records and guards the seam.
+- `packages/domain/module-roles.json` declares the role of every production
+  module — 16 policy (8,399 lines), 14 orchestration (9,644 lines), none in both
+  and none unclassified — plus the specifiers forbidden in a policy module.
+- The classification is derivable from imports, but **a derived list cannot
+  fail**: adding an adapter import to `serviceBillingCatalog` would make a
+  classifier silently reclassify it and stay green, which is the drift this
+  slice exists to prevent. Declaring the roles turns that event into a test
+  failure and gives CR04 a worklist to diff against rather than a boundary
+  rediscovered by grep at extraction time.
+- `packages/domain/moduleRoles.test.ts` guards it with four assertions, reading
+  source text with the TypeScript compiler API: the manifest partitions the
+  package; policy modules import nothing forbidden, in production **and** test
+  files; every orchestration module still imports an adapter; the barrel imports
+  nothing forbidden. **All four were proven to fire** — a policy module given an
+  adapter import, a reclassified orchestration module, an undeclared module on
+  disk, and a policy module declared as orchestration each fail with exit 1.
+- The third assertion is the one that earns its place during CR04: as
+  orchestration is lifted out, an emptied module fails until it is
+  reclassified, so the manifest tracks the extraction rather than decaying
+  behind it.
+- Measured fact worth keeping: `packages/domain` reaches outside itself for
+  exactly three specifiers — `@pest-patrol/types` (46), `vitest` (30, tests) and
+  `@pest-patrol/api-client` (19). There is no direct provider SDK import
+  anywhere in the package, so CR04's extraction seam is single-specifier.
+  `forbiddenInPolicy` still names `@supabase/*` and `stripe` because they are
+  the shape the next violation would take.
+- `tsconfig.json` gains `"types": ["node"]` and the package gains an
+  `@types/node` devDependency, for the reason `packages/types` needed them in
+  CR02: the guard reads files, and `virtualStoreDir: .pnpm` puts `@types/node`
+  outside `tsc`'s default type-root walk. Fourth workspace project to carry the
+  pair, after `api-client`, `tooling/` and `types`.
+- Merged as PR [#189](https://github.com/otto-agent007/pp/pull/189),
+  `8f510ce0317e08d674ed434d175307fedfb453d8`; the `Rebuild source tag` workflow
+  published `rebuild/cr03-source` automatically at the canonical head
+  `ca811bd`.
+- Verified with `pnpm rebuild:verify` (14/14 gates, evidence set `e0792858`) and
+  the full 13-check gate set. The load-bearing one is `pnpm architecture:check`
+  still reporting **two** matched exceptions: a drop to one would have meant the
+  slice removed coupling it was scoped not to touch.
+
 ## CR02 bounded-context shared types
 
 - Base `47fdc35ae0169d0c2c88cd399626794682fd230a`, branch

@@ -369,7 +369,7 @@
       "baseSha": "d4199f73535ddd6fda4ab12407ec6fbad227ad79",
       "id": "CR03",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR01"
@@ -450,11 +450,18 @@
           "exitCode": 0,
           "commitSha": "002a6a73dcac3c2e21c257d7e6eb8f80b2ba1373",
           "recordedAt": "2026-09-08T06:05:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #189 merged as 8f510ce0317e08d674ed434d175307fedfb453d8; the Rebuild source tag workflow published rebuild/cr03-source automatically at the canonical head.",
+          "commitSha": "ca811bd28ff7cb2a8177870771ebc3b60d500531",
+          "recordedAt": "2026-09-08T06:07:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/189"
         }
       ],
       "branch": "codex/rebuild-cr03-domain-seam-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/189",
-      "mergeSha": "",
+      "mergeSha": "8f510ce0317e08d674ed434d175307fedfb453d8",
       "supersededBy": null,
       "target": null
     },
