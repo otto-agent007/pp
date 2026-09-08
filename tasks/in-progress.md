@@ -20,21 +20,18 @@
   story of the stale #148 it replaced are in `tasks/done.md`.
   `pnpm architecture:check` now guards package responsibilities and dependency
   direction on every run.
-- CR02 (bounded-context shared types) is `running` on
-  `codex/rebuild-cr02-types-contexts-v1`, draft PR
-  [#186](https://github.com/otto-agent007/pp/pull/186), awaiting controller
-  merge approval. It splits `packages/types`' single 1370-line `index.ts` into
-  twenty context modules and keeps the root entry as an explicit re-export
-  barrel, so all 174 consumer import sites resolve unchanged. Every declaration
-  moved byte-identical and the package still declares no runtime value.
-  `packages/types/publicSurface.test.ts` is its first test and freezes the
-  175-name public surface.
+- CR02 (bounded-context shared types) is `done`; its summary is in
+  `tasks/done.md`. `packages/types` is now twenty context modules behind an
+  explicit re-export barrel, and `packages/types/publicSurface.test.ts` freezes
+  its 175-name public surface.
 - CR03-CR09 follow and each need their own controller promotion decision. They
-  are the first slices in this sequence to change application code, so
-  `pnpm test` becomes load-bearing again rather than the formality it was
-  through the Expo hops, and `pnpm architecture:check` holds their dependency
-  directions honest. Two debt exceptions expire inside them: `api-client-domain-manifest`
-  in CR05 and `domain-to-api-client` in CR09.
+  change application code, so `pnpm architecture:check` holds their dependency
+  directions honest. CR02 added the qualifier that matters for the type-level
+  packages: `pnpm test` is load-bearing only where a package has runtime
+  behaviour, and for one that emits nothing the real compatibility proof is
+  `pnpm typecheck` across its consumers. Two debt exceptions expire inside
+  these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
+  in CR09.
 - Known follow-up left by CR02: `packages/types` exposes no subpath entry
   points, so a consumer cannot address a context directly as
   `@pest-patrol/types/jobs`. No consumer wants to today, and supporting it
