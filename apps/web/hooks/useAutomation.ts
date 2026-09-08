@@ -1,14 +1,14 @@
 "use client";
 
 import {
+  archiveNotificationTemplate,
   createAutomationRule,
   createNotificationEvent,
   createNotificationTemplate,
-  archiveNotificationTemplate,
   dismissNotificationEvent,
-  listAutomationSchedulerRuns,
-  listAutomationRules,
   getNotificationProviderStatus,
+  listAutomationRules,
+  listAutomationSchedulerRuns,
   listNotificationEvents,
   listNotificationTemplates,
   markNotificationEventHandled,
@@ -19,7 +19,7 @@ import {
   updateAutomationRule,
   updateAutomationRuleStatus,
   updateNotificationTemplate,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type {
   AutomationRule,
   AutomationRuleInput,

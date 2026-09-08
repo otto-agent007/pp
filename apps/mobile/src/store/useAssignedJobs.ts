@@ -1,4 +1,4 @@
-import { listAssignedTechnicianJobs } from "@pest-patrol/domain";
+import { listAssignedTechnicianJobs } from "@pest-patrol/application";
 import type { Job, JobStatus, JobStatusUpdateQueuePayload } from "@pest-patrol/types";
 import { create } from "zustand";
 

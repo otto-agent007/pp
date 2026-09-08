@@ -5,7 +5,7 @@ import {
   listComplianceChunks,
   listComplianceDocuments,
   listComplianceSources,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import { isComplianceSchemaUnavailableError } from "@pest-patrol/api-client";
 import type {
   ComplianceAdvisory,

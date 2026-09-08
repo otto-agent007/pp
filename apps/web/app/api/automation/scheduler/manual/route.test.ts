@@ -14,7 +14,7 @@ vi.mock("@pest-patrol/api-client", () => ({
   ) => createAutomationSchedulerRunRecord(input, client),
 }));
 
-vi.mock("@pest-patrol/domain", () => ({
+vi.mock("@pest-patrol/application", () => ({
   runAutomationSchedulerForClient: (
     client: unknown,
     now: string | undefined,

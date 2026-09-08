@@ -6,8 +6,11 @@ import type {
 } from "@pest-patrol/types";
 
 export const JOB_MEDIA_BUCKET = "job-media";
+
 export const JOB_MEDIA_MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
 export const JOB_MEDIA_MAX_SIGNATURE_BYTES = 2 * 1024 * 1024;
+
 export const JOB_MEDIA_DESCRIPTION_MAX_LENGTH = 240;
 
 type JobMediaKind = "photo" | "signature";
@@ -316,16 +319,4 @@ export function validateJobSignatureCaptureQueuePayload(
     signer_name: normalizeOptional(payload.signer_name),
     captured_at: normalizeOptional(payload.captured_at),
   }, fileSizeBytes) as JobSignatureCaptureQueuePayload;
-}
-
-export async function listJobMedia(jobId: string) {
-  const { listJobMediaRecords } = await import("@pest-patrol/api-client");
-  return listJobMediaRecords(requireNonEmpty(jobId, "Job"));
-}
-
-export async function listCustomerPortalMedia(customerId: string) {
-  const { listCustomerPortalMediaRecords } = await import(
-    "@pest-patrol/api-client"
-  );
-  return listCustomerPortalMediaRecords(requireNonEmpty(customerId, "Customer"));
 }

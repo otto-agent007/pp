@@ -12,14 +12,18 @@ import {
 import type { UserProfile } from "@pest-patrol/types";
 import {
   DEMO_SEED_ADMIN_EMAIL,
+  shouldUseLocalDemoFixtures,
+} from "@pest-patrol/domain";
+import {
+  requestPasswordReset as requestPasswordResetDomain,
+} from "@pest-patrol/application";
+import {
   establishPasswordRecoverySession,
   getCurrentAdminAuth,
-  requestPasswordReset as requestPasswordResetDomain,
-  shouldUseLocalDemoFixtures,
   signInAdmin,
   signOutAdmin,
   updateCurrentUserPassword,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import {
   activateLocalDemoFixtureSession,
   deactivateLocalDemoFixtureSession,

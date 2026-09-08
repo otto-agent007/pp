@@ -1,24 +1,14 @@
 import {
-  createComplianceAdvisoryAuditRecord,
-  listComplianceAdvisoryAuditRecords,
-  listComplianceChunkRecords,
-  listComplianceDocumentRecords,
-  listComplianceSourceRecords,
-  searchComplianceChunkRecords,
-} from "@pest-patrol/api-client";
-import {
   CHEMICAL_LOG_MISSING_TECHNICIAN_CREDENTIAL_COPY,
   getChemicalLogCredentialReview,
   getWdoCredentialReview,
 } from "./technicianLicenses";
-import type { AuthSupabaseClient } from "@pest-patrol/api-client";
 import type {
   ChemicalInventoryItem,
   ChemicalLog,
   ComplianceAdvisory,
   ComplianceAdvisoryAudit,
   ComplianceAdvisoryRequest,
-  ComplianceAdvisoryStatus,
   ComplianceAuthority,
   ComplianceBranch,
   ComplianceChunk,
@@ -36,7 +26,6 @@ import type {
   LocationUnit,
   TechnicianLicense,
 } from "@pest-patrol/types";
-
 export type { ComplianceSetupReadiness } from "@pest-patrol/types";
 
 export interface ComplianceRuntimeEnv {
@@ -172,12 +161,15 @@ export interface ComplianceKnowledgeBaseReadiness {
 }
 
 export type ComplianceReviewItemSeverity = "info" | "warning" | "critical";
+
 export type ComplianceReviewItemStatus = "open" | "review";
+
 export type ComplianceReviewItemCategory =
   | "advisory"
   | "chemical"
   | "source"
   | "wdo";
+
 export type ComplianceReviewItemFilter =
   | "advisory"
   | "all"
@@ -337,23 +329,28 @@ const workflowLabels: Record<ComplianceWorkflow, string> = {
 };
 
 const complianceWorkflows = Object.keys(workflowLabels) as ComplianceWorkflow[];
+
 const complianceAuthorities: ComplianceAuthority[] = [
   "cdpr",
   "epa",
   "spcb",
   "internal",
 ];
+
 const complianceBranches: ComplianceBranch[] = [
   "branch_2",
   "branch_3",
   "general",
 ];
+
 const complianceJurisdictions: ComplianceJurisdiction[] = [
   "california",
   "federal",
 ];
+
 export const COMPLIANCE_RAG_MIGRATION_NAME =
   "20260516175724_california_compliance_rag_v1.sql" as const;
+
 const complianceReviewStatuses: ComplianceReviewStatus[] = [
   "archived",
   "draft",
@@ -1977,42 +1974,6 @@ export function filterComplianceReviewItems(
   return sortComplianceReviewItems(
     items.filter((item) => item.category === filter),
   );
-}
-
-export async function listComplianceSources() {
-  return listComplianceSourceRecords();
-}
-
-export async function listComplianceDocuments() {
-  return listComplianceDocumentRecords();
-}
-
-export async function listComplianceChunks() {
-  return listComplianceChunkRecords();
-}
-
-export async function searchComplianceChunks(
-  input: ComplianceChunkSearchInput,
-) {
-  return searchComplianceChunkRecords(input);
-}
-
-export async function listComplianceAdvisoryAudits() {
-  return listComplianceAdvisoryAuditRecords();
-}
-
-export async function createComplianceAdvisoryAudit(
-  input: {
-    citation_chunk_ids: string[];
-    created_by?: string | null;
-    request: Record<string, unknown>;
-    response: ComplianceAdvisory;
-    status: ComplianceAdvisoryStatus;
-    workflow: ComplianceWorkflow;
-  },
-  client?: AuthSupabaseClient,
-): Promise<ComplianceAdvisoryAudit> {
-  return createComplianceAdvisoryAuditRecord(input, client);
 }
 
 export function validateComplianceChunkSearchInput(

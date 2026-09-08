@@ -5,7 +5,7 @@ import {
   createCustomer,
   listCustomers,
   updateCustomer,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type { Customer, CustomerInput } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {

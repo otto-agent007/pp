@@ -199,6 +199,9 @@ importers:
       '@pest-patrol/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@pest-patrol/application':
+        specifier: workspace:*
+        version: link:../../packages/application
       '@pest-patrol/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -278,6 +281,9 @@ importers:
       '@pest-patrol/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@pest-patrol/application':
+        specifier: workspace:*
+        version: link:../../packages/application
       '@pest-patrol/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -357,6 +363,25 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.115.0
         version: 2.115.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  packages/application:
+    dependencies:
+      '@pest-patrol/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@pest-patrol/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@pest-patrol/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@types/node':
         specifier: ^24.13.3

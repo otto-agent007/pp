@@ -1,6 +1,6 @@
 "use client";
 
-import { listJobGeofenceEvents } from "@pest-patrol/domain";
+import { listJobGeofenceEvents } from "@pest-patrol/application";
 import { useQuery } from "@tanstack/react-query";
 
 import { getLocalDemoFixtures } from "./localDemoData";

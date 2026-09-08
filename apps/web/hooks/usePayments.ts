@@ -7,7 +7,7 @@ import {
   listInvoices,
   markInvoicePaid,
   voidInvoice,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type { Invoice, InvoiceInput } from "@pest-patrol/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {

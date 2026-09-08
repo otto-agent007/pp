@@ -1,5 +1,6 @@
 "use client";
 
+import { validateJobInput } from "@pest-patrol/domain";
 import {
   assignJobTechnician,
   cancelJob,
@@ -7,8 +8,7 @@ import {
   createJob,
   listJobs,
   updateJob,
-  validateJobInput,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import { convertEstimateToWorkOrderRecord } from "@pest-patrol/api-client";
 import type {
   EstimateConversionInput,

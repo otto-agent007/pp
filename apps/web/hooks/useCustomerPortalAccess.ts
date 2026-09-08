@@ -7,7 +7,7 @@ import {
   listCustomerPortalAccessTokens,
   revokeCustomerPortalAccessToken,
   sendCustomerPortalAccessToken,
-} from "@pest-patrol/domain";
+} from "@pest-patrol/application";
 import type {
   CustomerPortalAccessGrant,
   CustomerPortalAccessInput,
