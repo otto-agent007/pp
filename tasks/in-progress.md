@@ -40,6 +40,38 @@
   `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
   supplies the conflict and terminal-failure semantics `docs/architecture.md`
   requires.
+- CR05 (ports and adapters) is `done`; its summary is in `tasks/done.md`.
+  **`pnpm architecture:check` reports zero exceptions**, and the package
+  dependency direction matches `docs/architecture.md` exactly.
+- **CR06 was measured on 2026-09-08 and is next.** It is a *relocation*, not an
+  extraction: CR05 already put the queue behind `OfflineSyncPort`, so
+  `packages/sync` never needs `api-client` — the edge that is not on its
+  allowlist and the one that blocked CR05. The surface is `offlineSync.ts` (10
+  functions, 484 lines) plus its 602-line test and **one** app consumer,
+  `apps/mobile/src/store/useQueueSync.ts`. A dependency-graph check with `sync`
+  added finds no cycle.
+- CR06 also promotes `packages/sync` from `planned` to `required` in the
+  boundary policy, the same promotion CR04 did for `packages/application`.
+- **Deliberately not in CR06:** CR04's `mutationOutcome.ts` retry-budget and
+  terminal-failure semantics are still unused, and the queue is their natural
+  consumer. Wiring them in is behavioural change on top of a move, so it gets
+  its own slice where a queue regression stays attributable.
+- CR05-CR09 follow and each need their own controller promotion decision. They
+  change application code, so `pnpm architecture:check` holds their dependency
+  directions honest. CR02 added the qualifier that matters for the type-level
+  packages: `pnpm test` is load-bearing only where a package has runtime
+  behaviour, and for one that emits nothing the real compatibility proof is
+  `pnpm typecheck` across its consumers. Two debt exceptions expire inside
+  these slices: `api-client-domain-manifest` in CR05 and `domain-to-api-client`
+  in CR06.
+- CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
+  `packages/domain/module-roles.json` now declares 16 policy and 14
+  orchestration modules and `moduleRoles.test.ts` guards the declaration.
+- CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
+  `packages/application` now holds the 88 declarations that reached an adapter,
+  `packages/domain` has one orchestration module left, and `mutationOutcome.ts`
+  supplies the conflict and terminal-failure semantics `docs/architecture.md`
+  requires.
 - CR05 (ports and adapters) is `running` on `codex/rebuild-cr05-ports-v1`,
   draft PR [#195](https://github.com/otto-agent007/pp/pull/195), awaiting
   controller merge approval. Thirteen ports and 77 methods now sit between
