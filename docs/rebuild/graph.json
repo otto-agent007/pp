@@ -635,7 +635,7 @@
       "baseSha": "b98e6f6388051193f258d2e35bc9be0611418b57",
       "id": "CR05",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR04"
@@ -801,11 +801,18 @@
           "exitCode": 0,
           "commitSha": "26bce6af48f83d0570d30569b52f337449493d6f",
           "recordedAt": "2026-09-08T10:10:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "PR #195 merged as 0784f842ff0125d307010fe9eaba53957daf060e; the Rebuild source tag workflow published rebuild/cr05-source automatically at the canonical head.",
+          "commitSha": "aab78b32d26a5e2c6c0be88ff5c4df3042c6ea2a",
+          "recordedAt": "2026-09-08T10:30:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/195"
         }
       ],
       "branch": "codex/rebuild-cr05-ports-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/195",
-      "mergeSha": "",
+      "mergeSha": "0784f842ff0125d307010fe9eaba53957daf060e",
       "supersededBy": null,
       "target": null
     },
@@ -823,20 +830,20 @@
       ],
       "ownership": [
         "apps/mobile/src/store/useQueueSync.ts",
+        "packages/application",
         "packages/domain",
         "packages/sync",
-        "tooling/architecture-boundaries.json"
+        "tooling/architecture-boundaries.json",
+        "tsconfig.base.json"
       ],
       "deliverables": [
         "Durable offline mutation queue",
-        "offlineSync's adapter orchestration lifted out of packages/domain into packages/sync, the last domain module reaching an adapter",
-        "Pure domain package: packages/domain reaches zero provider and adapter imports",
-        "Removal of the domain-to-api-client boundary exception",
+        "The queue relocated from packages/application into packages/sync as a pure move, with packages/sync promoted from planned to required in the boundary policy",
         "Package-local tests for durable identity and state, persistence, restart replay, retry and backoff scheduling, durable transitions, and stable identity across retry, as docs/architecture.md requires of CR06"
       ],
       "checks": [],
       "approvals": [
-        "decompose into parallel write-tasks at promotion"
+        "Controller scoping of CR06 on 2026-09-08: a pure relocation, with CR04's mutationOutcome semantics left unwired so that a queue regression stays attributable to one change or the other"
       ],
       "evidence": [],
       "branch": "",

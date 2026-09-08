@@ -1,5 +1,70 @@
 # Done
 
+## CR05 ports and adapters
+
+- Base `b98e6f6388051193f258d2e35bc9be0611418b57`, branch
+  `codex/rebuild-cr05-ports-v1`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr05-ports.md`,
+  design spec
+  `docs/superpowers/specs/2026-09-08-controlled-rebuild-cr05-ports-design.md`.
+- **`pnpm architecture:check` reports zero exceptions** — the first time since
+  CR01 recorded them. The dependency direction now matches
+  `docs/architecture.md` exactly: `types` depends on nothing, `domain` on
+  `types`, `application` on `domain` and `types`, `api-client` on
+  `application`, `domain` and `types`.
+- Thirteen ports and 77 methods, declared in `packages/application/ports.ts` and
+  implemented in `packages/api-client/adapters.ts`. The implementations *import*
+  the interfaces rather than restating them, which is the allowed direction and
+  makes a drifted signature a type error; all 77 compiled against their port on
+  the first attempt.
+- Signatures were derived with the TypeScript compiler rather than written by
+  hand, substituting a public type name only where printed and candidate types
+  were assignable in **both** directions. That named 71 of 77 automatically.
+  `AuthPort<TSession>` is generic because no use case inspects a session, which
+  is what lets `packages/application` avoid naming Supabase's `Session` while
+  the composition roots keep their concrete type.
+- **CR05 absorbed `offlineSync`, which CR04 had deferred to CR06.** That was
+  forced rather than chosen: `packages/application` may depend only on `domain`
+  and `types`, so adding `api-client -> application` while `domain ->
+  api-client` still existed closed the cycle `domain -> api-client ->
+  application -> domain`, which turbo refuses outright. Moving its ten
+  adapter-reaching declarations removed the last edge. `packages/domain` now
+  depends on `types` alone and its module-roles manifest lists thirty policy
+  modules and no orchestration modules.
+- All three boundary exceptions were removed together:
+  `application-to-api-client` and `domain-to-api-client` because the edges no
+  longer exist,
+  `api-client-domain-manifest` because `api-client` now declares the domain
+  dependency it always had.
+- **One behavioural regression was caught by tests rather than review.** Both
+  automation scheduler routes build a service-role client per request, and a
+  module-scope port would have silently substituted the anon-key singleton. The
+  port is now constructed from that client inside the request, and the tests
+  assert the port carries it.
+- CR03's module-roles guard fired again, naming `offlineSync` as an
+  orchestration module that no longer orchestrates — the second slice in a row
+  it caught a real extraction rather than a hypothetical one.
+- Tests follow the seam: use cases are tested against stub ports in
+  `packages/application` with no module mocking, and adapter mapping, client
+  binding and replay identity are tested in `packages/api-client`, which is what
+  `docs/architecture.md` asks of CR05.
+- Two corrections to the original scoping, both from measurement: the app
+  surface was counted as five composition roots and is really **twenty files**,
+  because clearing the exception requires every use case to take a port rather
+  than only the fifteen that threaded a client.
+- Known limitation, recorded rather than hidden:
+  `packages/api-client/supabase.ts` still creates a client at import time, and
+  the 47 adapters that take no client
+  close over it. Composition-root selection is therefore genuine for the
+  adapters that accept a client and **nominal** for the rest; removing the
+  singleton is a CR09 deliverable.
+- Merged as PR [#195](https://github.com/otto-agent007/pp/pull/195),
+  `0784f842ff0125d307010fe9eaba53957daf060e`; the `Rebuild source tag` workflow
+  published `rebuild/cr05-source` automatically at the canonical head `aab78b3`.
+- Verified with `pnpm rebuild:verify` (16/16 gates, evidence set `a5ffe7bb`) and
+  the full gate set: `pnpm test` 9/9 projects (domain 335, web 426, api-client
+  116, mobile 79, application 36).
+
 ## CR04 application layer
 
 - Base `b98e6f6388051193f258d2e35bc9be0611418b57`, branch
