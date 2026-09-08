@@ -1,5 +1,45 @@
 # Done
 
+## CR01 executable architecture foundation
+
+- Base `f5e2df896fb79446e5a8f6dcb601375bfeb6e7cd`, branch
+  `codex/rebuild-cr01-foundation-v2`, plan
+  `docs/superpowers/plans/2026-08-25-controlled-rebuild-cr01-foundation.md`,
+  design spec
+  `docs/superpowers/specs/2026-08-25-controlled-rebuild-cr01-foundation-design.md`.
+- Establishes the canonical package responsibility and dependency-direction
+  contract, plus an executable manifest and TypeScript-source boundary checker
+  wired in as `pnpm architecture:check`. Two expiring debt exceptions are
+  recorded against CR05 and CR09.
+- **Re-established on a fresh branch, replacing the stale draft PR
+  [#148](https://github.com/otto-agent007/pp/pull/148).** That branch had sat 86
+  commits behind `main` for twelve days, but was never actually blocked by the
+  platform chain: it touches no application code, so the Expo, Next, React, pnpm
+  and TypeScript work never reached it. Its content was carried across
+  byte-identical rather than rebased, because its value is three tooling files
+  and two documents while its graph and tracker edits had to be rewritten
+  against the current graph regardless.
+- Two fixes were needed, both pre-existing rather than drift:
+  - The `domain-to-api-client` debt exception targeted `CR08`, which the CR00
+    recovery superseded into CR09; it was failing the tool's own policy test.
+  - Seventeen type errors in the test file, from the `exceptionWith` fixture
+    returning an unannotated literal so `kind` widened to `string`. **Not
+    TypeScript 6 regressions** — they reproduce identically under 5.9.3. They
+    were latent from authoring and only became visible once PR
+    [#180](https://github.com/otto-agent007/pp/pull/180) put `tooling/` under
+    `pnpm typecheck`. Annotating the fixture fixed fourteen; the three call
+    sites that deliberately pass out-of-union values to prove the validator
+    rejects them carry narrow casts with the reason recorded.
+- Merged as PR [#184](https://github.com/otto-agent007/pp/pull/184),
+  `1c1cf2546a70023d4e160bcdf21ae93f0736a54a`. **The first slice whose source tag
+  was published automatically**: the `Rebuild source tag` workflow from PR
+  [#182](https://github.com/otto-agent007/pp/pull/182) resolved CR01 from the
+  merged pull request and created `rebuild/cr01-source` at the canonical head
+  `26ab252`, whose tree matches the merge commit's.
+- Verified with `pnpm rebuild:verify` (14/14 gates, evidence set `6c9d09a7`),
+  `pnpm architecture:check` against the live workspace (9 packages, 2 matched
+  exceptions), the checker's own suite at 112/112, and the full gate set.
+
 ## CR15 Expo SDK 57 migration — platform chain closed
 
 - Base `e49aae824706c57d6cb7f9a666ca03fb0fc81868`, branch

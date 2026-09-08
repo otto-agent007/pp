@@ -16,19 +16,16 @@
   CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), CR13 (Expo SDK 54.0.37), CR14 (Expo
   SDK 55.0.31) and CR15 (Expo SDK 57.0.20) are all `done`; details are in
   `tasks/done.md`.
-- CR01 is `running` on `codex/rebuild-cr01-foundation-v2`, re-established on a
-  fresh branch off the closed platform chain. The original draft PR
-  [#148](https://github.com/otto-agent007/pp/pull/148) sat 86 commits behind
-  `main` for twelve days; its content was carried across unchanged rather than
-  rebased, because its value is three tooling files and two documents while its
-  graph and tracker edits had to be rewritten against the current graph anyway.
-  It touches no application code, so none of the platform-chain churn reached
-  it. Two fixes were needed: a debt exception scheduled for removal in `CR08`,
-  which is now superseded into CR09, and seventeen type errors in its test file
-  that were latent from the start and only became visible once PR
-  [#180](https://github.com/otto-agent007/pp/pull/180) put `tooling/` under
-  `pnpm typecheck`.
-- CR02-CR09 follow CR01 and each need their own controller promotion decision.
+- CR01 (executable architecture foundation) is `done`; its summary and the
+  story of the stale #148 it replaced are in `tasks/done.md`.
+  `pnpm architecture:check` now guards package responsibilities and dependency
+  direction on every run.
+- CR02-CR09 follow and each need their own controller promotion decision. They
+  are the first slices in this sequence to change application code, so
+  `pnpm test` becomes load-bearing again rather than the formality it was
+  through the Expo hops, and `pnpm architecture:check` holds their dependency
+  directions honest. Two debt exceptions expire inside them: `api-client-domain-manifest`
+  in CR05 and `domain-to-api-client` in CR09.
 - A slice now needs only controller merge approval to land. Three control-plane
   changes removed the rest: PR
   [#178](https://github.com/otto-agent007/pp/pull/178) (no reconciliation PR and
