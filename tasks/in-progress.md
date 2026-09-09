@@ -63,6 +63,20 @@
   and 25 in the `packages/types` surface CR02 deliberately froze). A library
   exporting more than today's callers use is normal, so that check is noise
   rather than signal here.
+- **CR07 (queue type boundary) is `running`.** Re-measurement on 2026-09-08
+  confirmed the recorded scope rather than correcting it — the first slice in
+  this chain where that has happened. Every path the change reaches was already
+  owned, and the two deliberate invalid-payload tests are exactly two.
+- **The four extra `apps/mobile` files an unfixed prototype appears to break are
+  cascades, not scope.** `SyncStatusIndicator.tsx`, `app/index.tsx`,
+  `useQueueSync.ts` and `JobStatusControls.tsx` all fail with `unknown[]` while
+  `useOfflineQueue.ts` is still broken, because zustand infers `unknown` from a
+  store whose own state type does not compile. Type the store and they compile
+  untouched. Fix the middle of a cascade before reading its ends as scope.
+- **No cast is needed in production code.** TypeScript accepts constructing
+  `OfflineQueueItem<TAction>` generically from a matching payload, and rejects a
+  mismatched pairing. Both were established by probe before the change was
+  written, because the correlated-union pattern usually does need one.
 - **CR07 was measured on 2026-09-08 and is next.** A compiled prototype — the
   mapping added, `OfflineQueueItem` discriminated by action — produced 94
   unique type errors. Fixing the three mechanical causes underneath them

@@ -160,6 +160,29 @@ asserted that a replay is the same logical write as the attempt it repeats.
 CR06 added those, and required each to fail against an injected fault before
 recording it as covered.
 
+### The queue's action decides its payload
+
+`OfflineQueueAction` and the seven `*QueuePayload` envelopes used to be two
+independent lists that happened to line up, and `OfflineQueueItem` defaulted its
+payload to `Record<string, unknown>`, so nothing checked that an item's payload
+suited its action. CR07 replaced the standalone action union with
+[`OfflineQueuePayloadByAction`](../packages/types/offlineQueue.ts), a total map
+from action to envelope, and derived the action union from its keys. The item
+and input types distribute over the action, so the pairing is now a compile
+error rather than a convention.
+
+Two consequences worth naming. The generic parameter's meaning changed from
+payload to action, which is why every call site moved even though no behaviour
+did. And `getOfflineQueueItemLabel`'s map, which covered five of seven actions
+with the other two subtracted by hand through `Exclude<…>` and re-attached at
+the call site, is now total: a newly added action fails to compile where the
+labels live instead of rendering `undefined`.
+
+CR07 changed no behaviour by design. `apps/mobile` still reads its persisted
+queue straight into `OfflineQueueItem[]` without validating it — a cast that was
+unsound before this slice and is no more sound after it. What changed is that
+there is now a mapping to validate against, and CR09 owns doing so.
+
 ### Provider selection is only half real until CR09
 
 `packages/api-client/supabase.ts` creates a client at import time from

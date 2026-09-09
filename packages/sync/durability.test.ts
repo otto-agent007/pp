@@ -49,6 +49,23 @@ beforeEach(() => {
   port = createStubPort();
 });
 
+/**
+ * A stored queue item whose payload its action forbids.
+ *
+ * CR07 made the payload follow from the action, so this pairing can no longer
+ * be written directly. The runtime guard it exercises is still load bearing:
+ * `apps/mobile` hydrates its queue from storage without validating it, so an
+ * item written by an older build can still arrive malformed. Checking at that
+ * boundary is CR09's. Until then, deliberate violations go through this one
+ * builder rather than an inline cast.
+ */
+function untrustedQueueItem(
+  item: OfflineQueueItem,
+  payload: unknown,
+): OfflineQueueItem {
+  return { ...item, payload } as OfflineQueueItem;
+}
+
 const enqueuedAt = "2026-05-05T20:00:00.000Z";
 
 function formItem(id = "queue-form-1") {
@@ -364,10 +381,9 @@ describe("durable transitions", () => {
   });
 
   it("marks a permanently invalid payload failed without spending the budget", async () => {
-    const malformed: OfflineQueueItem = {
-      ...formItem("queue-malformed"),
-      payload: { job_id: "job-1" },
-    };
+    const malformed = untrustedQueueItem(formItem("queue-malformed"), {
+      job_id: "job-1",
+    });
 
     const result = await processOfflineQueueItems(port, [malformed], {
       now: "2026-05-05T20:01:00.000Z",

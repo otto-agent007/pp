@@ -120,6 +120,7 @@ export type {
   OfflineQueueAction,
   OfflineQueueInput,
   OfflineQueueItem,
+  OfflineQueuePayloadByAction,
   OfflineQueueStatus,
 } from "./offlineQueue";
 export type {

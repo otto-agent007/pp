@@ -2,6 +2,7 @@ import type {
   OfflineQueueAction,
   OfflineQueueInput,
   OfflineQueueItem,
+  OfflineQueuePayloadByAction,
   OfflineQueueStatus,
 } from "@pest-patrol/types";
 
@@ -68,8 +69,8 @@ export function timestamp(value?: string) {
   return value ?? new Date().toISOString();
 }
 
-export function validateOfflineQueueInput<TPayload>(
-  input: OfflineQueueInput<TPayload>,
+export function validateOfflineQueueInput<TAction extends OfflineQueueAction>(
+  input: OfflineQueueInput<TAction>,
 ) {
   if (!input.action) {
     throw new Error("Queue action is required");
@@ -82,10 +83,10 @@ export function validateOfflineQueueInput<TPayload>(
   return input;
 }
 
-export function createOfflineQueueItem<TPayload>(
-  input: OfflineQueueInput<TPayload>,
+export function createOfflineQueueItem<TAction extends OfflineQueueAction>(
+  input: OfflineQueueInput<TAction>,
   options: QueueItemOptions = {},
-): OfflineQueueItem<TPayload> {
+): OfflineQueueItem<TAction> {
   validateOfflineQueueInput(input);
 
   if (!options.id?.trim()) {
@@ -107,11 +108,11 @@ export function createOfflineQueueItem<TPayload>(
   };
 }
 
-export function markQueueItemRetrying<TPayload>(
-  item: OfflineQueueItem<TPayload>,
+export function markQueueItemRetrying<TAction extends OfflineQueueAction>(
+  item: OfflineQueueItem<TAction>,
   error: string,
   options: RetryOptions = {},
-): OfflineQueueItem<TPayload> {
+): OfflineQueueItem<TAction> {
   const now = timestamp(options.now);
   const retryDelayMs = options.retryDelayMs ?? 60_000;
   const nextRetryAt = new Date(new Date(now).getTime() + retryDelayMs).toISOString();
@@ -126,11 +127,11 @@ export function markQueueItemRetrying<TPayload>(
   };
 }
 
-export function markQueueItemFailed<TPayload>(
-  item: OfflineQueueItem<TPayload>,
+export function markQueueItemFailed<TAction extends OfflineQueueAction>(
+  item: OfflineQueueItem<TAction>,
   error: string,
   options: QueueItemOptions = {},
-): OfflineQueueItem<TPayload> {
+): OfflineQueueItem<TAction> {
   const now = timestamp(options.now);
 
   return {
@@ -142,10 +143,10 @@ export function markQueueItemFailed<TPayload>(
   };
 }
 
-export function markQueueItemSynced<TPayload>(
-  item: OfflineQueueItem<TPayload>,
+export function markQueueItemSynced<TAction extends OfflineQueueAction>(
+  item: OfflineQueueItem<TAction>,
   options: QueueItemOptions = {},
-): OfflineQueueItem<TPayload> {
+): OfflineQueueItem<TAction> {
   const now = timestamp(options.now);
 
   return {
@@ -158,27 +159,29 @@ export function markQueueItemSynced<TPayload>(
   };
 }
 
-export function scrubSensitiveSyncedProofPayload<TPayload>(
-  action: OfflineQueueAction,
-  payload: TPayload,
-): TPayload {
+export function scrubSensitiveSyncedProofPayload<
+  TAction extends OfflineQueueAction,
+>(
+  action: TAction,
+  payload: OfflineQueuePayloadByAction[TAction],
+): OfflineQueuePayloadByAction[TAction] {
   if (!sensitiveProofActions.has(action) || !isRecord(payload)) {
     return payload;
   }
 
   return Object.fromEntries(
     Object.entries(payload).filter(([key]) => !sensitiveProofPayloadKeys.has(key)),
-  ) as TPayload;
+  ) as OfflineQueuePayloadByAction[TAction];
 }
 
-export function clearSyncedQueueItems<TPayload>(
-  items: OfflineQueueItem<TPayload>[],
+export function clearSyncedQueueItems<TAction extends OfflineQueueAction>(
+  items: OfflineQueueItem<TAction>[],
 ) {
   return items.filter((item) => item.status !== "synced");
 }
 
-export function getOfflineQueueSummary<TPayload>(
-  items: OfflineQueueItem<TPayload>[],
+export function getOfflineQueueSummary<TAction extends OfflineQueueAction>(
+  items: OfflineQueueItem<TAction>[],
 ): OfflineQueueSummary {
   const initialSummary: OfflineQueueSummary = {
     failed: 0,
@@ -217,7 +220,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function queueItemJobId<TPayload>(item: OfflineQueueItem<TPayload>) {
+function queueItemJobId<TAction extends OfflineQueueAction>(item: OfflineQueueItem<TAction>) {
   return isRecord(item.payload) && typeof item.payload.job_id === "string"
     ? item.payload.job_id
     : null;
@@ -259,32 +262,37 @@ function arrivalNotificationLabel(payload: unknown) {
   return "Arrival notice";
 }
 
-const queueActionLabels: Record<
-  Exclude<OfflineQueueAction, "geofence_event_create" | "arrival_notification_create">,
-  string
-> = {
+/**
+ * Every action's label, either fixed or derived from that action's payload.
+ *
+ * Total over `OfflineQueueAction` by construction, so a newly added action is a
+ * compile error here rather than a silently missing label.
+ */
+const queueActionLabels: {
+  [K in OfflineQueueAction]:
+    | string
+    | ((payload: OfflineQueuePayloadByAction[K]) => string);
+} = {
+  arrival_notification_create: arrivalNotificationLabel,
   chemical_log_create: "Chemical log",
   form_submission_create: "Treatment form",
+  geofence_event_create: geofenceEventLabel,
   job_status_update: "Status update",
   photo_upload: "Photo capture",
   signature_capture: "Signature",
 };
 
-export function getOfflineQueueItemLabel<TPayload>(
-  item: OfflineQueueItem<TPayload>,
+export function getOfflineQueueItemLabel<TAction extends OfflineQueueAction>(
+  item: OfflineQueueItem<TAction>,
 ) {
-  const actionLabel =
-    item.action === "geofence_event_create"
-      ? geofenceEventLabel(item.payload)
-      : item.action === "arrival_notification_create"
-        ? arrivalNotificationLabel(item.payload)
-      : queueActionLabels[item.action];
+  const label = queueActionLabels[item.action];
+  const actionLabel = typeof label === "string" ? label : label(item.payload);
 
   return `${actionLabel} for ${payloadJobLabel(item.payload)}`;
 }
 
-export function getOfflineQueueJobTriage<TPayload>(
-  items: OfflineQueueItem<TPayload>[],
+export function getOfflineQueueJobTriage<TAction extends OfflineQueueAction>(
+  items: OfflineQueueItem<TAction>[],
   jobId: string,
 ): OfflineQueueJobTriage {
   const jobItems = items.filter((item) => queueItemJobId(item) === jobId);

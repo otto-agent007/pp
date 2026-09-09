@@ -2,7 +2,12 @@ import React from "react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { Job, OfflineQueueItem } from "@pest-patrol/types";
+import type {
+  Job,
+  OfflineQueueAction,
+  OfflineQueueItem,
+  OfflineQueuePayloadByAction,
+} from "@pest-patrol/types";
 
 import {
   mobileCaptureControlStyles,
@@ -363,7 +368,67 @@ describe("JobStatusControls", () => {
   });
 });
 
-function queueItem(action: OfflineQueueItem["action"]): OfflineQueueItem {
+/**
+ * The smallest valid payload for each queue action.
+ *
+ * CR07 made the payload follow from the action, so `{ job_id }` no longer
+ * stands in for any of them. These tests only care that an item exists for a
+ * job, so the payloads are minimal — but they have to be well formed, and the
+ * map is total so a newly added action is a compile error here.
+ */
+const queuePayloads: OfflineQueuePayloadByAction = {
+  arrival_notification_create: {
+    captured_at: "2026-05-07T00:00:00.000Z",
+    client_event_id: "arrival-event-1",
+    decision: "send_now",
+    job_id: "job-1",
+  },
+  chemical_log_create: {
+    amount_used: 2,
+    chemical_id: "chemical-1",
+    job_id: "job-1",
+  },
+  form_submission_create: {
+    form_data: {},
+    job_id: "job-1",
+    template_id: "template-1",
+  },
+  geofence_event_create: {
+    accuracy_m: 5,
+    captured_at: "2026-05-07T00:00:00.000Z",
+    client_event_id: "geofence-event-1",
+    distance_m: 10,
+    event_type: "arrival",
+    job_id: "job-1",
+    latitude: 30.27,
+    longitude: -97.74,
+    within_radius: true,
+  },
+  photo_upload: {
+    content_type: "image/jpeg",
+    file_name: "photo.jpg",
+    job_id: "job-1",
+    local_uri: "file:///photo.jpg",
+    storage_bucket: "job-media",
+    storage_path: "job-1/photo.jpg",
+  },
+  job_status_update: {
+    job_id: "job-1",
+    status: "en_route",
+  },
+  signature_capture: {
+    content_type: "image/png",
+    file_name: "signature.png",
+    job_id: "job-1",
+    local_uri: "data:image/png;base64,signature",
+    storage_bucket: "job-media",
+    storage_path: "job-1/signature.png",
+  },
+};
+
+function queueItem<TAction extends OfflineQueueAction>(
+  action: TAction,
+): OfflineQueueItem<TAction> {
   return {
     action,
     attempts: 0,
@@ -371,7 +436,7 @@ function queueItem(action: OfflineQueueItem["action"]): OfflineQueueItem {
     id: action,
     last_error: null,
     next_retry_at: null,
-    payload: { job_id: "job-1" },
+    payload: queuePayloads[action],
     status: "synced",
     updated_at: "2026-05-07T00:00:00.000Z",
   };
