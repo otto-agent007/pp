@@ -1391,6 +1391,58 @@
           "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
           "recordedAt": "2026-09-09T23:30:00Z",
           "url": "https://github.com/otto-agent007/pp/pull/213"
+        },
+        {
+          "kind": "review",
+          "summary": "Every new guard was proved to fire rather than merely to pass, by injecting the regression and confirming which test names it. Reverting hydrate to the unchecked cast, and separately making persistence write only the items, each fail apps/mobile/src/store/useQueueSync.test.ts on 'keeps a persisted item it cannot read, and surfaces it for recovery'. Letting discardQueueItem remove an item regardless of status fails packages/domain/offlineQueue.test.ts on 'discards a failed item and leaves work the queue is still doing'. A guard wired in but never triggered looks identical to a passing one.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm exec tsc -p apps/mobile/tsconfig.json --noEmit",
+          "exitCode": 2,
+          "summary": "The en-to-es parity guard was re-proved against this task's own copy, not only against the probe key the re-scope used. Removing sync.discard from the es block alone exits 2 with TS2719 naming that property, while the mobile suite stays green in the same tree. The key was restored; nothing in this pull request carries the removal. This is why checks names pnpm typecheck.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "summary": "The full suite passes 10 of 10 tasks plus the root tooling suite. packages/domain goes from 335 tests to 347 as the validation and recovery suites start running, and apps/mobile from 79 in 20 files to 86 in 21 as the composition-root integration test appears and the recovery interaction tests join SyncStatusIndicator. Every other package's count is unchanged, including packages/sync, whose 36 tests cover the normalizers this task corrected.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm typecheck",
+          "exitCode": 0,
+          "summary": "Typecheck passes 11 of 11 across the workspace. It is the gate that matters twice here: it is the only reader of the en-to-es copy parity, and it is what proves the validation needs no cast, since a payload that reaches an OfflineQueueItem does so only through its action's normalizer.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "summary": "The boundary checker reports 11 workspace packages and zero exceptions, unchanged. The validation adds one intra-package import, offlineQueue.ts to offlineSync.ts inside packages/domain, and no cross-package edge: packages/domain still reaches only @pest-patrol/types.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The ownership boundary was proved to fire for this running task, not assumed from a passing reconcile. Committing an unrelated line in README.md and running pnpm rebuild:graph:reconcile -- --offline exits 1 with 'changed path README.md is outside running-node ownership'; the probe commit was reset and the reconcile passes again. A passing reconcile looks identical to a skipped one.",
+          "commitSha": "e2c3e4971c856e51cf3c41a0496fd3ce50b3b1fa",
+          "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "summary": "Clean-tree rebuild verification PASS, 15 of 15 gates, evidence set 605eee3f, running-slice mode against base 6a2305c with identical pre and post trees. No gate reported UNMAPPED, including docs/architecture.md and the plan document, which is standing slice ownership matched on the node id.",
+          "commitSha": "e2c3e4971c856e51cf3c41a0496fd3ce50b3b1fa",
+          "recordedAt": "2026-09-09T23:45:00Z"
         }
       ],
       "branch": "codex/rebuild-cr09b-queue-recovery-v1",
