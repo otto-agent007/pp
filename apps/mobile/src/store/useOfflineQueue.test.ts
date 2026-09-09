@@ -33,11 +33,25 @@ describe("useOfflineQueue", () => {
     });
     const failed = useOfflineQueue.getState().enqueue({
       action: "photo_upload",
-      payload: { job_id: "job-1", local_uri: "file://photo.jpg" },
+      payload: {
+        content_type: "image/jpeg",
+        file_name: "photo.jpg",
+        job_id: "job-1",
+        local_uri: "file://photo.jpg",
+        storage_bucket: "job-media",
+        storage_path: "job-1/photo.jpg",
+      },
     });
     const synced = useOfflineQueue.getState().enqueue({
       action: "signature_capture",
-      payload: { job_id: "job-1", local_uri: "data:image/png;base64,signature" },
+      payload: {
+        content_type: "image/png",
+        file_name: "signature.png",
+        job_id: "job-1",
+        local_uri: "data:image/png;base64,signature",
+        storage_bucket: "job-media",
+        storage_path: "job-1/signature.png",
+      },
     });
 
     useOfflineQueue.getState().markFailed(failed.id, "Upload failed");
@@ -72,7 +86,14 @@ describe("useOfflineQueue", () => {
   it("persists clearing synced queue items", () => {
     const synced = useOfflineQueue.getState().enqueue({
       action: "signature_capture",
-      payload: { job_id: "job-1", local_uri: "data:image/png;base64,signature" },
+      payload: {
+        content_type: "image/png",
+        file_name: "signature.png",
+        job_id: "job-1",
+        local_uri: "data:image/png;base64,signature",
+        storage_bucket: "job-media",
+        storage_path: "job-1/signature.png",
+      },
     });
 
     useOfflineQueue.getState().markSynced(synced.id);
@@ -88,11 +109,13 @@ describe("useOfflineQueue", () => {
     const synced = useOfflineQueue.getState().enqueue({
       action: "signature_capture",
       payload: {
+        content_type: "image/png",
+        data_url: "data:image/png;base64,signature",
+        file_name: "signature.png",
         job_id: "job-1",
         local_uri: "data:image/png;base64,signature",
-        data_url: "data:image/png;base64,signature",
         signature_data: "raw-signature",
-        file_name: "signature.png",
+        storage_bucket: "job-media",
         storage_path: "job-1/signature.png",
       },
     });
@@ -107,8 +130,10 @@ describe("useOfflineQueue", () => {
         id: synced.id,
         status: "synced",
         payload: {
-          job_id: "job-1",
+          content_type: "image/png",
           file_name: "signature.png",
+          job_id: "job-1",
+          storage_bucket: "job-media",
           storage_path: "job-1/signature.png",
         },
       }),

@@ -139,8 +139,8 @@ export function resolveMutationOutcome(
 }
 
 /** Resolve the outcome for a queue item that has just failed an attempt. */
-export function resolveQueueItemOutcome<TPayload>(
-  item: Pick<OfflineQueueItem<TPayload>, "attempts">,
+export function resolveQueueItemOutcome(
+  item: Pick<OfflineQueueItem, "attempts">,
   reason: MutationFailureReason,
   policy: MutationOutcomePolicy = DEFAULT_MUTATION_OUTCOME_POLICY,
 ): MutationOutcome {

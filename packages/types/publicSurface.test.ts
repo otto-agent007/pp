@@ -179,6 +179,7 @@ const PUBLIC_SURFACE: readonly string[] = [
   "OfflineQueueAction",
   "OfflineQueueInput",
   "OfflineQueueItem",
+  "OfflineQueuePayloadByAction",
   "OfflineQueueStatus",
   "PaymentProvider",
   "PaymentRecord",

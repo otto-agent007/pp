@@ -10,21 +10,18 @@ import { create } from "zustand";
 
 import { readMobileJson, writeMobileJson } from "./mobilePersistence";
 
-type MobileOfflinePayload = Record<string, unknown>;
 const OFFLINE_QUEUE_STORAGE_KEY = "pest-patrol:offline-queue:v1";
 
 interface OfflineQueueState {
   clearAll: () => void;
   clearSynced: () => void;
-  enqueue: (
-    input: OfflineQueueInput<MobileOfflinePayload>,
-  ) => OfflineQueueItem<MobileOfflinePayload>;
+  enqueue: (input: OfflineQueueInput) => OfflineQueueItem;
   hydrate: () => Promise<void>;
-  items: OfflineQueueItem<MobileOfflinePayload>[];
+  items: OfflineQueueItem[];
   markFailed: (id: string, error: string) => void;
   markRetrying: (id: string, error: string) => void;
   markSynced: (id: string) => void;
-  replaceItems: (items: OfflineQueueItem<MobileOfflinePayload>[]) => void;
+  replaceItems: (items: OfflineQueueItem[]) => void;
 }
 
 function makeQueueId() {
@@ -57,7 +54,7 @@ export const useOfflineQueue = create<OfflineQueueState>((set) => ({
     return item;
   },
   hydrate: async () => {
-    const items = await readMobileJson<OfflineQueueItem<MobileOfflinePayload>[]>(
+    const items = await readMobileJson<OfflineQueueItem[]>(
       OFFLINE_QUEUE_STORAGE_KEY,
       [],
     );

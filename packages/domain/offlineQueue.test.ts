@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import type { OfflineQueueAction, OfflineQueueInput } from "@pest-patrol/types";
+
+import { queuePayload } from "./fixtures/offlineQueue";
 import {
   clearSyncedQueueItems,
   createOfflineQueueItem,
@@ -11,6 +14,23 @@ import {
 } from "./offlineQueue";
 
 const now = "2026-05-05T12:00:00.000Z";
+
+/**
+ * A queue input the type system forbids, for the one test that proves the
+ * runtime guard still rejects it.
+ *
+ * CR07 made the payload follow from the action, so a malformed input can no
+ * longer be written directly. The guard is still worth having: a persisted
+ * queue is read back from storage unvalidated, and CR09 owns checking it there.
+ * The deliberate violation goes through this builder so it stays greppable
+ * instead of hiding in an inline cast.
+ */
+function untrustedQueueInput(
+  action: OfflineQueueAction,
+  payload: unknown,
+): OfflineQueueInput {
+  return { action, payload } as OfflineQueueInput;
+}
 
 describe("offline queue domain", () => {
   it("creates queued items with retry metadata cleared", () => {
@@ -36,15 +56,15 @@ describe("offline queue domain", () => {
 
   it("rejects queue items without payloads or ids", () => {
     expect(() =>
-      createOfflineQueueItem(
-        { action: "job_status_update", payload: undefined },
-        { id: "queue-1", now },
-      ),
+      createOfflineQueueItem(untrustedQueueInput("job_status_update", undefined), {
+        id: "queue-1",
+        now,
+      }),
     ).toThrow("Queue payload is required");
 
     expect(() =>
       createOfflineQueueItem(
-        { action: "job_status_update", payload: { job_id: "job-1" } },
+        { action: "job_status_update", payload: queuePayload("job_status_update") },
         { id: " ", now },
       ),
     ).toThrow("Queue id is required");
@@ -54,7 +74,7 @@ describe("offline queue domain", () => {
     const item = createOfflineQueueItem(
       {
         action: "chemical_log_create",
-        payload: { job_id: "job-1", amount_used: 2 },
+        payload: queuePayload("chemical_log_create"),
       },
       { id: "queue-1", now },
     );
@@ -75,7 +95,7 @@ describe("offline queue domain", () => {
 
   it("marks synced items and clears synced queue entries", () => {
     const queued = createOfflineQueueItem(
-      { action: "photo_upload", payload: { job_id: "job-1" } },
+      { action: "photo_upload", payload: queuePayload("photo_upload") },
       { id: "queue-1", now },
     );
     const synced = markQueueItemSynced(queued, {
@@ -157,7 +177,11 @@ describe("offline queue domain", () => {
     const queued = createOfflineQueueItem(
       {
         action: "chemical_log_create",
-        payload: { job_id: "job-1", local_uri: "not-proof", notes: "Baseboards" },
+        payload: {
+          ...queuePayload("chemical_log_create"),
+          local_uri: "not-proof",
+          notes: "Baseboards",
+        },
       },
       { id: "queue-chemical-1", now },
     );
@@ -167,7 +191,7 @@ describe("offline queue domain", () => {
 
   it("summarizes pending, failed, synced, and next retry counts", () => {
     const queued = createOfflineQueueItem(
-      { action: "job_status_update", payload: { job_id: "job-1" } },
+      { action: "job_status_update", payload: queuePayload("job_status_update") },
       { id: "queue-1", now },
     );
     const retrying = markQueueItemRetrying(queued, "Offline", {
@@ -176,7 +200,10 @@ describe("offline queue domain", () => {
     });
     const synced = markQueueItemSynced(
       createOfflineQueueItem(
-        { action: "signature_capture", payload: { job_id: "job-2" } },
+        {
+          action: "signature_capture",
+          payload: queuePayload("signature_capture", "job-2"),
+        },
         { id: "queue-2", now },
       ),
       { now },
@@ -199,7 +226,7 @@ describe("offline queue domain", () => {
         createOfflineQueueItem(
           {
             action: "form_submission_create",
-            payload: { job_id: "job-1", template_id: "template-1" },
+            payload: queuePayload("form_submission_create"),
           },
           { id: "queue-1", now },
         ),
@@ -211,7 +238,10 @@ describe("offline queue domain", () => {
         createOfflineQueueItem(
           {
             action: "geofence_event_create",
-            payload: { job_id: "job-2", event_type: "arrival" },
+            payload: {
+              ...queuePayload("geofence_event_create", "job-2"),
+              event_type: "arrival",
+            },
           },
           { id: "queue-2", now },
         ),
@@ -238,12 +268,15 @@ describe("offline queue domain", () => {
 
   it("summarizes queued work by job for route stop triage", () => {
     const queued = createOfflineQueueItem(
-      { action: "photo_upload", payload: { job_id: "job-1" } },
+      { action: "photo_upload", payload: queuePayload("photo_upload") },
       { id: "queue-1", now },
     );
     const retrying = markQueueItemRetrying(
       createOfflineQueueItem(
-        { action: "signature_capture", payload: { job_id: "job-1" } },
+        {
+          action: "signature_capture",
+          payload: queuePayload("signature_capture"),
+        },
         { id: "queue-2", now },
       ),
       "Offline",
@@ -251,7 +284,10 @@ describe("offline queue domain", () => {
     );
     const synced = markQueueItemSynced(
       createOfflineQueueItem(
-        { action: "form_submission_create", payload: { job_id: "job-1" } },
+        {
+          action: "form_submission_create",
+          payload: queuePayload("form_submission_create"),
+        },
         { id: "queue-3", now },
       ),
       { now },
@@ -272,7 +308,7 @@ describe("offline queue domain", () => {
 
   it("prioritizes failed route stop sync state", () => {
     const failed = createOfflineQueueItem(
-      { action: "chemical_log_create", payload: { job_id: "job-1" } },
+      { action: "chemical_log_create", payload: queuePayload("chemical_log_create") },
       { id: "queue-1", now },
     );
 

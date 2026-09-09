@@ -21,6 +21,7 @@ import {
   parseJobScheduleWallTime,
   validateJobInput,
 } from "./jobs";
+import { queueItem } from "./fixtures/offlineQueue";
 import type { OfflineQueueItem } from "@pest-patrol/types";
 
 const validInput = {
@@ -1609,17 +1610,15 @@ describe("job domain", () => {
       },
     ] satisfies Job[];
     const queueItems = [
-      {
+      queueItem("photo_upload", {
         id: "queue-failed-photo",
-        action: "photo_upload",
         attempts: 1,
         created_at: now,
+        jobId: "job-failed",
         last_error: "Upload failed",
-        next_retry_at: null,
-        payload: { job_id: "job-failed", path: "photo.jpg" },
-        status: "failed" as const,
+        status: "failed",
         updated_at: now,
-      },
+      }),
       ...(
         [
           "geofence_event_create",
@@ -1628,17 +1627,15 @@ describe("job domain", () => {
           "signature_capture",
           "form_submission_create",
         ] as const
-      ).map((action, index) => ({
-        id: `queue-ready-${index}`,
-        action,
-        attempts: 0,
-        created_at: now,
-        last_error: null,
-        next_retry_at: null,
-        payload: { job_id: "job-ready" },
-        status: "synced" as const,
-        updated_at: now,
-      })),
+      ).map((action, index) =>
+        queueItem(action, {
+          id: `queue-ready-${index}`,
+          created_at: now,
+          jobId: "job-ready",
+          status: "synced",
+          updated_at: now,
+        }),
+      ),
     ] satisfies OfflineQueueItem[];
 
     const timeline = buildMobileDailyRouteTimeline(

@@ -950,10 +950,10 @@
       ]
     },
     {
-      "baseSha": "",
+      "baseSha": "8973697d56e97671adbf6c88e5ef436690e0e336",
       "id": "CR07",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR02",
@@ -979,7 +979,8 @@
         "OfflineQueueItem discriminated by action rather than defaulting TPayload to Record<string, unknown>",
         "Retirement of the hand-maintained Exclude<OfflineQueueAction, ...> label map in packages/domain/offlineQueue.ts, which silently omits any newly added action",
         "Test fixtures corrected so every queue payload matches its action, with one named escape hatch for the two tests that deliberately exercise the runtime guards against an untrusted payload",
-        "The frozen public surface in packages/types/publicSurface.test.ts updated for the new mapping type, since CR02's guard requires exact equality"
+        "The frozen public surface in packages/types/publicSurface.test.ts updated for the new mapping type, since CR02's guard requires exact equality",
+        "A per-action test fixture wherever a test builds one item per action, since a single object literal over a union of actions loses the correlation this slice creates"
       ],
       "checks": [
         "pnpm exec vitest run packages/types/publicSurface.test.ts",
@@ -1002,11 +1003,77 @@
         "Scoped on 2026-09-08 from the measured gap: seven queue actions and seven payload types exist with nothing relating them, and OfflineQueueItem's TPayload default erases the pairing",
         "Controller scoping of CR07 on 2026-09-08: types only. The unchecked cast in the mobile store's hydrate stays as it is, and validating the persisted queue becomes a CR09 deliverable, so this slice changes no behaviour",
         "Controller scoping of CR07 on 2026-09-08: the two tests that deliberately build an invalid payload keep working through one named escape-hatch builder rather than inline casts, so the intent stays reviewable in one place",
-        "Ownership widened on 2026-09-08 from measurement: a compiled prototype showed the change reaches packages/application and three apps/mobile files, none of which CR07 owned"
+        "Ownership widened on 2026-09-08 from measurement: a compiled prototype showed the change reaches packages/application and three apps/mobile files, none of which CR07 owned",
+        "Re-measured on 2026-09-08 before promotion with a compiled prototype, per the recurring defect class. The recorded ownership needed no change: every path the slice reaches was already owned, which is the first time in this chain that a scope survived re-measurement intact.",
+        "The escape hatch is two named builders rather than one, decided on measurement: the two deliberate violations live in different packages and invalidate at different levels, a missing payload on an input in packages/domain and a malformed payload on a stored item in packages/sync. Sharing one builder would make a test fixture part of a cross-package contract, so each package names its own and states why."
       ],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "evidence": [
+        {
+          "kind": "review",
+          "summary": "Re-measurement before promotion, with a compiled prototype, confirmed the recorded scope instead of correcting it. Every path the slice reaches was already owned: five production files (packages/types/offlineQueue.ts and its barrel, packages/domain/offlineQueue.ts, packages/application/mutationOutcome.ts, apps/mobile/src/store/useOfflineQueue.ts) and six test files. This is the first node in the chain whose scope survived the recurring defect-class check intact.",
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The four further apps/mobile files an unfixed prototype appears to break are cascades, not scope. SyncStatusIndicator.tsx, app/index.tsx, useQueueSync.ts and JobStatusControls.tsx each fail with unknown[] while useOfflineQueue.ts is still broken, because zustand infers unknown from a store whose own state type does not compile. Typing the store leaves all four compiling untouched. Widening ownership to cover them would have been the mistake the measurement exists to prevent.",
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "Probed before writing the change, because the correlated-union pattern usually needs a cast: constructing OfflineQueueItem<TAction> generically from queuePayload(action) typechecks with no cast, a union of actions distributes correctly through a map call site, and pairing action photo_upload with a ChemicalLogQueuePayload is rejected. Production code therefore contains no cast; the only two casts in the slice are the named escape hatches the deliberate invalid-payload tests use.",
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The changed-path ownership gate was proved to fire rather than skip. Appending a line to apps/web/next.config.ts and committing it made pnpm rebuild:graph:reconcile -- --offline exit 1 with 'changed path apps/web/next.config.ts is outside running-node ownership'. The probe commit was discarded.",
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The full suite passes 10/10 tasks with every test count identical to CR06's: domain 335, web 426, api-client 109, mobile 79, sync 29, application 19, ui 9, ui-tokens 8, ui-native 7, types 4. A types-only slice that added no test and removed none is exactly what an unchanged count set shows.",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Typecheck passes 11/11 across the workspace, which is the load-bearing gate here: packages/types emits no runtime value, so compiling its consumers is the compatibility proof rather than pnpm test.",
+          "command": "pnpm typecheck",
+          "exitCode": 0,
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "The architecture boundary checker reports 11 workspace packages and zero exceptions, unchanged by this slice, which introduces no cross-package edge.",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft PR #199 opened for CR07.",
+          "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
+          "url": "https://github.com/otto-agent007/pp/pull/199",
+          "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 16/16 gates, evidence set 31424523. Run in running-slice mode against base 8973697 with an identical pre and post tree, so no gate mutated the worktree.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "c107d7efb8dd73a44668989def900b236c183fd6",
+          "recordedAt": "2026-09-09T01:50:00Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr07-queue-types-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/199",
       "mergeSha": "",
       "supersededBy": null,
       "target": null,

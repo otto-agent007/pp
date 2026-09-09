@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { queuePayload } from "./fixtures/offlineQueue";
 import {
   buildMobileJobWorkPlan,
   buildMobileTechnicianReadinessPanel,
@@ -95,7 +96,7 @@ describe("demo readiness domain", () => {
         {
           id: "queue-1",
           action: "chemical_log_create",
-          payload: { job_id: "job-1" },
+          payload: queuePayload("chemical_log_create", "job-1"),
           status: "queued",
           attempts: 0,
           created_at: "2026-05-05T12:00:00.000Z",
@@ -106,7 +107,7 @@ describe("demo readiness domain", () => {
         {
           id: "queue-2",
           action: "photo_upload",
-          payload: { job_id: "job-1" },
+          payload: queuePayload("photo_upload", "job-1"),
           status: "synced",
           attempts: 1,
           created_at: "2026-05-05T12:00:00.000Z",
@@ -117,7 +118,7 @@ describe("demo readiness domain", () => {
         {
           id: "queue-3",
           action: "signature_capture",
-          payload: { job_id: "other-job" },
+          payload: queuePayload("signature_capture", "other-job"),
           status: "queued",
           attempts: 0,
           created_at: "2026-05-05T12:00:00.000Z",
@@ -175,7 +176,7 @@ describe("demo readiness domain", () => {
         {
           id: "queue-1",
           action: "form_submission_create",
-          payload: { job_id: "job-1" },
+          payload: queuePayload("form_submission_create", "job-1"),
           status: "queued",
           attempts: 0,
           created_at: "2026-05-05T12:00:00.000Z",
@@ -209,7 +210,7 @@ describe("demo readiness domain", () => {
         {
           id: "queue-1",
           action: "photo_upload",
-          payload: { job_id: "job-1" },
+          payload: queuePayload("photo_upload", "job-1"),
           status: "failed",
           attempts: 2,
           created_at: "2026-05-05T12:00:00.000Z",

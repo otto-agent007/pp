@@ -5,14 +5,6 @@ import type {
 } from "./geofencing";
 import type { JobStatus } from "./jobs";
 
-export type OfflineQueueAction =
-  | "form_submission_create"
-  | "job_status_update"
-  | "chemical_log_create"
-  | "photo_upload"
-  | "signature_capture"
-  | "geofence_event_create"
-  | "arrival_notification_create";
 
 export type OfflineQueueStatus = "queued" | "retrying" | "failed" | "synced";
 
@@ -81,19 +73,39 @@ export interface FormSubmissionQueuePayload extends Record<string, unknown> {
   form_data: JobFormData;
 }
 
-export interface OfflineQueueInput<TPayload = Record<string, unknown>> {
-  action: OfflineQueueAction;
-  payload: TPayload;
+export interface OfflineQueuePayloadByAction {
+  arrival_notification_create: ArrivalNotificationQueuePayload;
+  chemical_log_create: ChemicalLogQueuePayload;
+  form_submission_create: FormSubmissionQueuePayload;
+  geofence_event_create: JobGeofenceEventQueuePayload;
+  job_status_update: JobStatusUpdateQueuePayload;
+  photo_upload: JobPhotoUploadQueuePayload;
+  signature_capture: JobSignatureCaptureQueuePayload;
 }
 
-export interface OfflineQueueItem<TPayload = Record<string, unknown>> {
-  id: string;
-  action: OfflineQueueAction;
-  payload: TPayload;
-  status: OfflineQueueStatus;
-  attempts: number;
-  created_at: string;
-  updated_at: string;
-  next_retry_at: string | null;
-  last_error: string | null;
-}
+export type OfflineQueueAction = keyof OfflineQueuePayloadByAction;
+
+export type OfflineQueueInput<
+  TAction extends OfflineQueueAction = OfflineQueueAction,
+> = {
+  [K in TAction]: {
+    action: K;
+    payload: OfflineQueuePayloadByAction[K];
+  };
+}[TAction];
+
+export type OfflineQueueItem<
+  TAction extends OfflineQueueAction = OfflineQueueAction,
+> = {
+  [K in TAction]: {
+    id: string;
+    action: K;
+    payload: OfflineQueuePayloadByAction[K];
+    status: OfflineQueueStatus;
+    attempts: number;
+    created_at: string;
+    updated_at: string;
+    next_retry_at: string | null;
+    last_error: string | null;
+  };
+}[TAction];
