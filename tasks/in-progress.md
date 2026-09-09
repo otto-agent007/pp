@@ -63,50 +63,71 @@
   and 25 in the `packages/types` surface CR02 deliberately froze). A library
   exporting more than today's callers use is normal, so that check is noise
   rather than signal here.
-- **CR07 (queue type boundary) is `running`.** Re-measurement on 2026-09-08
-  confirmed the recorded scope rather than correcting it — the first slice in
-  this chain where that has happened. Every path the change reaches was already
-  owned, and the two deliberate invalid-payload tests are exactly two.
-- **The four extra `apps/mobile` files an unfixed prototype appears to break are
-  cascades, not scope.** `SyncStatusIndicator.tsx`, `app/index.tsx`,
-  `useQueueSync.ts` and `JobStatusControls.tsx` all fail with `unknown[]` while
-  `useOfflineQueue.ts` is still broken, because zustand infers `unknown` from a
-  store whose own state type does not compile. Type the store and they compile
-  untouched. Fix the middle of a cascade before reading its ends as scope.
-- **No cast is needed in production code.** TypeScript accepts constructing
-  `OfflineQueueItem<TAction>` generically from a matching payload, and rejects a
-  mismatched pairing. Both were established by probe before the change was
-  written, because the correlated-union pattern usually does need one.
-- **CR07 was measured on 2026-09-08 and is next.** A compiled prototype — the
-  mapping added, `OfflineQueueItem` discriminated by action — produced 94
-  unique type errors. Fixing the three mechanical causes underneath them
-  (`packages/domain/offlineQueue.ts`'s pass-through `TPayload` generics, one
-  generic in `packages/application/mutationOutcome.ts`, and the
-  `MobileOfflinePayload = Record<string, unknown>` alias in the mobile store)
-  took it to **27, every one of them in a test file**. No production source
-  outside those three places needs to change, and `packages/sync`,
-  `packages/api-client` and `apps/web` need no change at all.
-- The 27 are 17 tests across 6 files that build a payload not matching its
-  action — `{ job_id }` for a `job_status_update`, `{ job_id, local_uri }` for
-  a `photo_upload`. That is the drift the mapping exists to catch, and it was
-  invisible because every payload interface extends `Record<string, unknown>`.
-  Two of the 17 build an invalid payload *deliberately*, to exercise the
-  runtime guards; they keep working through one named escape-hatch builder
-  rather than inline casts.
-- **CR07 is types only.** The mobile store's `hydrate()` reads the persisted
-  queue with an unchecked cast, and discriminating the item type makes that
-  cast a stronger claim about data an older app version wrote. Validating it is
-  behaviour, so it is now a **CR09 deliverable** rather than an unrecorded
-  assumption, and CR07 changes no behaviour at all.
-- Measuring CR07 found the **seventh** instance of the recurring defect class:
-  the node owned `packages/domain`, `packages/sync` and `packages/types`, and
-  the compiled prototype reached `packages/application` and three
-  `apps/mobile` files it did not own. Ownership was corrected at scoping.
-- CR09 and CR18 remain after CR07, and each needs its own controller promotion
-  decision. CR02 added the qualifier that matters for the type-level packages:
-  `pnpm test` is load-bearing only where a package has runtime behaviour, and
-  for one that emits nothing the real compatibility proof is `pnpm typecheck`
-  across its consumers.
+- **CR07 (queue type boundary) is `done`**; its summary is in `tasks/done.md`.
+  `OfflineQueuePayloadByAction` makes the action decide the payload, and the
+  `Exclude<…>` label map that covered five of seven actions is total.
+- **CR07 is the first slice in this chain whose recorded scope survived
+  re-measurement unchanged.** Six in a row had found a requirement recorded
+  where the enforcement never reads it; a compiled prototype found nothing to
+  correct here. A clean re-measurement is now a real outcome rather than a sign
+  the measurement was wrong — but it still has to be run.
+- **Fix the middle of a type cascade before reading its ends as scope.** Four
+  `apps/mobile` files appear to break and do not: `SyncStatusIndicator.tsx`,
+  `app/index.tsx`, `useQueueSync.ts` and `JobStatusControls.tsx` all fail with
+  `unknown[]` while `useOfflineQueue.ts` is still untyped, because zustand
+  infers `unknown` from a store whose own state type does not compile. Widening
+  ownership to cover them would have been the mistake measurement prevents.
+- **The correlated-union construction needs no cast, and that was probed rather
+  than assumed.** Constructing `OfflineQueueItem<TAction>` generically from a
+  matching payload typechecks, a union of actions distributes through a `.map`
+  call site, and a mismatched pairing is rejected. The pattern usually does need
+  a cast, so a probe file settled it before any real edit.
+
+## What is next
+
+- **CR09 and CR19 are both unblocked, and which runs next is a controller
+  decision.** CR09 depends on CR07, now `done`; CR19 depends on CR06 and CR07.
+- **CR19 was re-measured on 2026-09-09, as its own approval required.** The
+  premise holds: `packages/application/mutationOutcome.ts` still has **zero**
+  consumers outside its own barrel re-export. The queue it should drive repeats
+  the same failure block **seven times**, once per `process*QueueItem`, each
+  branching on `attempts >= maxAttempts` and stringifying whatever was thrown
+  through `errorMessage()`.
+- **Its ownership was wrong, the eighth instance of the recurring defect
+  class**, and this one was found before promotion rather than during it. CR19
+  owned `packages/api-client`, `packages/application` and `packages/sync` but
+  not `packages/types` or `packages/domain`. Without those, CR19 and CR09 are
+  mutually unsatisfiable: `QueueProcessResult` returns a numeric summary that
+  the mobile store discards while persisting `result.items`, so an outcome
+  recorded only in the summary does not survive the restart CR06 made the queue
+  durable across — and CR09 could then only present a conflict by parsing the
+  `last_error` string CR19 exists to stop parsing.
+- `apps/mobile` needs no ownership: `useQueueSync.ts` passes an empty options
+  object, so an options-shape change does not reach it.
+- **Three decisions are required before CR19 can be promoted.** How a
+  `MutationFailureReason` reaches `packages/sync` at all, given that
+  `OfflineSyncPort`'s seven methods either return a record or reject with the
+  raw provider error and the adapters in `packages/api-client/adapters.ts`
+  rethrow it unchanged. Whether the retry budget resolves to **3** or **5** —
+  `DEFAULT_MUTATION_OUTCOME_POLICY` allows 5 and
+  `packages/sync/offlineSync.ts` defaults to 3, and wiring them together changes
+  retry behaviour either way. And what shape the recorded outcome takes on
+  `OfflineQueueItem`, which reaches `packages/types`' frozen public surface.
+- **CR09 is left exactly as recorded.** It carries the approval `decompose into
+  parallel write-tasks at promotion`, and the graph validator supports
+  `kind: "task"` nodes. Do not pre-scope its deliverables by guessing; decompose
+  it at promotion. Note that it has accumulated three: the `supabase` singleton
+  removal, the real composition-root integration, and now CR07's persisted-queue
+  validation.
+- CR18 also remains, and like CR09 and CR19 it needs its own controller
+  promotion decision.
+
+## Carried forward
+
+- CR02 added the qualifier that matters for the type-level packages: `pnpm test`
+  is load-bearing only where a package has runtime behaviour, and for one that
+  emits nothing the real compatibility proof is `pnpm typecheck` across its
+  consumers. CR07 is the second slice to rely on it.
 - **The `supabase` singleton is wrapped, not removed.**
   `packages/api-client/supabase.ts` creates a client at import time from env
   vars, so composition-root selection is genuine for the adapters that take a

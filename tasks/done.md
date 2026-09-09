@@ -1,5 +1,68 @@
 # Done
 
+## CR07 queue type boundary
+
+- Base `8973697d56e97671adbf6c88e5ef436690e0e336`, branch
+  `codex/rebuild-cr07-queue-types-v1`, PR
+  [#199](https://github.com/otto-agent007/pp/pull/199), merge
+  `4a003a6f8a987777efa67cdce6cda0fb4191a511`, source tag
+  `rebuild/cr07-source` at `3fdec00`, plan
+  `docs/superpowers/plans/2026-09-08-controlled-rebuild-cr07-queue-types.md`.
+- `OfflineQueuePayloadByAction` is a total map from queue action to payload
+  envelope, `OfflineQueueAction` is derived from its keys, and
+  `OfflineQueueItem` and `OfflineQueueInput` distribute over the action. The
+  seven actions and seven payload types were two independent lists that happened
+  to line up; the pairing is now a compile error rather than a convention.
+- The generic parameter's meaning changed from payload to action, which moved 22
+  call sites and no behaviour. `packages/types`' frozen public surface went from
+  175 names to 176.
+- `getOfflineQueueItemLabel`'s map covered five of seven actions, with
+  `geofence_event_create` and `arrival_notification_create` subtracted by hand
+  through `Exclude<…>` and re-attached through a conditional chain at the call
+  site. An eighth action would have compiled and rendered `undefined`, because
+  `tsconfig.base.json` sets `strict` without `noUncheckedIndexedAccess`. The map
+  is now total.
+- **The first slice in this chain whose recorded scope survived re-measurement
+  unchanged.** Six consecutive slices found a requirement recorded where the
+  enforcement never reads it; a compiled prototype found nothing to correct here.
+  Every path the change reaches was already owned: five production files and six
+  test files.
+- **Four further `apps/mobile` files appear to break and do not.**
+  `SyncStatusIndicator.tsx`, `app/index.tsx`, `useQueueSync.ts` and
+  `JobStatusControls.tsx` each fail with `unknown[]` while `useOfflineQueue.ts`
+  is still untyped, because zustand infers `unknown` from a store whose own state
+  type does not compile. All four compile untouched once the store is typed.
+  Widening ownership to cover them would have been the mistake the measurement
+  exists to prevent.
+- **No cast is needed in production code.** Constructing
+  `OfflineQueueItem<TAction>` generically from a matching payload typechecks, a
+  union of actions distributes correctly through a `.map` call site, and pairing
+  `photo_upload` with a `ChemicalLogQueuePayload` is rejected. The
+  correlated-union pattern usually does need a cast, so a probe file settled it
+  before any real edit was made.
+- 27 fixture errors across 6 test files followed, every one a payload standing in
+  `{ job_id }` for an action requiring more. Completed inline where a test names
+  one action; supplied by a generic per-action fixture where a test maps *across*
+  actions, since one object literal over a union of actions loses the correlation
+  the slice creates.
+- Two tests build an invalid payload deliberately, to prove the runtime guards
+  still reject one. They ended as two named escape hatches rather than the single
+  builder the scoping approval assumed: they sit in different packages and
+  invalidate at different levels, an input with no payload in `packages/domain`
+  and a stored item with a malformed one in `packages/sync`, so sharing a builder
+  would make a test fixture part of a cross-package contract.
+- Every package's test count is identical to CR06's — domain 335, web 426,
+  api-client 109, mobile 79, sync 29, application 19 — which is what a types-only
+  slice that adds no test and removes none looks like. Clean-tree
+  `pnpm rebuild:verify` passed 16/16 gates.
+- The changed-path ownership gate was proved to fire rather than skip: an
+  out-of-ownership line appended to `apps/web/next.config.ts` made
+  `pnpm rebuild:graph:reconcile -- --offline` exit 1 naming the path.
+- **Deliberately not done.** `apps/mobile` still hydrates its persisted queue
+  with an unchecked cast — no less sound than before, and now with a mapping to
+  validate against. That is behaviour on a restart holding a stale item, so it is
+  CR09's, recorded as a `defers` graph edge rather than a sentence.
+
 ## CR06 durable queue relocation
 
 - Base `bc543ac27d7f3c1382b23e7df871082cea8ab134`, branch
