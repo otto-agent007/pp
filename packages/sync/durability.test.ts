@@ -161,6 +161,7 @@ describe("durable identity and state", () => {
       "id",
       "last_error",
       "next_retry_at",
+      "outcome",
       "payload",
       "status",
       "updated_at",

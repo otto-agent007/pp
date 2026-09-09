@@ -1,4 +1,8 @@
-import type { OfflineQueueItem } from "@pest-patrol/types";
+import type {
+  MutationFailureReason,
+  MutationOutcomeKind,
+  OfflineQueueItem,
+} from "@pest-patrol/types";
 
 /**
  * Provider-independent semantics for the outcome of a durable mutation.
@@ -16,36 +20,13 @@ import type { OfflineQueueItem } from "@pest-patrol/types";
  * lost a race from one that can never apply.
  */
 
-/** What an adapter observed, expressed without reference to any provider. */
-export type MutationFailureReason =
-  /** The device could not reach the provider at all. */
-  | "network-unavailable"
-  /** The provider was reachable but could not serve the request. */
-  | "provider-unavailable"
-  /** The provider asked the caller to slow down. */
-  | "rate-limited"
-  /** The provider gave no usable answer; the write may or may not have applied. */
-  | "ambiguous-response"
-  /** Current state disagrees with the precondition the intent was built on. */
-  | "precondition-conflict"
-  /** The intent itself is not valid and no retry can change that. */
-  | "invalid-intent"
-  /** The caller may not perform this write. */
-  | "unauthorized"
-  /** The target of the write does not exist. */
-  | "target-missing";
-
-export type MutationOutcomeKind =
-  /** The provider confirmed the write. */
-  | "applied"
-  /** Current state disagrees with the intent; a person has to decide. */
-  | "conflict"
-  /** Unknown whether the write applied; replay under the same identity. */
-  | "ambiguous"
-  /** Transient; the same intent can be attempted again. */
-  | "retryable"
-  /** No further attempt can succeed; the technician must recover it. */
-  | "terminal";
+/**
+ * `MutationFailureReason` and `MutationOutcomeKind` are declared in
+ * `packages/types`, because `OfflineQueueItem` records the resolved outcome and
+ * that package may depend on nothing. They are re-exported here so this module
+ * stays the single place a caller reads mutation-outcome semantics from.
+ */
+export type { MutationFailureReason, MutationOutcomeKind };
 
 export interface MutationOutcomePolicy {
   /**
@@ -145,4 +126,45 @@ export function resolveQueueItemOutcome(
   policy: MutationOutcomePolicy = DEFAULT_MUTATION_OUTCOME_POLICY,
 ): MutationOutcome {
   return resolveMutationOutcome(reason, item.attempts, policy);
+}
+
+/**
+ * A provider failure an adapter has already interpreted.
+ *
+ * The queue used to infer what a failure meant from the error message an
+ * adapter happened to rethrow, which made every provider-specific string part
+ * of `packages/sync`'s behaviour. Adapters now map their provider's answer onto
+ * a `MutationFailureReason` and throw this instead, so the reason crosses the
+ * port without the port's seven signatures changing.
+ */
+export class MutationFailure extends Error {
+  readonly reason: MutationFailureReason;
+
+  constructor(
+    reason: MutationFailureReason,
+    message: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = "MutationFailure";
+    this.reason = reason;
+  }
+}
+
+export function isMutationFailure(error: unknown): error is MutationFailure {
+  return error instanceof MutationFailure;
+}
+
+/**
+ * The reason a thrown value carries, or the reason to assume when it carries
+ * none.
+ *
+ * An unmapped error means an adapter did not interpret its provider, not that
+ * the write can never apply. Assuming `provider-unavailable` keeps such a
+ * failure retryable, which is how the queue behaved before any of this existed;
+ * assuming a terminal reason would silently turn an adapter's omission into
+ * lost field work.
+ */
+export function mutationFailureReason(error: unknown): MutationFailureReason {
+  return isMutationFailure(error) ? error.reason : "provider-unavailable";
 }

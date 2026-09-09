@@ -120,6 +120,22 @@
     force CR09 to re-derive the kind on every render and would lose the
     budget-applied result; not a new `OfflineQueueStatus` value, which would move
     `getOfflineQueueSummary`, `getOfflineQueueJobTriage` and their tests.
+- **CR19 is `running`** (base `374c6ec`, branch
+  `codex/rebuild-cr19-outcomes-v1`). `offlineSync.ts` went from 484 lines to
+  361, the seven duplicated failure blocks collapsed into one outcome-driven
+  path, and `pnpm test` went from 29 to 36 tests in `packages/sync` and 109 to
+  120 in `packages/api-client`.
+- **The re-scope was wrong about `apps/mobile`, and implementation found it.**
+  It measured that `useQueueSync.ts` passes an empty options object, which is
+  true and beside the point: the *item* shape changed too, and
+  `JobStatusControls.test.tsx` builds queue items directly. Ownership was
+  widened to that one file. Ninth instance of the recurring defect class, and
+  the first this chain introduced rather than inherited. Measure the shape of
+  every type a slice changes, not only the one its call sites pass.
+- **No test observed the budget disagreement, which is why it survived.** All
+  seven existing `packages/sync` tests pass `maxAttempts` explicitly, so
+  changing the default from three to five broke nothing and would have gone
+  unnoticed either way. A new test pins the default to the policy.
 - **`MutationFailureReason` and `MutationOutcomeKind` therefore move into
   `packages/types`.** Verified rather than assumed:
   `tooling/architecture-boundaries.json` gives `@pest-patrol/types` an **empty**

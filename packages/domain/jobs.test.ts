@@ -1552,6 +1552,7 @@ describe("job domain", () => {
           template_id: "template-1",
           form_data: {},
         },
+        outcome: null,
         status: "queued",
         updated_at: now,
       },

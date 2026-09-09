@@ -4,6 +4,7 @@ import type {
   JobGeofenceEventType,
 } from "./geofencing";
 import type { JobStatus } from "./jobs";
+import type { MutationOutcomeKind } from "./mutationOutcome";
 
 
 export type OfflineQueueStatus = "queued" | "retrying" | "failed" | "synced";
@@ -107,5 +108,14 @@ export type OfflineQueueItem<
     updated_at: string;
     next_retry_at: string | null;
     last_error: string | null;
+    /**
+     * How the last attempt resolved, once one has been made.
+     *
+     * Recorded on the item rather than only in a process summary because the
+     * mobile store persists the items and discards the summary, so an outcome
+     * kept only there would not survive a restart. `null` means no attempt has
+     * resolved yet.
+     */
+    outcome: MutationOutcomeKind | null;
   };
 }[TAction];

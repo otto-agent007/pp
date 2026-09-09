@@ -1,4 +1,5 @@
 import type {
+  MutationOutcomeKind,
   OfflineQueueAction,
   OfflineQueueInput,
   OfflineQueueItem,
@@ -14,6 +15,23 @@ interface QueueItemOptions {
 interface RetryOptions {
   now?: string;
   retryDelayMs?: number;
+  /**
+   * How the attempt resolved, as `packages/application` decided it.
+   *
+   * The queue records the outcome; it does not classify one. Defaulting keeps
+   * every existing caller correct: a retry that reaches here without an outcome
+   * is by construction a retryable one.
+   */
+  outcome?: MutationOutcomeKind;
+}
+
+interface FailureOptions {
+  now?: string;
+  /**
+   * How the attempt resolved. Defaults to `terminal`, since an item marked
+   * failed has by construction stopped being retried.
+   */
+  outcome?: MutationOutcomeKind;
 }
 
 export interface OfflineQueueSummary {
@@ -105,6 +123,7 @@ export function createOfflineQueueItem<TAction extends OfflineQueueAction>(
     updated_at: now,
     next_retry_at: null,
     last_error: null,
+    outcome: null,
   };
 }
 
@@ -122,6 +141,7 @@ export function markQueueItemRetrying<TAction extends OfflineQueueAction>(
     attempts: item.attempts + 1,
     last_error: error.trim() || "Sync failed",
     next_retry_at: nextRetryAt,
+    outcome: options.outcome ?? "retryable",
     status: "retrying",
     updated_at: now,
   };
@@ -130,7 +150,7 @@ export function markQueueItemRetrying<TAction extends OfflineQueueAction>(
 export function markQueueItemFailed<TAction extends OfflineQueueAction>(
   item: OfflineQueueItem<TAction>,
   error: string,
-  options: QueueItemOptions = {},
+  options: FailureOptions = {},
 ): OfflineQueueItem<TAction> {
   const now = timestamp(options.now);
 
@@ -138,6 +158,7 @@ export function markQueueItemFailed<TAction extends OfflineQueueAction>(
     ...item,
     last_error: error.trim() || "Sync failed",
     next_retry_at: null,
+    outcome: options.outcome ?? "terminal",
     status: "failed",
     updated_at: now,
   };
@@ -153,6 +174,7 @@ export function markQueueItemSynced<TAction extends OfflineQueueAction>(
     ...item,
     last_error: null,
     next_retry_at: null,
+    outcome: "applied",
     payload: scrubSensitiveSyncedProofPayload(item.action, item.payload),
     status: "synced",
     updated_at: now,
