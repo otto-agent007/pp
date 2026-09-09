@@ -151,9 +151,17 @@ function executionReadyNode(overrides: Record<string, unknown> = {}) {
   });
 }
 
+/**
+ * A done write node of either kind. `nodeWith` defaults to `kind: "task"`, and
+ * a done task now records the same provenance a done slice does, because it
+ * ships its own pull request and reaches `done` through its own merge.
+ */
 function doneNodeWith(overrides: Record<string, unknown> = {}) {
   return executionReadyNode({
+    branch: "codex/rebuild-test-v1",
     evidence: [commandEvidence()],
+    mergeSha: FULL_SHA,
+    pr: "https://github.com/otto-agent007/pp/pull/7",
     status: "done",
     ...overrides,
   });
@@ -919,6 +927,76 @@ describe("controlled rebuild graph validator", () => {
         }),
       ),
     ).toEqual([]);
+  });
+
+  /**
+   * A write task reaches `done` through its own merge, so it records the same
+   * provenance a slice does. These rules used to be slice-only, which left a
+   * done task needing no branch, no pull request and no merge SHA — and so
+   * gave the reconciler nothing to check its source tag against, letting
+   * CR18's "every source tag published" claim pass vacuously over it.
+   */
+  it("requires a done write task to record its own provenance", () => {
+    const errors = validateRebuildGraph(
+      graphWith({
+        nodes: [
+          doneNodeWith({
+            branch: "",
+            id: "CR01",
+            mergeSha: "",
+            parent: null,
+            pr: "",
+          }),
+        ],
+        preferredPrOrder: ["CR01"],
+      }),
+    );
+
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        "done task CR01 must include a correctly named codex branch",
+        "done task CR01 must include a pull request URL for otto-agent007/pp",
+        "done task CR01 must include a 40-character hexadecimal merge SHA",
+      ]),
+    );
+  });
+
+  it("requires a running write task to record its branch", () => {
+    expect(
+      validateRebuildGraph(
+        graphWith({
+          nodes: [
+            executionReadyNode({
+              branch: "",
+              id: "CR01",
+              parent: null,
+              status: "running",
+            }),
+          ],
+          preferredPrOrder: ["CR01"],
+        }),
+      ),
+    ).toContain("running task CR01 must include a correctly named codex branch");
+  });
+
+  it("still names a slice a slice in those messages", () => {
+    expect(
+      validateRebuildGraph(
+        graphWith({
+          nodes: [
+            doneNodeWith({
+              branch: "",
+              id: "CR01",
+              kind: "slice",
+              mergeSha: "",
+              parent: null,
+              pr: "",
+            }),
+          ],
+          preferredPrOrder: ["CR01"],
+        }),
+      ),
+    ).toContain("done slice CR01 must include a correctly named codex branch");
   });
 
   it("detects dependency cycles after superseded nodes are resolved", () => {

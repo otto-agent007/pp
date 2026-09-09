@@ -21,8 +21,16 @@ Before marking a slice `done`, the immutable lightweight tag
 head. For example, CR00 uses `rebuild/cr00-source`. Never move or reuse a source
 tag.
 
+A **write task** — a `kind: "task"` node a slice decomposes into, such as CR09A
+— is held to every rule in this runbook that a slice is: the same ownership
+boundary, the same `pnpm rebuild:verify` evidence, and its own source tag
+(`rebuild/cr09a-source`). It ships its own pull request and is recorded `done`
+from its own merge. The only rules it is exempt from are the ones the graph
+validator applies to slices alone, because a task need not carry a branch, a
+pull request or a merge SHA in order to be `planned`.
+
 The `Rebuild source tag` workflow publishes it automatically when a slice's pull
-request merges. It matches the merged pull request against the running slice by
+request merges. It matches the merged pull request against the running node by
 **both** its URL and its head branch, because between a slice merging and its
 record catching up the default branch still names that slice as running, and a
 control-plane pull request merged in that window would otherwise look like it.

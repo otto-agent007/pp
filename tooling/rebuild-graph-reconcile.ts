@@ -81,10 +81,23 @@ function isMergedAndLanded(
  * `running` lives on that node's own branch, and siblings are still `planned`
  * in the graph this tree carries.
  */
+function isWriteNode(node: { kind: string }) {
+  return node.kind === "slice" || node.kind === "task";
+}
+
 function isRunningWriteNode(node: { kind: string; status: string }) {
-  return (
-    (node.kind === "slice" || node.kind === "task") && node.status === "running"
-  );
+  return isWriteNode(node) && node.status === "running";
+}
+
+/**
+ * A write task reaches `done` through its own merge, so its provenance is
+ * checked on the same terms: the source tag at the canonical pull-request head,
+ * and a merge SHA that has landed on the default branch. Left slice-only, a
+ * done task would have carried no verified provenance at all, and CR18's claim
+ * that every source tag is published would have passed vacuously over it.
+ */
+function isDoneWriteNode(node: { kind: string; status: string }) {
+  return isWriteNode(node) && node.status === "done";
 }
 
 /**
@@ -252,22 +265,22 @@ function validateRepositoryClaimsWithOptions(
   for (const node of graphRecord.nodes) {
     let evidenceDescendant: string | null = null;
     let sourceEvidenceCommits: Set<string> | null = null;
-    if (node.kind === "slice" && node.status === "done") {
+    if (isDoneWriteNode(node)) {
       const source = sliceSources.get(node.pr);
       if (!source) {
         errors.push(
-          `done slice ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
+          `done ${node.kind} ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
         );
       } else {
         sourceEvidenceCommits = new Set(source.commitShas);
         if (!sourceEvidenceCommits.has(source.headSha)) {
           errors.push(
-            `done slice ${node.id} pull request head commit is missing from source history: ${source.headSha}`,
+            `done ${node.kind} ${node.id} pull request head commit is missing from source history: ${source.headSha}`,
           );
         }
         if (source.headTreeSha !== source.mergeTreeSha) {
           errors.push(
-            `done slice ${node.id} merged tree ${source.mergeTreeSha} does not match pull request head tree ${source.headTreeSha}`,
+            `done ${node.kind} ${node.id} merged tree ${source.mergeTreeSha} does not match pull request head tree ${source.headTreeSha}`,
           );
         }
       }
@@ -275,27 +288,27 @@ function validateRepositoryClaimsWithOptions(
         const pullRequest = pullRequests.get(node.pr);
         if (!pullRequest) {
           errors.push(
-            `done slice ${node.id} pull request does not exist: ${node.pr}`,
+            `done ${node.kind} ${node.id} pull request does not exist: ${node.pr}`,
           );
         } else if (pullRequest.state !== "MERGED") {
           errors.push(
-            `done slice ${node.id} pull request is ${pullRequest.state}, not MERGED: ${node.pr}`,
+            `done ${node.kind} ${node.id} pull request is ${pullRequest.state}, not MERGED: ${node.pr}`,
           );
         } else if (pullRequest.mergeSha !== node.mergeSha) {
           errors.push(
-            `done slice ${node.id} merge SHA ${node.mergeSha} does not match pull request merge SHA ${String(pullRequest.mergeSha)}`,
+            `done ${node.kind} ${node.id} merge SHA ${node.mergeSha} does not match pull request merge SHA ${String(pullRequest.mergeSha)}`,
           );
         }
       }
 
       if (!existingCommits.has(node.mergeSha)) {
         errors.push(
-          `done slice ${node.id} merge SHA does not exist: ${node.mergeSha}`,
+          `done ${node.kind} ${node.id} merge SHA does not exist: ${node.mergeSha}`,
         );
       }
       if (!isAncestor(node.mergeSha, graphRecord.repository.defaultBranch)) {
         errors.push(
-          `done slice ${node.id} merge SHA ${node.mergeSha} is not an ancestor of ${graphRecord.repository.defaultBranch}`,
+          `done ${node.kind} ${node.id} merge SHA ${node.mergeSha} is not an ancestor of ${graphRecord.repository.defaultBranch}`,
         );
       }
     } else if (isRunningWriteNode(node)) {
@@ -499,7 +512,7 @@ function collectLocalRepositoryFacts(
   for (const node of relevantNodes) {
     if (isRunningWriteNode(node)) {
       commits.add(node.baseSha);
-    } else if (node.kind === "slice" && node.status === "done") {
+    } else if (isDoneWriteNode(node)) {
       commits.add(node.mergeSha);
     }
     for (const evidence of node.evidence) {
@@ -508,13 +521,13 @@ function collectLocalRepositoryFacts(
   }
 
   for (const node of relevantNodes) {
-    if (node.kind !== "slice" || node.status !== "done") {
+    if (!isDoneWriteNode(node)) {
       continue;
     }
     const sourceRef = resolveSourceTagRef(cwd, node.id);
     if (!sourceRef) {
       errors.push(
-        `done slice ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
+        `done ${node.kind} ${node.id} source tag ${sourceTagRef(node.id)} is unavailable; fetch tags or run live reconciliation`,
       );
       continue;
     }
@@ -595,7 +608,7 @@ function collectLocalRepositoryFacts(
           `unable to list changed paths for running ${node.kind} ${node.id}`,
         );
       }
-    } else if (node.kind === "slice" && node.status === "done") {
+    } else if (isDoneWriteNode(node)) {
       requiredPairs.push({
         ancestor: node.mergeSha,
         descendant: graph.repository.defaultBranch,
@@ -677,11 +690,7 @@ function appendMergedRunningSliceAncestry(
     ),
   );
   for (const node of graph.nodes) {
-    if (
-      node.kind !== "slice" ||
-      node.status !== "running" ||
-      node.pr.length === 0
-    ) {
+    if (!isRunningWriteNode(node) || node.pr.length === 0) {
       continue;
     }
     const pullRequest = pullRequests.get(node.pr);
@@ -747,7 +756,7 @@ async function collectPullRequestFacts(
       graph.nodes
         .filter(
           (node) =>
-            node.kind === "slice" &&
+            isWriteNode(node) &&
             (node.status === "done" || node.status === "running") &&
             node.pr.length > 0,
         )

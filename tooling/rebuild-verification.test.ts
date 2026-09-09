@@ -81,7 +81,7 @@ function createRecoveryFixture(
  * A running slice whose branch has merged the default branch forward, where the
  * default branch meanwhile gained a path the slice does not own.
  */
-function createUpdatedFromDefaultBranchFixture() {
+function createUpdatedFromDefaultBranchFixture(kind = "slice") {
   const repository = mkdtempSync(join(tmpdir(), "pp-rebuild-running-"));
   const graphDirectory = mkdtempSync(join(tmpdir(), "pp-rebuild-graph-"));
   temporaryDirectories.push(repository, graphDirectory);
@@ -123,7 +123,7 @@ function createUpdatedFromDefaultBranchFixture() {
           baseSha,
           checks: ["git diff --check"],
           id: "CR99",
-          kind: "slice",
+          kind,
           mergeSha: "",
           ownership: ["tasks/in-progress.md"],
           status: "running",
@@ -540,6 +540,58 @@ describe("controlled rebuild running-slice gate selection", () => {
         "UNMAPPED changed path: tools/other/src/client.ts",
       );
       expect(exitCode).toBe(0);
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
+  });
+
+  /**
+   * A running write task is verified on the same terms as a running slice.
+   * Before this, the node lookup asked for `kind === "slice"`, so verifying a
+   * decomposed slice refused with "requires one running slice" and produced no
+   * command evidence — the one step of the runbook it could not perform.
+   */
+  it("verifies a running write task the same way", () => {
+    const fixture = createUpdatedFromDefaultBranchFixture("task");
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = runRebuildVerificationCli(
+        ["--graph", fixture.graphPath],
+        fixture.repository,
+        {},
+      );
+
+      expect(error.mock.calls.flat().join("\n")).not.toContain(
+        "requires one running slice",
+      );
+      expect(exitCode).toBe(0);
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
+  });
+
+  it("still refuses when no node is running", () => {
+    const fixture = createUpdatedFromDefaultBranchFixture("gate");
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const exitCode = runRebuildVerificationCli(
+        ["--graph", fixture.graphPath],
+        fixture.repository,
+        {},
+      );
+
+      expect(error.mock.calls.flat().join("\n")).toContain(
+        "Rebuild verification requires one running slice or write task.",
+      );
+      expect(exitCode).toBe(1);
     } finally {
       error.mockRestore();
       log.mockRestore();
