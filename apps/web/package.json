@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "lint": "eslint \"app/**/*.{ts,tsx}\" \"hooks/**/*.{ts,tsx}\" \"*.ts\"",
+    "lint": "eslint \"app/**/*.{ts,tsx}\" \"hooks/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"*.ts\"",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

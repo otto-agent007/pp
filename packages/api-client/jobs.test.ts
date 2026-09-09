@@ -11,14 +11,19 @@ import {
   updateAssignedTechnicianJobStatusRecord,
   updateJobRecord,
 } from "./jobs";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: vi.fn(),
-    rpc: vi.fn(),
-  },
-}));
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+  rpc: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -115,7 +120,7 @@ const workOrderJob = {
 };
 
 describe("job api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -125,7 +130,7 @@ describe("job api client", () => {
     const jobsQuery = new MockQuery({ data: [job], error: null });
     from.mockReturnValue(jobsQuery as never);
 
-    const jobs = await listJobRecords();
+    const jobs = await listJobRecords(testClient);
 
     expect(jobs).toHaveLength(1);
     expect(jobs[0]).toMatchObject({
@@ -174,7 +179,7 @@ describe("job api client", () => {
     });
     from.mockReturnValue(jobsQuery as never);
 
-    const jobs = await listCustomerPortalJobRecords("customer-1");
+    const jobs = await listCustomerPortalJobRecords("customer-1", testClient);
 
     expect(jobs).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("jobs");
@@ -208,7 +213,7 @@ describe("job api client", () => {
       service_cadence: "quarterly",
       service_family: "recurring_general_pest",
       service_offering_id: "general_pest_quarterly",
-    });
+    }, testClient);
 
     expect(created.service_family).toBe("recurring_general_pest");
     expect(jobQuery.calls[0]).toEqual([
@@ -245,7 +250,7 @@ describe("job api client", () => {
     const result = await convertEstimateToWorkOrderRecord({
       estimate_job_id: "estimate-1",
       scheduled_start: "2026-06-10T09:00",
-    });
+    }, testClient);
 
     expect(result.reused_existing_work_order).toBe(false);
     expect(result.estimate_job.estimate_status).toBe("accepted");
@@ -287,7 +292,7 @@ describe("job api client", () => {
     const result = await convertEstimateToWorkOrderRecord({
       estimate_job_id: "estimate-1",
       scheduled_start: "2026-06-10T09:00",
-    });
+    }, testClient);
 
     expect(result.reused_existing_work_order).toBe(true);
     expect(result.work_order_job.id).toBe("work-order-1");
@@ -310,7 +315,7 @@ describe("job api client", () => {
       convertEstimateToWorkOrderRecord({
         estimate_job_id: "missing",
         scheduled_start: "2026-06-10T09:00",
-      }),
+      }, testClient),
     ).rejects.toThrow("not found");
     expect(from).toHaveBeenCalledTimes(1);
   });
@@ -332,7 +337,7 @@ describe("job api client", () => {
     const result = await convertEstimateToWorkOrderRecord({
       estimate_job_id: "estimate-1",
       scheduled_start: "2026-06-10T09:00",
-    });
+    }, testClient);
 
     expect(result.warning).toMatch(/could not be updated/i);
     expect(result.work_order_job.id).toBe("work-order-1");
@@ -356,7 +361,7 @@ describe("job api client", () => {
       service_cadence: "project",
       service_family: "rodent_attic",
       service_offering_id: "rodent_exclusion",
-    });
+    }, testClient);
 
     expect(jobQuery.calls).toContainEqual(["eq", ["id", "job-1"]]);
     expect(jobQuery.calls[0][0]).toBe("update");
@@ -419,7 +424,7 @@ describe("job api client", () => {
     });
     from.mockReturnValue(jobQuery as never);
 
-    const canceled = await cancelJobRecord("job-1");
+    const canceled = await cancelJobRecord("job-1", testClient);
 
     expect(canceled.status).toBe("canceled");
     expect(jobQuery.calls[0]).toEqual(["update", [{ status: "canceled" }]]);
@@ -432,7 +437,7 @@ describe("job api client", () => {
     });
     from.mockReturnValue(profilesQuery as never);
 
-    const technicians = await listTechnicianProfiles();
+    const technicians = await listTechnicianProfiles(testClient);
 
     expect(technicians).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("profiles");

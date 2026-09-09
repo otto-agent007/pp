@@ -10,16 +10,21 @@ import {
   upsertPaymentRecordRecord,
   updateInvoiceStatusRecord,
 } from "./payments";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-    },
-    from: vi.fn(),
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
   },
-}));
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -86,7 +91,7 @@ const invoice: Invoice = {
 };
 
 describe("payments api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -97,7 +102,7 @@ describe("payments api client", () => {
     const listQuery = new MockQuery({ data: [invoice], error: null });
     from.mockReturnValue(listQuery as never);
 
-    const invoices = await listInvoiceRecords();
+    const invoices = await listInvoiceRecords(testClient);
 
     expect(invoices).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("invoices");
@@ -108,7 +113,7 @@ describe("payments api client", () => {
     const listQuery = new MockQuery({ data: [invoice], error: null });
     from.mockReturnValue(listQuery as never);
 
-    const invoices = await listCustomerPortalInvoiceRecords("customer-1");
+    const invoices = await listCustomerPortalInvoiceRecords("customer-1", testClient);
 
     expect(invoices).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("invoices");
@@ -136,7 +141,7 @@ describe("payments api client", () => {
           unit_amount_cents: 12500,
         },
       ],
-    });
+    }, testClient);
 
     expect(createQuery.calls[0]).toEqual([
       "insert",
@@ -167,7 +172,7 @@ describe("payments api client", () => {
     });
     from.mockReturnValue(updateQuery as never);
 
-    const updated = await updateInvoiceStatusRecord("invoice-1", "paid");
+    const updated = await updateInvoiceStatusRecord("invoice-1", "paid", testClient);
 
     expect(updated.status).toBe("paid");
     expect(updateQuery.calls[0]).toEqual(["update", [{ status: "paid" }]]);
@@ -177,7 +182,7 @@ describe("payments api client", () => {
     const readQuery = new MockQuery({ data: invoice, error: null });
     from.mockReturnValue(readQuery as never);
 
-    const found = await findInvoiceRecord("invoice-1");
+    const found = await findInvoiceRecord("invoice-1", testClient);
 
     expect(found).toEqual(invoice);
     expect(from).toHaveBeenCalledWith("invoices");
@@ -229,7 +234,7 @@ describe("payments api client", () => {
       provider: "stripe",
       provider_payment_id: "pi_123",
       status: "succeeded",
-    });
+    }, testClient);
 
     expect(updated.amount_cents).toBe(15000);
     expect(existingQuery.calls[0]).toEqual(["select", ["*, invoice:invoices(*)"]]);
@@ -269,7 +274,7 @@ describe("payments api client", () => {
 
     const updated = await createInvoicePaymentLinkRecord({
       invoice_id: "invoice-1",
-    });
+    }, testClient);
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/payments/payment-link",

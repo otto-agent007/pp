@@ -31,9 +31,11 @@ import {
   createTechniciansAdapter,
 } from "@pest-patrol/api-client";
 
-const jobsPort = createJobsAdapter();
-const technicianLicensesPort = createTechnicianLicensesAdapter();
-const techniciansPort = createTechniciansAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const jobsPort = createJobsAdapter(browserSupabase);
+const technicianLicensesPort = createTechnicianLicensesAdapter(browserSupabase);
+const techniciansPort = createTechniciansAdapter(browserSupabase);
 
 
 export const techniciansQueryKey = ["technicians"] as const;

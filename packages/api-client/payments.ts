@@ -10,12 +10,11 @@ import type {
   PaymentStatus,
   StripePaymentProviderStatus,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
 type InvoiceRow = Invoice;
-type PaymentsClient = typeof supabase | AuthSupabaseClient;
+type PaymentsClient = SupabaseProviderClient;
 type PaymentRecordInput = {
   amount_cents: number;
   currency: string;
@@ -67,7 +66,7 @@ function toLineItemRows(invoiceId: string, lineItems: InvoiceLineItemInput[]) {
 
 export async function getInvoiceRecord(
   id: string,
-  client: PaymentsClient = supabase,
+  client: PaymentsClient,
 ) {
   const { data, error } = await client
     .from("invoices")
@@ -84,7 +83,7 @@ export async function getInvoiceRecord(
 
 export async function findInvoiceRecord(
   id: string,
-  client: PaymentsClient = supabase,
+  client: PaymentsClient,
 ) {
   try {
     return await getInvoiceRecord(id, client);
@@ -93,8 +92,8 @@ export async function findInvoiceRecord(
   }
 }
 
-export async function listInvoiceRecords() {
-  const { data, error } = await supabase
+export async function listInvoiceRecords(client: PaymentsClient) {
+  const { data, error } = await client
     .from("invoices")
     .select(invoiceSelect)
     .order("created_at", { ascending: false });
@@ -108,7 +107,7 @@ export async function listInvoiceRecords() {
 
 export async function listCustomerPortalInvoiceRecords(
   customerId: string,
-  client: PaymentsClient = supabase,
+  client: PaymentsClient,
 ) {
   const { data, error } = await client
     .from("invoices")
@@ -124,8 +123,11 @@ export async function listCustomerPortalInvoiceRecords(
   return (data ?? []) as unknown as Invoice[];
 }
 
-export async function createInvoiceRecord(input: InvoiceInput) {
-  const { data, error } = await supabase
+export async function createInvoiceRecord(
+  input: InvoiceInput,
+  client: PaymentsClient,
+) {
+  const { data, error } = await client
     .from("invoices")
     .insert(toInvoiceRow(input))
     .select("*")
@@ -136,7 +138,7 @@ export async function createInvoiceRecord(input: InvoiceInput) {
   }
 
   const invoice = data as Invoice;
-  const { error: lineItemsError } = await supabase
+  const { error: lineItemsError } = await client
     .from("invoice_line_items")
     .insert(toLineItemRows(invoice.id, input.line_items));
 
@@ -144,13 +146,13 @@ export async function createInvoiceRecord(input: InvoiceInput) {
     throw lineItemsError;
   }
 
-  return getInvoiceRecord(invoice.id);
+  return getInvoiceRecord(invoice.id, client);
 }
 
 export async function updateInvoiceStatusRecord(
   id: string,
   status: InvoiceStatus,
-  client: PaymentsClient = supabase,
+  client: PaymentsClient,
 ) {
   const { data, error } = await client
     .from("invoices")
@@ -169,7 +171,7 @@ export async function updateInvoiceStatusRecord(
 async function getPaymentRecordByProviderPaymentIdRecord(
   provider: PaymentProvider,
   providerPaymentId: string,
-  client: PaymentsClient = supabase,
+  client: PaymentsClient,
 ) {
   const { data, error } = await client
     .from("payments")
@@ -187,7 +189,7 @@ async function getPaymentRecordByProviderPaymentIdRecord(
 
 export async function upsertPaymentRecordRecord(
   input: PaymentRecordInput,
-  client: PaymentsClient = supabase,
+  client: PaymentsClient,
 ) {
   const existing = await getPaymentRecordByProviderPaymentIdRecord(
     input.provider,
@@ -235,8 +237,9 @@ export async function upsertPaymentRecordRecord(
 export async function saveInvoicePaymentLinkRecord(
   id: string,
   link: InvoicePaymentLinkResult,
+  client: PaymentsClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("invoices")
     .update({
       status: "sent",
@@ -256,11 +259,12 @@ export async function saveInvoicePaymentLinkRecord(
 
 export async function createInvoicePaymentLinkRecord(
   input: InvoicePaymentLinkInput,
+  client: PaymentsClient,
 ) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  const { data } = await supabase.auth.getSession();
+  const { data } = await client.auth.getSession();
 
   if (data.session?.access_token) {
     headers.Authorization = `Bearer ${data.session.access_token}`;
@@ -278,11 +282,13 @@ export async function createInvoicePaymentLinkRecord(
 
   const link = (await response.json()) as InvoicePaymentLinkResult;
 
-  return saveInvoicePaymentLinkRecord(input.invoice_id, link);
+  return saveInvoicePaymentLinkRecord(input.invoice_id, link, client);
 }
 
-export async function getStripePaymentProviderStatusRecord() {
-  const { data } = await supabase.auth.getSession();
+export async function getStripePaymentProviderStatusRecord(
+  client: PaymentsClient,
+) {
+  const { data } = await client.auth.getSession();
   const headers: Record<string, string> = {};
 
   if (data.session?.access_token) {

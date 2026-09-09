@@ -7,7 +7,6 @@ import {
   getDemoSeedStatusRecord,
   isDemoLoginRefreshUnavailableError,
   refreshDemoLoginSeedRecord,
-  supabase,
 } from "@pest-patrol/api-client";
 import type { UserProfile } from "@pest-patrol/types";
 import {
@@ -33,7 +32,9 @@ import {
 } from "../hooks/localDemoData";
 import { createAuthAdapter } from "@pest-patrol/api-client";
 
-const authPort = createAuthAdapter(supabase);
+import { browserSupabase } from "../lib/supabase-browser";
+
+const authPort = createAuthAdapter(browserSupabase);
 
 
 type AdminAuthStatus = "loading" | "signed_in" | "signed_out";
@@ -190,7 +191,7 @@ function isProductionDemoSeedUnavailable(
 
 async function syncDemoFixtureSessionFromRuntimeStatus() {
   try {
-    const status = await getDemoSeedStatusRecord(supabase);
+    const status = await getDemoSeedStatusRecord(browserSupabase);
 
     if (isProductionDemoSeedUnavailable(status.status)) {
       activateLocalDemoFixtureSession({ reset: false });
@@ -260,7 +261,7 @@ async function signIn(email: string, password: string) {
 
     if (record.profile.email === DEMO_SEED_ADMIN_EMAIL) {
       try {
-        await refreshDemoLoginSeedRecord(supabase);
+        await refreshDemoLoginSeedRecord(browserSupabase);
         deactivateLocalDemoFixtureSession();
       } catch (error) {
         if (!isDemoLoginRefreshUnavailableError(error)) {
@@ -343,7 +344,7 @@ function ensureAuthSubscription() {
   }
 
   subscriptionStarted = true;
-  supabase.auth.onAuthStateChange((event) => {
+  browserSupabase.auth.onAuthStateChange((event) => {
     if (event === "SIGNED_OUT") {
       setAuthState(signedOutState);
       return;

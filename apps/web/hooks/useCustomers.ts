@@ -16,7 +16,9 @@ import {
 } from "./localDemoData";
 import { createCustomersAdapter } from "@pest-patrol/api-client";
 
-const customersPort = createCustomersAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const customersPort = createCustomersAdapter(browserSupabase);
 
 
 export const customersQueryKey = ["customers"] as const;

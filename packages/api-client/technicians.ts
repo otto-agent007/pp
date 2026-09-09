@@ -6,16 +6,16 @@ import type {
 } from "@pest-patrol/types";
 import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type TechniciansClient = typeof supabase | AuthSupabaseClient;
+type TechniciansClient = SupabaseProviderClient;
 
 interface TechnicianInviteRecordInput extends TechnicianInviteInput {
   redirect_to: string;
 }
 
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
+async function getAccessToken(client: TechniciansClient) {
+  const { data, error } = await client.auth.getSession();
 
   if (error) {
     throw error;
@@ -25,8 +25,8 @@ async function getAccessToken() {
 }
 
 export async function listTechnicianProfileRecords(
+  client: TechniciansClient,
   status?: TechnicianStatus,
-  client: TechniciansClient = supabase,
 ) {
   let query = client
     .from("profiles")
@@ -111,8 +111,11 @@ export async function inviteTechnicianWithAdminClientRecord(
   } satisfies TechnicianInviteResult;
 }
 
-export async function inviteTechnicianRecord(input: TechnicianInviteInput) {
-  const adminAccessToken = await getAccessToken();
+export async function inviteTechnicianRecord(
+  input: TechnicianInviteInput,
+  client: TechniciansClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };

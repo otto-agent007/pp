@@ -1,23 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-declare const process: {
-  env: {
-    NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
-    NEXT_PUBLIC_SUPABASE_URL?: string;
-  };
-};
-
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:54321";
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "missing-supabase-anon-key";
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Missing Supabase Environment Variables");
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    detectSessionInUrl: false,
-  },
-});
+/**
+ * The provider client every record function in this package is given.
+ *
+ * This module used to construct a Supabase client at import time and export it
+ * as `supabase`, and most of this package reached for that module-level value
+ * either directly or through a `client = supabase` default. CR09A removed it:
+ * a composition root now creates the client and passes it in, so selecting a
+ * provider is real for every adapter rather than only the ones that already
+ * accepted an injected client.
+ *
+ * The composition roots are `apps/web/lib/supabase-browser.ts`,
+ * `apps/mobile/src/lib/supabase.ts`, and the per-request server client in
+ * `apps/web/app/api/_lib/server-auth.ts`.
+ */
+export type SupabaseProviderClient = SupabaseClient;

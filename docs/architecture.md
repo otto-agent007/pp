@@ -233,17 +233,28 @@ not scheduled, because the condition for removing it — no client older than th
 migration still running — is not observable from this repository. The migration
 changed no message, so the other skew direction needs nothing.
 
-### Provider selection is only half real until CR09A
+### Provider selection is real at every composition root
 
-`packages/api-client/supabase.ts` creates a client at import time from
-environment variables. Of its adapters, those that accept a client are genuinely
-selected at a composition root; the rest close over that singleton, so their
-"selection" is nominal. The distinction is narrower than it looks: `apps/mobile`
-already passes its own client at every composition root, so this is an
-`apps/web` limitation, where the two auth contexts import the singleton and pass
-it back in and the hooks pass nothing at all. Removing it is a CR09A
-deliverable, and until then this is a recorded limitation rather than an
-oversight.
+CR09A removed the client `packages/api-client/supabase.ts` used to create at
+import time from environment variables. Until then, adapters that accepted a
+client were genuinely selected at a composition root and the rest closed over
+that singleton, so their "selection" was nominal — an `apps/web` limitation,
+because `apps/mobile` already passed its own client everywhere, while the web
+auth contexts imported the singleton and passed it back in and the hooks passed
+nothing at all.
+
+Every record function and every adapter factory now takes its client as a
+required argument, and `apps/web/lib/supabase-browser.ts` is the browser
+composition root that supplies it — the web counterpart of
+`apps/mobile/src/lib/supabase.ts`. API routes are unaffected: they already built
+a per-request client bound to the caller's token or to the service role.
+
+This is enforced rather than described. `packages/api-client/supabase.test.ts`
+fails if any module in that package constructs a client, if the package exports
+a client-valued binding, or if an adapter factory defaults its client again;
+`apps/web/lib/supabase-browser.test.ts` fails if a browser adapter is built with
+anything but the composition root's client, if a second browser client appears,
+or if server code reaches for the browser's.
 
 Use the [controlled rebuild runbook](rebuild/README.md) for scheduler,
 lifecycle, verification, and publication rules.

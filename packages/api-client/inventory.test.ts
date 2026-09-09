@@ -9,13 +9,18 @@ import {
   listChemicalLogRecords,
   updateChemicalInventoryRecord,
 } from "./inventory";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: vi.fn(),
-  },
-}));
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -80,7 +85,7 @@ const log = {
 };
 
 describe("inventory api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -90,7 +95,7 @@ describe("inventory api client", () => {
     const inventoryQuery = new MockQuery({ data: [chemical], error: null });
     from.mockReturnValue(inventoryQuery as never);
 
-    const inventory = await listChemicalInventoryRecords();
+    const inventory = await listChemicalInventoryRecords(testClient);
 
     expect(inventory).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("chemical_inventory");
@@ -108,14 +113,14 @@ describe("inventory api client", () => {
       current_stock: 12,
       unit: "oz",
       reorder_level: 4,
-    });
+    }, testClient);
     await updateChemicalInventoryRecord("chemical-1", {
       name: "Bait Gel",
       epa_number: "EPA-123",
       current_stock: 10,
       unit: "oz",
       reorder_level: 4,
-    });
+    }, testClient);
 
     expect(createQuery.calls[0]).toEqual([
       "insert",
@@ -131,7 +136,7 @@ describe("inventory api client", () => {
     });
     from.mockReturnValue(archiveQuery as never);
 
-    const archived = await archiveChemicalInventoryRecord("chemical-1");
+    const archived = await archiveChemicalInventoryRecord("chemical-1", testClient);
 
     expect(archived.status).toBe("archived");
     expect(archiveQuery.calls[0]).toEqual(["update", [{ status: "archived" }]]);
@@ -142,13 +147,13 @@ describe("inventory api client", () => {
     const createQuery = new MockQuery({ data: log, error: null });
     from.mockReturnValueOnce(listQuery as never).mockReturnValueOnce(createQuery as never);
 
-    const logs = await listChemicalLogRecords();
+    const logs = await listChemicalLogRecords(testClient);
     await createChemicalLogRecord({
       job_id: "job-1",
       chemical_id: "chemical-1",
       amount_used: 2,
       notes: null,
-    });
+    }, testClient);
 
     expect(logs).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("chemical_logs");
@@ -168,7 +173,7 @@ describe("inventory api client", () => {
     const listQuery = new MockQuery({ data: [log], error: null });
     from.mockReturnValue(listQuery as never);
 
-    const logs = await listJobChemicalLogRecords("job-1");
+    const logs = await listJobChemicalLogRecords("job-1", testClient);
 
     expect(logs).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("chemical_logs");

@@ -1,9 +1,8 @@
 import type { CloseoutCaptureSummary, JobMediaType } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type CloseoutsClient = typeof supabase | AuthSupabaseClient;
+type CloseoutsClient = SupabaseProviderClient;
 
 interface JobIdRow {
   job_id: string;
@@ -37,7 +36,7 @@ function incrementSummary(
 
 export async function listCloseoutCaptureSummaryRecords(
   jobIds: string[],
-  client: CloseoutsClient = supabase,
+  client: CloseoutsClient,
 ) {
   const uniqueJobIds = Array.from(new Set(jobIds.filter(Boolean)));
 

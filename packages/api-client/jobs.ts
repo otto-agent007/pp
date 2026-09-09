@@ -10,10 +10,10 @@ import type {
 } from "@pest-patrol/types";
 import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 import { listTechnicianProfileRecords } from "./technicians";
 
-type JobsClient = typeof supabase | AuthSupabaseClient;
+type JobsClient = SupabaseProviderClient;
 type JobRow = Partial<Job> & Pick<
   Job,
   | "assigned_tech_id"
@@ -171,7 +171,7 @@ function buildWorkOrderRowFromEstimate(
   };
 }
 
-export async function listJobRecords(client: JobsClient = supabase) {
+export async function listJobRecords(client: JobsClient) {
   const { data, error } = await client
     .from("jobs")
     .select(jobSelect)
@@ -210,7 +210,7 @@ export async function listAssignedTechnicianJobRecords(client: AuthSupabaseClien
 
 export async function listCustomerPortalJobRecords(
   customerId: string,
-  client: JobsClient = supabase,
+  client: JobsClient,
 ) {
   const { data, error } = await client
     .from("jobs")
@@ -226,8 +226,8 @@ export async function listCustomerPortalJobRecords(
   return (data ?? []) as unknown as CustomerPortalJob[];
 }
 
-export async function createJobRecord(input: JobInput) {
-  const { data, error } = await supabase
+export async function createJobRecord(input: JobInput, client: JobsClient) {
+  const { data, error } = await client
     .from("jobs")
     .insert(toJobRow(input))
     .select(jobSelect)
@@ -242,7 +242,7 @@ export async function createJobRecord(input: JobInput) {
 
 export async function convertEstimateToWorkOrderRecord(
   input: EstimateConversionInput,
-  client: JobsClient = supabase,
+  client: JobsClient,
 ): Promise<EstimateConversionResult> {
   const { data: estimateData, error: estimateError } = await client
     .from("jobs")
@@ -323,8 +323,12 @@ export async function convertEstimateToWorkOrderRecord(
   };
 }
 
-export async function updateJobRecord(id: string, input: JobInput) {
-  const { data, error } = await supabase
+export async function updateJobRecord(
+  id: string,
+  input: JobInput,
+  client: JobsClient,
+) {
+  const { data, error } = await client
     .from("jobs")
     .update(toJobRow(input))
     .eq("id", id)
@@ -364,8 +368,8 @@ export async function updateAssignedTechnicianJobStatusRecord(
   return toJob(data as JobRow);
 }
 
-export async function cancelJobRecord(id: string) {
-  const { data, error } = await supabase
+export async function cancelJobRecord(id: string, client: JobsClient) {
+  const { data, error } = await client
     .from("jobs")
     .update({ status: "canceled" })
     .eq("id", id)
@@ -379,6 +383,6 @@ export async function cancelJobRecord(id: string) {
   return toJob(data as JobRow);
 }
 
-export async function listTechnicianProfiles() {
-  return listTechnicianProfileRecords("active");
+export async function listTechnicianProfiles(client: JobsClient) {
+  return listTechnicianProfileRecords(client, "active");
 }

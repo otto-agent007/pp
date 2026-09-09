@@ -1,4 +1,4 @@
-export { supabase } from "./supabase";
+export type { SupabaseProviderClient } from "./supabase";
 export {
   createAutomationRuleRecord,
   createAutomationSchedulerRunRecord,

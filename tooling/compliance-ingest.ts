@@ -59,15 +59,15 @@ interface ComplianceIngestionDependencies {
   readTextFile?: (filePath: string) => Promise<string>;
   upsertChunks?: (
     input: ComplianceChunkUpsertInput[],
-    client?: ComplianceClient,
+    client: ComplianceClient,
   ) => Promise<unknown[]>;
   upsertDocument?: (
     input: ComplianceDocumentUpsertInput,
-    client?: ComplianceClient,
+    client: ComplianceClient,
   ) => Promise<{ id: string }>;
   upsertSource?: (
     input: ComplianceSourceUpsertInput,
-    client?: ComplianceClient,
+    client: ComplianceClient,
   ) => Promise<{ id: string }>;
 }
 
@@ -498,7 +498,11 @@ export async function runComplianceIngestion(
     summary.documentsProcessed += 1;
     summary.chunksPlanned += previewPlan.chunks.length;
 
-    if (dryRun) {
+    // A dry run has no client, and the upserts below now require one: CR09A
+    // made every api-client record function take its client rather than fall
+    // back to a module-level singleton. Naming the client here is what tells
+    // the compiler the rest of this loop body has one.
+    if (dryRun || !client) {
       summary.embeddingsSkipped += previewPlan.chunks.length;
       continue;
     }

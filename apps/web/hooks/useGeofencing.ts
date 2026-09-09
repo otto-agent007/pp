@@ -6,7 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getLocalDemoFixtures } from "./localDemoData";
 import { createGeofencingAdapter } from "@pest-patrol/api-client";
 
-const geofencingPort = createGeofencingAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const geofencingPort = createGeofencingAdapter(browserSupabase);
 
 
 export const jobGeofenceEventsQueryKey = ["job-geofence-events"] as const;

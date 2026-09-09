@@ -19,7 +19,9 @@ import {
 } from "./localDemoData";
 import { createPaymentsAdapter } from "@pest-patrol/api-client";
 
-const paymentsPort = createPaymentsAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const paymentsPort = createPaymentsAdapter(browserSupabase);
 
 
 export const invoicesQueryKey = ["invoices"] as const;

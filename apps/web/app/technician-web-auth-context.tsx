@@ -1,6 +1,5 @@
 "use client";
 
-import { supabase } from "@pest-patrol/api-client";
 import {
   establishPasswordRecoverySession,
   signInTechnician,
@@ -9,7 +8,9 @@ import {
 import { useState } from "react";
 import { createAuthAdapter } from "@pest-patrol/api-client";
 
-const authPort = createAuthAdapter(supabase);
+import { browserSupabase } from "../lib/supabase-browser";
+
+const authPort = createAuthAdapter(browserSupabase);
 
 
 type TechnicianWebAuthStatus = "signed_in" | "signed_out" | "loading";

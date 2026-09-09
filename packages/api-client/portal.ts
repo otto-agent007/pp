@@ -14,10 +14,12 @@ import type {
   CustomerPortalUpgradeIntentResult,
 } from "@pest-patrol/types";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
+type PortalClient = SupabaseProviderClient;
+
+async function getAccessToken(client: PortalClient) {
+  const { data, error } = await client.auth.getSession();
 
   if (error) {
     throw error;
@@ -91,8 +93,9 @@ export async function requestCustomerPortalUpgradeIntentRecord(
 
 export async function createCustomerPortalAccessTokenRecord(
   input: CustomerPortalAccessInput,
+  client: PortalClient,
 ) {
-  const adminAccessToken = await getAccessToken();
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -114,8 +117,11 @@ export async function createCustomerPortalAccessTokenRecord(
   return (await response.json()) as CustomerPortalAccessGrant;
 }
 
-export async function listCustomerPortalAccessTokenRecords(customerId: string) {
-  const adminAccessToken = await getAccessToken();
+export async function listCustomerPortalAccessTokenRecords(
+  customerId: string,
+  client: PortalClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {
@@ -136,8 +142,11 @@ export async function listCustomerPortalAccessTokenRecords(customerId: string) {
   return body.tokens;
 }
 
-export async function revokeCustomerPortalAccessTokenRecord(id: string) {
-  const adminAccessToken = await getAccessToken();
+export async function revokeCustomerPortalAccessTokenRecord(
+  id: string,
+  client: PortalClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {
@@ -159,8 +168,11 @@ export async function revokeCustomerPortalAccessTokenRecord(id: string) {
   return (await response.json()) as CustomerPortalAccessTokenSummary;
 }
 
-export async function listCustomerPortalAccessTokenEventRecords(id: string) {
-  const adminAccessToken = await getAccessToken();
+export async function listCustomerPortalAccessTokenEventRecords(
+  id: string,
+  client: PortalClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {
@@ -184,8 +196,10 @@ export async function listCustomerPortalAccessTokenEventRecords(id: string) {
   return body;
 }
 
-export async function getCustomerPortalProviderStatusRecord() {
-  const adminAccessToken = await getAccessToken();
+export async function getCustomerPortalProviderStatusRecord(
+  client: PortalClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {
@@ -205,8 +219,9 @@ export async function getCustomerPortalProviderStatusRecord() {
 
 export async function sendCustomerPortalAccessTokenRecord(
   input: CustomerPortalSendInput,
+  client: PortalClient,
 ) {
-  const adminAccessToken = await getAccessToken();
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };

@@ -23,7 +23,9 @@ import {
 } from "./localDemoData";
 import { createCloseoutsAdapter } from "@pest-patrol/api-client";
 
-const closeoutsPort = createCloseoutsAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const closeoutsPort = createCloseoutsAdapter(browserSupabase);
 
 
 export const customerPortalAccessTokensQueryKey = (customerId: string) =>

@@ -17,6 +17,8 @@ import {
   resetLocalDemoFixtures,
 } from "./localDemoData";
 
+import { browserSupabase } from "../lib/supabase-browser";
+
 export const demoSeedStatusQueryKey = ["demo-seed-status"] as const;
 
 function localFixtureStatus(): DemoSeedStatusResponse {
@@ -50,7 +52,7 @@ export function useDemoSeedStatus() {
     enabled: !fixtureStatus,
     initialData: fixtureStatus ?? undefined,
     queryKey: demoSeedStatusQueryKey,
-    queryFn: () => getDemoSeedStatusRecord(),
+    queryFn: () => getDemoSeedStatusRecord(browserSupabase),
   });
 }
 
@@ -64,7 +66,7 @@ export function useRunDemoSeedAction() {
         return Promise.resolve(localFixtureAction(input));
       }
 
-      return runDemoSeedActionRecord(input);
+      return runDemoSeedActionRecord(browserSupabase, input);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries();

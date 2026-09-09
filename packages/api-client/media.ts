@@ -6,11 +6,10 @@ import type {
   JobPhotoUploadQueuePayload,
   JobSignatureCaptureQueuePayload,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type MediaClient = typeof supabase | AuthSupabaseClient;
+type MediaClient = SupabaseProviderClient;
 type JobMediaRow = JobMedia;
 
 const jobMediaSelect = "*, job:jobs(*, customer:customers(*), location:locations(*))";
@@ -262,7 +261,7 @@ async function withCustomerPortalSignedUrls(
 
 export async function listJobMediaRecords(
   jobId: string,
-  client: MediaClient = supabase,
+  client: MediaClient,
 ) {
   const { data, error } = await client
     .from("job_media")
@@ -279,7 +278,7 @@ export async function listJobMediaRecords(
 
 export async function listCustomerPortalMediaRecords(
   customerId: string,
-  client: MediaClient = supabase,
+  client: MediaClient,
 ) {
   const { data, error } = await client
     .from("job_media")
@@ -302,7 +301,7 @@ export async function listCustomerPortalMediaRecords(
 
 export async function createJobMediaRecord(
   input: JobMediaInput,
-  client: MediaClient = supabase,
+  client: MediaClient,
 ) {
   const validatedInput = validateJobMediaInput(input);
   const uploadedBy = await getCurrentUserId(client);
@@ -321,7 +320,7 @@ export async function createJobMediaRecord(
 
 export async function uploadJobPhotoRecord(
   input: JobPhotoUploadQueuePayload,
-  client: MediaClient = supabase,
+  client: MediaClient,
 ) {
   const validatedInput = validatePhotoUploadInput(input);
   const fileBody = await readLocalUri(validatedInput.local_uri);
@@ -351,7 +350,7 @@ export async function uploadJobPhotoRecord(
 
 export async function uploadJobSignatureRecord(
   input: JobSignatureCaptureQueuePayload,
-  client: MediaClient = supabase,
+  client: MediaClient,
 ) {
   const validatedInput = validateSignatureUploadInput(input);
   const fileBody = await readLocalUri(validatedInput.local_uri);
