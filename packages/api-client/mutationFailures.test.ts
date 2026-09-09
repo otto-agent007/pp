@@ -24,6 +24,66 @@ describe("classifying a Supabase failure", () => {
     expect(classifySupabaseFailure({ code: "23502" })).toBe("invalid-intent");
   });
 
+  it("reads the application codes the technician RPCs raise", () => {
+    expect(classifySupabaseFailure({ code: "PP400" })).toBe("invalid-intent");
+    expect(classifySupabaseFailure({ code: "PP401" })).toBe("unauthorized");
+    expect(classifySupabaseFailure({ code: "PP404" })).toBe("target-missing");
+    expect(classifySupabaseFailure({ code: "PP409" })).toBe(
+      "precondition-conflict",
+    );
+  });
+
+  it("does not depend on the wording once a code is present", () => {
+    // The point of CR20. Change the message to anything at all and the reason
+    // has to hold, because the code decided it. If this test can be broken by
+    // editing prose, the codes are not being read.
+    for (const message of [
+      "Assigned job status transition is not allowed",
+      "Se rechaza la transicion",
+      "wibble",
+      "",
+    ]) {
+      expect(classifySupabaseFailure({ code: "PP409", message })).toBe(
+        "precondition-conflict",
+      );
+    }
+  });
+
+  it("prefers the code over the message when both could match", () => {
+    // A message that the compatibility matcher would read as unauthorized,
+    // carrying a code that says otherwise. The code wins.
+    expect(
+      classifySupabaseFailure({
+        code: "PP409",
+        message: "Assigned job geofence event is not allowed",
+      }),
+    ).toBe("precondition-conflict");
+  });
+
+  it("still reads a database that has not applied the codes migration", () => {
+    // The skew this compatibility path exists for: this app against a database
+    // still raising bare P0001. Every message the two technician RPCs raise has
+    // to land somewhere better than the default.
+    const reasons = [
+      ["Assigned job status transition is not allowed", "precondition-conflict"],
+      ["Authentication is required", "unauthorized"],
+      ["Job status is not available to technicians", "invalid-intent"],
+      ["Previous job status is required", "invalid-intent"],
+      ["Assigned job was not found", "target-missing"],
+      ["Assigned job geofence event is not allowed", "unauthorized"],
+      ["Geofence event type is invalid", "invalid-intent"],
+      ["Geofence coordinates are invalid", "invalid-intent"],
+      ["Geofence accuracy is invalid", "invalid-intent"],
+      ["Geofence capture time is outside the allowed window", "invalid-intent"],
+    ] as const;
+
+    for (const [message, reason] of reasons) {
+      expect(classifySupabaseFailure({ code: "P0001", message }), message).toBe(
+        reason,
+      );
+    }
+  });
+
   it("reads PostgREST's own codes", () => {
     expect(classifySupabaseFailure({ code: "PGRST116" })).toBe("target-missing");
     expect(classifySupabaseFailure({ code: "PGRST301" })).toBe("unauthorized");

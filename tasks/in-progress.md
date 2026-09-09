@@ -95,34 +95,38 @@
 
 ## What is next
 
-- **CR19 (mutation outcome wiring) is `done`**; its summary is in
-  `tasks/done.md`. The queue now decides on what a failure meant rather than on
-  how many times it has happened.
-- **CR09 and CR20 are the two open slices, and each needs its own controller
-  promotion decision.** CR18 remains the final reconciliation and now depends on
-  CR20 as well, so its claim that every slice is done stays enforceable.
-- **CR20 is new, created on 2026-09-09 at controller request.** CR19 recorded a
-  limitation that no existing node could own: `update_assigned_job_status`
-  enforces its precondition with a bare `raise exception`, which reaches the
-  client as SQLSTATE `P0001` carrying only message text, so a transition another
-  device already made is told from an intent that was never valid by matching an
-  English string. CR09 owns `apps`, CR18 is the final reconciliation, and
-  nothing in the graph owned any `supabase` path.
-- **CR20 is the first rebuild node to own a database migration.** Its promotion
-  needs a decision no previous slice has needed: what happens to a client
-  running against a database that has not yet applied it, since the two deploy
-  independently. Its ownership is a first cut and says so.
-- CR19 records the handoff as a `defers` edge to CR20 rather than as prose, so
-  the validator can check it.
-- **CR09 is still left exactly as recorded.** It carries the approval
-  `decompose into parallel write-tasks at promotion`, and the graph validator
-  supports `kind: "task"` nodes, of which none exist yet. Do not pre-scope its
-  deliverables by guessing. It has accumulated three: the `supabase` singleton
-  removal in `packages/api-client`, the real composition-root integration, and
-  CR07's persisted-queue validation.
-- **CR09 and CR20 both reach `packages/api-client`**, so whichever runs second
-  needs re-measuring against what the first left. CR09's ownership currently
-  reads `apps` alone while one of its deliverables removes the singleton from
+- **CR20 (technician RPC error codes) is `running`** (base `7f21bca`, branch
+  `codex/rebuild-cr20-sqlstates-v1`). Both technician RPCs now raise an
+  application code, and `packages/api-client` reads it ahead of any message.
+- **The message matching was not merely fragile, it was incapable.**
+  `record_assigned_job_geofence_event` raises `Assigned job geofence event is
+  not allowed` for two different things — the job is not assigned to this
+  technician, and the idempotent upsert matched someone else's row. Same string,
+  so no matcher could ever separate them. Only a code can.
+- **The mapping was also wrong.** CR19's fallback covered four messages, all
+  from the status RPC. Every geofence message fell through to the `P0001`
+  default of `invalid-intent`, so `Assigned job was not found` — a
+  `target-missing` — was reported as an intent that could never be valid.
+- **No node had ever owned a `supabase` path, and `selectVerificationGates` had
+  no rule for one**, so every supabase path reported `UNMAPPED` and the first
+  slice to touch a migration could not have passed its own verification. Tenth
+  instance of the recurring defect class, and the second caught before
+  promotion. CR20's ownership was widened to `tooling/` and `package.json`.
+- **Seven of fourteen `tooling/*.test.ts` files are run by nothing.** The root
+  `test` script names seven files explicitly rather than globbing, and CI runs
+  no others. CR20 adopts the five that assert `supabase/`, which is what makes
+  its own gate honest.
+- **Two orphans are reported rather than absorbed.**
+  `production-readiness-protection.test.ts` passes;
+  **`owasp-api-route-inventory.test.ts` fails** — Next API routes exist that its
+  inventory does not document. Neither reads `supabase/`, so neither belongs to
+  CR20, and wiring in a failing test would make this slice red for a reason that
+  is not its own. **The OWASP one is a real security-documentation drift and
+  wants an owner.**
+- **CR09 is the remaining slice**, plus CR18 as the final reconciliation. CR09
+  still carries `decompose into parallel write-tasks at promotion`, and the
+  validator supports `kind: "task"` nodes of which none exist yet. Its ownership
+  reads `apps` alone while a deliverable removes the `supabase` singleton from
   `packages/api-client`, which is a scope defect waiting at its promotion.
 
 ## Carried forward

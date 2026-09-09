@@ -263,6 +263,38 @@ describe("controlled rebuild verification gate selection", () => {
     ).toEqual(["git diff --check", "pnpm lint"]);
   });
 
+  it("maps a database migration to the suite that asserts it", () => {
+    // No node owned any supabase path until CR20, so a migration reported
+    // UNMAPPED and no slice touching one could have passed verification.
+    // Nothing in CI executes a migration; the tooling/ tests that read the SQL
+    // are what actually check it, and those run under `pnpm test`.
+    expect(
+      selectVerificationGates(
+        ["supabase/migrations/20260909000000_technician_rpc_error_codes_v1.sql"],
+        [],
+      ).map((gate) => gate.command),
+    ).toEqual(["git diff --check", "pnpm test"]);
+  });
+
+  it("leaves no supabase path unmapped, and keeps the gates a path already had", () => {
+    expect(
+      selectVerificationGates(["supabase/seed.sql"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual(["git diff --check", "pnpm test"]);
+    // config.toml already parsed as TOML; it must keep that and gain the rest
+    // rather than trading one gate for another.
+    expect(
+      selectVerificationGates(["supabase/config.toml"], []).map(
+        (gate) => gate.command,
+      ),
+    ).toEqual([
+      "git diff --check",
+      "pnpm test",
+      "python3 -c \"import sys,tomllib; tomllib.load(open(sys.argv[1],'rb'))\" 'supabase/config.toml'",
+    ]);
+  });
+
   it("maps TypeScript project configs to the typecheck and docs/config gates", () => {
     expect(
       selectVerificationGates(["tsconfig.tooling.json"], []).map(
