@@ -438,6 +438,120 @@ describe("rebuild graph running slice whose pull request already merged", () => 
   });
 });
 
+/**
+ * A slice that decomposes into parallel write tasks is the reason `kind:
+ * "task"` exists, and every enforcement here used to ask for `kind ===
+ * "slice"`. A running task therefore answered for nothing: not its ownership
+ * boundary, not its pull request, not its base SHA. These assert that a task
+ * is held to exactly what a slice is held to, because the only thing that
+ * distinguished them was the word.
+ */
+describe("rebuild graph running write task", () => {
+  function runningTaskGraph() {
+    const graph = runningGraph();
+    return {
+      ...graph,
+      nodes: graph.nodes.map((node) => ({ ...node, kind: "task" })),
+    };
+  }
+
+  function inFlightFacts(overrides: Partial<RepositoryFacts> = {}) {
+    return matchingFacts({
+      existingCommits: [BASE_SHA, EVIDENCE_SHA],
+      ancestorPairs: [
+        { ancestor: BASE_SHA, descendant: "HEAD" },
+        { ancestor: EVIDENCE_SHA, descendant: "HEAD" },
+      ],
+      pullRequests: [{ url: PR_URL, state: "OPEN", mergeSha: null }],
+      ...overrides,
+    });
+  }
+
+  it("accepts a running write task that stays inside its ownership", () => {
+    expect(
+      validateRepositoryClaims(
+        runningTaskGraph(),
+        inFlightFacts({
+          changedPaths: ["tasks/in-progress.md", "tooling/check.ts"],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("holds a running write task to its ownership", () => {
+    expect(
+      validateRepositoryClaims(
+        runningTaskGraph(),
+        inFlightFacts({ changedPaths: ["app/outside.ts"] }),
+      ),
+    ).toContain("changed path app/outside.ts is outside running-node ownership");
+  });
+
+  it("requires a running write task's declared PR to exist and remain open", () => {
+    expect(
+      validateRepositoryClaims(
+        runningTaskGraph(),
+        inFlightFacts({ pullRequests: [] }),
+      ),
+    ).toContain(
+      `running task CR00 pull request does not exist: ${PR_URL}`,
+    );
+
+    expect(
+      validateRepositoryClaims(
+        runningTaskGraph(),
+        inFlightFacts({
+          pullRequests: [{ url: PR_URL, state: "CLOSED", mergeSha: null }],
+        }),
+      ),
+    ).toContain(
+      `running task CR00 pull request is CLOSED, not OPEN: ${PR_URL}`,
+    );
+  });
+
+  it("holds a running write task to its base SHA", () => {
+    expect(
+      validateRepositoryClaims(
+        runningTaskGraph(),
+        inFlightFacts({
+          existingCommits: [EVIDENCE_SHA],
+          ancestorPairs: [{ ancestor: EVIDENCE_SHA, descendant: "HEAD" }],
+        }),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        `running task CR00 base SHA does not exist: ${BASE_SHA}`,
+        `running task CR00 base SHA ${BASE_SHA} is not an ancestor of HEAD`,
+      ]),
+    );
+  });
+
+  it("does not hold an unrelated branch to a running write task", () => {
+    expect(
+      validateRepositoryClaims(runningTaskGraph(), {
+        ...inFlightFacts({ changedPaths: ["app/outside.ts"] }),
+        graphInheritedFromDefaultBranch: true,
+      }),
+    ).toEqual([]);
+  });
+
+  it("reports a running write task whose pull request already merged", () => {
+    const facts = inFlightFacts({
+      changedPaths: ["app/outside.ts"],
+      ancestorPairs: [
+        { ancestor: BASE_SHA, descendant: "HEAD" },
+        { ancestor: EVIDENCE_SHA, descendant: "HEAD" },
+        { ancestor: MERGE_SHA, descendant: "main" },
+      ],
+      existingCommits: [BASE_SHA, EVIDENCE_SHA, MERGE_SHA],
+      pullRequests: [{ url: PR_URL, state: "MERGED", mergeSha: MERGE_SHA }],
+    });
+
+    expect(findMergedRunningSlices(runningTaskGraph(), facts)).toEqual(["CR00"]);
+    expect(validateRepositoryClaims(runningTaskGraph(), facts)).toEqual([]);
+  });
+});
+
 describe("rebuild graph changed-path ownership", () => {
   it("accepts exact files and descendants of declared directories", () => {
     expect(
@@ -780,7 +894,7 @@ describe("rebuild graph reconciliation CLI", () => {
       expect(error).not.toHaveBeenCalled();
       expect(exitCode).toBe(0);
       expect(log.mock.calls.flat().join("\n")).toContain(
-        "Running-slice checks were skipped for CR00: the pull request has already merged",
+        "Running-node checks were skipped for CR00: the pull request has already merged",
       );
     } finally {
       fetchSpy.mockRestore();
