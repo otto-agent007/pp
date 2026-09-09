@@ -1062,6 +1062,14 @@
           "commitSha": "48055a1340e55af66c70aa06676c001e12c8c65b",
           "url": "https://github.com/otto-agent007/pp/pull/199",
           "recordedAt": "2026-09-08T19:05:00Z"
+        },
+        {
+          "kind": "command",
+          "summary": "Clean-tree rebuild verification PASS, 16/16 gates, evidence set 31424523. Run in running-slice mode against base 8973697 with an identical pre and post tree, so no gate mutated the worktree.",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "c107d7efb8dd73a44668989def900b236c183fd6",
+          "recordedAt": "2026-09-09T01:50:00Z"
         }
       ],
       "branch": "codex/rebuild-cr07-queue-types-v1",
