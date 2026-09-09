@@ -98,35 +98,49 @@
 - **CR20 (technician RPC error codes) is `done`**; its summary is in
   `tasks/done.md`. Both technician RPCs raise an application code, and
   `packages/api-client` reads it ahead of any message.
-- **CR09 is the last slice**, then CR18 as the final reconciliation. Every other
-  node is `done` or `superseded`.
-- **CR09 needs decomposition, not implementation, at promotion.** It carries the
-  approval `decompose into parallel write-tasks at promotion`, and the graph
-  validator supports `kind: "task"` nodes of which **none exist yet**, so this
-  would be their first use. Do not pre-scope its deliverables by guessing.
-- **CR09 has accumulated three deliverables:** removing the module-level
-  `supabase` singleton in `packages/api-client`, the real `apps/mobile`
-  composition-root integration `docs/architecture.md` requires, and CR07's
-  persisted-queue validation.
-- **A scope defect is already visible and should be fixed at promotion:** CR09's
-  ownership reads `apps` alone, while removing the singleton reaches
-  `packages/api-client`. That is the same shape as the nine instances before it.
-- **CR09 should be re-measured against what CR19 and CR20 left**, since both
-  changed `packages/api-client` after CR09 was last scoped.
+- **CR09 has been decomposed into CR09A and CR09B**, the first `kind: "task"`
+  nodes this graph has ever carried, under its standing approval `decompose into
+  parallel write-tasks at promotion`. CR09 itself is `superseded`: it ships no
+  pull request of its own, and leaving it `planned` would block CR18 forever.
+  These two and CR18 are all that remain open.
+- **CR09A owns `apps/web` and `packages/api-client`:** remove the module-level
+  `supabase` singleton, give `apps/web` the browser composition-root client it
+  has never had, and drop the `supabase` re-export from the package's public
+  surface.
+- **CR09B owns `apps/mobile` and `packages/domain`:** the real composition-root
+  integration test `docs/architecture.md` requires, terminal-failure visibility
+  and user recovery, and CR07's persisted-queue validation.
+- **The split is by application because ownership does not overlap**, which is
+  what lets two write tasks run at once. The re-measurement on `f069e65` found
+  the singleton confined to `packages/api-client` and `apps/web`; all four
+  `apps/mobile` stores already pass `mobileSupabase`.
+- **The scope defect recorded against CR09 is resolved by the split**, not by
+  widening it: CR09's ownership read `apps` alone while a deliverable reached
+  `packages/api-client`.
+- **CR09A must name `pnpm typecheck` in its `checks` explicitly.**
+  `selectVerificationGates` maps `packages/**` and `apps/**` to `pnpm test`
+  only, and turbo's `test` task does not depend on `typecheck`, so a change of
+  87 signatures would otherwise be gated by no compiler at all.
 
 ## Open items that no node owns
 
-- **`tooling/owasp-api-route-inventory.test.ts` is run by nothing and fails.**
-  Next API routes exist that its inventory does not document. CR20 found it,
-  deliberately did not absorb it — it does not read `supabase/`, and a failing
-  unrelated test would have made that slice red for a reason that was not its
-  own — and nothing owns it now. This is real security-documentation drift.
-- **`tooling/production-readiness-protection.test.ts` is run by nothing** and
-  currently passes. Same cause: the root `test` script names files explicitly
-  rather than globbing, so a new tooling test is dead unless someone adds it.
-- Both would be fixed at the root by globbing `tooling/*.test.ts` in the `test`
-  script, which is a one-line change gated on the OWASP inventory being brought
-  up to date first.
+Both of the items recorded here were closed on 2026-09-09.
+
+- **The orphaned tooling tests are fixed.** The root `test` script named twelve
+  files explicitly, so `owasp-api-route-inventory.test.ts` and
+  `production-readiness-protection.test.ts` were run by nothing and any future
+  one would be too. It now runs `vitest run --dir tooling`, which scans the
+  directory: 14 files, 270 tests. `vitest run "tooling/*.test.ts"` does **not**
+  work — vitest treats positional arguments as substring filters rather than
+  globs, so it matches nothing and exits 1 — and an unscoped `vitest run` would
+  collect every workspace test `turbo test` already owns in the same script.
+- **The OWASP inventory failure was real drift, and was one route.**
+  `/api/csp-report` existed with no row. It is the repository's only
+  deliberately unauthenticated route and its only one with no route-level rate
+  limit, so the API2 and API4 control notes each gained a clause rather than
+  letting the table imply coverage the prose denies. The `/api/transcribe` and
+  `/api/whisper-health` rows are not stale: they are `next.config.ts` rewrites,
+  and the test only checks routes against the document.
 
 ## Carried forward
 
@@ -137,8 +151,10 @@
 - **The `supabase` singleton is wrapped, not removed.**
   `packages/api-client/supabase.ts` creates a client at import time from env
   vars, so composition-root selection is genuine for the adapters that take a
-  client and nominal for the 47 that close over it. **CR09 removes it**, which
-  is a recorded deliverable rather than an unrecorded assumption.
+  client and nominal for the rest. **CR09A removes it**, which is a recorded
+  deliverable rather than an unrecorded assumption. Measured on 2026-09-09: 87
+  exported functions still reach it, 27 taking no client at all and 60 taking it
+  as a default parameter value, which is the shape CR05's wrap left behind.
 - A latent defect the CR03/CR04 re-scoping surfaced, worth carrying:
   **an exception's removal node must own every path the exception names**, and
   neither removal node did. Promoting CR05 failed `pnpm architecture:check`
@@ -172,10 +188,15 @@
   eighth action is added: `tsconfig.base.json` sets `strict` but not
   `noUncheckedIndexedAccess`, so the missing label reads as `string` and
   arrives as `undefined` at runtime.
-- **CR09 is deliberately open-ended**, not unscoped: it records the approval
-  `decompose into parallel write-tasks at promotion`, and the graph validator
-  already supports `kind: "task"` nodes. Do not "fix" its single deliverable by
-  guessing; decompose it at promotion as recorded.
+- **A running write task used to answer for nothing.** `kind: "task"` was valid
+  in the graph validator from the start, and it even forbids two running tasks
+  from owning overlapping paths, but every enforcement in
+  `tooling/rebuild-graph-reconcile.ts` asked for `kind === "slice"`. So a
+  running task passed reconciliation with no ownership boundary, no
+  pull-request state and no base-SHA ancestry. This is the eleventh instance of
+  the recurring defect class and the first that would have *removed* a gate
+  rather than failed to add one, and it was found while preparing exactly the
+  decomposition that would have tripped it.
 - A slice now needs only controller merge approval to land. Three control-plane
   changes removed the rest: PR
   [#178](https://github.com/otto-agent007/pp/pull/178) (no reconciliation PR and

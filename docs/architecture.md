@@ -105,10 +105,13 @@ provide adapter-mapping, stable-intent idempotency, and ambiguous-response
 replay tests. CR06 (`packages/sync`) must provide package-local tests for
 durable identity and state, persistence, restart replay, retry/backoff
 scheduling, durable transitions, and stable identity across retry, using owned
-package boundaries or fakes where needed. CR09 (`apps`) must provide the real
-`apps/mobile` composition-root integration through durable enqueue, optimistic
-projection, restart, sync, adapter/provider acknowledgment, plus a
-terminal-failure visibility and user-recovery interaction test.
+package boundaries or fakes where needed. CR09B (`apps/mobile`,
+`packages/domain`) must provide the real `apps/mobile` composition-root
+integration through durable enqueue, optimistic projection, restart, sync,
+adapter/provider acknowledgment, plus a terminal-failure visibility and
+user-recovery interaction test. That requirement was CR09's until 2026-09-09,
+when CR09 was decomposed into the write tasks CR09A and CR09B; it is named
+against the task that owns the paths so it stays reachable from a node.
 
 CR01 documents this target contract only. It creates no application or sync
 package implementation and does not claim that these behaviors exist in the
@@ -181,7 +184,9 @@ labels live instead of rendering `undefined`.
 CR07 changed no behaviour by design. `apps/mobile` still reads its persisted
 queue straight into `OfflineQueueItem[]` without validating it — a cast that was
 unsound before this slice and is no more sound after it. What changed is that
-there is now a mapping to validate against, and CR09 owns doing so.
+there is now a mapping to validate against, and CR09B owns doing so. An item
+that fails that validation is kept and marked terminal rather than dropped, so
+field work a technician believed was saved is shown rather than lost.
 
 ### The queue acts on what a failure meant
 
@@ -228,13 +233,17 @@ not scheduled, because the condition for removing it — no client older than th
 migration still running — is not observable from this repository. The migration
 changed no message, so the other skew direction needs nothing.
 
-### Provider selection is only half real until CR09
+### Provider selection is only half real until CR09A
 
 `packages/api-client/supabase.ts` creates a client at import time from
 environment variables. Of its adapters, those that accept a client are genuinely
 selected at a composition root; the rest close over that singleton, so their
-"selection" is nominal. Removing it is a CR09 deliverable, and until then this
-distinction is a recorded limitation rather than an oversight.
+"selection" is nominal. The distinction is narrower than it looks: `apps/mobile`
+already passes its own client at every composition root, so this is an
+`apps/web` limitation, where the two auth contexts import the singleton and pass
+it back in and the hooks pass nothing at all. Removing it is a CR09A
+deliverable, and until then this is a recorded limitation rather than an
+oversight.
 
 Use the [controlled rebuild runbook](rebuild/README.md) for scheduler,
 lifecycle, verification, and publication rules.
