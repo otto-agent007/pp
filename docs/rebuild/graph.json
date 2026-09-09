@@ -1297,10 +1297,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "6a2305cfb058f1ab7ee8e47aa0f1a27ded3f10c2",
       "id": "CR09B",
       "kind": "task",
-      "status": "planned",
+      "status": "running",
       "parent": "CR09",
       "dependencies": [
         "CR07",
@@ -1311,6 +1311,7 @@
       ],
       "ownership": [
         "apps/mobile",
+        "docs/architecture.md",
         "packages/domain",
         "packages/i18n"
       ],
@@ -1319,7 +1320,23 @@
         "Validation of the persisted offline queue where apps/mobile reads it back, so a stored item is checked against the action-to-payload mapping rather than cast. CR07 established the mapping and deliberately left the cast in place",
         "A queue item that fails that validation is kept rather than discarded, recorded as status failed with outcome terminal and a last_error the technician can see and dismiss, so unreadable field work surfaces through the same recovery interaction as any other terminal failure"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run packages/domain/offlineQueue.test.ts",
+        "pnpm exec vitest run apps/mobile/src/store/useQueueSync.test.ts",
+        "pnpm exec vitest run apps/mobile/src/components/SyncStatusIndicator.test.tsx",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts",
+        "pnpm architecture:check",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "Decomposed from CR09 on 2026-09-09 under its decompose into parallel write-tasks at promotion approval. Ownership does not overlap CR09A.",
         "Controller decided on 2026-09-09 that the validator lives in packages/domain, beside createOfflineQueueItem and the isReady*QueueItem guards, which already import @pest-patrol/types. It cannot live in packages/types, which holds zero runtime values and has an empty import allowlist, and putting it at the apps/mobile persistence edge would move the action-to-payload mapping's knowledge into the composition layer and leave packages/sync unable to reuse it.",
@@ -1327,7 +1344,13 @@
         "CR19 is a dependency because this task is what finally reads its work: outcome on OfflineQueueItem has one occurrence anywhere in apps/, a test fixture, so the terminal-versus-retryable distinction CR19 recorded is invisible to the technician today.",
         "Re-measured on 329dbc3 before promotion, after CR09A merged. Ownership gains packages/i18n: every string SyncStatusIndicator renders comes from packages/i18n/index.ts under jobs.fieldCopy.sync, in both the en and es blocks, so terminal-failure visibility and the recovery affordance cannot ship without adding copy there. packages/i18n was owned only by CR15, which is done.",
         "checks must name pnpm typecheck explicitly when this task is promoted, for a different reason than CR09A had. A copy key added to en alone fails pnpm typecheck with TS2719 and passes pnpm test with every mobile test green, because the only thing tying es to en is two assignments in apps/mobile/src/store/useLanguage.test.ts that hand translations.es to a typeof translations.en slot. translations is a bare object literal with no type relating its halves, so the compiler is the only reader of that parity.",
-        "The re-measurement found three things this task does not need, which narrow it rather than widen it: packages/types needs no change because OfflineQueueItem already carries status, last_error and outcome and the two vocabularies already include failed and terminal; packages/sync needs no change for visibility because useQueueSync already calls replaceItems(result.items), so a recorded outcome already reaches the store and survives a restart; and packages/domain already supplies the mechanism for the third deliverable, since markQueueItemFailed defaults outcome to terminal and sets status failed with a last_error."
+        "The re-measurement found three things this task does not need, which narrow it rather than widen it: packages/types needs no change because OfflineQueueItem already carries status, last_error and outcome and the two vocabularies already include failed and terminal; packages/sync needs no change for visibility because useQueueSync already calls replaceItems(result.items), so a recorded outcome already reaches the store and survives a restart; and packages/domain already supplies the mechanism for the third deliverable, since markQueueItemFailed defaults outcome to terminal and sets status failed with a last_error.",
+        "Controller directed the promotion on 2026-09-09. CR09B runs on branch codex/rebuild-cr09b-queue-recovery-v1 from base 6a2305cfb058f1ab7ee8e47aa0f1a27ded3f10c2, which is CR09A merged plus this node's own re-scope. It is the last open node before CR18.",
+        "Ownership gained docs/architecture.md at promotion, measured from the diff rather than assumed. That file recorded the cast as still present and named CR09B as the node that would remove it, so leaving it out would have shipped the work while the document still described the state before it. This is the thirteenth instance of the recurring defect class and the same correction CR09A made; the file is free to take because CR09A is done.",
+        "checks names pnpm typecheck explicitly, as this node required. It also names the domain validation suite, the composition-root integration test and the recovery interaction test, so the gate reads them directly rather than only through the aggregate.",
+        "Deliverable 3's mechanism, decided at promotion. An entry whose payload the domain refuses is kept as a RejectedOfflineQueueEntry, which carries status failed, outcome terminal and a last_error exactly as the deliverable requires, rather than as an OfflineQueueItem. It cannot be one: OfflineQueueItem types payload by action, so putting an unvalidated payload there needs a cast, and that cast is the thing this task exists to remove. The entry holds the record as it was stored, the store persists it back untouched on every write, and getOfflineQueueRecoveryItems puts it in the same list as a stopped queue item, so the technician meets it through the one recovery interaction the deliverable asks for.",
+        "A second rule the validation needed, decided at promotion: a field that is absent from a stored record takes its default, while a field that is present and unreadable is damage. The record shape grows over time - an item queued before CR19 added outcome carries no such key - so treating absence as damage would mark real field work terminal on the first upgrade that read it. Damage marks the item terminal rather than repairing it quietly, because those values are readable enough to show a technician and not trustworthy enough to send.",
+        "One defect found while implementing, and fixed inside this task: normalizeJobPhotoUploadQueuePayload and normalizeJobSignatureCaptureQueuePayload built their object literal without file_size_bytes, so a proof's recorded size never reached packages/api-client, which validates and stores one. It is in scope because this task runs those normalizers over a queue read back from a device, where the omission would have deleted a field the queue was holding rather than merely failing to send it."
       ],
       "evidence": [
         {
@@ -1355,10 +1378,23 @@
           "summary": "No per-item recovery exists today. useOfflineQueue exposes clearAll, clearSynced, markFailed, markRetrying, markSynced, replaceItems, hydrate and enqueue, and clearSynced removes only synced items, so an item marked failed and terminal stays in the queue with no technician-facing way out. That is the gap the user-recovery deliverable closes, and it wants a discard helper in packages/domain beside clearSyncedQueueItems.",
           "commitSha": "329dbc3aba85deec3e8d5214173c87df53db7a5d",
           "recordedAt": "2026-09-09T22:00:00Z"
+        },
+        {
+          "kind": "approval",
+          "summary": "Controller directed CR09B's implementation and promotion to running on 2026-09-09, with ownership measured from the diff.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:30:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft pull request 213 opened for CR09B from codex/rebuild-cr09b-queue-recovery-v1.",
+          "commitSha": "341bb5c1762198aace532cef3bc4d8defc2e35e0",
+          "recordedAt": "2026-09-09T23:30:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/213"
         }
       ],
-      "branch": "",
-      "pr": "",
+      "branch": "codex/rebuild-cr09b-queue-recovery-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/213",
       "mergeSha": "",
       "supersededBy": null,
       "target": null
