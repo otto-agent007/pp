@@ -2,11 +2,10 @@ import type {
   TechnicianLicense,
   TechnicianLicenseInput,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type TechnicianLicensesClient = typeof supabase | AuthSupabaseClient;
+type TechnicianLicensesClient = SupabaseProviderClient;
 type TechnicianLicenseRow = TechnicianLicense;
 
 export function isTechnicianLicenseSchemaUnavailableError(error: unknown) {
@@ -34,8 +33,8 @@ function toTechnicianLicenseRow(input: TechnicianLicenseInput) {
 }
 
 export async function listTechnicianLicenseRecords(
+  client: TechnicianLicensesClient,
   technicianId?: string,
-  client: TechnicianLicensesClient = supabase,
 ) {
   let query = client
     .from("technician_licenses")
@@ -59,7 +58,7 @@ export async function listTechnicianLicenseRecords(
 
 export async function createTechnicianLicenseRecord(
   input: TechnicianLicenseInput,
-  client: TechnicianLicensesClient = supabase,
+  client: TechnicianLicensesClient,
 ) {
   const { data, error } = await client
     .from("technician_licenses")
@@ -77,7 +76,7 @@ export async function createTechnicianLicenseRecord(
 export async function updateTechnicianLicenseRecord(
   id: string,
   input: TechnicianLicenseInput,
-  client: TechnicianLicensesClient = supabase,
+  client: TechnicianLicensesClient,
 ) {
   const { data, error } = await client
     .from("technician_licenses")
@@ -95,7 +94,7 @@ export async function updateTechnicianLicenseRecord(
 
 export async function archiveTechnicianLicenseRecord(
   id: string,
-  client: TechnicianLicensesClient = supabase,
+  client: TechnicianLicensesClient,
 ) {
   const { data, error } = await client
     .from("technician_licenses")

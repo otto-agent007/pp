@@ -22,16 +22,21 @@ import {
   updateNotificationTemplateRecord,
   updateNotificationTemplateStatusRecord,
 } from "./automation";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-    },
-    from: vi.fn(),
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
   },
-}));
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -145,12 +150,12 @@ const schedulerRun = {
 };
 
 describe("automation api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
     vi.unstubAllGlobals();
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: null },
     } as never);
   });
@@ -160,13 +165,13 @@ describe("automation api client", () => {
     const createQuery = new MockQuery({ data: rule, error: null });
     from.mockReturnValueOnce(listQuery as never).mockReturnValueOnce(createQuery as never);
 
-    const rules = await listAutomationRuleRecords();
+    const rules = await listAutomationRuleRecords(testClient);
     await createAutomationRuleRecord({
       name: "Post-service follow-up",
       type: "follow_up_reminder",
       offset_days: 2,
       message: "Check satisfaction",
-    });
+    }, testClient);
 
     expect(rules).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("automation_rules");
@@ -200,8 +205,8 @@ describe("automation api client", () => {
       template_id: "template-1",
       offset_days: 2,
       message: "Check satisfaction",
-    });
-    const updated = await updateAutomationRuleStatusRecord("rule-1", "paused");
+    }, testClient);
+    const updated = await updateAutomationRuleStatusRecord("rule-1", "paused", testClient);
 
     expect(fullUpdate.template_id).toBe("template-1");
     expect(fullUpdateQuery.calls[0]).toEqual([
@@ -221,14 +226,14 @@ describe("automation api client", () => {
     const createQuery = new MockQuery({ data: notification, error: null });
     from.mockReturnValueOnce(listQuery as never).mockReturnValueOnce(createQuery as never);
 
-    const notifications = await listNotificationEventRecords();
+    const notifications = await listNotificationEventRecords(testClient);
     await createNotificationEventRecord({
       rule_id: "rule-1",
       type: "follow_up_reminder",
       customer_id: "customer-1",
       title: "Call Apex",
       due_at: now,
-    });
+    }, testClient);
 
     expect(notifications).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("notification_events");
@@ -254,7 +259,7 @@ describe("automation api client", () => {
       due_at: now,
       type: "arrival_notification",
       handled_at: now,
-    });
+    }, testClient);
 
     expect(createQuery.calls[0]).toEqual([
       "insert",
@@ -286,22 +291,23 @@ describe("automation api client", () => {
       .mockReturnValueOnce(updateQuery as never)
       .mockReturnValueOnce(archiveQuery as never);
 
-    const templates = await listNotificationTemplateRecords();
+    const templates = await listNotificationTemplateRecords(testClient);
     await createNotificationTemplateRecord({
       name: "Follow-up call",
       type: "follow_up_reminder",
       title: "Call customer",
       message: "Ask how the service went",
-    });
+    }, testClient);
     await updateNotificationTemplateRecord("template-1", {
       name: "Follow-up call",
       type: "follow_up_reminder",
       title: "Updated title",
       message: "Ask how the service went",
-    });
+    }, testClient);
     const archived = await updateNotificationTemplateStatusRecord(
       "template-1",
       "archived",
+      testClient,
     );
 
     expect(templates).toHaveLength(1);
@@ -339,7 +345,7 @@ describe("automation api client", () => {
     const listQuery = new MockQuery({ data: [], error: null });
     from.mockReturnValue(listQuery as never);
 
-    const jobs = await listAutomationSchedulerJobRecords();
+    const jobs = await listAutomationSchedulerJobRecords(testClient);
 
     expect(jobs).toEqual([]);
     expect(from).toHaveBeenCalledWith("jobs");
@@ -366,7 +372,7 @@ describe("automation api client", () => {
       .mockReturnValueOnce(listQuery as never)
       .mockReturnValueOnce(createQuery as never);
 
-    const runs = await listAutomationSchedulerRunRecords();
+    const runs = await listAutomationSchedulerRunRecords(testClient);
     await createAutomationSchedulerRunRecord({
       status: "success",
       triggered_by: "cron",
@@ -377,7 +383,7 @@ describe("automation api client", () => {
       skipped_duplicate_count: 2,
       evaluated_rule_count: 1,
       evaluated_job_count: 3,
-    });
+    }, testClient);
 
     expect(runs).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("automation_scheduler_runs");
@@ -413,7 +419,7 @@ describe("automation api client", () => {
       customer_id: "customer-1",
       title: "Call Apex",
       due_at: now,
-    });
+    }, testClient);
     const duplicate = await createGeneratedNotificationEventRecord({
       rule_id: "rule-1",
       type: "follow_up_reminder",
@@ -421,7 +427,7 @@ describe("automation api client", () => {
       customer_id: "customer-1",
       title: "Call Apex",
       due_at: now,
-    });
+    }, testClient);
 
     expect(created?.id).toBe("notification-1");
     expect(duplicate).toBeNull();
@@ -448,8 +454,8 @@ describe("automation api client", () => {
       .mockReturnValueOnce(handledQuery as never)
       .mockReturnValueOnce(dismissedQuery as never);
 
-    await markNotificationEventHandledRecord("notification-1");
-    await dismissNotificationEventRecord("notification-1");
+    await markNotificationEventHandledRecord("notification-1", testClient);
+    await dismissNotificationEventRecord("notification-1", testClient);
 
     expect(handledQuery.calls[0][0]).toBe("update");
     expect(dismissedQuery.calls[0]).toEqual([
@@ -459,7 +465,7 @@ describe("automation api client", () => {
   });
 
   it("sends notification delivery through the server route", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -481,7 +487,7 @@ describe("automation api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const sent = await sendNotificationEventDeliveryRecord("notification-1");
+    const sent = await sendNotificationEventDeliveryRecord("notification-1", testClient);
 
     expect(sent.delivery_status).toBe("sent");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -496,7 +502,7 @@ describe("automation api client", () => {
   });
 
   it("loads notification provider status through the server route", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -510,7 +516,7 @@ describe("automation api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const status = await getNotificationProviderStatusRecord();
+    const status = await getNotificationProviderStatusRecord(testClient);
 
     expect(status.provider).toBe("webhook");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -524,7 +530,7 @@ describe("automation api client", () => {
   });
 
   it("bulk sends notification delivery sequentially and reports failures", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -555,7 +561,7 @@ describe("automation api client", () => {
     const result = await sendNotificationEventDeliveriesRecord([
       "notification-1",
       "notification-2",
-    ]);
+    ], testClient);
 
     expect(result.sent_count).toBe(1);
     expect(result.failed_count).toBe(1);
@@ -576,7 +582,7 @@ describe("automation api client", () => {
   });
 
   it("runs the automation scheduler through the admin manual route", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -594,7 +600,7 @@ describe("automation api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await runAutomationSchedulerManualRecord();
+    const result = await runAutomationSchedulerManualRecord(testClient);
 
     expect(result.result.created).toBe(2);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -609,7 +615,7 @@ describe("automation api client", () => {
   });
 
   it("surfaces manual scheduler route failures", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -621,7 +627,7 @@ describe("automation api client", () => {
       }),
     );
 
-    await expect(runAutomationSchedulerManualRecord()).rejects.toThrow(
+    await expect(runAutomationSchedulerManualRecord(testClient)).rejects.toThrow(
       "Unable to run scheduler",
     );
   });

@@ -6,13 +6,18 @@ import {
   listActiveFormTemplateRecords,
   listJobFormSubmissionRecords,
 } from "./forms";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: vi.fn(),
-  },
-}));
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -52,7 +57,7 @@ class MockQuery<T> {
 const now = "2026-05-05T18:00:00.000Z";
 
 describe("forms api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -75,7 +80,7 @@ describe("forms api client", () => {
     });
     from.mockReturnValue(query as never);
 
-    const templates = await listActiveFormTemplateRecords();
+    const templates = await listActiveFormTemplateRecords(testClient);
 
     expect(templates).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("form_templates");
@@ -86,7 +91,7 @@ describe("forms api client", () => {
     const query = new MockQuery({ data: [], error: null });
     from.mockReturnValue(query as never);
 
-    await listJobFormSubmissionRecords("job-1");
+    await listJobFormSubmissionRecords("job-1", testClient);
 
     expect(from).toHaveBeenCalledWith("job_form_submissions");
     expect(query.calls).toContainEqual(["eq", ["job_id", "job-1"]]);
@@ -96,7 +101,7 @@ describe("forms api client", () => {
     const query = new MockQuery({ data: [], error: null });
     from.mockReturnValue(query as never);
 
-    await listCustomerPortalFormSubmissionRecords("customer-1");
+    await listCustomerPortalFormSubmissionRecords("customer-1", testClient);
 
     expect(from).toHaveBeenCalledWith("job_form_submissions");
     expect(query.calls).toContainEqual(["eq", ["job.customer_id", "customer-1"]]);
@@ -123,7 +128,7 @@ describe("forms api client", () => {
       job_id: "job-1",
       template_id: "template-1",
       form_data: { target_pests: "Ants" },
-    });
+    }, testClient);
 
     expect(submission.id).toBe("submission-1");
     expect(query.calls[0]).toEqual([

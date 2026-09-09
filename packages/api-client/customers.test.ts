@@ -6,13 +6,18 @@ import {
   listCustomerRecords,
   updateCustomerRecord,
 } from "./customers";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: vi.fn(),
-  },
-}));
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -67,7 +72,7 @@ class MockQuery<T> {
 const now = "2026-05-05T00:00:00Z";
 
 describe("customer api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -93,7 +98,7 @@ describe("customer api client", () => {
     });
     from.mockReturnValue(customersQuery as never);
 
-    const customers = await listCustomerRecords();
+    const customers = await listCustomerRecords(testClient);
 
     expect(customers).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("customers");
@@ -140,7 +145,7 @@ describe("customer api client", () => {
       property_type: "residential",
       service_notes: null,
       locations: [{ address: "10 Pine Street" }],
-    });
+    }, testClient);
 
     expect(customer.locations).toHaveLength(1);
     expect(customerQuery.calls[0]).toEqual([
@@ -192,7 +197,7 @@ describe("customer api client", () => {
       name: "Apex Homes",
       property_type: "commercial",
       locations: [{ id: "location-1", address: "10 Pine Street" }],
-    });
+    }, testClient);
 
     expect(archiveQuery.calls).toContainEqual(["eq", ["customer_id", "customer-1"]]);
     expect(archiveQuery.calls).toContainEqual(["not", ["id", "in", "(location-1)"]]);
@@ -218,7 +223,7 @@ describe("customer api client", () => {
     });
     from.mockReturnValueOnce(locationsQuery as never).mockReturnValueOnce(customerQuery as never);
 
-    const archived = await archiveCustomerRecord("customer-1");
+    const archived = await archiveCustomerRecord("customer-1", testClient);
 
     expect(archived.status).toBe("archived");
     expect(locationsQuery.calls[0]).toEqual([

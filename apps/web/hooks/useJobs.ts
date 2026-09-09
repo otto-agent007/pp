@@ -29,7 +29,9 @@ import {
 } from "./localDemoData";
 import { createJobsAdapter } from "@pest-patrol/api-client";
 
-const jobsPort = createJobsAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const jobsPort = createJobsAdapter(browserSupabase);
 
 export { techniciansQueryKey, useTechnicians } from "./useTechnicians";
 
@@ -102,7 +104,7 @@ export function useConvertEstimateToWorkOrder() {
     mutationFn: (input: EstimateConversionInput) =>
       getLocalDemoFixtures()
         ? Promise.resolve(convertLocalDemoEstimateToWorkOrder(input))
-        : convertEstimateToWorkOrderRecord(input),
+        : convertEstimateToWorkOrderRecord(input, browserSupabase),
     onSuccess: (result: EstimateConversionResult) => {
       queryClient.setQueryData<Job[]>(jobsQueryKey, (previous = []) => {
         const withoutConverted = previous.filter(

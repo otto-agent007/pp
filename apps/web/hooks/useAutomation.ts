@@ -32,7 +32,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLocalDemoFixtures } from "./localDemoData";
 import { createAutomationAdapter } from "@pest-patrol/api-client";
 
-const automationPort = createAutomationAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const automationPort = createAutomationAdapter(browserSupabase);
 
 
 export const automationRulesQueryKey = ["automation-rules"] as const;

@@ -17,10 +17,12 @@ import {
   createMediaAdapter,
 } from "@pest-patrol/api-client";
 
-const closeoutsPort = createCloseoutsAdapter();
-const formsPort = createFormsAdapter();
-const inventoryPort = createInventoryAdapter();
-const mediaPort = createMediaAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const closeoutsPort = createCloseoutsAdapter(browserSupabase);
+const formsPort = createFormsAdapter(browserSupabase);
+const inventoryPort = createInventoryAdapter(browserSupabase);
+const mediaPort = createMediaAdapter(browserSupabase);
 
 
 export const closeoutFormsQueryKey = (jobId: string) =>

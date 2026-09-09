@@ -103,10 +103,25 @@
   parallel write-tasks at promotion`. CR09 itself is `superseded`: it ships no
   pull request of its own, and leaving it `planned` would block CR18 forever.
   These two and CR18 are all that remain open.
-- **CR09A owns `apps/web` and `packages/api-client`:** remove the module-level
-  `supabase` singleton, give `apps/web` the browser composition-root client it
-  has never had, and drop the `supabase` re-export from the package's public
-  surface.
+- **CR09A is running, and implemented.** It owns `apps/web` and
+  `packages/api-client`: the module-level `supabase` client is gone, every
+  record function and adapter factory takes its client as a required argument,
+  `apps/web/lib/supabase-browser.ts` is the browser composition root supplying
+  it at all eighteen adapter constructions, and the package's public surface no
+  longer re-exports a client.
+- **CR09A's ownership also names `tooling/compliance-ingest.ts` and
+  `docs/architecture.md`**, both measured from the diff rather than assumed. The
+  ingest script passes a possibly-undefined client into three api-client
+  functions, which only type-checked while those functions had a fallback; the
+  architecture document recorded the limitation this task removes.
+- **CR09A guards the removal rather than describing it.**
+  `packages/api-client/supabase.test.ts` fails if any module in that package
+  constructs a client, if the package exports a client-valued binding, or if an
+  adapter factory defaults its client again — `Function.length` drops to 0 when
+  it does. `apps/web/lib/supabase-browser.test.ts` fails if a browser adapter is
+  built with anything but the composition root's client, if a second browser
+  client appears, or if server code imports the browser's. Both were proved to
+  fire by injecting the regression they describe.
 - **CR09B owns `apps/mobile` and `packages/domain`:** the real composition-root
   integration test `docs/architecture.md` requires, terminal-failure visibility
   and user recovery, and CR07's persisted-queue validation.
@@ -148,13 +163,13 @@ Both of the items recorded here were closed on 2026-09-09.
   is load-bearing only where a package has runtime behaviour, and for one that
   emits nothing the real compatibility proof is `pnpm typecheck` across its
   consumers. CR07 is the second slice to rely on it.
-- **The `supabase` singleton is wrapped, not removed.**
-  `packages/api-client/supabase.ts` creates a client at import time from env
-  vars, so composition-root selection is genuine for the adapters that take a
-  client and nominal for the rest. **CR09A removes it**, which is a recorded
-  deliverable rather than an unrecorded assumption. Measured on 2026-09-09: 87
-  exported functions still reach it, 27 taking no client at all and 60 taking it
-  as a default parameter value, which is the shape CR05's wrap left behind.
+- **The `supabase` singleton is removed, not merely wrapped.** CR05 wrapped it
+  and recorded that CR09 would take it out; CR09A did. `supabase.ts` no longer
+  creates a client at import time and carries only the client type, so
+  composition-root selection is genuine for every adapter rather than for the
+  ones that accepted a client. The shape it removed, measured on 2026-09-09: 87
+  exported functions reached it, 27 taking no client at all and 60 taking it as
+  a default parameter value, which is what CR05's wrap left behind.
 - A latent defect the CR03/CR04 re-scoping surfaced, worth carrying:
   **an exception's removal node must own every path the exception names**, and
   neither removal node did. Promoting CR05 failed `pnpm architecture:check`

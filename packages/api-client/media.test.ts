@@ -7,16 +7,21 @@ import {
   uploadJobPhotoRecord,
   uploadJobSignatureRecord,
 } from "./media";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+  storage: {
     from: vi.fn(),
-    storage: {
-      from: vi.fn(),
-    },
   },
-}));
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -68,8 +73,8 @@ const media = {
 };
 
 describe("media api client", () => {
-  const from = vi.mocked(supabase.from);
-  const storageFrom = vi.mocked(supabase.storage.from);
+  const from = vi.mocked(testClient.from);
+  const storageFrom = vi.mocked(testClient.storage.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -87,7 +92,7 @@ describe("media api client", () => {
     } as never);
     from.mockReturnValue(query as never);
 
-    const records = await listJobMediaRecords("job-1");
+    const records = await listJobMediaRecords("job-1", testClient);
 
     expect(records).toHaveLength(1);
     expect(records[0].signed_url).toBe("https://signed.example/photo.jpg");
@@ -106,7 +111,7 @@ describe("media api client", () => {
     } as never);
     from.mockReturnValue(query as never);
 
-    const records = await listCustomerPortalMediaRecords("customer-1");
+    const records = await listCustomerPortalMediaRecords("customer-1", testClient);
 
     expect(records).toHaveLength(1);
     expect(records[0]).toEqual(
@@ -134,7 +139,7 @@ describe("media api client", () => {
       storage_path: "job-1/photo.jpg",
       description: "Kitchen",
       captured_at: now,
-    });
+    }, testClient);
 
     expect(query.calls[0]).toEqual([
       "insert",
@@ -158,7 +163,7 @@ describe("media api client", () => {
         storage_path: "job-1/../photo.svg",
         description: "Kitchen",
         captured_at: now,
-      }),
+      }, testClient),
     ).rejects.toThrow("Photo storage path is invalid");
 
     expect(from).not.toHaveBeenCalled();

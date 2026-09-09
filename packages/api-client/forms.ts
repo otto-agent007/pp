@@ -4,11 +4,10 @@ import type {
   JobFormSubmission,
   JobFormSubmissionInput,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type FormsClient = typeof supabase | AuthSupabaseClient;
+type FormsClient = SupabaseProviderClient;
 
 type JobFormSubmissionRow = JobFormSubmission;
 
@@ -26,7 +25,7 @@ function toSubmissionRow(input: JobFormSubmissionInput, submittedBy?: string | n
   };
 }
 
-export async function listActiveFormTemplateRecords(client: FormsClient = supabase) {
+export async function listActiveFormTemplateRecords(client: FormsClient) {
   const { data, error } = await client
     .from("form_templates")
     .select("*")
@@ -43,7 +42,7 @@ export async function listActiveFormTemplateRecords(client: FormsClient = supaba
 
 export async function listJobFormSubmissionRecords(
   jobId: string,
-  client: FormsClient = supabase,
+  client: FormsClient,
 ) {
   const { data, error } = await client
     .from("job_form_submissions")
@@ -60,7 +59,7 @@ export async function listJobFormSubmissionRecords(
 
 export async function listCustomerPortalFormSubmissionRecords(
   customerId: string,
-  client: FormsClient = supabase,
+  client: FormsClient,
 ) {
   const { data, error } = await client
     .from("job_form_submissions")
@@ -78,7 +77,7 @@ export async function listCustomerPortalFormSubmissionRecords(
 
 export async function createJobFormSubmissionRecord(
   input: JobFormSubmissionInput,
-  client: FormsClient = supabase,
+  client: FormsClient,
 ) {
   let submittedBy: string | null = null;
 

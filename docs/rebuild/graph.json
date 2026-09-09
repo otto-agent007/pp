@@ -1163,10 +1163,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "1d28d5c1a3c2429d6c482803bf5c7a92aaeaa020",
       "id": "CR09A",
       "kind": "task",
-      "status": "planned",
+      "status": "running",
       "parent": "CR09",
       "dependencies": [
         "CR07"
@@ -1176,22 +1176,102 @@
       ],
       "ownership": [
         "apps/web",
-        "packages/api-client"
+        "docs/architecture.md",
+        "packages/api-client",
+        "tooling/compliance-ingest.ts"
       ],
       "deliverables": [
         "Removal of the module-level supabase singleton in packages/api-client, so provider selection at a composition root covers every adapter rather than only the ones that accept an injected client",
         "A browser composition-root client for apps/web, which has none today: its two auth contexts import the singleton from @pest-patrol/api-client and pass it back in, so their selection is nominal, and 14 hook call sites pass no client at all",
-        "Removal of the supabase re-export from packages/api-client/index.ts, which makes this a change to the package's public surface rather than an internal one"
+        "Removal of the supabase re-export from packages/api-client/index.ts, which makes this a change to the package's public surface rather than an internal one",
+        "Guards that hold the removal in place rather than a note that it happened: packages/api-client/supabase.test.ts fails if any module in that package constructs a client, if the package exports a client-valued binding, or if an adapter factory defaults its client again, and apps/web/lib/supabase-browser.test.ts fails if a browser adapter is built with anything but the composition root's client, if a second browser client appears, or if server code imports the browser's"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run packages/api-client/",
+        "pnpm exec vitest run apps/web/lib/",
+        "pnpm exec vitest run tooling/compliance-ingest.test.ts",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "Decomposed from CR09 on 2026-09-09 under its decompose into parallel write-tasks at promotion approval. Split by application because ownership does not overlap CR09B: measurement on f069e65 found the singleton confined to packages/api-client and apps/web, with all four apps/mobile stores already passing mobileSupabase.",
         "Measured scope on 2026-09-09: 87 exported functions still reach the singleton, 27 taking no client at all and 60 taking it as a default parameter value, which is what CR05 left when it wrapped rather than removed it. createCustomersAdapter takes no client parameter at all and is the one adapter factory that can never be selected.",
-        "checks must name pnpm typecheck explicitly. selectVerificationGates maps packages/** and apps/** to pnpm test only, and turbo's test task does not depend on typecheck, so a change of 87 signatures would otherwise be gated by no compiler at all."
+        "checks must name pnpm typecheck explicitly. selectVerificationGates maps packages/** and apps/** to pnpm test only, and turbo's test task does not depend on typecheck, so a change of 87 signatures would otherwise be gated by no compiler at all.",
+        "Controller directed the promotion on 2026-09-09. CR09A runs on branch codex/rebuild-cr09a-singleton-v1 from base 1d28d5c1a3c2429d6c482803bf5c7a92aaeaa020, and CR09B stays planned: a node's running status exists only on its own branch, so one branch resolves one running node.",
+        "Ownership gained tooling/compliance-ingest.ts and docs/architecture.md at promotion, measured from the diff rather than assumed. The ingest script hands a possibly-undefined client to upsertComplianceSourceRecord, upsertComplianceDocumentRecord and upsertComplianceChunkRecords, which type-checked only while those functions carried a module-level fallback, and docs/architecture.md held the section recording the limitation this task removes. Owning the paths the work must touch is the correction for the defect class this chain keeps meeting, not a widening of scope.",
+        "checks names pnpm typecheck explicitly, as this node required. It also names the two guard suites and tooling/compliance-ingest.test.ts, so the gate reads them directly rather than through the aggregate."
       ],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller directed CR09A's implementation and promotion to running on 2026-09-09, with ownership measured from the diff.",
+          "commitSha": "3773a69ba14dd2c6009b2f2446836266e6335a2d",
+          "recordedAt": "2026-09-09T20:35:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft pull request 210 opened for CR09A from codex/rebuild-cr09a-singleton-v1.",
+          "commitSha": "3773a69ba14dd2c6009b2f2446836266e6335a2d",
+          "recordedAt": "2026-09-09T20:35:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/210"
+        },
+        {
+          "kind": "review",
+          "summary": "Both guards were proved to fire rather than merely to pass. Giving createGeofencingAdapter a default client again fails packages/api-client/supabase.test.ts naming that factory, because Function.length drops to 0; pointing one hook's adapter at any identifier other than browserSupabase fails apps/web/lib/supabase-browser.test.ts naming the file and the call. A guard wired in but never triggered looks identical to a passing one.",
+          "commitSha": "3773a69ba14dd2c6009b2f2446836266e6335a2d",
+          "recordedAt": "2026-09-09T20:41:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The ownership boundary was proved to fire for a running write task, which is the first time the kind: task enforcement #207 and #209 added has been exercised by a real one. Committing an unrelated line in README.md and reconciling offline exits 1 with 'changed path README.md is outside running-node ownership'. Before #207 a running task answered for nothing here.",
+          "commitSha": "b657c2048bb6b04a4ff72213606935ac59d7b4b8",
+          "recordedAt": "2026-09-09T20:41:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm typecheck",
+          "exitCode": 0,
+          "summary": "Typecheck passes 11/11 across the workspace. This is the gate that matters for this task and the reason the node names it explicitly: 87 signatures changed, and turbo's test task does not depend on typecheck, so pnpm test alone would have proved nothing about them.",
+          "commitSha": "3773a69ba14dd2c6009b2f2446836266e6335a2d",
+          "recordedAt": "2026-09-09T20:41:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "summary": "The full suite passes 10/10 tasks plus the root tooling suite. packages/api-client goes from 124 tests in 16 files to 127 in 17 as the removal guard starts running, apps/web from 426 in 61 files to 429 in 62 as the composition-root guard does, and every other package's count is unchanged.",
+          "commitSha": "3773a69ba14dd2c6009b2f2446836266e6335a2d",
+          "recordedAt": "2026-09-09T20:41:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "summary": "The boundary checker reports 11 workspace packages and zero exceptions, unchanged. Removing the singleton adds no cross-package edge: apps/web already depended on @supabase/supabase-js and already built clients in its API routes.",
+          "commitSha": "3773a69ba14dd2c6009b2f2446836266e6335a2d",
+          "recordedAt": "2026-09-09T20:41:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "summary": "Clean-tree rebuild verification PASS, 16/16 gates, evidence set 6f49603f, running-slice mode against base 1d28d5c with identical pre and post trees. This is the first time a decomposed write task has been able to produce this evidence at all: before #209 the verifier refused a running task with 'requires one running slice' and produced no command evidence. No gate reported UNMAPPED, including tooling/compliance-ingest.ts.",
+          "commitSha": "b657c2048bb6b04a4ff72213606935ac59d7b4b8",
+          "recordedAt": "2026-09-09T20:41:00Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr09a-singleton-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/210",
       "mergeSha": "",
       "supersededBy": null,
       "target": null

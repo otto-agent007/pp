@@ -112,7 +112,7 @@ describe("auth adapter mapping", () => {
 
 describe("adapter construction", () => {
   it("exposes exactly the port's methods", () => {
-    const port = createCustomersAdapter();
+    const port = createCustomersAdapter(createFakeClient().client);
 
     expect(Object.keys(port).sort()).toEqual([
       "archiveCustomerRecord",
@@ -123,6 +123,10 @@ describe("adapter construction", () => {
   });
 
   it("returns a fresh object per call, so roots cannot share mutable state", () => {
-    expect(createCustomersAdapter()).not.toBe(createCustomersAdapter());
+    const { client } = createFakeClient();
+
+    expect(createCustomersAdapter(client)).not.toBe(
+      createCustomersAdapter(client),
+    );
   });
 });

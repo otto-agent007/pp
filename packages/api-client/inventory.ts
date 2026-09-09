@@ -4,11 +4,10 @@ import type {
   ChemicalLog,
   ChemicalLogInput,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type InventoryClient = typeof supabase | AuthSupabaseClient;
+type InventoryClient = SupabaseProviderClient;
 type ChemicalInventoryRow = ChemicalInventoryItem;
 type ChemicalLogRow = ChemicalLog;
 
@@ -35,7 +34,7 @@ function toChemicalLogRow(input: ChemicalLogInput) {
 const chemicalLogSelect =
   "*, chemical:chemical_inventory(*), job:jobs(*, customer:customers(*), location:locations(*))";
 
-export async function listChemicalInventoryRecords(client: InventoryClient = supabase) {
+export async function listChemicalInventoryRecords(client: InventoryClient) {
   const { data, error } = await client
     .from("chemical_inventory")
     .select("*")
@@ -48,8 +47,11 @@ export async function listChemicalInventoryRecords(client: InventoryClient = sup
   return (data ?? []) as ChemicalInventoryItem[];
 }
 
-export async function createChemicalInventoryRecord(input: ChemicalInventoryInput) {
-  const { data, error } = await supabase
+export async function createChemicalInventoryRecord(
+  input: ChemicalInventoryInput,
+  client: InventoryClient,
+) {
+  const { data, error } = await client
     .from("chemical_inventory")
     .insert(toInventoryRow(input))
     .select("*")
@@ -65,8 +67,9 @@ export async function createChemicalInventoryRecord(input: ChemicalInventoryInpu
 export async function updateChemicalInventoryRecord(
   id: string,
   input: ChemicalInventoryInput,
+  client: InventoryClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("chemical_inventory")
     .update(toInventoryRow(input))
     .eq("id", id)
@@ -80,8 +83,11 @@ export async function updateChemicalInventoryRecord(
   return data as ChemicalInventoryItem;
 }
 
-export async function archiveChemicalInventoryRecord(id: string) {
-  const { data, error } = await supabase
+export async function archiveChemicalInventoryRecord(
+  id: string,
+  client: InventoryClient,
+) {
+  const { data, error } = await client
     .from("chemical_inventory")
     .update({ status: "archived" })
     .eq("id", id)
@@ -95,7 +101,7 @@ export async function archiveChemicalInventoryRecord(id: string) {
   return data as ChemicalInventoryItem;
 }
 
-export async function listChemicalLogRecords(client: InventoryClient = supabase) {
+export async function listChemicalLogRecords(client: InventoryClient) {
   const { data, error } = await client
     .from("chemical_logs")
     .select(chemicalLogSelect)
@@ -110,7 +116,7 @@ export async function listChemicalLogRecords(client: InventoryClient = supabase)
 
 export async function listJobChemicalLogRecords(
   jobId: string,
-  client: InventoryClient = supabase,
+  client: InventoryClient,
 ) {
   const { data, error } = await client
     .from("chemical_logs")
@@ -127,7 +133,7 @@ export async function listJobChemicalLogRecords(
 
 export async function createChemicalLogRecord(
   input: ChemicalLogInput,
-  client: InventoryClient = supabase,
+  client: InventoryClient,
 ) {
   const { data, error } = await client
     .from("chemical_logs")

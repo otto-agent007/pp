@@ -15,8 +15,6 @@ import type {
   DemoSeedStatusResponse,
 } from "@pest-patrol/types";
 
-import { supabase } from "./supabase";
-
 interface SupabaseQuery {
   delete(): SupabaseQuery;
   eq(column: string, value: unknown): SupabaseQuery;
@@ -598,7 +596,7 @@ export async function resetDemoSeedRecords(
   };
 }
 
-async function getAccessToken(client: DemoSeedAuthClient = supabase) {
+async function getAccessToken(client: DemoSeedAuthClient) {
   const { data, error } = await client.auth.getSession();
 
   if (error) {
@@ -646,9 +644,7 @@ export function isDemoLoginRefreshUnavailableError(error: unknown) {
   return message.includes("Demo seed is disabled on production deployments.");
 }
 
-export async function getDemoSeedStatusRecord(
-  client: DemoSeedAuthClient = supabase,
-) {
+export async function getDemoSeedStatusRecord(client: DemoSeedAuthClient) {
   const token = await getAccessToken(client);
   const response = await fetch("/api/demo-seed", {
     headers: authHeaders(token),
@@ -675,9 +671,7 @@ export async function prepareLocalDemoLoginRecord() {
   return (await response.json()) as DemoSeedActionResponse;
 }
 
-export async function refreshDemoLoginSeedRecord(
-  client: DemoSeedAuthClient = supabase,
-) {
+export async function refreshDemoLoginSeedRecord(client: DemoSeedAuthClient) {
   const token = await getAccessToken(client);
   const response = await fetch("/api/demo-seed/login-refresh", {
     headers: authHeaders(token),
@@ -694,18 +688,9 @@ export async function refreshDemoLoginSeedRecord(
 }
 
 export async function runDemoSeedActionRecord(
-  input: DemoSeedActionInput,
-): Promise<DemoSeedActionResponse>;
-export async function runDemoSeedActionRecord(
   client: DemoSeedAuthClient,
   input: DemoSeedActionInput,
-): Promise<DemoSeedActionResponse>;
-export async function runDemoSeedActionRecord(
-  clientOrInput: DemoSeedAuthClient | DemoSeedActionInput,
-  maybeInput?: DemoSeedActionInput,
-) {
-  const client = maybeInput ? (clientOrInput as DemoSeedAuthClient) : supabase;
-  const input = maybeInput ?? (clientOrInput as DemoSeedActionInput);
+): Promise<DemoSeedActionResponse> {
   const token = await getAccessToken(client);
   const response = await fetch("/api/demo-seed", {
     body: JSON.stringify(input),

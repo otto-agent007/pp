@@ -24,7 +24,9 @@ import {
 } from "./localDemoData";
 import { createInventoryAdapter } from "@pest-patrol/api-client";
 
-const inventoryPort = createInventoryAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const inventoryPort = createInventoryAdapter(browserSupabase);
 
 
 export const chemicalInventoryQueryKey = ["chemical-inventory"] as const;

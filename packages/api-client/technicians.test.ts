@@ -11,16 +11,21 @@ import {
   listTechnicianLicenseRecords,
   updateTechnicianLicenseRecord,
 } from "./technicianLicenses";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn(),
-    },
-    from: vi.fn(),
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  auth: {
+    getSession: vi.fn(),
   },
-}));
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -103,8 +108,8 @@ const technicianLicense = {
 } as const;
 
 describe("technician api client", () => {
-  const from = vi.mocked(supabase.from);
-  const getSession = vi.mocked(supabase.auth.getSession);
+  const from = vi.mocked(testClient.from);
+  const getSession = vi.mocked(testClient.auth.getSession);
   const fetchMock = vi.fn();
 
   beforeEach(() => {
@@ -118,7 +123,7 @@ describe("technician api client", () => {
     const profilesQuery = new MockQuery({ data: [technician], error: null });
     from.mockReturnValue(profilesQuery as never);
 
-    const technicians = await listTechnicianProfileRecords("active");
+    const technicians = await listTechnicianProfileRecords(testClient, "active");
 
     expect(technicians).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("profiles");
@@ -139,7 +144,7 @@ describe("technician api client", () => {
     const result = await inviteTechnicianRecord({
       email: "testnician@example.com",
       display_name: "Testnician",
-    });
+    }, testClient);
 
     expect(result.technician.display_name).toBe("Testnician");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -250,7 +255,7 @@ describe("technician api client", () => {
     });
     from.mockReturnValue(licensesQuery as never);
 
-    const records = await listTechnicianLicenseRecords("technician-1");
+    const records = await listTechnicianLicenseRecords(testClient, "technician-1");
 
     expect(records).toEqual([technicianLicense]);
     expect(from).toHaveBeenCalledWith("technician_licenses");
@@ -285,7 +290,7 @@ describe("technician api client", () => {
       status: "active",
       expires_at: "2026-12-31",
       notes: null,
-    });
+    }, testClient);
     await updateTechnicianLicenseRecord("license-1", {
       technician_id: "technician-1",
       license_type: "operator",
@@ -295,7 +300,7 @@ describe("technician api client", () => {
       status: "active",
       expires_at: "2026-12-31",
       notes: null,
-    });
+    }, testClient);
 
     expect(createQuery.calls[0]).toEqual([
       "insert",
@@ -324,7 +329,7 @@ describe("technician api client", () => {
     });
     from.mockReturnValue(archiveQuery as never);
 
-    const archived = await archiveTechnicianLicenseRecord("license-1");
+    const archived = await archiveTechnicianLicenseRecord("license-1", testClient);
 
     expect(archived.archived_at).toBeTruthy();
     expect(archiveQuery.calls[0][0]).toBe("update");

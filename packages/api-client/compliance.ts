@@ -8,11 +8,10 @@ import type {
   ComplianceSource,
   ComplianceWorkflow,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-export type ComplianceClient = typeof supabase | AuthSupabaseClient;
+export type ComplianceClient = SupabaseProviderClient;
 
 interface ComplianceChunkSearchInput {
   authority?: ComplianceAuthority | "all";
@@ -181,7 +180,7 @@ function toChunkRow(input: ComplianceChunkUpsertInput) {
 }
 
 export async function listComplianceSourceRecords(
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_sources")
@@ -196,7 +195,7 @@ export async function listComplianceSourceRecords(
 }
 
 export async function assertComplianceSchemaReady(
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const tableNames = [
     "compliance_sources",
@@ -227,7 +226,7 @@ export async function assertComplianceSchemaReady(
 
 export async function upsertComplianceSourceRecord(
   input: ComplianceSourceUpsertInput,
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_sources")
@@ -243,7 +242,7 @@ export async function upsertComplianceSourceRecord(
 }
 
 export async function listComplianceDocumentRecords(
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_documents")
@@ -259,7 +258,7 @@ export async function listComplianceDocumentRecords(
 
 export async function upsertComplianceDocumentRecord(
   input: ComplianceDocumentUpsertInput,
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_documents")
@@ -275,7 +274,7 @@ export async function upsertComplianceDocumentRecord(
 }
 
 export async function listComplianceChunkRecords(
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_chunks")
@@ -291,7 +290,7 @@ export async function listComplianceChunkRecords(
 
 export async function upsertComplianceChunkRecords(
   input: ComplianceChunkUpsertInput[],
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   if (input.length === 0) {
     return [];
@@ -311,7 +310,7 @@ export async function upsertComplianceChunkRecords(
 
 export async function searchComplianceChunkRecords(
   input: ComplianceChunkSearchInput,
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const matchCount = input.limit ?? 8;
   const workflowFilter =
@@ -364,7 +363,7 @@ export async function searchComplianceChunkRecords(
 }
 
 export async function listComplianceAdvisoryAuditRecords(
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_advisory_audits")
@@ -380,7 +379,7 @@ export async function listComplianceAdvisoryAuditRecords(
 
 export async function createComplianceAdvisoryAuditRecord(
   input: ComplianceAdvisoryAuditInput,
-  client: ComplianceClient = supabase,
+  client: ComplianceClient,
 ) {
   const { data, error } = await client
     .from("compliance_advisory_audits")

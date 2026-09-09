@@ -10,14 +10,19 @@ import {
   upsertComplianceDocumentRecord,
   upsertComplianceSourceRecord,
 } from "./compliance";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: vi.fn(),
-    rpc: vi.fn(),
-  },
-}));
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+  rpc: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -100,8 +105,8 @@ const chunk = {
 };
 
 describe("compliance api client", () => {
-  const from = vi.mocked(supabase.from);
-  const rpc = vi.mocked(supabase.rpc);
+  const from = vi.mocked(testClient.from);
+  const rpc = vi.mocked(testClient.rpc);
 
   beforeEach(() => {
     from.mockReset();
@@ -134,7 +139,7 @@ describe("compliance api client", () => {
     const query = new MockQuery({ data: [source], error: null });
     from.mockReturnValue(query as never);
 
-    const sources = await listComplianceSourceRecords();
+    const sources = await listComplianceSourceRecords(testClient);
 
     expect(sources).toHaveLength(1);
     expect(from).toHaveBeenCalledWith("compliance_sources");
@@ -156,7 +161,7 @@ describe("compliance api client", () => {
       .mockReturnValueOnce(auditQuery as never);
     rpc.mockResolvedValue({ data: [], error: null } as never);
 
-    await assertComplianceSchemaReady();
+    await assertComplianceSchemaReady(testClient);
 
     expect(from).toHaveBeenNthCalledWith(1, "compliance_sources");
     expect(sourceQuery.calls).toEqual([
@@ -207,7 +212,7 @@ describe("compliance api client", () => {
       embedding: [0.1, 0.2],
       limit: 4,
       workflow: "chemical_application",
-    });
+    }, testClient);
 
     expect(chunks).toHaveLength(1);
     expect(rpc).toHaveBeenCalledWith("match_compliance_chunks", {
@@ -226,7 +231,7 @@ describe("compliance api client", () => {
       limit: 3,
       query: "application time",
       workflow: "chemical_application",
-    });
+    }, testClient);
 
     expect(from).toHaveBeenCalledWith("compliance_chunks");
     expect(query.calls).toContainEqual(["limit", [3]]);
@@ -285,7 +290,7 @@ describe("compliance api client", () => {
       },
       status: "rag_disabled",
       workflow: "chemical_application",
-    });
+    }, testClient);
 
     expect(from).toHaveBeenCalledWith("compliance_advisory_audits");
     expect(query.calls[0]).toEqual([
@@ -315,7 +320,7 @@ describe("compliance api client", () => {
       title: "DPR structural recordkeeping",
       url: "https://www.cdpr.ca.gov/",
       workflow: "chemical_application",
-    });
+    }, testClient);
 
     expect(record.id).toBe("source-1");
     expect(from).toHaveBeenCalledWith("compliance_sources");
@@ -361,7 +366,7 @@ describe("compliance api client", () => {
       source_hash: "document-hash",
       source_id: "source-1",
       title: "Recordkeeping update",
-    });
+    }, testClient);
     await upsertComplianceChunkRecords([
       {
         chunk_index: 0,
@@ -373,7 +378,7 @@ describe("compliance api client", () => {
         source_id: "source-1",
         tokens_estimate: 4,
       },
-    ]);
+    ], testClient);
 
     expect(from).toHaveBeenNthCalledWith(1, "compliance_documents");
     expect(documentQuery.calls[0]).toEqual([

@@ -21,7 +21,9 @@ import { useAdminAuth } from "../app/admin-auth-context";
 import { getLocalDemoFixtures } from "./localDemoData";
 import { createComplianceAdapter } from "@pest-patrol/api-client";
 
-const compliancePort = createComplianceAdapter();
+import { browserSupabase } from "../lib/supabase-browser";
+
+const compliancePort = createComplianceAdapter(browserSupabase);
 
 
 export const complianceSourcesQueryKey = ["compliance-sources"] as const;

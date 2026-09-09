@@ -1,6 +1,8 @@
 import type { Customer, CustomerInput, CustomerLocationInput } from "@pest-patrol/types";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
+
+type CustomersClient = SupabaseProviderClient;
 
 type CustomerRow = Omit<Customer, "locations"> & {
   locations?: Customer["locations"];
@@ -21,8 +23,8 @@ function normalizeLocationInput(
   };
 }
 
-export async function listCustomerRecords() {
-  const { data, error } = await supabase
+export async function listCustomerRecords(client: CustomersClient) {
+  const { data, error } = await client
     .from("customers")
     .select("*, locations(*)")
     .order("name", { ascending: true })
@@ -38,9 +40,12 @@ export async function listCustomerRecords() {
   return (data ?? []) as Customer[];
 }
 
-export async function createCustomerRecord(input: CustomerInput) {
+export async function createCustomerRecord(
+  input: CustomerInput,
+  client: CustomersClient,
+) {
   const { locations, ...customerInput } = input;
-  const { data: customer, error: customerError } = await supabase
+  const { data: customer, error: customerError } = await client
     .from("customers")
     .insert({
       ...customerInput,
@@ -59,7 +64,7 @@ export async function createCustomerRecord(input: CustomerInput) {
   const locationRows = locations.map((location, index) =>
     normalizeLocationInput(customer.id, location, index),
   );
-  const { data: savedLocations, error: locationError } = await supabase
+  const { data: savedLocations, error: locationError } = await client
     .from("locations")
     .insert(locationRows)
     .select("*");
@@ -74,9 +79,13 @@ export async function createCustomerRecord(input: CustomerInput) {
   } satisfies Customer;
 }
 
-export async function updateCustomerRecord(id: string, input: CustomerInput) {
+export async function updateCustomerRecord(
+  id: string,
+  input: CustomerInput,
+  client: CustomersClient,
+) {
   const { locations, ...customerInput } = input;
-  const { data: customer, error: customerError } = await supabase
+  const { data: customer, error: customerError } = await client
     .from("customers")
     .update({
       ...customerInput,
@@ -96,7 +105,7 @@ export async function updateCustomerRecord(id: string, input: CustomerInput) {
     .map((location) => location.id)
     .filter((locationId): locationId is string => Boolean(locationId));
 
-  let archiveQuery = supabase
+  let archiveQuery = client
     .from("locations")
     .update({ status: "archived", is_primary: false })
     .eq("customer_id", id);
@@ -115,7 +124,7 @@ export async function updateCustomerRecord(id: string, input: CustomerInput) {
     ...normalizeLocationInput(id, location, index),
     id: location.id,
   }));
-  const { data: savedLocations, error: locationError } = await supabase
+  const { data: savedLocations, error: locationError } = await client
     .from("locations")
     .upsert(locationRows)
     .select("*");
@@ -130,8 +139,11 @@ export async function updateCustomerRecord(id: string, input: CustomerInput) {
   } satisfies Customer;
 }
 
-export async function archiveCustomerRecord(id: string) {
-  const { error: locationError } = await supabase
+export async function archiveCustomerRecord(
+  id: string,
+  client: CustomersClient,
+) {
+  const { error: locationError } = await client
     .from("locations")
     .update({ status: "archived", is_primary: false })
     .eq("customer_id", id);
@@ -140,7 +152,7 @@ export async function archiveCustomerRecord(id: string) {
     throw locationError;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("customers")
     .update({ status: "archived" })
     .eq("id", id)

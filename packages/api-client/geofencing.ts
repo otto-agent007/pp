@@ -2,11 +2,10 @@ import type {
   JobGeofenceEvent,
   JobGeofenceEventInput,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-type GeofencingClient = typeof supabase | AuthSupabaseClient;
+type GeofencingClient = SupabaseProviderClient;
 type JobGeofenceEventRow = JobGeofenceEvent;
 
 const geofenceEventSelect =
@@ -14,7 +13,7 @@ const geofenceEventSelect =
 
 export async function createJobGeofenceEventRecord(
   input: JobGeofenceEventInput,
-  client: GeofencingClient = supabase,
+  client: GeofencingClient,
 ) {
   const { data, error } = await client
     .rpc("record_assigned_job_geofence_event", {
@@ -37,7 +36,7 @@ export async function createJobGeofenceEventRecord(
 }
 
 export async function listJobGeofenceEventRecords(
-  client: GeofencingClient = supabase,
+  client: GeofencingClient,
 ) {
   const { data, error } = await client
     .from("job_location_events")

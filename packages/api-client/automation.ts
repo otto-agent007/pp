@@ -13,12 +13,11 @@ import type {
   NotificationTemplateInput,
   NotificationTemplateStatus,
 } from "@pest-patrol/types";
-import type { AuthSupabaseClient } from "./auth";
 
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
 type AutomationRuleRow = AutomationRule;
-type AutomationClient = typeof supabase | AuthSupabaseClient;
+type AutomationClient = SupabaseProviderClient;
 type AutomationSchedulerRunRow = AutomationSchedulerRun;
 type NotificationEventRow = NotificationEvent;
 type NotificationTemplateRow = NotificationTemplate;
@@ -53,8 +52,8 @@ export interface NotificationBulkDeliveryRecordResult {
   sent_count: number;
 }
 
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
+async function getAccessToken(client: AutomationClient) {
+  const { data, error } = await client.auth.getSession();
 
   if (error) {
     throw error;
@@ -100,7 +99,7 @@ function toNotificationTemplateRow(input: NotificationTemplateInput) {
 }
 
 export async function listAutomationRuleRecords(
-  client: AutomationClient = supabase,
+  client: AutomationClient,
 ) {
   const { data, error } = await client
     .from("automation_rules")
@@ -115,7 +114,7 @@ export async function listAutomationRuleRecords(
 }
 
 export async function listAutomationSchedulerJobRecords(
-  client: AutomationClient = supabase,
+  client: AutomationClient,
 ) {
   const { data, error } = await client
     .from("jobs")
@@ -131,7 +130,7 @@ export async function listAutomationSchedulerJobRecords(
 }
 
 export async function listAutomationSchedulerRunRecords(
-  client: AutomationClient = supabase,
+  client: AutomationClient,
 ) {
   const { data, error } = await client
     .from("automation_scheduler_runs")
@@ -147,7 +146,7 @@ export async function listAutomationSchedulerRunRecords(
 
 export async function createAutomationSchedulerRunRecord(
   input: AutomationSchedulerRunInput,
-  client: AutomationClient = supabase,
+  client: AutomationClient,
 ) {
   const { data, error } = await client
     .from("automation_scheduler_runs")
@@ -173,8 +172,11 @@ export async function createAutomationSchedulerRunRecord(
   return data as AutomationSchedulerRun;
 }
 
-export async function createAutomationRuleRecord(input: AutomationRuleInput) {
-  const { data, error } = await supabase
+export async function createAutomationRuleRecord(
+  input: AutomationRuleInput,
+  client: AutomationClient,
+) {
+  const { data, error } = await client
     .from("automation_rules")
     .insert(toRuleRow(input))
     .select(ruleSelect)
@@ -190,8 +192,9 @@ export async function createAutomationRuleRecord(input: AutomationRuleInput) {
 export async function updateAutomationRuleRecord(
   id: string,
   input: AutomationRuleInput,
+  client: AutomationClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("automation_rules")
     .update({
       name: input.name,
@@ -215,8 +218,9 @@ export async function updateAutomationRuleRecord(
 export async function updateAutomationRuleStatusRecord(
   id: string,
   status: AutomationRuleStatus,
+  client: AutomationClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("automation_rules")
     .update({ status })
     .eq("id", id)
@@ -230,8 +234,8 @@ export async function updateAutomationRuleStatusRecord(
   return data as AutomationRule;
 }
 
-export async function listNotificationEventRecords() {
-  const { data, error } = await supabase
+export async function listNotificationEventRecords(client: AutomationClient) {
+  const { data, error } = await client
     .from("notification_events")
     .select(notificationSelect)
     .order("due_at", { ascending: true });
@@ -243,8 +247,10 @@ export async function listNotificationEventRecords() {
   return (data ?? []) as NotificationEvent[];
 }
 
-export async function listNotificationTemplateRecords() {
-  const { data, error } = await supabase
+export async function listNotificationTemplateRecords(
+  client: AutomationClient,
+) {
+  const { data, error } = await client
     .from("notification_templates")
     .select("*")
     .order("created_at", { ascending: false });
@@ -258,8 +264,9 @@ export async function listNotificationTemplateRecords() {
 
 export async function createNotificationTemplateRecord(
   input: NotificationTemplateInput,
+  client: AutomationClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("notification_templates")
     .insert(toNotificationTemplateRow(input))
     .select("*")
@@ -275,8 +282,9 @@ export async function createNotificationTemplateRecord(
 export async function updateNotificationTemplateRecord(
   id: string,
   input: NotificationTemplateInput,
+  client: AutomationClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("notification_templates")
     .update({
       name: input.name,
@@ -299,8 +307,9 @@ export async function updateNotificationTemplateRecord(
 export async function updateNotificationTemplateStatusRecord(
   id: string,
   status: NotificationTemplateStatus,
+  client: AutomationClient,
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("notification_templates")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id)
@@ -314,8 +323,11 @@ export async function updateNotificationTemplateStatusRecord(
   return data as NotificationTemplate;
 }
 
-export async function createNotificationEventRecord(input: NotificationEventInput) {
-  const { data, error } = await supabase
+export async function createNotificationEventRecord(
+  input: NotificationEventInput,
+  client: AutomationClient,
+) {
+  const { data, error } = await client
     .from("notification_events")
     .insert(toNotificationRow(input))
     .select(notificationSelect)
@@ -330,7 +342,7 @@ export async function createNotificationEventRecord(input: NotificationEventInpu
 
 export async function createGeneratedNotificationEventRecord(
   input: NotificationEventInput,
-  client: AutomationClient = supabase,
+  client: AutomationClient,
 ) {
   const { data, error } = await client
     .from("notification_events")
@@ -349,8 +361,11 @@ export async function createGeneratedNotificationEventRecord(
   return data as NotificationEvent;
 }
 
-export async function markNotificationEventHandledRecord(id: string) {
-  const { data, error } = await supabase
+export async function markNotificationEventHandledRecord(
+  id: string,
+  client: AutomationClient,
+) {
+  const { data, error } = await client
     .from("notification_events")
     .update({
       status: "handled",
@@ -367,8 +382,11 @@ export async function markNotificationEventHandledRecord(id: string) {
   return data as NotificationEvent;
 }
 
-export async function dismissNotificationEventRecord(id: string) {
-  const { data, error } = await supabase
+export async function dismissNotificationEventRecord(
+  id: string,
+  client: AutomationClient,
+) {
+  const { data, error } = await client
     .from("notification_events")
     .update({ status: "dismissed" })
     .eq("id", id)
@@ -382,8 +400,11 @@ export async function dismissNotificationEventRecord(id: string) {
   return data as NotificationEvent;
 }
 
-export async function sendNotificationEventDeliveryRecord(id: string) {
-  const adminAccessToken = await getAccessToken();
+export async function sendNotificationEventDeliveryRecord(
+  id: string,
+  client: AutomationClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {
@@ -407,8 +428,10 @@ export async function sendNotificationEventDeliveryRecord(id: string) {
   return result.event;
 }
 
-export async function getNotificationProviderStatusRecord() {
-  const adminAccessToken = await getAccessToken();
+export async function getNotificationProviderStatusRecord(
+  client: AutomationClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {
@@ -428,12 +451,13 @@ export async function getNotificationProviderStatusRecord() {
 
 export async function sendNotificationEventDeliveriesRecord(
   ids: string[],
+  client: AutomationClient,
 ): Promise<NotificationBulkDeliveryRecordResult> {
   const results: NotificationBulkDeliveryRecordResult["results"] = [];
 
   for (const id of ids) {
     try {
-      const event = await sendNotificationEventDeliveryRecord(id);
+      const event = await sendNotificationEventDeliveryRecord(id, client);
 
       results.push({
         error: null,
@@ -458,8 +482,10 @@ export async function sendNotificationEventDeliveriesRecord(
   };
 }
 
-export async function runAutomationSchedulerManualRecord() {
-  const adminAccessToken = await getAccessToken();
+export async function runAutomationSchedulerManualRecord(
+  client: AutomationClient,
+) {
+  const adminAccessToken = await getAccessToken(client);
   const headers: Record<string, string> = {};
 
   if (adminAccessToken) {

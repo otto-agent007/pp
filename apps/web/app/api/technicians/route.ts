@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
   try {
     const client = createServiceRoleSupabaseClient();
-    const technicians = await listTechnicianProfileRecords(undefined, client);
+    const technicians = await listTechnicianProfileRecords(client);
 
     return NextResponse.json({ technicians });
   } catch (error) {

@@ -11,21 +11,26 @@ import {
   revokeCustomerPortalAccessTokenRecord,
   sendCustomerPortalAccessTokenRecord,
 } from "./portal";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-    },
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
   },
-}));
+} as unknown as SupabaseProviderClient;
 
 describe("portal api client", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: null },
     } as never);
   });
@@ -124,7 +129,7 @@ describe("portal api client", () => {
   });
 
   it("creates portal access tokens through an admin-authenticated route", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -143,7 +148,7 @@ describe("portal api client", () => {
 
     const grant = await createCustomerPortalAccessTokenRecord({
       customer_id: "customer-1",
-    });
+    }, testClient);
 
     expect(grant.access_token).toBe("portal-token");
     expect(grant.token_id).toBe("token-1");
@@ -159,7 +164,7 @@ describe("portal api client", () => {
   });
 
   it("sends a freshly generated portal link through the server route", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -176,7 +181,7 @@ describe("portal api client", () => {
       customer_id: "customer-1",
       token_id: "token-1",
       portal_url: "http://localhost:3000/portal/customer-1?grant=portal-token",
-    });
+    }, testClient);
 
     expect(result.status).toBe("requested");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -197,7 +202,7 @@ describe("portal api client", () => {
   });
 
   it("loads portal provider status without provider secrets", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -211,7 +216,7 @@ describe("portal api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const status = await getCustomerPortalProviderStatusRecord();
+    const status = await getCustomerPortalProviderStatusRecord(testClient);
 
     expect(status.provider).toBe("manual");
     expect(status.webhook_configured).toBe(false);
@@ -226,7 +231,7 @@ describe("portal api client", () => {
   });
 
   it("lists portal access token summaries for admins", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -248,7 +253,7 @@ describe("portal api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const tokens = await listCustomerPortalAccessTokenRecords("customer-1");
+    const tokens = await listCustomerPortalAccessTokenRecords("customer-1", testClient);
 
     expect(tokens).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -262,7 +267,7 @@ describe("portal api client", () => {
   });
 
   it("revokes portal access tokens for admins", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -280,7 +285,7 @@ describe("portal api client", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const token = await revokeCustomerPortalAccessTokenRecord("token-1");
+    const token = await revokeCustomerPortalAccessTokenRecord("token-1", testClient);
 
     expect(token.status).toBe("revoked");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -295,7 +300,7 @@ describe("portal api client", () => {
   });
 
   it("lists portal access token audit events for admins", async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+    vi.mocked(testClient.auth.getSession).mockResolvedValue({
       data: { session: { access_token: "admin-token" } },
       error: null,
     } as never);
@@ -317,7 +322,7 @@ describe("portal api client", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const history =
-      await listCustomerPortalAccessTokenEventRecords("token-1");
+      await listCustomerPortalAccessTokenEventRecords("token-1", testClient);
 
     expect(history.events).toHaveLength(1);
     expect(history.events[0]?.kind).toBe("generated");

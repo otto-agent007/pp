@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { listCloseoutCaptureSummaryRecords } from "./closeouts";
-import { supabase } from "./supabase";
+import type { SupabaseProviderClient } from "./supabase";
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: vi.fn(),
-  },
-}));
+/**
+ * The provider client these tests hand in.
+ *
+ * It replaces the module mock that used to stand in for the `supabase`
+ * singleton: the functions under test take their client now, so the double
+ * is passed at the call rather than substituted for a module.
+ */
+const testClient = {
+  from: vi.fn(),
+} as unknown as SupabaseProviderClient;
 
 class MockQuery<T> {
   calls: Array<[string, unknown[]]> = [];
@@ -30,7 +35,7 @@ class MockQuery<T> {
 }
 
 describe("closeouts api client", () => {
-  const from = vi.mocked(supabase.from);
+  const from = vi.mocked(testClient.from);
 
   beforeEach(() => {
     from.mockReset();
@@ -58,7 +63,7 @@ describe("closeouts api client", () => {
       .mockReturnValueOnce(logsQuery as never)
       .mockReturnValueOnce(mediaQuery as never);
 
-    const summaries = await listCloseoutCaptureSummaryRecords(["job-1", "job-2"]);
+    const summaries = await listCloseoutCaptureSummaryRecords(["job-1", "job-2"], testClient);
 
     expect(from).toHaveBeenNthCalledWith(1, "job_form_submissions");
     expect(from).toHaveBeenNthCalledWith(2, "chemical_logs");
@@ -86,7 +91,7 @@ describe("closeouts api client", () => {
   });
 
   it("returns no summaries without job ids", async () => {
-    await expect(listCloseoutCaptureSummaryRecords([])).resolves.toEqual([]);
+    await expect(listCloseoutCaptureSummaryRecords([], testClient)).resolves.toEqual([]);
     expect(from).not.toHaveBeenCalled();
   });
 });
