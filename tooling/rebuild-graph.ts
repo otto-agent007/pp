@@ -783,33 +783,38 @@ export function validateRebuildGraph(value: unknown): string[] {
         `done node ${node.id} must include successful command evidence`,
       );
     }
-    if (node.kind === "slice" && node.status === "done") {
+    // A write task ships its own pull request and reaches `done` through its
+    // own merge, so it records the same provenance a slice does. Without this a
+    // done task needed no branch, no pull request and no merge SHA, and the
+    // reconciler had nothing to check its source tag against.
+    const isWriteNode = node.kind === "slice" || node.kind === "task";
+    if (isWriteNode && node.status === "done") {
       if (
         typeof node.branch !== "string" ||
         !/^codex\/[a-z0-9][a-z0-9-]*$/.test(node.branch)
       ) {
         errors.push(
-          `done slice ${node.id} must include a correctly named codex branch`,
+          `done ${node.kind} ${node.id} must include a correctly named codex branch`,
         );
       }
       if (!isPrUrl(node.pr, repositorySlug)) {
         errors.push(
-          `done slice ${node.id} must include a pull request URL for ${repositorySlug}`,
+          `done ${node.kind} ${node.id} must include a pull request URL for ${repositorySlug}`,
         );
       }
       if (!isMergeSha(node.mergeSha)) {
         errors.push(
-          `done slice ${node.id} must include a 40-character hexadecimal merge SHA`,
+          `done ${node.kind} ${node.id} must include a 40-character hexadecimal merge SHA`,
         );
       }
     }
-    if (node.kind === "slice" && node.status === "running") {
+    if (isWriteNode && node.status === "running") {
       if (
         typeof node.branch !== "string" ||
         !/^codex\/[a-z0-9][a-z0-9-]*$/.test(node.branch)
       ) {
         errors.push(
-          `running slice ${node.id} must include a correctly named codex branch`,
+          `running ${node.kind} ${node.id} must include a correctly named codex branch`,
         );
       }
     }
