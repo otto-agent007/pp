@@ -65,8 +65,32 @@ function isMergedAndLanded(
 }
 
 /**
- * Running slices whose pull request has already merged into the default
- * branch, so the caller can report that the record is behind without failing.
+ * Whether a node is in flight on this branch and must answer for it.
+ *
+ * Write tasks are held to exactly what a slice is held to. The graph validator
+ * has always accepted `kind: "task"` and forbids two running tasks from owning
+ * overlapping paths, but every enforcement below used to ask for `kind ===
+ * "slice"`, so a running task passed reconciliation in silence: no ownership
+ * boundary, no pull-request state, no base-SHA ancestry. That is the failure
+ * this repository keeps rediscovering — a requirement recorded where the
+ * enforcement never reads it — and decomposing a slice into tasks would have
+ * been the first time it disabled the gate rather than merely failed to add one.
+ *
+ * One branch resolves at most one running node, so this needs no notion of
+ * which task a tree belongs to: a promotion commit that sets a node to
+ * `running` lives on that node's own branch, and siblings are still `planned`
+ * in the graph this tree carries.
+ */
+function isRunningWriteNode(node: { kind: string; status: string }) {
+  return (
+    (node.kind === "slice" || node.kind === "task") && node.status === "running"
+  );
+}
+
+/**
+ * Running slices and write tasks whose pull request has already merged into the
+ * default branch, so the caller can report that the record is behind without
+ * failing.
  */
 export function findMergedRunningSlices(
   graph: unknown,
@@ -92,8 +116,7 @@ export function findMergedRunningSlices(
   return graphRecord.nodes
     .filter(
       (node) =>
-        node.kind === "slice" &&
-        node.status === "running" &&
+        isRunningWriteNode(node) &&
         node.pr.length > 0 &&
         isMergedAndLanded(
           pullRequests.get(node.pr),
@@ -275,7 +298,7 @@ function validateRepositoryClaimsWithOptions(
           `done slice ${node.id} merge SHA ${node.mergeSha} is not an ancestor of ${graphRecord.repository.defaultBranch}`,
         );
       }
-    } else if (node.kind === "slice" && node.status === "running") {
+    } else if (isRunningWriteNode(node)) {
       if (facts.graphInheritedFromDefaultBranch) {
         // Every check below asks whether *this* branch is the running slice:
         // its pull request open, its base an ancestor of HEAD, its evidence
@@ -290,7 +313,7 @@ function validateRepositoryClaimsWithOptions(
         const pullRequest = pullRequests.get(node.pr);
         if (!pullRequest) {
           errors.push(
-            `running slice ${node.id} pull request does not exist: ${node.pr}`,
+            `running ${node.kind} ${node.id} pull request does not exist: ${node.pr}`,
           );
         } else if (pullRequest.state === "MERGED") {
           // The record is one step behind, which is expected. Every remaining
@@ -303,32 +326,32 @@ function validateRepositoryClaimsWithOptions(
           const mergeSha = pullRequest.mergeSha ?? "";
           if (mergeSha.length === 0) {
             errors.push(
-              `running slice ${node.id} pull request is MERGED without a merge commit: ${node.pr}`,
+              `running ${node.kind} ${node.id} pull request is MERGED without a merge commit: ${node.pr}`,
             );
           } else if (
             !isAncestor(mergeSha, graphRecord.repository.defaultBranch)
           ) {
             errors.push(
-              `running slice ${node.id} pull request is MERGED as ${mergeSha}, which has not landed on ${graphRecord.repository.defaultBranch}: ${node.pr}`,
+              `running ${node.kind} ${node.id} pull request is MERGED as ${mergeSha}, which has not landed on ${graphRecord.repository.defaultBranch}: ${node.pr}`,
             );
           } else {
             continue;
           }
         } else if (pullRequest.state !== "OPEN") {
           errors.push(
-            `running slice ${node.id} pull request is ${pullRequest.state}, not OPEN: ${node.pr}`,
+            `running ${node.kind} ${node.id} pull request is ${pullRequest.state}, not OPEN: ${node.pr}`,
           );
         }
       }
       evidenceDescendant = "HEAD";
       if (!existingCommits.has(node.baseSha)) {
         errors.push(
-          `running slice ${node.id} base SHA does not exist: ${node.baseSha}`,
+          `running ${node.kind} ${node.id} base SHA does not exist: ${node.baseSha}`,
         );
       }
       if (!isAncestor(node.baseSha, "HEAD")) {
         errors.push(
-          `running slice ${node.id} base SHA ${node.baseSha} is not an ancestor of HEAD`,
+          `running ${node.kind} ${node.id} base SHA ${node.baseSha} is not an ancestor of HEAD`,
         );
       }
       errors.push(
@@ -474,7 +497,7 @@ function collectLocalRepositoryFacts(
   );
   const commits = new Set<string>();
   for (const node of relevantNodes) {
-    if (node.kind === "slice" && node.status === "running") {
+    if (isRunningWriteNode(node)) {
       commits.add(node.baseSha);
     } else if (node.kind === "slice" && node.status === "done") {
       commits.add(node.mergeSha);
@@ -540,7 +563,7 @@ function collectLocalRepositoryFacts(
     gitDescendant: string;
   }> = [];
   for (const node of relevantNodes) {
-    if (node.kind === "slice" && node.status === "running") {
+    if (isRunningWriteNode(node)) {
       if (facts.graphInheritedFromDefaultBranch) {
         continue;
       }
@@ -569,7 +592,7 @@ function collectLocalRepositoryFacts(
         );
       } else {
         errors.push(
-          `unable to list changed paths for running slice ${node.id}`,
+          `unable to list changed paths for running ${node.kind} ${node.id}`,
         );
       }
     } else if (node.kind === "slice" && node.status === "done") {
@@ -938,7 +961,7 @@ export async function runRebuildGraphReconcileCli(
   console.log(`Rebuild graph repository facts are valid: ${inputPath}`);
   if (graphInherited) {
     console.log(
-      "Running-slice checks were skipped: this branch's rebuild graph is inherited unchanged from the default branch.",
+      "Running-node checks were skipped: this branch's rebuild graph is inherited unchanged from the default branch.",
     );
   }
   const mergedRunning = findMergedRunningSlices(
@@ -948,7 +971,7 @@ export async function runRebuildGraphReconcileCli(
   );
   if (mergedRunning.length > 0) {
     console.log(
-      `Running-slice checks were skipped for ${mergedRunning.join(", ")}: the pull request has already merged, so the graph record is one step behind. Record the slice as done before promoting a dependent.`,
+      `Running-node checks were skipped for ${mergedRunning.join(", ")}: the pull request has already merged, so the graph record is one step behind. Record the node as done before promoting a dependent.`,
     );
   }
   if (offline) {
