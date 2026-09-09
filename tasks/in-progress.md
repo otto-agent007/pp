@@ -111,14 +111,42 @@
   path outside it, `pnpm rebuild:verify` produced 16-of-16 evidence in
   running-slice mode, and the `Rebuild source tag` workflow published
   `rebuild/cr09a-source` automatically at the pull-request head.
-- **CR09B is the only open node before CR18.** It owns `apps/mobile` and
-  `packages/domain`: the real composition-root integration test
-  `docs/architecture.md` requires, terminal-failure visibility and user
-  recovery, and CR07's persisted-queue validation. The zero-overlap claim the
-  decomposition rested on held in practice — CR09A's merged diff touches neither
-  path — so its recorded scope needs no re-measurement on account of CR09A. Its
-  promotion is still a controller decision, and re-measuring before promoting
-  remains the rule.
+- **CR09B is the only open node before CR18.** It owns `apps/mobile`,
+  `packages/domain` and now `packages/i18n`: the real composition-root
+  integration test `docs/architecture.md` requires, terminal-failure visibility
+  and user recovery, and CR07's persisted-queue validation. The zero-overlap
+  claim the decomposition rested on held in practice — CR09A's merged diff
+  touches none of those paths. Its promotion is still a controller decision.
+- **CR09B was re-measured on `329dbc3`, and the measurement narrowed it in three
+  places.** `packages/types` needs no change: `OfflineQueueItem` already carries
+  `status`, `last_error` and `outcome`, and the two vocabularies already include
+  `failed` and `terminal`. `packages/sync` needs no change for visibility:
+  `useQueueSync` already calls `replaceItems(result.items)`, so a recorded
+  outcome already reaches the store and survives a restart. And
+  `packages/domain` already supplies the third deliverable's mechanism —
+  `markQueueItemFailed` defaults `outcome` to `terminal` and sets `status`
+  `failed` with a `last_error`.
+- **It widened it in one: `packages/i18n` joined the ownership.** Every string
+  `SyncStatusIndicator` renders comes from `packages/i18n/index.ts` under
+  `jobs.fieldCopy.sync`, in both the `en` and `es` blocks, so terminal-failure
+  visibility and a recovery affordance cannot ship without adding copy there.
+  That is the twelfth instance of the recurring defect class and the third
+  caught before promotion rather than during it.
+- **`packages/i18n`'s en-to-es parity is guarded, but only by the compiler.**
+  Probed rather than assumed: a key added to `en` alone exits `pnpm typecheck`
+  with TS2719 naming the property missing from `es`, while `pnpm test` passes
+  79 of 79 in the same tree. The only thing relating the two halves is a pair of
+  assignments in `apps/mobile/src/store/useLanguage.test.ts` that hand
+  `translations.es` to a `typeof translations.en` slot; `translations` itself is
+  a bare object literal. **So CR09B must name `pnpm typecheck` in its `checks`**
+  — the same conclusion CR09A reached, by a different mechanism.
+- **No per-item recovery exists today.** `useOfflineQueue` exposes `clearAll`,
+  `clearSynced`, `markFailed`, `markRetrying`, `markSynced`, `replaceItems`,
+  `hydrate` and `enqueue`, and `clearSynced` removes only `synced` items, so an
+  item marked `failed` and `terminal` stays in the queue with no
+  technician-facing way out. That is the gap the user-recovery deliverable
+  closes, and it wants a discard helper in `packages/domain` beside
+  `clearSyncedQueueItems`.
 - **The split is by application because ownership does not overlap**, which is
   what lets two write tasks run at once. The re-measurement on `f069e65` found
   the singleton confined to `packages/api-client` and `apps/web`; all four

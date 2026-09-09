@@ -1311,7 +1311,8 @@
       ],
       "ownership": [
         "apps/mobile",
-        "packages/domain"
+        "packages/domain",
+        "packages/i18n"
       ],
       "deliverables": [
         "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09",
@@ -1323,9 +1324,39 @@
         "Decomposed from CR09 on 2026-09-09 under its decompose into parallel write-tasks at promotion approval. Ownership does not overlap CR09A.",
         "Controller decided on 2026-09-09 that the validator lives in packages/domain, beside createOfflineQueueItem and the isReady*QueueItem guards, which already import @pest-patrol/types. It cannot live in packages/types, which holds zero runtime values and has an empty import allowlist, and putting it at the apps/mobile persistence edge would move the action-to-payload mapping's knowledge into the composition layer and leave packages/sync unable to reuse it.",
         "Controller decided on 2026-09-09 that an item failing validation is kept and marked terminal rather than dropped or quarantined, so that nothing a technician believed was saved disappears without being shown.",
-        "CR19 is a dependency because this task is what finally reads its work: outcome on OfflineQueueItem has one occurrence anywhere in apps/, a test fixture, so the terminal-versus-retryable distinction CR19 recorded is invisible to the technician today."
+        "CR19 is a dependency because this task is what finally reads its work: outcome on OfflineQueueItem has one occurrence anywhere in apps/, a test fixture, so the terminal-versus-retryable distinction CR19 recorded is invisible to the technician today.",
+        "Re-measured on 329dbc3 before promotion, after CR09A merged. Ownership gains packages/i18n: every string SyncStatusIndicator renders comes from packages/i18n/index.ts under jobs.fieldCopy.sync, in both the en and es blocks, so terminal-failure visibility and the recovery affordance cannot ship without adding copy there. packages/i18n was owned only by CR15, which is done.",
+        "checks must name pnpm typecheck explicitly when this task is promoted, for a different reason than CR09A had. A copy key added to en alone fails pnpm typecheck with TS2719 and passes pnpm test with every mobile test green, because the only thing tying es to en is two assignments in apps/mobile/src/store/useLanguage.test.ts that hand translations.es to a typeof translations.en slot. translations is a bare object literal with no type relating its halves, so the compiler is the only reader of that parity.",
+        "The re-measurement found three things this task does not need, which narrow it rather than widen it: packages/types needs no change because OfflineQueueItem already carries status, last_error and outcome and the two vocabularies already include failed and terminal; packages/sync needs no change for visibility because useQueueSync already calls replaceItems(result.items), so a recorded outcome already reaches the store and survives a restart; and packages/domain already supplies the mechanism for the third deliverable, since markQueueItemFailed defaults outcome to terminal and sets status failed with a last_error."
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "review",
+          "summary": "CR09B re-measured on 329dbc3 after CR09A merged, and CR09A changed nothing it depends on: the merged diff touches no apps/mobile or packages/domain path, so the decomposition's zero-overlap claim held in practice rather than only on paper.",
+          "commitSha": "329dbc3aba85deec3e8d5214173c87df53db7a5d",
+          "recordedAt": "2026-09-09T22:00:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "Twelfth instance of the recurring defect class, and the third caught before promotion rather than during it. CR09B's ownership named apps/mobile and packages/domain while its terminal-failure visibility and user-recovery deliverable cannot be built without new copy in packages/i18n. Ownership now covers it.",
+          "commitSha": "329dbc3aba85deec3e8d5214173c87df53db7a5d",
+          "recordedAt": "2026-09-09T22:00:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm exec tsc -p apps/mobile/tsconfig.json --noEmit",
+          "exitCode": 2,
+          "summary": "Probe rather than assumption: adding one key to the en translations alone exits 2 with TS2719 naming the property missing from es, while the mobile suite passes 79 of 79 in the same tree. The en-to-es parity guard is real but incidental, and only pnpm typecheck reads it. The probe was reverted; nothing in this pull request carries it.",
+          "commitSha": "329dbc3aba85deec3e8d5214173c87df53db7a5d",
+          "recordedAt": "2026-09-09T22:00:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "No per-item recovery exists today. useOfflineQueue exposes clearAll, clearSynced, markFailed, markRetrying, markSynced, replaceItems, hydrate and enqueue, and clearSynced removes only synced items, so an item marked failed and terminal stays in the queue with no technician-facing way out. That is the gap the user-recovery deliverable closes, and it wants a discard helper in packages/domain beside clearSyncedQueueItems.",
+          "commitSha": "329dbc3aba85deec3e8d5214173c87df53db7a5d",
+          "recordedAt": "2026-09-09T22:00:00Z"
+        }
+      ],
       "branch": "",
       "pr": "",
       "mergeSha": "",
