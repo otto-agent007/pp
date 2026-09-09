@@ -2117,7 +2117,7 @@
       "baseSha": "7f21bcaddfb175ec3e2ce36e57f51bcfaddd9f2b",
       "id": "CR20",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR19"
@@ -2252,11 +2252,18 @@
           "commitSha": "a6aa53a6d3e61b27484d61b9dc3f1f6b7c25bbbf",
           "recordedAt": "2026-09-09T08:20:00Z",
           "summary": "Clean-tree rebuild verification PASS, 16/16 gates, evidence set 87439a86, running-slice mode against base 7f21bca with identical pre and post trees. No gate reported UNMAPPED, which is the direct proof the new supabase mapping works: without it the migration would have reported UNMAPPED changed path and the run would have failed."
+        },
+        {
+          "kind": "github",
+          "summary": "PR #203 merged as ab5ab9ec3b87d43b7a1c23229f758f2d6a5b4a43; the Rebuild source tag workflow published rebuild/cr20-source automatically at the canonical head bfe6631, confirmed against the remote after the run completed rather than assumed. The tag is not present the instant the merge lands, so check the workflow run before concluding it failed.",
+          "commitSha": "bfe6631f21622a5ce374be0c9a4a5f71bf0cc106",
+          "recordedAt": "2026-09-09T09:25:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/203"
         }
       ],
       "branch": "codex/rebuild-cr20-sqlstates-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/203",
-      "mergeSha": "",
+      "mergeSha": "ab5ab9ec3b87d43b7a1c23229f758f2d6a5b4a43",
       "supersededBy": null,
       "target": null
     }
