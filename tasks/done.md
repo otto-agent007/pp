@@ -1,5 +1,70 @@
 # Done
 
+## CR20 technician RPC error codes
+
+- Base `7f21bcaddfb175ec3e2ce36e57f51bcfaddd9f2b`, branch
+  `codex/rebuild-cr20-sqlstates-v1`, PR
+  [#203](https://github.com/otto-agent007/pp/pull/203), merge
+  `ab5ab9ec3b87d43b7a1c23229f758f2d6a5b4a43`, source tag
+  `rebuild/cr20-source` at `bfe6631`, plan
+  `docs/superpowers/plans/2026-09-09-controlled-rebuild-cr20-sqlstates.md`.
+- Both technician RPCs raise an application code — `PP400` invalid-intent,
+  `PP401` unauthorized, `PP404` target-missing, `PP409` precondition-conflict.
+  Class `PP` is unused by PostgreSQL, whose PL/pgSQL codes are class `P0`, and
+  is not one of the `PT` codes PostgREST reinterprets as an HTTP status.
+- **The message matching CR19 left behind was not merely fragile, it was
+  incapable.** `record_assigned_job_geofence_event` raises `Assigned job
+  geofence event is not allowed` for two different things: the job is not
+  assigned to this technician, and the idempotent upsert matched a row belonging
+  to someone else. Same string, so no matcher could ever separate them.
+- **It was also wrong.** CR19's fallback covered four messages, all from the
+  status RPC, so every geofence message fell through to the `P0001` default of
+  `invalid-intent` — and `Assigned job was not found`, a `target-missing`, was
+  being reported as an intent that could never be valid.
+- **The migration adds codes and rewrites nothing, and that was proved rather
+  than asserted.** Stripping the added `using errcode` lines reconstructs both
+  function bodies byte-identically to the originals, and the sequence of twelve
+  raised messages is identical between the two files. An unchanged message is
+  what keeps an app released before this migration working against a migrated
+  database.
+- The client reads the code first. The message matching stays as a compatibility
+  path for the other skew direction, this app against a database that has not
+  yet migrated. **Its removal is deliberately not scheduled**, because the
+  condition — no client older than the migration still running — is not
+  observable from this repository, and an unverifiable removal condition is the
+  recurring defect class again.
+- **Tenth instance of the recurring defect class, and the second caught before
+  promotion.** No node had ever owned a `supabase` path, and
+  `selectVerificationGates` had no rule for one, so every supabase path reported
+  `UNMAPPED` and the first slice to touch a migration could not have passed its
+  own verification. CR20's first cut owned `supabase/migrations` but no
+  `tooling/` path, so it could not have fixed that either. Ownership was widened
+  to `tooling/rebuild-verification.ts`, its test, the new migration test, and
+  `package.json`.
+- **Seven of fourteen `tooling/*.test.ts` files were run by nothing.** The root
+  `test` script names seven files explicitly rather than globbing, and no CI
+  workflow or graph node check ran the rest. A gate sending `supabase/**` to
+  `pnpm test` would have been a lie, so the five orphans that assert `supabase/`
+  are now in the root script — the tooling suite went from 7 files to 12.
+- Seven injections, each required to produce a named failure or a demonstrable
+  silence: the supabase gate rule dropped; an errcode removed; a message
+  changed; the two shared geofence raises given one code; the `PP` codes dropped
+  from the client table; the message matcher run before the code lookup; and the
+  new test dropped from the root script.
+- Clean-tree `pnpm rebuild:verify` passed 16/16 gates **with no `UNMAPPED`
+  gate**, which is the direct proof the new mapping works: without it the
+  migration would have reported `UNMAPPED changed path` and the run would have
+  failed.
+- `Supabase Preview` ran on this PR and passed. It had been `SKIPPED` on every
+  earlier rebuild PR, because it runs only when a PR touches `supabase/`.
+- **Two orphaned tooling tests were reported rather than absorbed.**
+  `owasp-api-route-inventory.test.ts` is unrun **and failing** — Next API routes
+  exist that its inventory does not document, which is real
+  security-documentation drift. `production-readiness-protection.test.ts` is
+  unrun and passing. Neither reads `supabase/`, so neither was needed to make
+  this slice's gate honest, and absorbing a failing unrelated test would have
+  made CR20 red for a reason that was not CR20's.
+
 ## CR19 mutation outcome wiring
 
 - Base `374c6ec6640bfffcaacc155568d2382be678637c`, branch

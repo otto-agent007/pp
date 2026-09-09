@@ -95,39 +95,38 @@
 
 ## What is next
 
-- **CR20 (technician RPC error codes) is `running`** (base `7f21bca`, branch
-  `codex/rebuild-cr20-sqlstates-v1`). Both technician RPCs now raise an
-  application code, and `packages/api-client` reads it ahead of any message.
-- **The message matching was not merely fragile, it was incapable.**
-  `record_assigned_job_geofence_event` raises `Assigned job geofence event is
-  not allowed` for two different things — the job is not assigned to this
-  technician, and the idempotent upsert matched someone else's row. Same string,
-  so no matcher could ever separate them. Only a code can.
-- **The mapping was also wrong.** CR19's fallback covered four messages, all
-  from the status RPC. Every geofence message fell through to the `P0001`
-  default of `invalid-intent`, so `Assigned job was not found` — a
-  `target-missing` — was reported as an intent that could never be valid.
-- **No node had ever owned a `supabase` path, and `selectVerificationGates` had
-  no rule for one**, so every supabase path reported `UNMAPPED` and the first
-  slice to touch a migration could not have passed its own verification. Tenth
-  instance of the recurring defect class, and the second caught before
-  promotion. CR20's ownership was widened to `tooling/` and `package.json`.
-- **Seven of fourteen `tooling/*.test.ts` files are run by nothing.** The root
-  `test` script names seven files explicitly rather than globbing, and CI runs
-  no others. CR20 adopts the five that assert `supabase/`, which is what makes
-  its own gate honest.
-- **Two orphans are reported rather than absorbed.**
-  `production-readiness-protection.test.ts` passes;
-  **`owasp-api-route-inventory.test.ts` fails** — Next API routes exist that its
-  inventory does not document. Neither reads `supabase/`, so neither belongs to
-  CR20, and wiring in a failing test would make this slice red for a reason that
-  is not its own. **The OWASP one is a real security-documentation drift and
-  wants an owner.**
-- **CR09 is the remaining slice**, plus CR18 as the final reconciliation. CR09
-  still carries `decompose into parallel write-tasks at promotion`, and the
-  validator supports `kind: "task"` nodes of which none exist yet. Its ownership
-  reads `apps` alone while a deliverable removes the `supabase` singleton from
-  `packages/api-client`, which is a scope defect waiting at its promotion.
+- **CR20 (technician RPC error codes) is `done`**; its summary is in
+  `tasks/done.md`. Both technician RPCs raise an application code, and
+  `packages/api-client` reads it ahead of any message.
+- **CR09 is the last slice**, then CR18 as the final reconciliation. Every other
+  node is `done` or `superseded`.
+- **CR09 needs decomposition, not implementation, at promotion.** It carries the
+  approval `decompose into parallel write-tasks at promotion`, and the graph
+  validator supports `kind: "task"` nodes of which **none exist yet**, so this
+  would be their first use. Do not pre-scope its deliverables by guessing.
+- **CR09 has accumulated three deliverables:** removing the module-level
+  `supabase` singleton in `packages/api-client`, the real `apps/mobile`
+  composition-root integration `docs/architecture.md` requires, and CR07's
+  persisted-queue validation.
+- **A scope defect is already visible and should be fixed at promotion:** CR09's
+  ownership reads `apps` alone, while removing the singleton reaches
+  `packages/api-client`. That is the same shape as the nine instances before it.
+- **CR09 should be re-measured against what CR19 and CR20 left**, since both
+  changed `packages/api-client` after CR09 was last scoped.
+
+## Open items that no node owns
+
+- **`tooling/owasp-api-route-inventory.test.ts` is run by nothing and fails.**
+  Next API routes exist that its inventory does not document. CR20 found it,
+  deliberately did not absorb it — it does not read `supabase/`, and a failing
+  unrelated test would have made that slice red for a reason that was not its
+  own — and nothing owns it now. This is real security-documentation drift.
+- **`tooling/production-readiness-protection.test.ts` is run by nothing** and
+  currently passes. Same cause: the root `test` script names files explicitly
+  rather than globbing, so a new tooling test is dead unless someone adds it.
+- Both would be fixed at the root by globbing `tooling/*.test.ts` in the `test`
+  script, which is a one-line change gated on the OWASP inventory being brought
+  up to date first.
 
 ## Carried forward
 
