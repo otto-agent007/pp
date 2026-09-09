@@ -950,10 +950,10 @@
       ]
     },
     {
-      "baseSha": "",
+      "baseSha": "8973697d56e97671adbf6c88e5ef436690e0e336",
       "id": "CR07",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR02",
@@ -979,7 +979,8 @@
         "OfflineQueueItem discriminated by action rather than defaulting TPayload to Record<string, unknown>",
         "Retirement of the hand-maintained Exclude<OfflineQueueAction, ...> label map in packages/domain/offlineQueue.ts, which silently omits any newly added action",
         "Test fixtures corrected so every queue payload matches its action, with one named escape hatch for the two tests that deliberately exercise the runtime guards against an untrusted payload",
-        "The frozen public surface in packages/types/publicSurface.test.ts updated for the new mapping type, since CR02's guard requires exact equality"
+        "The frozen public surface in packages/types/publicSurface.test.ts updated for the new mapping type, since CR02's guard requires exact equality",
+        "A per-action test fixture wherever a test builds one item per action, since a single object literal over a union of actions loses the correlation this slice creates"
       ],
       "checks": [
         "pnpm exec vitest run packages/types/publicSurface.test.ts",
@@ -1002,11 +1003,13 @@
         "Scoped on 2026-09-08 from the measured gap: seven queue actions and seven payload types exist with nothing relating them, and OfflineQueueItem's TPayload default erases the pairing",
         "Controller scoping of CR07 on 2026-09-08: types only. The unchecked cast in the mobile store's hydrate stays as it is, and validating the persisted queue becomes a CR09 deliverable, so this slice changes no behaviour",
         "Controller scoping of CR07 on 2026-09-08: the two tests that deliberately build an invalid payload keep working through one named escape-hatch builder rather than inline casts, so the intent stays reviewable in one place",
-        "Ownership widened on 2026-09-08 from measurement: a compiled prototype showed the change reaches packages/application and three apps/mobile files, none of which CR07 owned"
+        "Ownership widened on 2026-09-08 from measurement: a compiled prototype showed the change reaches packages/application and three apps/mobile files, none of which CR07 owned",
+        "Re-measured on 2026-09-08 before promotion with a compiled prototype, per the recurring defect class. The recorded ownership needed no change: every path the slice reaches was already owned, which is the first time in this chain that a scope survived re-measurement intact.",
+        "The escape hatch is two named builders rather than one, decided on measurement: the two deliberate violations live in different packages and invalidate at different levels, a missing payload on an input in packages/domain and a malformed payload on a stored item in packages/sync. Sharing one builder would make a test fixture part of a cross-package contract, so each package names its own and states why."
       ],
       "evidence": [],
-      "branch": "",
-      "pr": "",
+      "branch": "codex/rebuild-cr07-queue-types-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/199",
       "mergeSha": "",
       "supersededBy": null,
       "target": null,
