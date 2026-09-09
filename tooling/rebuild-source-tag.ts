@@ -9,15 +9,19 @@ import { fileURLToPath } from "node:url";
  * never from a retained branch, so the tag has to exist even after GitHub
  * deletes the source branch.
  *
- * This module only decides *whether* a merged pull request is a slice and what
- * its tag is called. Creating the tag, and refusing to move an existing one,
- * belongs to the caller.
+ * This module only decides *whether* a merged pull request is a write node and
+ * what its tag is called. Creating the tag, and refusing to move an existing
+ * one, belongs to the caller.
+ *
+ * A write task earns a tag on exactly the same terms as a slice. It ships its
+ * own pull request and is recorded `done` from its own merge, so offline
+ * reconciliation needs its provenance for the same reason.
  */
 
-const SLICE_ID = /^CR[0-9]{2}$/;
+const WRITE_NODE_ID = /^CR[0-9]{2}[A-Z]?$/;
 
 export function sourceTagRefFor(nodeId: string) {
-  if (!SLICE_ID.test(nodeId)) {
+  if (!WRITE_NODE_ID.test(nodeId)) {
     throw new Error(`refusing to build a source tag for node ID: ${nodeId}`);
   }
   return `refs/tags/rebuild/${nodeId.toLowerCase()}-source`;
@@ -29,12 +33,13 @@ export type MergedPullRequest = {
 };
 
 /**
- * The running slice a just-merged pull request belongs to, or null.
+ * The running slice or write task a just-merged pull request belongs to, or
+ * null.
  *
  * Both the pull request URL and the head branch must match the node. The branch
- * is not redundant: between a slice merging and its record catching up, the
- * default branch's graph still names that slice as running, so a control-plane
- * pull request merged in that window would otherwise look like the slice.
+ * is not redundant: between a node merging and its record catching up, the
+ * default branch's graph still names it as running, so a control-plane pull
+ * request merged in that window would otherwise look like that node.
  */
 export function resolveSourceTagForMergedPullRequest(
   graph: unknown,
@@ -52,7 +57,7 @@ export function resolveSourceTagForMergedPullRequest(
       continue;
     }
     const { id, kind, status, branch, pr } = node as Record<string, unknown>;
-    if (kind !== "slice" || status !== "running") {
+    if ((kind !== "slice" && kind !== "task") || status !== "running") {
       continue;
     }
     if (typeof id !== "string" || typeof pr !== "string") {
@@ -61,7 +66,7 @@ export function resolveSourceTagForMergedPullRequest(
     if (pr !== pullRequest.url || branch !== pullRequest.headRef) {
       continue;
     }
-    if (!SLICE_ID.test(id)) {
+    if (!WRITE_NODE_ID.test(id)) {
       return null;
     }
     return { nodeId: id, ref: sourceTagRefFor(id) };

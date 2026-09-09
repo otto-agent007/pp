@@ -588,8 +588,15 @@ export function runRebuildVerificationCli(
     return 1;
   }
 
+  // A running write task is verified on exactly the same terms as a running
+  // slice. It declares its own checks, owns its own paths and ships its own
+  // pull request, so a decomposed slice would otherwise reach the one step in
+  // the runbook it cannot perform: this used to refuse with "requires one
+  // running slice" and produce no command evidence at all.
   const runningNode = graph.nodes.find(
-    (node) => node.kind === "slice" && node.status === "running",
+    (node) =>
+      (node.kind === "slice" || node.kind === "task") &&
+      node.status === "running",
   );
   let verificationNode = runningNode;
   let verificationBaseSha = runningNode?.baseSha ?? "";
@@ -597,13 +604,13 @@ export function runRebuildVerificationCli(
   if (recoverySliceId) {
     if (runningNode) {
       console.error(
-        "Post-merge recovery verification is unavailable while a slice is running.",
+        "Post-merge recovery verification is unavailable while a slice or write task is running.",
       );
       return 1;
     }
     verificationNode = graph.nodes.find(
       (node) =>
-        node.kind === "slice" &&
+        (node.kind === "slice" || node.kind === "task") &&
         node.id === recoverySliceId &&
         node.status === "done",
     );
@@ -612,7 +619,7 @@ export function runRebuildVerificationCli(
       !/^[0-9a-f]{40}$/.test(verificationNode.mergeSha)
     ) {
       console.error(
-        `Post-merge recovery requires done slice ${recoverySliceId} with a full merge SHA.`,
+        `Post-merge recovery requires done slice or write task ${recoverySliceId} with a full merge SHA.`,
       );
       return 1;
     }
@@ -628,7 +635,9 @@ export function runRebuildVerificationCli(
       return 1;
     }
   } else if (!verificationNode) {
-    console.error("Rebuild verification requires one running slice.");
+    console.error(
+      "Rebuild verification requires one running slice or write task.",
+    );
     return 1;
   }
   // Gate selection must describe what this slice changed, not what it merged

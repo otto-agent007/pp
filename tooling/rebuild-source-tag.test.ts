@@ -58,7 +58,7 @@ describe("rebuild source tag resolution", () => {
     ).toBeNull();
   });
 
-  it("ignores nodes that are not running slices", () => {
+  it("ignores a node that is not running", () => {
     for (const status of ["planned", "done", "blocked", "abandoned"]) {
       expect(
         resolveSourceTagForMergedPullRequest(graphWith({ status }), {
@@ -67,12 +67,40 @@ describe("rebuild source tag resolution", () => {
         }),
       ).toBeNull();
     }
+  });
+
+  it("ignores a node kind that ships no pull request", () => {
     expect(
-      resolveSourceTagForMergedPullRequest(graphWith({ kind: "task" }), {
+      resolveSourceTagForMergedPullRequest(graphWith({ kind: "gate" }), {
         url: PR,
         headRef: "codex/rebuild-cr15-expo-57-v1",
       }),
     ).toBeNull();
+  });
+
+  /**
+   * A write task is tagged on the same terms as a slice. It ships its own pull
+   * request and is recorded `done` from its own merge, so offline
+   * reconciliation needs its provenance for the same reason. This used to
+   * assert the opposite, which would have left the first decomposed slice with
+   * no source tag and no way to reach `done`.
+   */
+  it("resolves a running write task whose pull request just merged", () => {
+    expect(
+      resolveSourceTagForMergedPullRequest(
+        graphWith({
+          id: "CR09A",
+          kind: "task",
+          branch: "codex/rebuild-cr09a-singleton-v1",
+        }),
+        { url: PR, headRef: "codex/rebuild-cr09a-singleton-v1" },
+      ),
+    ).toEqual({ nodeId: "CR09A", ref: "refs/tags/rebuild/cr09a-source" });
+  });
+
+  it("names a write task's tag from its suffixed ID", () => {
+    expect(sourceTagRefFor("CR09A")).toBe("refs/tags/rebuild/cr09a-source");
+    expect(sourceTagRefFor("CR09B")).toBe("refs/tags/rebuild/cr09b-source");
   });
 
   it("ignores a malformed graph rather than throwing", () => {
@@ -86,9 +114,11 @@ describe("rebuild source tag resolution", () => {
     }
   });
 
-  it("rejects a slice ID that would escape the tag namespace", () => {
+  it("rejects a node ID that would escape the tag namespace", () => {
     expect(() => sourceTagRefFor("../evil")).toThrow();
     expect(() => sourceTagRefFor("CR15 extra")).toThrow();
     expect(() => sourceTagRefFor("")).toThrow();
+    expect(() => sourceTagRefFor("CR09AB")).toThrow();
+    expect(() => sourceTagRefFor("CR09a")).toThrow();
   });
 });
