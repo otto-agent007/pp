@@ -1,5 +1,66 @@
 # Done
 
+## CR09A supabase singleton removal
+
+- Base `1d28d5c1a3c2429d6c482803bf5c7a92aaeaa020`, branch
+  `codex/rebuild-cr09a-singleton-v1`, PR
+  [#210](https://github.com/otto-agent007/pp/pull/210), merge
+  `498459cda0395dc5b729e3b2015d75bea9d0e03a`, source tag
+  `rebuild/cr09a-source` at `235f0d7`, plan
+  `docs/superpowers/plans/2026-09-09-controlled-rebuild-cr09a-singleton.md`.
+- **The first `kind: "task"` node the controlled rebuild has ever run**, and
+  therefore the first held to the write-task rules #207 and #209 added: the same
+  ownership boundary a running slice answers for, the same `pnpm rebuild:verify`
+  evidence, and its own source tag.
+- `packages/api-client/supabase.ts` no longer creates a client at import time
+  and carries only `SupabaseProviderClient`. Every record function and every
+  adapter factory takes its client as a required argument, and `index.ts` no
+  longer re-exports one, which makes this a change to the package's public
+  surface rather than an internal one.
+- **The shape it removed:** 87 exported functions reached the singleton — 27
+  taking no client at all, 60 taking it as a default parameter value, which is
+  what CR05's wrap left behind, and 7 already requiring one.
+  `createCustomersAdapter()` took no client parameter at all and was the one
+  adapter factory that could never be selected.
+- `apps/web/lib/supabase-browser.ts` is the browser composition root the web app
+  never had, the counterpart of `apps/mobile/src/lib/supabase.ts`, passed at all
+  eighteen adapter constructions — sixteen in the hooks, two in the auth
+  contexts. API routes were unaffected: they already built a per-request client
+  bound to the caller's token or to the service role.
+- **Two signatures could not simply gain a parameter.** A required parameter
+  cannot follow an optional one, so `listTechnicianProfileRecords` and
+  `listTechnicianLicenseRecords` take their client first, as `auth.ts` already
+  did. `runDemoSeedActionRecord` lost the overload that existed only to supply
+  the singleton when the caller gave none.
+- **Ownership gained two paths at promotion, measured from the diff rather than
+  assumed.** `tooling/compliance-ingest.ts` hands a possibly-undefined client to
+  three api-client functions and type-checked only while those functions carried
+  a fallback; `docs/architecture.md` held the section recording the limitation
+  this task removes.
+- **The removal is guarded, not described.**
+  `packages/api-client/supabase.test.ts` fails if any module in the package
+  constructs a client, if the package exports a client-valued binding, or if an
+  adapter factory defaults its client again — `Function.length` drops to 0 when
+  it does. `apps/web/lib/supabase-browser.test.ts` fails if a browser adapter is
+  built with anything but the composition root's client, if a second browser
+  client appears, or if server code imports the browser's. Both were proved to
+  fire by injecting the regression they name.
+- **A gap closed on the way past:** `apps/web`'s lint script globbed `app/`,
+  `hooks/` and `*.ts` only, so a new top-level `lib/` directory would have been
+  linted by nothing.
+- Clean-tree `pnpm rebuild:verify` PASS 16/16, evidence set `6f49603f`,
+  running-slice mode against base `1d28d5c` with identical pre and post trees
+  and no `UNMAPPED` gate. **This is the first time a decomposed write task could
+  produce that evidence at all** — before #209 the verifier refused a running
+  task with "requires one running slice".
+- The ownership boundary was proved to fire for a running write task, not merely
+  to pass: an unrelated `README.md` line, committed, exits reconciliation with
+  `changed path README.md is outside running-node ownership`. That is the first
+  real exercise of the `kind: "task"` enforcement #207 and #209 added.
+- **The decomposition's zero-overlap claim held in practice.** The merged diff
+  touches no `apps/mobile` or `packages/domain` path, so CR09B needs no
+  re-measurement on account of this task.
+
 ## CR20 technician RPC error codes
 
 - Base `7f21bcaddfb175ec3e2ce36e57f51bcfaddd9f2b`, branch

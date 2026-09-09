@@ -102,29 +102,23 @@
   nodes this graph has ever carried, under its standing approval `decompose into
   parallel write-tasks at promotion`. CR09 itself is `superseded`: it ships no
   pull request of its own, and leaving it `planned` would block CR18 forever.
-  These two and CR18 are all that remain open.
-- **CR09A is running, and implemented.** It owns `apps/web` and
-  `packages/api-client`: the module-level `supabase` client is gone, every
-  record function and adapter factory takes its client as a required argument,
-  `apps/web/lib/supabase-browser.ts` is the browser composition root supplying
-  it at all eighteen adapter constructions, and the package's public surface no
-  longer re-exports a client.
-- **CR09A's ownership also names `tooling/compliance-ingest.ts` and
-  `docs/architecture.md`**, both measured from the diff rather than assumed. The
-  ingest script passes a possibly-undefined client into three api-client
-  functions, which only type-checked while those functions had a fallback; the
-  architecture document recorded the limitation this task removes.
-- **CR09A guards the removal rather than describing it.**
-  `packages/api-client/supabase.test.ts` fails if any module in that package
-  constructs a client, if the package exports a client-valued binding, or if an
-  adapter factory defaults its client again — `Function.length` drops to 0 when
-  it does. `apps/web/lib/supabase-browser.test.ts` fails if a browser adapter is
-  built with anything but the composition root's client, if a second browser
-  client appears, or if server code imports the browser's. Both were proved to
-  fire by injecting the regression they describe.
-- **CR09B owns `apps/mobile` and `packages/domain`:** the real composition-root
-  integration test `docs/architecture.md` requires, terminal-failure visibility
-  and user recovery, and CR07's persisted-queue validation.
+- **CR09A is `done`**; its summary is in `tasks/done.md`. The `supabase`
+  singleton is gone, `apps/web/lib/supabase-browser.ts` is the browser
+  composition root, and two guard suites hold the removal in place.
+- **CR09A proved the write-task machinery end to end.** It is the first
+  `kind: "task"` node this chain has run, and every rule #207 and #209 added was
+  exercised by it rather than by a fixture: the ownership boundary refused a
+  path outside it, `pnpm rebuild:verify` produced 16-of-16 evidence in
+  running-slice mode, and the `Rebuild source tag` workflow published
+  `rebuild/cr09a-source` automatically at the pull-request head.
+- **CR09B is the only open node before CR18.** It owns `apps/mobile` and
+  `packages/domain`: the real composition-root integration test
+  `docs/architecture.md` requires, terminal-failure visibility and user
+  recovery, and CR07's persisted-queue validation. The zero-overlap claim the
+  decomposition rested on held in practice — CR09A's merged diff touches neither
+  path — so its recorded scope needs no re-measurement on account of CR09A. Its
+  promotion is still a controller decision, and re-measuring before promoting
+  remains the rule.
 - **The split is by application because ownership does not overlap**, which is
   what lets two write tasks run at once. The re-measurement on `f069e65` found
   the singleton confined to `packages/api-client` and `apps/web`; all four
