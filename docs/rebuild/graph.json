@@ -18,6 +18,7 @@
     "CR06",
     "CR07",
     "CR19",
+    "CR20",
     "CR08",
     "CR09",
     "CR18"
@@ -1921,7 +1922,8 @@
         "CR14",
         "CR15",
         "CR16",
-        "CR09"
+        "CR09",
+        "CR20"
       ],
       "conflicts": [
         "CR00"
@@ -1937,7 +1939,9 @@
         "Final graph reconciliation with every slice done and every source tag published"
       ],
       "checks": [],
-      "approvals": [],
+      "approvals": [
+        "CR20 added to the dependencies on 2026-09-09 when that node was created. CR18 claims every slice is done and every source tag published, so a new slice it does not depend on would let that claim pass while the slice was still open"
+      ],
       "evidence": [],
       "branch": "",
       "pr": "",
@@ -1949,7 +1953,7 @@
       "baseSha": "374c6ec6640bfffcaacc155568d2382be678637c",
       "id": "CR19",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR06",
@@ -2088,10 +2092,61 @@
           "commitSha": "884bd4ac7c1d33d31a486c22c48be72088992a91",
           "recordedAt": "2026-09-09T05:30:00Z",
           "summary": "Clean-tree rebuild verification PASS, 18/18 gates, evidence set 8e74f524. Run in running-slice mode against base 374c6ec with an identical pre and post tree, so no gate mutated the worktree."
+        },
+        {
+          "kind": "github",
+          "summary": "PR #201 merged as 7b57ecdb239ca26d5c0bc1a6d1b06e0988e1f352; the Rebuild source tag workflow published rebuild/cr19-source automatically at the canonical head 7688e44, confirmed against the remote rather than assumed.",
+          "commitSha": "7688e443e1b6b369acdc459bf618d2dd44ef6820",
+          "recordedAt": "2026-09-09T05:40:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/201"
         }
       ],
       "branch": "codex/rebuild-cr19-outcomes-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/201",
+      "mergeSha": "7b57ecdb239ca26d5c0bc1a6d1b06e0988e1f352",
+      "supersededBy": null,
+      "target": null,
+      "defers": [
+        {
+          "to": "CR20",
+          "summary": "Giving the technician job RPCs distinct SQLSTATEs so a precondition conflict is told from an invalid intent by a code rather than by matching English message text, which CR19 left alone because it needs a database migration and CR19 owns no supabase path"
+        }
+      ]
+    },
+    {
+      "baseSha": "",
+      "id": "CR20",
+      "kind": "slice",
+      "status": "planned",
+      "parent": "CR00",
+      "dependencies": [
+        "CR19"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "docs/architecture.md",
+        "packages/api-client",
+        "supabase/migrations",
+        "tasks/done.md"
+      ],
+      "deliverables": [
+        "Distinct SQLSTATEs raised by the technician job RPCs, so a precondition conflict carries a code rather than only message text",
+        "packages/api-client/mutationFailures.ts reading those codes, and the RAISED_MESSAGE_REASONS message matching removed once nothing depends on it",
+        "A test proving the mapping no longer depends on the English wording of a raised exception, by changing the message and requiring the reason to hold",
+        "A recorded decision on what happens to a client running against a database that has not yet applied the migration, since the two deploy independently"
+      ],
+      "checks": [],
+      "approvals": [
+        "Created on 2026-09-09 at controller request, after CR19 recorded the limitation and no existing node could own it: CR09 owns apps, CR18 is the final reconciliation, and nothing in the graph owned any supabase path",
+        "The measured problem: update_assigned_job_status enforces its precondition with a bare raise exception, which reaches the client as SQLSTATE P0001 carrying only message text, so the distinction that matters most, a transition another device already made versus an intent that was never valid, is recoverable only by matching an English string",
+        "Ownership here is a first cut from what is true today and must be re-measured before promotion, as every slice in this chain has had to be. CR19 established the mapping this node changes",
+        "This is the first rebuild node to own a database migration, so its promotion needs a decision on migration safety and rollout that no previous slice has needed"
+      ],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
       "mergeSha": "",
       "supersededBy": null,
       "target": null

@@ -43,12 +43,12 @@
   The queue lives in `packages/sync`, which is now `required` rather than
   `planned`, and `pnpm architecture:check` reports 11 packages and zero
   exceptions.
-- **CR19 is that slice**, and it exists now. CR04's `mutationOutcome.ts`
-  retry-budget and terminal-failure semantics have no consumer; the queue is
-  their natural one. CR05 and CR06 each put the wiring off, correctly and for
-  the same reason — behavioural change on top of a move makes a regression
-  unattributable — but each recorded it only as a sentence, so nothing owned
-  it and every following slice rediscovered it.
+- **CR19 was that slice, and it is now `done`**; its summary is in
+  `tasks/done.md`. CR04's `mutationOutcome.ts` semantics had no consumer, CR05
+  and CR06 each put the wiring off for the same correct reason — a behavioural
+  change on top of a move makes a regression unattributable — and each recorded
+  it only as a sentence, so nothing owned it and every following slice
+  rediscovered it. That is the pattern the `defers` edge exists to stop.
 - **The graph now refuses a deferral that is only a sentence.** A node carries
   an optional `defers: { to, summary }[]`, the validator checks the
   destination is live and not already finished, and it reads the node's own
@@ -82,74 +82,48 @@
   matching payload typechecks, a union of actions distributes through a `.map`
   call site, and a mismatched pairing is rejected. The pattern usually does need
   a cast, so a probe file settled it before any real edit.
+- **A behaviour change that breaks no test is the defect, not the
+  reassurance.** CR19 changed the queue's default retry budget from three to
+  five and the suite stayed green, because all seven `packages/sync` tests pass
+  `maxAttempts` explicitly. The budget had been declared in two places that
+  disagreed and nothing observed it.
+- **Measure the shape of every type a slice changes, not only the one its call
+  sites pass.** CR19's re-scope cleared `apps/mobile` on the grounds that
+  `useQueueSync.ts` passes an empty options object. True, and beside the point:
+  the item shape changed too. Ninth instance of the recurring defect class, and
+  the first this chain introduced rather than inherited.
 
 ## What is next
 
-- **CR09 and CR19 are both unblocked, and which runs next is a controller
-  decision.** CR09 depends on CR07, now `done`; CR19 depends on CR06 and CR07.
-- **CR19 was re-measured on 2026-09-09, as its own approval required.** The
-  premise holds: `packages/application/mutationOutcome.ts` still has **zero**
-  consumers outside its own barrel re-export. The queue it should drive repeats
-  the same failure block **seven times**, once per `process*QueueItem`, each
-  branching on `attempts >= maxAttempts` and stringifying whatever was thrown
-  through `errorMessage()`.
-- **Its ownership was wrong, the eighth instance of the recurring defect
-  class**, and this one was found before promotion rather than during it. CR19
-  owned `packages/api-client`, `packages/application` and `packages/sync` but
-  not `packages/types` or `packages/domain`. Without those, CR19 and CR09 are
-  mutually unsatisfiable: `QueueProcessResult` returns a numeric summary that
-  the mobile store discards while persisting `result.items`, so an outcome
-  recorded only in the summary does not survive the restart CR06 made the queue
-  durable across — and CR09 could then only present a conflict by parsing the
-  `last_error` string CR19 exists to stop parsing.
-- `apps/mobile` needs no ownership: `useQueueSync.ts` passes an empty options
-  object, so an options-shape change does not reach it.
-- **The three decisions CR19 needed were made on 2026-09-09, and it is next.**
-  - *Failure channel:* adapters throw a typed `MutationFailure` carrying a
-    reason, defined in `packages/application`. `OfflineSyncPort` keeps its seven
-    signatures, so the test stubs and the mobile composition root are untouched,
-    and `packages/sync` still holds no provider knowledge. Not a result union,
-    which would have changed all seven signatures and every adapter and stub.
-  - *Retry budget:* **five** wins and `packages/sync` stops defaulting to three.
-    `docs/architecture.md` makes `packages/application` the owner of these
-    semantics and CR04 chose five deliberately. The higher number does not make
-    a failure slower to surface, because a terminal reason now short-circuits
-    instead of spending the budget.
-  - *Outcome shape:* a nullable `outcome` field on `OfflineQueueItem` holding
-    the resolved `MutationOutcomeKind`. Not a stored raw reason, which would
-    force CR09 to re-derive the kind on every render and would lose the
-    budget-applied result; not a new `OfflineQueueStatus` value, which would move
-    `getOfflineQueueSummary`, `getOfflineQueueJobTriage` and their tests.
-- **CR19 is `running`** (base `374c6ec`, branch
-  `codex/rebuild-cr19-outcomes-v1`). `offlineSync.ts` went from 484 lines to
-  361, the seven duplicated failure blocks collapsed into one outcome-driven
-  path, and `pnpm test` went from 29 to 36 tests in `packages/sync` and 109 to
-  120 in `packages/api-client`.
-- **The re-scope was wrong about `apps/mobile`, and implementation found it.**
-  It measured that `useQueueSync.ts` passes an empty options object, which is
-  true and beside the point: the *item* shape changed too, and
-  `JobStatusControls.test.tsx` builds queue items directly. Ownership was
-  widened to that one file. Ninth instance of the recurring defect class, and
-  the first this chain introduced rather than inherited. Measure the shape of
-  every type a slice changes, not only the one its call sites pass.
-- **No test observed the budget disagreement, which is why it survived.** All
-  seven existing `packages/sync` tests pass `maxAttempts` explicitly, so
-  changing the default from three to five broke nothing and would have gone
-  unnoticed either way. A new test pins the default to the policy.
-- **`MutationFailureReason` and `MutationOutcomeKind` therefore move into
-  `packages/types`.** Verified rather than assumed:
-  `tooling/architecture-boundaries.json` gives `@pest-patrol/types` an **empty**
-  allowlist, so `OfflineQueueItem` cannot import the union from
-  `packages/application` and the union has to be relocated. Both join the frozen
-  public surface, taking it from 176 names to 178.
-- **CR09 is left exactly as recorded.** It carries the approval `decompose into
-  parallel write-tasks at promotion`, and the graph validator supports
-  `kind: "task"` nodes. Do not pre-scope its deliverables by guessing; decompose
-  it at promotion. Note that it has accumulated three: the `supabase` singleton
-  removal, the real composition-root integration, and now CR07's persisted-queue
-  validation.
-- CR18 also remains, and like CR09 and CR19 it needs its own controller
-  promotion decision.
+- **CR19 (mutation outcome wiring) is `done`**; its summary is in
+  `tasks/done.md`. The queue now decides on what a failure meant rather than on
+  how many times it has happened.
+- **CR09 and CR20 are the two open slices, and each needs its own controller
+  promotion decision.** CR18 remains the final reconciliation and now depends on
+  CR20 as well, so its claim that every slice is done stays enforceable.
+- **CR20 is new, created on 2026-09-09 at controller request.** CR19 recorded a
+  limitation that no existing node could own: `update_assigned_job_status`
+  enforces its precondition with a bare `raise exception`, which reaches the
+  client as SQLSTATE `P0001` carrying only message text, so a transition another
+  device already made is told from an intent that was never valid by matching an
+  English string. CR09 owns `apps`, CR18 is the final reconciliation, and
+  nothing in the graph owned any `supabase` path.
+- **CR20 is the first rebuild node to own a database migration.** Its promotion
+  needs a decision no previous slice has needed: what happens to a client
+  running against a database that has not yet applied it, since the two deploy
+  independently. Its ownership is a first cut and says so.
+- CR19 records the handoff as a `defers` edge to CR20 rather than as prose, so
+  the validator can check it.
+- **CR09 is still left exactly as recorded.** It carries the approval
+  `decompose into parallel write-tasks at promotion`, and the graph validator
+  supports `kind: "task"` nodes, of which none exist yet. Do not pre-scope its
+  deliverables by guessing. It has accumulated three: the `supabase` singleton
+  removal in `packages/api-client`, the real composition-root integration, and
+  CR07's persisted-queue validation.
+- **CR09 and CR20 both reach `packages/api-client`**, so whichever runs second
+  needs re-measuring against what the first left. CR09's ownership currently
+  reads `apps` alone while one of its deliverables removes the singleton from
+  `packages/api-client`, which is a scope defect waiting at its promotion.
 
 ## Carried forward
 
