@@ -162,3 +162,7 @@ export {
   createTechnicianLicensesAdapter,
   createTechniciansAdapter,
 } from "./adapters";
+export {
+  classifySupabaseFailure,
+  withMutationFailure,
+} from "./mutationFailures";

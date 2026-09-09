@@ -91,9 +91,12 @@ export {
 export { listCustomerPortalMedia, listJobMedia } from "./media";
 export {
   DEFAULT_MUTATION_OUTCOME_POLICY,
+  MutationFailure,
   classifyMutationFailure,
   describeMutationOutcome,
+  isMutationFailure,
   isTerminalOutcome,
+  mutationFailureReason,
   resolveMutationOutcome,
   resolveQueueItemOutcome,
 } from "./mutationOutcome";

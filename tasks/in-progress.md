@@ -104,15 +104,44 @@
   `last_error` string CR19 exists to stop parsing.
 - `apps/mobile` needs no ownership: `useQueueSync.ts` passes an empty options
   object, so an options-shape change does not reach it.
-- **Three decisions are required before CR19 can be promoted.** How a
-  `MutationFailureReason` reaches `packages/sync` at all, given that
-  `OfflineSyncPort`'s seven methods either return a record or reject with the
-  raw provider error and the adapters in `packages/api-client/adapters.ts`
-  rethrow it unchanged. Whether the retry budget resolves to **3** or **5** —
-  `DEFAULT_MUTATION_OUTCOME_POLICY` allows 5 and
-  `packages/sync/offlineSync.ts` defaults to 3, and wiring them together changes
-  retry behaviour either way. And what shape the recorded outcome takes on
-  `OfflineQueueItem`, which reaches `packages/types`' frozen public surface.
+- **The three decisions CR19 needed were made on 2026-09-09, and it is next.**
+  - *Failure channel:* adapters throw a typed `MutationFailure` carrying a
+    reason, defined in `packages/application`. `OfflineSyncPort` keeps its seven
+    signatures, so the test stubs and the mobile composition root are untouched,
+    and `packages/sync` still holds no provider knowledge. Not a result union,
+    which would have changed all seven signatures and every adapter and stub.
+  - *Retry budget:* **five** wins and `packages/sync` stops defaulting to three.
+    `docs/architecture.md` makes `packages/application` the owner of these
+    semantics and CR04 chose five deliberately. The higher number does not make
+    a failure slower to surface, because a terminal reason now short-circuits
+    instead of spending the budget.
+  - *Outcome shape:* a nullable `outcome` field on `OfflineQueueItem` holding
+    the resolved `MutationOutcomeKind`. Not a stored raw reason, which would
+    force CR09 to re-derive the kind on every render and would lose the
+    budget-applied result; not a new `OfflineQueueStatus` value, which would move
+    `getOfflineQueueSummary`, `getOfflineQueueJobTriage` and their tests.
+- **CR19 is `running`** (base `374c6ec`, branch
+  `codex/rebuild-cr19-outcomes-v1`). `offlineSync.ts` went from 484 lines to
+  361, the seven duplicated failure blocks collapsed into one outcome-driven
+  path, and `pnpm test` went from 29 to 36 tests in `packages/sync` and 109 to
+  120 in `packages/api-client`.
+- **The re-scope was wrong about `apps/mobile`, and implementation found it.**
+  It measured that `useQueueSync.ts` passes an empty options object, which is
+  true and beside the point: the *item* shape changed too, and
+  `JobStatusControls.test.tsx` builds queue items directly. Ownership was
+  widened to that one file. Ninth instance of the recurring defect class, and
+  the first this chain introduced rather than inherited. Measure the shape of
+  every type a slice changes, not only the one its call sites pass.
+- **No test observed the budget disagreement, which is why it survived.** All
+  seven existing `packages/sync` tests pass `maxAttempts` explicitly, so
+  changing the default from three to five broke nothing and would have gone
+  unnoticed either way. A new test pins the default to the policy.
+- **`MutationFailureReason` and `MutationOutcomeKind` therefore move into
+  `packages/types`.** Verified rather than assumed:
+  `tooling/architecture-boundaries.json` gives `@pest-patrol/types` an **empty**
+  allowlist, so `OfflineQueueItem` cannot import the union from
+  `packages/application` and the union has to be relocated. Both join the frozen
+  public surface, taking it from 176 names to 178.
 - **CR09 is left exactly as recorded.** It carries the approval `decompose into
   parallel write-tasks at promotion`, and the graph validator supports
   `kind: "task"` nodes. Do not pre-scope its deliverables by guessing; decompose

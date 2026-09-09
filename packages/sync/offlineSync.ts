@@ -1,3 +1,8 @@
+import {
+  DEFAULT_MUTATION_OUTCOME_POLICY,
+  mutationFailureReason,
+  resolveMutationOutcome,
+} from "@pest-patrol/application";
 import type { OfflineSyncPort } from "@pest-patrol/application";
 import type {
   QueueProcessResult,
@@ -5,12 +10,6 @@ import type {
 } from "@pest-patrol/domain";
 import type {
   ArrivalNotificationQueuePayload,
-  ChemicalLogQueuePayload,
-  FormSubmissionQueuePayload,
-  JobGeofenceEventQueuePayload,
-  JobPhotoUploadQueuePayload,
-  JobSignatureCaptureQueuePayload,
-  JobStatusUpdateQueuePayload,
   NotificationEventInput,
   OfflineQueueItem,
 } from "@pest-patrol/types";
@@ -38,6 +37,14 @@ import {
 } from "@pest-patrol/domain";
 
 interface QueueProcessOptions {
+  /**
+   * Attempts allowed before a retryable failure becomes terminal.
+   *
+   * Defaults to `packages/application`'s policy. This package used to default
+   * to three of its own, so the budget was declared in two places that
+   * disagreed; `docs/architecture.md` makes `packages/application` the owner of
+   * these semantics, so the queue reads the budget rather than setting one.
+   */
   maxAttempts?: number;
   now?: string;
   retryDelayMs?: number;
@@ -47,48 +54,90 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unable to sync queue item";
 }
 
+/**
+ * Turn a failed attempt into the item's next state.
+ *
+ * Every action used to carry its own copy of this, branching on
+ * `attempts >= maxAttempts` and treating every thrown value alike. The reason
+ * now comes from the adapter, so a conflict and a terminal failure stop the
+ * queue immediately rather than spending the remaining budget first, and the
+ * resolved outcome is recorded on the item for `apps` to present.
+ */
+function applyQueueItemFailure(
+  item: OfflineQueueItem,
+  error: unknown,
+  options: QueueProcessOptions,
+  now: string,
+): OfflineQueueItem {
+  const attempts = item.attempts + 1;
+  const outcome = resolveMutationOutcome(mutationFailureReason(error), attempts, {
+    maxAttempts: options.maxAttempts ?? DEFAULT_MUTATION_OUTCOME_POLICY.maxAttempts,
+  });
+
+  if (!outcome.retryable) {
+    return markQueueItemFailed({ ...item, attempts }, errorMessage(error), {
+      now,
+      outcome: outcome.kind,
+    });
+  }
+
+  return markQueueItemRetrying(item, errorMessage(error), {
+    now,
+    outcome: outcome.kind,
+    retryDelayMs: options.retryDelayMs,
+  });
+}
+
+/**
+ * The shape every action's processing shares: skip unless ready, refuse a
+ * payload the domain will not normalize, then send it and record what happened.
+ */
+async function processQueueItemWith<TPayload>(
+  item: OfflineQueueItem,
+  options: QueueProcessOptions,
+  isReady: (candidate: OfflineQueueItem, now: string) => boolean,
+  normalize: (payload: unknown) => TPayload,
+  send: (payload: TPayload) => Promise<unknown>,
+): Promise<OfflineQueueItem> {
+  const now = timestamp(options.now);
+
+  if (!isReady(item, now)) {
+    return item;
+  }
+
+  let payload: TPayload;
+
+  try {
+    payload = normalize(item.payload);
+  } catch (error) {
+    // A payload the domain refuses is an intent no retry can make valid, so it
+    // is terminal by construction rather than by exhausting the budget.
+    return markQueueItemFailed(item, errorMessage(error), {
+      now,
+      outcome: "terminal",
+    });
+  }
+
+  try {
+    await send(payload);
+    return markQueueItemSynced(item, { now });
+  } catch (error) {
+    return applyQueueItemFailure(item, error, options, now);
+  }
+}
+
 export async function processFormSubmissionQueueItem(
   port: OfflineSyncPort,
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadyFormSubmissionQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: FormSubmissionQueuePayload;
-
-  try {
-    payload = normalizeFormSubmissionQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.createJobFormSubmissionRecord(payload);
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadyFormSubmissionQueueItem,
+    normalizeFormSubmissionQueuePayload,
+    (payload) => port.createJobFormSubmissionRecord(payload),
+  );
 }
 
 export async function processJobStatusUpdateQueueItem(
@@ -96,47 +145,18 @@ export async function processJobStatusUpdateQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadyJobStatusUpdateQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: JobStatusUpdateQueuePayload;
-
-  try {
-    payload = normalizeJobStatusUpdateQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.updateAssignedTechnicianJobStatusRecord(
-      payload.job_id,
-      payload.status,
-      payload.previous_status,
-    );
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadyJobStatusUpdateQueueItem,
+    normalizeJobStatusUpdateQueuePayload,
+    (payload) =>
+      port.updateAssignedTechnicianJobStatusRecord(
+        payload.job_id,
+        payload.status,
+        payload.previous_status,
+      ),
+  );
 }
 
 export async function processChemicalLogQueueItem(
@@ -144,43 +164,13 @@ export async function processChemicalLogQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadyChemicalLogQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: ChemicalLogQueuePayload;
-
-  try {
-    payload = normalizeChemicalLogQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.createChemicalLogRecord(payload);
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadyChemicalLogQueueItem,
+    normalizeChemicalLogQueuePayload,
+    (payload) => port.createChemicalLogRecord(payload),
+  );
 }
 
 export async function processPhotoUploadQueueItem(
@@ -188,43 +178,13 @@ export async function processPhotoUploadQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadyPhotoUploadQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: JobPhotoUploadQueuePayload;
-
-  try {
-    payload = normalizeJobPhotoUploadQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.uploadJobPhotoRecord(payload);
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadyPhotoUploadQueueItem,
+    normalizeJobPhotoUploadQueuePayload,
+    (payload) => port.uploadJobPhotoRecord(payload),
+  );
 }
 
 export async function processSignatureCaptureQueueItem(
@@ -232,43 +192,13 @@ export async function processSignatureCaptureQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadySignatureCaptureQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: JobSignatureCaptureQueuePayload;
-
-  try {
-    payload = normalizeJobSignatureCaptureQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.uploadJobSignatureRecord(payload);
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadySignatureCaptureQueueItem,
+    normalizeJobSignatureCaptureQueuePayload,
+    (payload) => port.uploadJobSignatureRecord(payload),
+  );
 }
 
 export async function processGeofenceEventQueueItem(
@@ -276,43 +206,13 @@ export async function processGeofenceEventQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadyGeofenceEventQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: JobGeofenceEventQueuePayload;
-
-  try {
-    payload = normalizeJobGeofenceEventQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.createJobGeofenceEventRecord(payload);
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadyGeofenceEventQueueItem,
+    normalizeJobGeofenceEventQueuePayload,
+    (payload) => port.createJobGeofenceEventRecord(payload),
+  );
 }
 
 function buildArrivalNotificationInput(
@@ -358,45 +258,16 @@ export async function processArrivalNotificationQueueItem(
   item: OfflineQueueItem,
   options: QueueProcessOptions,
 ): Promise<OfflineQueueItem> {
-  const now = timestamp(options.now);
-  const maxAttempts = options.maxAttempts ?? 3;
-
-  if (!isReadyArrivalNotificationQueueItem(item, now)) {
-    return item;
-  }
-
-  let payload: ArrivalNotificationQueuePayload;
-
-  try {
-    payload = normalizeArrivalNotificationQueuePayload(item.payload);
-  } catch (error) {
-    return markQueueItemFailed(item, errorMessage(error), { now });
-  }
-
-  try {
-    await port.createGeneratedNotificationEventRecord(
-      buildArrivalNotificationInput(payload),
-    );
-    return markQueueItemSynced(item, { now });
-  } catch (error) {
-    const attempts = item.attempts + 1;
-
-    if (attempts >= maxAttempts) {
-      return markQueueItemFailed(
-        {
-          ...item,
-          attempts,
-        },
-        errorMessage(error),
-        { now },
-      );
-    }
-
-    return markQueueItemRetrying(item, errorMessage(error), {
-      now,
-      retryDelayMs: options.retryDelayMs,
-    });
-  }
+  return processQueueItemWith(
+    item,
+    options,
+    isReadyArrivalNotificationQueueItem,
+    normalizeArrivalNotificationQueuePayload,
+    (payload) =>
+      port.createGeneratedNotificationEventRecord(
+        buildArrivalNotificationInput(payload),
+      ),
+  );
 }
 
 export async function processOfflineQueueItem(

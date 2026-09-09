@@ -14,6 +14,8 @@
 
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 
+import { withMutationFailure } from "./mutationFailures";
+
 import type {
   AuthPort,
   AutomationPort,
@@ -362,26 +364,41 @@ export function createTechniciansAdapter(
   };
 }
 
+/**
+ * The one port whose failures the durable queue acts on rather than surfaces.
+ *
+ * Every method is wrapped so a provider rejection arrives at `packages/sync` as
+ * a `MutationFailure` carrying a reason. The queue used to read the message
+ * string off whatever was thrown, which made a PostgREST code part of its
+ * behaviour; the interpretation now happens here, where knowing about the
+ * provider is this package's job.
+ */
 export function createOfflineSyncAdapter(
   client: SupabaseLikeClient = supabase,
 ): OfflineSyncPort {
   return {
-    createChemicalLogRecord: (input) => createChemicalLogRecord(input, client),
+    createChemicalLogRecord: (input) =>
+      withMutationFailure(() => createChemicalLogRecord(input, client)),
     createGeneratedNotificationEventRecord: (input) =>
-      createGeneratedNotificationEventRecord(input, client),
-    createJobFormSubmissionRecord: (input) =>
-      createJobFormSubmissionRecord(input, client),
-    createJobGeofenceEventRecord: (input) =>
-      createJobGeofenceEventRecord(input, client),
-    updateAssignedTechnicianJobStatusRecord: (id, status, previousStatus) =>
-      updateAssignedTechnicianJobStatusRecord(
-        client,
-        id,
-        status,
-        previousStatus,
+      withMutationFailure(() =>
+        createGeneratedNotificationEventRecord(input, client),
       ),
-    uploadJobPhotoRecord: (input) => uploadJobPhotoRecord(input, client),
+    createJobFormSubmissionRecord: (input) =>
+      withMutationFailure(() => createJobFormSubmissionRecord(input, client)),
+    createJobGeofenceEventRecord: (input) =>
+      withMutationFailure(() => createJobGeofenceEventRecord(input, client)),
+    updateAssignedTechnicianJobStatusRecord: (id, status, previousStatus) =>
+      withMutationFailure(() =>
+        updateAssignedTechnicianJobStatusRecord(
+          client,
+          id,
+          status,
+          previousStatus,
+        ),
+      ),
+    uploadJobPhotoRecord: (input) =>
+      withMutationFailure(() => uploadJobPhotoRecord(input, client)),
     uploadJobSignatureRecord: (input) =>
-      uploadJobSignatureRecord(input, client),
+      withMutationFailure(() => uploadJobSignatureRecord(input, client)),
   };
 }

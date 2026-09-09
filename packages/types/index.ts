@@ -110,6 +110,10 @@ export type {
 } from "./jobs";
 export type { JobMedia, JobMediaInput, JobMediaType } from "./media";
 export type {
+  MutationFailureReason,
+  MutationOutcomeKind,
+} from "./mutationOutcome";
+export type {
   ArrivalNotificationQueuePayload,
   ChemicalLogQueuePayload,
   FormSubmissionQueuePayload,

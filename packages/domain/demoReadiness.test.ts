@@ -103,6 +103,7 @@ describe("demo readiness domain", () => {
           updated_at: "2026-05-05T12:00:00.000Z",
           next_retry_at: null,
           last_error: null,
+          outcome: null,
         },
         {
           id: "queue-2",
@@ -114,6 +115,7 @@ describe("demo readiness domain", () => {
           updated_at: "2026-05-05T12:05:00.000Z",
           next_retry_at: null,
           last_error: null,
+          outcome: null,
         },
         {
           id: "queue-3",
@@ -125,6 +127,7 @@ describe("demo readiness domain", () => {
           updated_at: "2026-05-05T12:00:00.000Z",
           next_retry_at: null,
           last_error: null,
+          outcome: null,
         },
       ],
     );
@@ -183,6 +186,7 @@ describe("demo readiness domain", () => {
           updated_at: "2026-05-05T12:00:00.000Z",
           next_retry_at: null,
           last_error: null,
+          outcome: null,
         },
       ],
     );
@@ -217,6 +221,7 @@ describe("demo readiness domain", () => {
           updated_at: "2026-05-05T12:05:00.000Z",
           next_retry_at: "2026-05-05T12:10:00.000Z",
           last_error: "Upload failed",
+          outcome: null,
         },
       ],
     );

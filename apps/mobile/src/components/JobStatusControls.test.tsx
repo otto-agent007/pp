@@ -436,6 +436,7 @@ function queueItem<TAction extends OfflineQueueAction>(
     id: action,
     last_error: null,
     next_retry_at: null,
+    outcome: "applied",
     payload: queuePayloads[action],
     status: "synced",
     updated_at: "2026-05-07T00:00:00.000Z",

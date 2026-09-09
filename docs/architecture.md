@@ -183,6 +183,42 @@ queue straight into `OfflineQueueItem[]` without validating it — a cast that w
 unsound before this slice and is no more sound after it. What changed is that
 there is now a mapping to validate against, and CR09 owns doing so.
 
+### The queue acts on what a failure meant
+
+CR04 defined conflict and terminal-failure semantics in
+[`mutationOutcome.ts`](../packages/application/mutationOutcome.ts) and nothing
+consumed them; CR05 and CR06 each declined to wire them, correctly, because a
+behavioural change on top of a move makes a regression unattributable. CR19
+wired them.
+
+The queue used to count attempts and treat every thrown value alike, so a write
+the provider will never accept was retried as often as one that failed because
+a tunnel dropped. Adapters in `packages/api-client` now map a provider failure
+onto a `MutationFailureReason` and throw a `MutationFailure` carrying it;
+`packages/sync` resolves that into an outcome and records it on the item. A
+conflict or a terminal reason stops the queue immediately rather than spending
+the remaining budget, which makes a failure the technician has to act on surface
+sooner even though the budget itself rose from three attempts to five.
+
+Three consequences worth naming. The budget was previously declared twice, at
+five in the policy and three in the queue, and no test observed the
+disagreement because every one passed `maxAttempts` explicitly; the policy is
+now the only declaration. `MutationFailureReason` and `MutationOutcomeKind` live
+in `packages/types` rather than `packages/application`, because
+`OfflineQueueItem` records the outcome and `packages/types` may depend on
+nothing. And the outcome is stored on the item rather than in the process
+summary, because the mobile store persists the items and discards the summary,
+so an outcome kept only there would not survive a restart.
+
+`packages/api-client` is the only module allowed to know what a PostgREST code
+means, and one case is uncomfortable there. `update_assigned_job_status`
+enforces its precondition with a bare `raise exception`, which arrives as
+SQLSTATE `P0001` carrying only message text, so a lost race is told apart from
+an invalid intent by matching an English string. The fragility is confined to
+the package that is permitted to know about the provider, and the queue never
+sees it. Removing it means giving those RPCs distinct SQLSTATEs, which is a
+database migration that no rebuild node currently owns.
+
 ### Provider selection is only half real until CR09
 
 `packages/api-client/supabase.ts` creates a client at import time from

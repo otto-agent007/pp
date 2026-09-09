@@ -163,6 +163,8 @@ const PUBLIC_SURFACE: readonly string[] = [
   "LocationUnitAreaType",
   "LocationUnitInput",
   "LocationUnitStatus",
+  "MutationFailureReason",
+  "MutationOutcomeKind",
   "NotificationDeliveryProvider",
   "NotificationDeliveryProviderPayload",
   "NotificationDeliveryResult",
