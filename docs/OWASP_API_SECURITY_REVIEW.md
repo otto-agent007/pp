@@ -57,6 +57,7 @@ migrations, seed/reset data, or live compliance ingestion.
 | `/api/automation/scheduler` | GET, POST | cron/provider bearer secret | none | jobs, automation rules, notification events, scheduler runs | `CRON_SECRET` or `AUTOMATION_CRON_SECRET` bearer match | generated-key idempotency; run history | no | no | API2, API4, API5, API6, API8 | tested |
 | `/api/automation/scheduler/manual` | POST | admin bearer token | none | jobs, automation rules, notification events, scheduler runs | `getAdminAccess` | generated-key idempotency; run history | no | no | API2, API4, API5, API6 | tested |
 | `/api/compliance/advisories` | POST | admin bearer token | `chemical_log_id`, workflow/source context | chemical logs, jobs, compliance chunks, advisory audits | `getAdminAccess`; schema-readiness check before provider call | `checkApiRateLimit`; disabled/no-schema paths avoid OpenAI call | OpenAI embeddings only when configured | staff only | API2, API3, API4, API5, API6, API7, API10 | tested |
+| `/api/csp-report` | POST | unauthenticated by design | none | browser-reported CSP violation details (blocked and document URI, violated directive) | none by design; browsers post violation reports without credentials | no route-level limit; body is read once, malformed bodies are discarded, and `safeLogWarn` sanitizes the report before logging | no | no, empty 204 | API2, API4, API9, API10 | tested |
 | `/api/demo-seed` | GET, POST | admin bearer token | action target | synthetic demo customer/job/media/payment data | `getAdminAccess`; target guardrails and confirmation for writes | production refusal; explicit confirm token for seed/reset | no | no | API2, API4, API5, API6, API8, API9 | tested |
 | `/api/demo-seed/local-login` | POST | unauthenticated but localhost/dev-only safe | none | synthetic demo records and demo auth session setup | localhost and non-production checks before service-role work | local-development only | no | no | API2, API5, API6, API8, API9 | tested |
 | `/api/demo-seed/login-refresh` | POST | admin bearer token | signed-in demo user id/email | synthetic demo records | `getAdminAccess`; demo-account-only and production refusal | guarded demo refresh only | no | no | API2, API5, API6, API8 | tested |
@@ -93,14 +94,19 @@ Dev-only rewrites:
 - API2 Broken Authentication: admin routes use `getAdminAccess`; cron routes
   use configured bearer secrets; Stripe webhook uses raw-body HMAC signature and
   timestamp tolerance; customer portal routes use a separate HttpOnly session
-  cookie and do not accept staff auth as portal auth.
+  cookie and do not accept staff auth as portal auth. The CSP violation report
+  endpoint is deliberately unauthenticated, because browsers post reports
+  without credentials; it accepts no object ids and returns an empty 204.
 - API3 Broken Object Property Level Authorization: portal DTOs exclude raw
   grants, token/session hashes, exact GPS, provider internals, admin notes, and
   internal compliance warnings. Payment-link Stripe metadata is limited to
   invoice/job/customer ids and ignores client-supplied invoice/provider fields.
 - API4 Resource Consumption: high-cost or repeated flows use route rate limits,
   generated-key idempotency, Stripe idempotency, existing-link reuse, provider
-  disabled paths before expensive work, and duplicate-send guards.
+  disabled paths before expensive work, and duplicate-send guards. The CSP
+  violation report endpoint has no route-level limit and depends on the edge
+  rate limit recorded under Open Gaps; it does no provider or database work, so
+  an unthrottled report costs one sanitized log line.
 - API5 Broken Function Level Authorization: admin/dispatcher APIs, portal
   customer APIs, cron APIs, and provider webhooks use separate trust mechanisms.
   Provider-status and ops-readiness routes require staff auth even though they
