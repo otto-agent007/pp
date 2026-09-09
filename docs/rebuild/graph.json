@@ -21,6 +21,8 @@
     "CR20",
     "CR08",
     "CR09",
+    "CR09A",
+    "CR09B",
     "CR18"
   ],
   "repository": {
@@ -1128,7 +1130,7 @@
       "baseSha": "",
       "id": "CR09",
       "kind": "slice",
-      "status": "planned",
+      "status": "superseded",
       "parent": "CR00",
       "dependencies": [
         "CR07"
@@ -1136,18 +1138,92 @@
       "conflicts": [
         "CR00"
       ],
-      "ownership": [
-        "apps"
-      ],
+      "ownership": [],
       "deliverables": [
-        "Application composition preparation and applications as the composition and UI boundary",
-        "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09",
-        "Removal of the module-level supabase singleton in packages/api-client, so provider selection at the composition roots covers every adapter rather than only the injected-client ones",
-        "Validation of the persisted offline queue where apps/mobile reads it back, so a stored item is checked against the action-to-payload mapping rather than cast, with a recorded decision for an item that no longer matches. CR07 established the mapping and deliberately left this cast in place"
+        "Application composition preparation and applications as the composition and UI boundary, decomposed into CR09A and CR09B"
       ],
       "checks": [],
       "approvals": [
-        "decompose into parallel write-tasks at promotion"
+        "decompose into parallel write-tasks at promotion",
+        "Controller approved the decomposition on 2026-09-09: two write tasks split by application, CR09A owning apps/web and packages/api-client, CR09B owning apps/mobile and packages/domain. CR09 records the decomposition and ships no pull request of its own, so it is superseded rather than left planned, which would block CR18 forever.",
+        "The ownership defect recorded against CR09 is resolved by the split rather than by widening it: CR09 read apps alone while a deliverable removed the singleton from packages/api-client."
+      ],
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller approved decomposing CR09 into the write tasks CR09A and CR09B, split by application.",
+          "commitSha": "f069e65a5f2d10053fed0dee18d9bd68cd6afe86",
+          "recordedAt": "2026-09-09T10:30:00Z"
+        }
+      ],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": "CR09A",
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR09A",
+      "kind": "task",
+      "status": "planned",
+      "parent": "CR09",
+      "dependencies": [
+        "CR07"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "apps/web",
+        "packages/api-client"
+      ],
+      "deliverables": [
+        "Removal of the module-level supabase singleton in packages/api-client, so provider selection at a composition root covers every adapter rather than only the ones that accept an injected client",
+        "A browser composition-root client for apps/web, which has none today: its two auth contexts import the singleton from @pest-patrol/api-client and pass it back in, so their selection is nominal, and 14 hook call sites pass no client at all",
+        "Removal of the supabase re-export from packages/api-client/index.ts, which makes this a change to the package's public surface rather than an internal one"
+      ],
+      "checks": [],
+      "approvals": [
+        "Decomposed from CR09 on 2026-09-09 under its decompose into parallel write-tasks at promotion approval. Split by application because ownership does not overlap CR09B: measurement on f069e65 found the singleton confined to packages/api-client and apps/web, with all four apps/mobile stores already passing mobileSupabase.",
+        "Measured scope on 2026-09-09: 87 exported functions still reach the singleton, 27 taking no client at all and 60 taking it as a default parameter value, which is what CR05 left when it wrapped rather than removed it. createCustomersAdapter takes no client parameter at all and is the one adapter factory that can never be selected.",
+        "checks must name pnpm typecheck explicitly. selectVerificationGates maps packages/** and apps/** to pnpm test only, and turbo's test task does not depend on typecheck, so a change of 87 signatures would otherwise be gated by no compiler at all."
+      ],
+      "evidence": [],
+      "branch": "",
+      "pr": "",
+      "mergeSha": "",
+      "supersededBy": null,
+      "target": null
+    },
+    {
+      "baseSha": "",
+      "id": "CR09B",
+      "kind": "task",
+      "status": "planned",
+      "parent": "CR09",
+      "dependencies": [
+        "CR07",
+        "CR19"
+      ],
+      "conflicts": [
+        "CR00"
+      ],
+      "ownership": [
+        "apps/mobile",
+        "packages/domain"
+      ],
+      "deliverables": [
+        "The real apps/mobile composition-root integration through durable enqueue, optimistic projection, restart, sync and adapter acknowledgment, plus a terminal-failure visibility and user-recovery interaction test, as docs/architecture.md requires of CR09",
+        "Validation of the persisted offline queue where apps/mobile reads it back, so a stored item is checked against the action-to-payload mapping rather than cast. CR07 established the mapping and deliberately left the cast in place",
+        "A queue item that fails that validation is kept rather than discarded, recorded as status failed with outcome terminal and a last_error the technician can see and dismiss, so unreadable field work surfaces through the same recovery interaction as any other terminal failure"
+      ],
+      "checks": [],
+      "approvals": [
+        "Decomposed from CR09 on 2026-09-09 under its decompose into parallel write-tasks at promotion approval. Ownership does not overlap CR09A.",
+        "Controller decided on 2026-09-09 that the validator lives in packages/domain, beside createOfflineQueueItem and the isReady*QueueItem guards, which already import @pest-patrol/types. It cannot live in packages/types, which holds zero runtime values and has an empty import allowlist, and putting it at the apps/mobile persistence edge would move the action-to-payload mapping's knowledge into the composition layer and leave packages/sync unable to reuse it.",
+        "Controller decided on 2026-09-09 that an item failing validation is kept and marked terminal rather than dropped or quarantined, so that nothing a technician believed was saved disappears without being shown.",
+        "CR19 is a dependency because this task is what finally reads its work: outcome on OfflineQueueItem has one occurrence anywhere in apps/, a test fixture, so the terminal-versus-retryable distinction CR19 recorded is invisible to the technician today."
       ],
       "evidence": [],
       "branch": "",
@@ -1922,8 +1998,9 @@
         "CR14",
         "CR15",
         "CR16",
-        "CR09",
-        "CR20"
+        "CR20",
+        "CR09A",
+        "CR09B"
       ],
       "conflicts": [
         "CR00"
@@ -1940,7 +2017,8 @@
       ],
       "checks": [],
       "approvals": [
-        "CR20 added to the dependencies on 2026-09-09 when that node was created. CR18 claims every slice is done and every source tag published, so a new slice it does not depend on would let that claim pass while the slice was still open"
+        "CR20 added to the dependencies on 2026-09-09 when that node was created. CR18 claims every slice is done and every source tag published, so a new slice it does not depend on would let that claim pass while the slice was still open",
+        "CR09A and CR09B replaced CR09 in the dependencies on 2026-09-09 when CR09 was decomposed. CR18 claims every slice is done, and a dependency that resolves through a superseded node would let that claim pass while one half of the decomposition was still open."
       ],
       "evidence": [],
       "branch": "",
