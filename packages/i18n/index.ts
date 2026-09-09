@@ -318,6 +318,16 @@ export const translations = {
             retrying: "{count} retrying",
             synced: "{count} synced",
           },
+          discard: "Discard",
+          recoveryTitle: "Needs your attention",
+          recoveryDetail:
+            "These changes stopped syncing on their own. Check the job, then discard each one once it is handled.",
+          outcomes: {
+            conflict:
+              "The office or another device changed this first - check the job before discarding.",
+            terminal: "This cannot be sent. Redo it on the job if it still matters.",
+            unknown: "This stopped syncing and needs a look.",
+          },
         },
       },
     },
@@ -642,6 +652,17 @@ export const translations = {
             queued: "{count} en cola",
             retrying: "{count} reintentando",
             synced: "{count} sincronizados",
+          },
+          discard: "Descartar",
+          recoveryTitle: "Requiere tu atención",
+          recoveryDetail:
+            "Estos cambios dejaron de sincronizarse por su cuenta. Revisa el trabajo y descarta cada uno cuando ya esté resuelto.",
+          outcomes: {
+            conflict:
+              "La oficina u otro dispositivo lo cambió primero: revisa el trabajo antes de descartarlo.",
+            terminal:
+              "Esto no se puede enviar. Vuelve a hacerlo en el trabajo si todavía hace falta.",
+            unknown: "Esto dejó de sincronizarse y necesita revisión.",
           },
         },
       },

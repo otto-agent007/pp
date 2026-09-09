@@ -28,7 +28,9 @@ vi.mock("../store/useLanguage", async () => {
 
 const offlineQueueState = vi.hoisted(() => ({
   clearSynced: vi.fn(),
+  discard: vi.fn(),
   items: [] as unknown[],
+  rejected: [] as unknown[],
 }));
 const queueSyncState = vi.hoisted(() => ({
   syncNow: vi.fn(),
@@ -298,5 +300,94 @@ describe("SyncStatusIndicator", () => {
 
     offlineQueueState.items = [];
     syncStatusState.networkStatus = "online";
+  });
+
+  it("tells a conflict apart from a terminal failure, which CR19 recorded and nothing read", () => {
+    offlineQueueState.items = [
+      {
+        action: "job_status_update",
+        attempts: 1,
+        created_at: "2026-05-07T10:00:00.000Z",
+        id: "queue-conflict",
+        last_error: "Job status transition is not allowed",
+        next_retry_at: null,
+        outcome: "conflict",
+        payload: { job_id: "job-1", status: "completed" },
+        status: "failed",
+        updated_at: "2026-05-07T10:00:00.000Z",
+      },
+      {
+        action: "photo_upload",
+        attempts: 5,
+        created_at: "2026-05-07T10:00:00.000Z",
+        id: "queue-terminal",
+        last_error: "Photo content type is not allowed",
+        next_retry_at: null,
+        outcome: "terminal",
+        payload: {
+          content_type: "image/jpeg",
+          file_name: "photo.jpg",
+          job_id: "job-2",
+          local_uri: "file://photo.jpg",
+          storage_bucket: "job-media",
+          storage_path: "job-2/photo.jpg",
+        },
+        status: "failed",
+        updated_at: "2026-05-07T10:00:00.000Z",
+      },
+    ];
+    syncStatusState.activity = "idle";
+    syncStatusState.lastError = null;
+    syncStatusState.lastSyncAt = null;
+    syncStatusState.networkStatus = "online";
+
+    const text = collectText(<SyncStatusIndicator />).join("");
+
+    expect(text).toContain("Needs your attention");
+    expect(text).toContain("Status update for job job-1");
+    expect(text).toContain("The office or another device changed this first");
+    expect(text).toContain("Job status transition is not allowed");
+    expect(text).toContain("Photo capture for job job-2");
+    expect(text).toContain("This cannot be sent.");
+    expect(text).toContain("Photo content type is not allowed");
+
+    offlineQueueState.items = [];
+  });
+
+  it("shows an entry the persisted-queue validation refused, and discards it on press", () => {
+    offlineQueueState.items = [];
+    offlineQueueState.rejected = [
+      {
+        action: "chemical_log_create",
+        entry: { payload: { job_id: "job-3" } },
+        id: "queue-damaged",
+        last_error: "Chemical is required",
+        outcome: "terminal",
+        status: "failed",
+      },
+    ];
+    offlineQueueState.discard.mockClear();
+    syncStatusState.activity = "idle";
+    syncStatusState.lastError = null;
+    syncStatusState.lastSyncAt = null;
+    syncStatusState.networkStatus = "online";
+
+    const element = <SyncStatusIndicator />;
+    const text = collectText(element).join("");
+    const discard = collectElementsByType(element, "Pressable").find((pressable) =>
+      collectText(pressable).includes("Discard"),
+    );
+
+    expect(text).toContain("Chemical log for job job-3");
+    expect(text).toContain("Chemical is required");
+    // The card reads as failing even though no queue item is failed: the
+    // summary counts items, and a refused entry is not one.
+    expect(text).toContain("Sync failed - retry");
+
+    discard?.props.onPress!();
+
+    expect(offlineQueueState.discard).toHaveBeenCalledWith("queue-damaged");
+
+    offlineQueueState.rejected = [];
   });
 });

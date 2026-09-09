@@ -474,19 +474,26 @@ export type {
 export {
   clearSyncedQueueItems,
   createOfflineQueueItem,
+  discardQueueItem,
+  discardRejectedQueueEntry,
   getOfflineQueueItemLabel,
   getOfflineQueueJobTriage,
+  getOfflineQueueRecoveryItems,
   getOfflineQueueSummary,
   markQueueItemFailed,
   markQueueItemRetrying,
   markQueueItemSynced,
+  reviewPersistedOfflineQueue,
   timestamp,
   validateOfflineQueueInput,
 } from "./offlineQueue";
 export type {
   OfflineQueueJobTriage,
   OfflineQueueJobTriageState,
+  OfflineQueueRecoveryItem,
   OfflineQueueSummary,
+  PersistedOfflineQueueReview,
+  RejectedOfflineQueueEntry,
 } from "./offlineQueue";
 export {
   createFormDraft,
