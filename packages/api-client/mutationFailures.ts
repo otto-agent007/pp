@@ -11,8 +11,21 @@ import type { MutationFailureReason } from "@pest-patrol/types";
  * reason and never sees the provider's answer.
  */
 
-/** PostgREST surfaces the database's SQLSTATE directly. */
+/**
+ * PostgREST surfaces the database's SQLSTATE directly.
+ *
+ * The `PP` codes are this application's own, raised by the technician RPCs and
+ * mapping one to one onto a reason. Class `PP` is unused by PostgreSQL, whose
+ * PL/pgSQL codes live in class `P0`, and is not one of the `PT` codes PostgREST
+ * reinterprets as an HTTP status.
+ */
 const SQLSTATE_REASONS: Record<string, MutationFailureReason> = {
+  // Raised by public.update_assigned_job_status and
+  // public.record_assigned_job_geofence_event.
+  PP400: "invalid-intent",
+  PP401: "unauthorized",
+  PP404: "target-missing",
+  PP409: "precondition-conflict",
   // insufficient_privilege, and the code row-level security denials carry.
   "42501": "unauthorized",
   // foreign_key_violation: the row this write points at is not there.
@@ -32,21 +45,37 @@ const SQLSTATE_REASONS: Record<string, MutationFailureReason> = {
 };
 
 /**
- * Messages the technician job RPCs raise, matched here rather than in the queue.
+ * Messages the technician job RPCs raise, for a database without their codes.
  *
- * `update_assigned_job_status` enforces its precondition with a bare
- * `raise exception`, which reaches the client as SQLSTATE P0001 carrying only
- * the message text. So the one distinction that matters most — a transition
- * another device already made, versus an intent that was never valid — is only
- * recoverable from the message today. Matching it here keeps that fragility
- * inside the package that is allowed to know about the provider; giving those
- * RPCs distinct SQLSTATEs would remove it, and needs a database migration.
+ * This is a compatibility path, not the mechanism. A migrated database raises a
+ * `PP` code and never reaches here; this matches only when an app that has this
+ * mapping talks to a database that has not yet applied
+ * `20260909000000_technician_rpc_error_codes_v1.sql`, which is possible because
+ * the two deploy independently. The reverse skew needs nothing: that migration
+ * left every message byte-identical, so an app released before it still matches
+ * the text.
+ *
+ * Its removal is not scheduled. The condition for removing it is that no client
+ * older than the migration is still running, and that is not observable from
+ * this repository.
+ *
+ * One case this cannot get right, and the reason the codes exist.
+ * `record_assigned_job_geofence_event` raises `Assigned job geofence event is
+ * not allowed` for two different things: the job is not assigned to this
+ * technician, and the idempotent upsert matched a row belonging to someone
+ * else. No matcher can tell those apart, because they are the same string. Both
+ * are non-retryable and both need the technician, so the fallback picks
+ * `unauthorized` and the codes separate them properly.
  */
 const RAISED_MESSAGE_REASONS: [RegExp, MutationFailureReason][] = [
   [/transition is not allowed/i, "precondition-conflict"],
   [/authentication is required/i, "unauthorized"],
   [/not available to technicians/i, "invalid-intent"],
   [/previous job status is required/i, "invalid-intent"],
+  [/assigned job was not found/i, "target-missing"],
+  [/geofence event is not allowed/i, "unauthorized"],
+  [/geofence (?:event type|coordinates|accuracy) (?:is|are) invalid/i, "invalid-intent"],
+  [/capture time is outside the allowed window/i, "invalid-intent"],
 ];
 
 function errorCode(error: unknown): string | null {

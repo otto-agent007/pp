@@ -113,13 +113,19 @@ export function selectVerificationGates(
     if (
       path.startsWith("apps/") ||
       path.startsWith("packages/") ||
-      path.startsWith("tooling/")
+      path.startsWith("tooling/") ||
+      // Nothing in CI executes a migration, so the tests under tooling/ that
+      // read the SQL as text are what actually check one. Before CR20 no node
+      // owned any supabase path and every one of them reported UNMAPPED, which
+      // would have failed verification for the first slice to touch one.
+      path.startsWith("supabase/")
     ) {
       matched = true;
       commands.add("pnpm test");
     }
     if (
       path.startsWith("docs/") ||
+      path.startsWith("supabase/") ||
       path.startsWith("tasks/") ||
       path.startsWith(".github/") ||
       path.startsWith(".codex/") ||

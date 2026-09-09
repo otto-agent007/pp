@@ -2114,10 +2114,10 @@
       ]
     },
     {
-      "baseSha": "",
+      "baseSha": "7f21bcaddfb175ec3e2ce36e57f51bcfaddd9f2b",
       "id": "CR20",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR19"
@@ -2127,25 +2127,52 @@
       ],
       "ownership": [
         "docs/architecture.md",
+        "package.json",
         "packages/api-client",
         "supabase/migrations",
-        "tasks/done.md"
+        "tasks/done.md",
+        "tooling/rebuild-verification.test.ts",
+        "tooling/rebuild-verification.ts",
+        "tooling/technician-rpc-error-codes-migration.test.ts"
       ],
       "deliverables": [
         "Distinct SQLSTATEs raised by the technician job RPCs, so a precondition conflict carries a code rather than only message text",
-        "packages/api-client/mutationFailures.ts reading those codes, and the RAISED_MESSAGE_REASONS message matching removed once nothing depends on it",
+        "packages/api-client/mutationFailures.ts reading those codes ahead of any message, and the message matching kept as a compatibility path for a database that has not yet applied the migration",
         "A test proving the mapping no longer depends on the English wording of a raised exception, by changing the message and requiring the reason to hold",
-        "A recorded decision on what happens to a client running against a database that has not yet applied the migration, since the two deploy independently"
+        "The two geofence failures that share one message separated, which no message matcher could ever do",
+        "The geofence messages the CR19 fallback never covered, which were resolving to invalid-intent when one of them is a target-missing",
+        "A verification gate for supabase paths in tooling/rebuild-verification.ts, since none existed and every supabase path reported UNMAPPED",
+        "The orphaned tooling tests that assert supabase wired into the root test script, so that gate checks something rather than nothing"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run tooling/technician-rpc-error-codes-migration.test.ts",
+        "pnpm exec vitest run tooling/rebuild-verification.test.ts",
+        "pnpm exec vitest run packages/api-client/mutationFailures.test.ts",
+        "pnpm architecture:check",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts tooling/rebuild-graph-reconcile.test.ts tooling/rebuild-verification.test.ts",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "Created on 2026-09-09 at controller request, after CR19 recorded the limitation and no existing node could own it: CR09 owns apps, CR18 is the final reconciliation, and nothing in the graph owned any supabase path",
         "The measured problem: update_assigned_job_status enforces its precondition with a bare raise exception, which reaches the client as SQLSTATE P0001 carrying only message text, so the distinction that matters most, a transition another device already made versus an intent that was never valid, is recoverable only by matching an English string",
         "Ownership here is a first cut from what is true today and must be re-measured before promotion, as every slice in this chain has had to be. CR19 established the mapping this node changes",
-        "This is the first rebuild node to own a database migration, so its promotion needs a decision on migration safety and rollout that no previous slice has needed"
+        "This is the first rebuild node to own a database migration, so its promotion needs a decision on migration safety and rollout that no previous slice has needed",
+        "Controller decision on 2026-09-09, SQLSTATE scheme: one application code per reason, PP400 invalid-intent, PP401 unauthorized, PP404 target-missing, PP409 precondition-conflict. Not PostgREST PTxxx status codes, which are coarser than a reason and tie the database error contract to PostgREST translation, and not reused standard SQLSTATEs, which would make a deliberate application check indistinguishable from the same error raised by the engine",
+        "Controller decision on 2026-09-09, rollout skew: read the code first and keep the message matching as a compatibility path, so an app and a database that deploy independently both keep working in either direction. Its removal is deliberately not scheduled, because the condition for removing it is that no client older than the migration is still running, which is not observable from this repository, and an unverifiable removal condition is the recurring defect class again",
+        "Ownership corrected on 2026-09-09 from measurement, the tenth instance of the recurring defect class and the second found before promotion: the first cut owned supabase/migrations but no tooling path, and selectVerificationGates had no rule for a supabase path, so every one reported UNMAPPED and this slice could not have passed its own verification. Ownership now covers tooling/rebuild-verification.ts, its test, the new migration test, and package.json",
+        "Measured on 2026-09-09 and deliberately left alone: seven of fourteen tooling/*.test.ts files are run by nothing, because the root test script names seven explicitly rather than globbing. This slice adopts the five that assert supabase, which is what makes its own gate honest. production-readiness-protection.test.ts passes and owasp-api-route-inventory.test.ts fails, neither reads supabase, and absorbing a failing unrelated test would make this slice red for a reason that is not its own"
       ],
       "evidence": [],
-      "branch": "",
+      "branch": "codex/rebuild-cr20-sqlstates-v1",
       "pr": "",
       "mergeSha": "",
       "supersededBy": null,

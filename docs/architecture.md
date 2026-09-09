@@ -211,13 +211,22 @@ summary, because the mobile store persists the items and discards the summary,
 so an outcome kept only there would not survive a restart.
 
 `packages/api-client` is the only module allowed to know what a PostgREST code
-means, and one case is uncomfortable there. `update_assigned_job_status`
-enforces its precondition with a bare `raise exception`, which arrives as
-SQLSTATE `P0001` carrying only message text, so a lost race is told apart from
-an invalid intent by matching an English string. The fragility is confined to
-the package that is permitted to know about the provider, and the queue never
-sees it. Removing it means giving those RPCs distinct SQLSTATEs, which is a
-database migration that no rebuild node currently owns.
+means. CR19 left one uncomfortable case there and CR20 closed it: both
+technician RPCs raised bare exceptions, arriving as SQLSTATE `P0001` with only
+message text, so a lost race was told apart from an invalid intent by matching
+an English string — and two different geofence failures could not be told apart
+at all, because they raise the same sentence.
+
+Both RPCs now raise an application code: `PP400` invalid-intent, `PP401`
+unauthorized, `PP404` target-missing, `PP409` precondition-conflict. Class `PP`
+is unused by PostgreSQL, whose PL/pgSQL codes are class `P0`, and is not one of
+the `PT` codes PostgREST reinterprets as an HTTP status. The client reads the
+code first and falls back to matching text only for a database that has not yet
+applied the migration, since an app and a database deploy independently. That
+fallback is a compatibility path rather than the mechanism, and its removal is
+not scheduled, because the condition for removing it — no client older than the
+migration still running — is not observable from this repository. The migration
+changed no message, so the other skew direction needs nothing.
 
 ### Provider selection is only half real until CR09
 
