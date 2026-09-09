@@ -2171,7 +2171,89 @@
         "Ownership corrected on 2026-09-09 from measurement, the tenth instance of the recurring defect class and the second found before promotion: the first cut owned supabase/migrations but no tooling path, and selectVerificationGates had no rule for a supabase path, so every one reported UNMAPPED and this slice could not have passed its own verification. Ownership now covers tooling/rebuild-verification.ts, its test, the new migration test, and package.json",
         "Measured on 2026-09-09 and deliberately left alone: seven of fourteen tooling/*.test.ts files are run by nothing, because the root test script names seven explicitly rather than globbing. This slice adopts the five that assert supabase, which is what makes its own gate honest. production-readiness-protection.test.ts passes and owasp-api-route-inventory.test.ts fails, neither reads supabase, and absorbing a failing unrelated test would make this slice red for a reason that is not its own"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "review",
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "The problem was worse than CR19 recorded. The message matching was not merely fragile, it was incapable: record_assigned_job_geofence_event raises 'Assigned job geofence event is not allowed' for a job assigned to another technician and for an idempotent upsert that matched another row, which is the same string, so no matcher could separate them. It was also wrong: CR19's fallback covered four messages, all from the status RPC, so every geofence message fell through to the P0001 default of invalid-intent and 'Assigned job was not found', a target-missing, was reported as an intent that could never be valid.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "review",
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "The migration adds codes and rewrites nothing, proved rather than asserted: stripping the added 'using errcode' lines from the new file reconstructs both function bodies byte-identically to the ones in 20260608133304_technician_job_rpc_security_v1.sql, and the sequence of 12 raised messages is identical between the two files. An unchanged message is what keeps an app released before this migration working against a migrated database.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "review",
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "Tenth instance of the recurring defect class, and the second caught before promotion. No node had ever owned a supabase path, and selectVerificationGates had no rule for one, so a migration reported UNMAPPED changed path and the first slice to touch one could not have passed its own verification. CR20's first cut owned supabase/migrations but no tooling path, so it could not have fixed that either. Ownership now covers tooling/rebuild-verification.ts, its test, the new migration test, and package.json.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "review",
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "Seven of fourteen tooling/*.test.ts files are run by nothing: the root test script names seven explicitly rather than globbing, and no CI workflow or graph node check runs the rest. Mapping supabase paths to pnpm test would therefore have been a lie. The five orphans that assert supabase are now in the root script, taking the tooling suite from 7 files to 12, all passing.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "review",
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "Two orphans are reported rather than absorbed. owasp-api-route-inventory.test.ts is orphaned AND FAILING, because Next API routes exist that its inventory does not document, which is real security-documentation drift that wants an owner. production-readiness-protection.test.ts is orphaned and passing. Neither reads supabase, so neither is needed to make this slice's gate honest, and absorbing a failing unrelated test would make CR20 red for a reason that is not CR20's.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "review",
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "Seven injections, each required to produce a named failure or a demonstrable silence: removing the supabase rule from selectVerificationGates failed both gate tests; dropping one errcode failed the every-guard test; changing a message failed the unchanged-messages test; giving the two shared geofence raises one code failed the separation test; dropping the PP codes from the client table failed three client tests; running the message matcher before the code lookup failed the code-wins test; and removing the new test from the root script made it silently stop running.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "review",
+          "commitSha": "a6aa53a6d3e61b27484d61b9dc3f1f6b7c25bbbf",
+          "summary": "The changed-path ownership gate was proved to fire rather than skip. Appending a line to apps/web/next.config.ts and committing it made pnpm rebuild:graph:reconcile -- --offline report 'changed path apps/web/next.config.ts is outside running-node ownership'. The probe commit was discarded.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "The full suite passes 10/10 tasks. The root tooling suite goes from 7 files to 12 as the orphaned supabase assertions start running, and packages/api-client goes 120 to 124 tests. Every other package's count is unchanged.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm typecheck",
+          "exitCode": 0,
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "Typecheck passes 11/11 across the workspace.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "commitSha": "88bb3783bcbb26b1328d6e7eb42cc18654768408",
+          "summary": "The architecture boundary checker reports 11 workspace packages and zero exceptions, unchanged: this slice adds no cross-package edge.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "github",
+          "commitSha": "a6aa53a6d3e61b27484d61b9dc3f1f6b7c25bbbf",
+          "url": "https://github.com/otto-agent007/pp/pull/203",
+          "summary": "Draft PR #203 opened for CR20.",
+          "recordedAt": "2026-09-09T08:10:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "commitSha": "a6aa53a6d3e61b27484d61b9dc3f1f6b7c25bbbf",
+          "recordedAt": "2026-09-09T08:20:00Z",
+          "summary": "Clean-tree rebuild verification PASS, 16/16 gates, evidence set 87439a86, running-slice mode against base 7f21bca with identical pre and post trees. No gate reported UNMAPPED, which is the direct proof the new supabase mapping works: without it the migration would have reported UNMAPPED changed path and the run would have failed."
+        }
+      ],
       "branch": "codex/rebuild-cr20-sqlstates-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/203",
       "mergeSha": "",
