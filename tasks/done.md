@@ -1,5 +1,66 @@
 # Done
 
+## CR19 mutation outcome wiring
+
+- Base `374c6ec6640bfffcaacc155568d2382be678637c`, branch
+  `codex/rebuild-cr19-outcomes-v1`, PR
+  [#201](https://github.com/otto-agent007/pp/pull/201), merge
+  `7b57ecdb239ca26d5c0bc1a6d1b06e0988e1f352`, source tag
+  `rebuild/cr19-source` at `7688e44`, plan
+  `docs/superpowers/plans/2026-09-09-controlled-rebuild-cr19-outcomes.md`.
+- CR04 defined conflict and terminal-failure semantics and nothing consumed
+  them. CR05 and CR06 each declined to wire them, correctly — a behavioural
+  change on top of a move makes a regression unattributable. This wired them.
+- The queue counted attempts and treated every thrown value alike, so a write
+  the provider will never accept was retried as often as one that failed because
+  a tunnel dropped. Adapters now map a provider failure onto a
+  `MutationFailureReason` and throw a `MutationFailure` carrying it;
+  `packages/sync` resolves that into an outcome and records it on the item.
+- **A conflict or a terminal reason stops the queue at once** rather than
+  spending the remaining budget, so a failure the technician must act on
+  surfaces sooner even though the budget rose from three attempts to five.
+- The seven duplicated failure blocks in `offlineSync.ts` became one shared
+  path; the file went from 484 lines to 361.
+- **The retry budget was declared twice and no test observed it.** Five in
+  `DEFAULT_MUTATION_OUTCOME_POLICY`, three in `packages/sync`. All seven
+  existing `packages/sync` tests pass `maxAttempts` explicitly, so either number
+  could have changed in silence — a behaviour change breaking no test is the
+  defect, not the reassurance. The policy is now the only declaration, pinned by
+  a test.
+- **`packages/types` has an empty dependency allowlist**, verified against
+  `tooling/architecture-boundaries.json` rather than assumed, so recording an
+  outcome on `OfflineQueueItem` forced `MutationFailureReason` and
+  `MutationOutcomeKind` to relocate there. `packages/application` imports and
+  re-exports them, so callers still read the semantics from one place. The
+  frozen public surface went from 176 names to 178.
+- The outcome lives on the item rather than in `QueueProcessSummary`, because
+  the mobile store persists the items and discards the summary. Adding the field
+  tripped CR06's durable field-set guard, which is that guard working.
+- **Ownership was corrected during implementation — the ninth instance of the
+  recurring defect class, and the first this chain introduced rather than
+  inherited.** The re-scope concluded `apps/mobile` needed no ownership, having
+  measured that `useQueueSync.ts` passes an empty options object so an
+  options-shape change cannot reach it. True, and beside the point: the *item*
+  shape changed too, and `JobStatusControls.test.tsx` builds queue items
+  directly. Measure the shape of every type a slice changes, not only the one
+  its call sites pass.
+- Eight injections, each required to produce a named failure: the local budget of
+  three restored; the terminal short-circuit replaced by budget-spending; an
+  unmapped error made terminal; the outcome no longer recorded, which failed all
+  seven new tests; a normalize failure routed through the budget; a fresh id
+  minted on retry; the `P0001` message matching dropped; the adapter wrapper made
+  a passthrough.
+- `pnpm test` 10/10 tasks with `packages/sync` 29 to 36 and `packages/api-client`
+  109 to 120, every other package's count unchanged — the behavioural change is
+  confined to where it was declared. Clean-tree `pnpm rebuild:verify` passed
+  18/18 gates.
+- **A limitation recorded rather than fixed, and now owned by CR20.**
+  `update_assigned_job_status` enforces its precondition with a bare
+  `raise exception`, arriving as SQLSTATE `P0001` with only message text, so a
+  lost race is told from an invalid intent by matching an English string. That
+  matching sits in `packages/api-client`, where provider knowledge belongs, and
+  the queue never sees it. Removing it needs a database migration.
+
 ## CR07 queue type boundary
 
 - Base `8973697d56e97671adbf6c88e5ef436690e0e336`, branch
