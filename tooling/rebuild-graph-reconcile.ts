@@ -382,9 +382,20 @@ function validateRepositoryClaimsWithOptions(
 
     if (sourceEvidenceCommits !== null) {
       for (const evidence of node.evidence) {
-        if (!sourceEvidenceCommits.has(evidence.commitSha)) {
+        // Evidence belongs to the pull request that shipped the node, or it
+        // predates that pull request. The second case is real work, not a
+        // loophole: a node measured and re-scoped in its own pull request and
+        // implemented in a later one carries evidence that is already merged
+        // and sits at or before its baseSha, where it can never be in the
+        // implementing pull request's commit set. Refusing it would make a node
+        // re-scoped before promotion impossible to mark done, and re-scoping
+        // before promotion is what catches a scope defect before it ships.
+        if (
+          !sourceEvidenceCommits.has(evidence.commitSha) &&
+          !isAncestor(evidence.commitSha, node.baseSha)
+        ) {
           errors.push(
-            `node ${node.id} evidence commit ${evidence.commitSha} is not part of merged pull request ${node.pr}`,
+            `node ${node.id} evidence commit ${evidence.commitSha} is not part of merged pull request ${node.pr} and is not an ancestor of its base ${node.baseSha}`,
           );
         }
       }
@@ -614,6 +625,18 @@ function collectLocalRepositoryFacts(
         descendant: graph.repository.defaultBranch,
         gitDescendant: defaultBranchRef,
       });
+      // Ancestry against the node's own base, so evidence recorded before its
+      // pull request existed can be told apart from evidence that points
+      // nowhere the node can reach.
+      if (node.baseSha) {
+        for (const evidence of node.evidence) {
+          requiredPairs.push({
+            ancestor: evidence.commitSha,
+            descendant: node.baseSha,
+            gitDescendant: node.baseSha,
+          });
+        }
+      }
     } else {
       const descendant =
         node.status === "abandoned" || node.status === "superseded"

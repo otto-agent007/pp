@@ -19,6 +19,7 @@ const MERGE_SHA = "3333333333333333333333333333333333333333";
 const OTHER_SHA = "4444444444444444444444444444444444444444";
 const TREE_SHA = "5555555555555555555555555555555555555555";
 const OTHER_TREE_SHA = "6666666666666666666666666666666666666666";
+const SCOPE_SHA = "7777777777777777777777777777777777777777";
 const PR_URL = "https://github.com/otto-agent007/pp/pull/146";
 
 function git(cwd: string, args: string[]) {
@@ -692,6 +693,78 @@ describe("rebuild graph repository claims", () => {
     ).toEqual([]);
   });
 
+  it("accepts evidence recorded before the node's own pull request existed", () => {
+    // A node measured and re-scoped in its own pull request, then implemented
+    // in a later one, carries evidence that landed on the default branch at or
+    // before its baseSha. That evidence is in no sense unverifiable - it is
+    // already merged - but it can never be in the implementing pull request's
+    // commit set. Refusing it would make a node re-scoped before promotion
+    // impossible to mark done, which is the practice this chain adopted to
+    // catch scope defects before they ship.
+    const graph = doneGraph();
+    const [node] = graph.nodes;
+
+    expect(
+      validateRepositoryClaims(
+        {
+          ...graph,
+          nodes: [
+            {
+              ...node,
+              evidence: [
+                ...node!.evidence,
+                {
+                  kind: "review",
+                  summary: "re-measured before promotion",
+                  commitSha: SCOPE_SHA,
+                  recordedAt: "2026-08-23T20:00:00Z",
+                },
+              ],
+            },
+          ],
+        },
+        matchingFacts({
+          existingCommits: [BASE_SHA, SCOPE_SHA, EVIDENCE_SHA, MERGE_SHA],
+          ancestorPairs: [
+            { ancestor: MERGE_SHA, descendant: "main" },
+            { ancestor: EVIDENCE_SHA, descendant: MERGE_SHA },
+            { ancestor: SCOPE_SHA, descendant: BASE_SHA },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("still rejects evidence that is neither in the pull request nor behind its base", () => {
+    const graph = doneGraph();
+    const [node] = graph.nodes;
+
+    expect(
+      validateRepositoryClaims(
+        {
+          ...graph,
+          nodes: [
+            {
+              ...node,
+              evidence: [
+                ...node!.evidence,
+                {
+                  kind: "review",
+                  summary: "recorded nowhere this node can reach",
+                  commitSha: SCOPE_SHA,
+                  recordedAt: "2026-08-23T20:00:00Z",
+                },
+              ],
+            },
+          ],
+        },
+        matchingFacts(),
+      ),
+    ).toContain(
+      `node CR00 evidence commit ${SCOPE_SHA} is not part of merged pull request ${PR_URL} and is not an ancestor of its base ${BASE_SHA}`,
+    );
+  });
+
   it("rejects evidence outside the merged pull request commit set", () => {
     expect(
       validateRepositoryClaims(
@@ -709,7 +782,7 @@ describe("rebuild graph repository claims", () => {
         }),
       ),
     ).toContain(
-      `node CR00 evidence commit ${EVIDENCE_SHA} is not part of merged pull request ${PR_URL}`,
+      `node CR00 evidence commit ${EVIDENCE_SHA} is not part of merged pull request ${PR_URL} and is not an ancestor of its base ${BASE_SHA}`,
     );
   });
 
