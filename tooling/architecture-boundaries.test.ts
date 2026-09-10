@@ -876,9 +876,44 @@ describe("architecture facts", () => {
     const policy = edgePolicy([], "planned");
     const facts = edgeFacts([], ["production-value"]);
 
+    // The edge error is the point of this test: a planned package that exists
+    // is still held to its permissions. It now also reports the staleness,
+    // because a package that exists is no longer planned.
     expect(factErrors(policy, facts)).toEqual([
       "forbidden-workspace-edge: @pest-patrol/importer -> @pest-patrol/target; manifest=packages/importer/package.json[none]; sources=packages/importer/src/production-value.ts",
+      "planned package @pest-patrol/importer exists at packages/importer and must be required",
     ]);
+  });
+
+  it("reports a planned package that has since been created", () => {
+    // The mirror of "required package is missing", and the half that was never
+    // written. CR06 created packages/sync, which the policy had declared
+    // planned, and nothing would have caught the policy still saying so - the
+    // gap was recorded at that promotion and left open because the checker was
+    // not CR06's to edit.
+    const policy = edgePolicy(["dependencies"], "planned");
+    const facts = edgeFacts(["dependencies"], []);
+
+    expect(factErrors(policy, facts)).toEqual([
+      "planned package @pest-patrol/importer exists at packages/importer and must be required",
+    ]);
+  });
+
+  it("leaves a planned package that does not exist alone", () => {
+    const policy: ArchitecturePolicy = {
+      schemaVersion: 1,
+      packages: [
+        {
+          name: "@pest-patrol/not-yet",
+          path: "packages/not-yet",
+          state: "planned",
+          allowedDependencies: [],
+        },
+      ],
+      exceptions: [],
+    };
+
+    expect(factErrors(policy, { packages: [] })).toEqual([]);
   });
 });
 

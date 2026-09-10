@@ -1091,6 +1091,17 @@ export function validateArchitectureFacts(
     if (pkg.state === "required" && !observedPolicyPackages.has(pkg.name)) {
       errors.push(`required package ${pkg.name} is missing at ${pkg.path}`);
     }
+    // The mirror of the rule above, and the half that was missing. `planned`
+    // says a package is expected to exist later; once it does, the policy is
+    // describing the past. CR06 created `packages/sync` against a policy that
+    // still called it planned and nothing objected, which was recorded at that
+    // promotion as a gap no node owned because the checker was not CR06's to
+    // edit.
+    if (pkg.state === "planned" && observedPolicyPackages.has(pkg.name)) {
+      errors.push(
+        `planned package ${pkg.name} exists at ${pkg.path} and must be required`,
+      );
+    }
   }
 
   const renderableViolations: RenderableViolation[] = [];

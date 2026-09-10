@@ -1,5 +1,126 @@
 # Done
 
+## CR18 controlled rebuild completion
+
+- Base `9959215`, branch `codex/rebuild-cr18-completion-v1`, PR to follow, plan
+  `docs/superpowers/plans/2026-09-09-controlled-rebuild-cr18-completion.md`.
+  The last node in the chain.
+- **The chain is complete.** Every live node is `done`: CR00 through CR07, the
+  CR09A/CR09B decomposition, the platform chain CR10 through CR15, CR19, CR20
+  and this node. CR08, CR09, CR16 and CR17 are `superseded`. Each has a
+  published `rebuild/crNN-source` tag, which the reconciler checks on every run
+  along with the merge ancestry and tag drift.
+- **CR18 could not have been promoted if that were untrue.** It depends on every
+  other live node by name, and `pnpm rebuild:graph:check` refuses to promote a
+  node whose dependency is not `done`. Its third deliverable is therefore
+  enforced by the act of running it rather than by anything it had to write.
+- **Its second deliverable was not enforced by anything, and now is.**
+  `pnpm architecture:check` prints the exception count on every run, and
+  printing a zero is not the same as failing on a one: re-adding a boundary
+  exception, or leaving a package `planned`, would have left every gate green
+  while CR18's recorded claim quietly stopped being true. That is the fourteenth
+  instance of the recurring defect class, and the last node in the chain met it
+  about its own completion claim.
+  `tooling/architecture-completion.test.ts` freezes both facts plus the
+  eleven-package end state.
+- **The guard is an assertion about this policy, not a new rule in the checker.**
+  Exceptions and `state: "planned"` stay legitimate features - a future debt
+  exception with a removal node, or a package declared before it is built, is a
+  normal thing to want. What must not happen is either appearing without someone
+  deciding to, and editing that file is how the decision becomes reviewable.
+- **A gap recorded at CR06's promotion and owned by nobody since is closed.**
+  The checker errored when a `required` package was missing and said nothing
+  when a `planned` package existed, so CR06 could have created `packages/sync`
+  against a policy that still called it planned and nothing would have objected.
+  The mirror rule now reports `planned package X exists at Y and must be
+  required`. CR06 could not have written it - `tooling/architecture-boundaries.ts`
+  was not CR06's to edit.
+- **One existing test encoded the gap**, as the memory of this defect class
+  warns they do: "validates a present planned package against its declared
+  permissions" asserted with `toEqual` that a present planned package produced
+  only an edge error. Its intent was right and is kept; the staleness error
+  joins its expected list.
+- Both guards were proved to fire rather than to pass. Flipping
+  `@pest-patrol/i18n` back to `planned` fails the completion test naming it and
+  fails `pnpm architecture:check` with the new rule; re-adding an exception
+  fails the completion test. The policy was restored byte-identical each time.
+
+## CR09B persisted-queue validation and terminal-failure recovery
+
+- Base `6a2305cfb058f1ab7ee8e47aa0f1a27ded3f10c2`, branch
+  `codex/rebuild-cr09b-queue-recovery-v1`, PR
+  [#213](https://github.com/otto-agent007/pp/pull/213), merge
+  `47dcc2b871e442051c99981c96ce455edd54ea47`, source tag
+  `rebuild/cr09b-source` at `6e61b16`, plan
+  `docs/superpowers/plans/2026-09-09-controlled-rebuild-cr09b-queue-recovery.md`.
+- `apps/mobile` read its offline queue back with `JSON.parse(value) as T`. CR07
+  built the action-to-payload mapping to check it against and deliberately left
+  the cast; `reviewPersistedOfflineQueue` reads it, running each stored entry
+  through that action's own normalizer - the same one `packages/sync` applies
+  before sending.
+- **Nothing is dropped, and that constrains the design.** An entry the queue
+  cannot represent comes back as a `RejectedOfflineQueueEntry`: the record
+  exactly as stored, under the `status`, `outcome` and `last_error` a terminal
+  sync failure carries. It is deliberately not an `OfflineQueueItem`, because
+  that type keys payload by action and putting an unvalidated one there is the
+  cast this task removes. The store persists it back untouched on every write.
+- **A damaged envelope is the third case:** readable enough to show, not
+  trustworthy enough to send, so the item is kept and marked terminal rather
+  than repaired quietly. An *absent* field takes its default instead, because
+  the record grows over time - an item queued before CR19 added `outcome` has no
+  such key, and calling that damage would strand real field work on the first
+  upgrade that read it.
+- **The first thing to read CR19's `outcome`.** It had one occurrence in
+  `apps/` before this, a test fixture. `SyncStatusIndicator` now lists stopped
+  items beside refused entries with what each outcome means to a technician - a
+  conflict means someone got there first, a terminal failure means redo the work
+  - and a `Discard` on each. `discardQueueItem` refuses anything the queue is
+  still working on; `clearSynced` removed only `synced` items, which left a
+  stopped item with no way out of the queue at all.
+- **The composition-root integration test `docs/architecture.md` requires now
+  exists.** `useQueueSync.test.ts` stands in only for secure storage and the
+  Supabase client built from environment variables, so a `PP409` from a fake
+  provider travels the real stores, domain, `packages/sync` and
+  `packages/api-client` adapter and arrives as `outcome: "conflict"` on a
+  persisted item.
+- **Thirteenth instance of the recurring defect class**, caught at promotion:
+  ownership gained `docs/architecture.md`, which recorded the cast as still
+  present and named CR09B as the node that would remove it.
+- **A defect found while implementing and fixed here:**
+  `normalizeJobPhotoUploadQueuePayload` and
+  `normalizeJobSignatureCaptureQueuePayload` built their object literal without
+  `file_size_bytes`, so a size the device measured never reached
+  `packages/api-client`, which validates and stores one. In scope because
+  hydrate now runs those normalizers over stored data, where the omission would
+  have deleted the field rather than merely failed to send it.
+- Every guard was proved to fire: reverting hydrate to the cast, and separately
+  dropping rejected entries from persistence, each fail the composition-root
+  test by name; letting `discardQueueItem` ignore status fails the domain test
+  by name; removing `sync.discard` from the `es` block alone exits `pnpm
+  typecheck` with TS2719 while `pnpm test` stays green.
+- `pnpm rebuild:verify` PASS 15/15, evidence set `605eee3f`.
+
+## Control-plane: evidence recorded before a node's own pull request
+
+- PR [#214](https://github.com/otto-agent007/pp/pull/214), merge `9959215`.
+- A `done` write node's evidence had to be in its own pull request's commit set.
+  Right for evidence that pull request produced, wrong for evidence recorded
+  before it existed - and this chain deliberately re-measures a node and records
+  the result on it *before* promoting, which is how the last three scope defects
+  were caught before they shipped.
+- CR09B was the first node where the practice met the rule: its re-scope landed
+  as [#212](https://github.com/otto-agent007/pp/pull/212) with four evidence
+  entries bound to `329dbc3`, its implementation as
+  [#213](https://github.com/otto-agent007/pp/pull/213). No correct edit to the
+  node could fix it - the evidence really was recorded there.
+- Evidence is now accepted if it is in the pull request's commit set **or** is
+  an ancestor of the node's `baseSha`. The guarantee is unchanged and a commit
+  in neither place is still an error, now naming both conditions.
+- Swept the other three rebuild tools rather than only the one with the bug, as
+  #209 had to: `rebuild-graph.ts` checks the SHA format alone, and
+  `rebuild-verification.ts` and `rebuild-source-tag.ts` do not read evidence
+  commits. This was the only site.
+
 ## CR09A supabase singleton removal
 
 - Base `1d28d5c1a3c2429d6c482803bf5c7a92aaeaa020`, branch
