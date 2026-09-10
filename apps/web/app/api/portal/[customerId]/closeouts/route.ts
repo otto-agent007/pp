@@ -31,9 +31,9 @@ export async function GET(
 
   if (
     await checkApiRateLimit({
-      id: "portal-session-exchange",
+      id: "portal-closeouts",
       request,
-      key: `portal-session-exchange:${customerId}:${sessionHash}${ipSuffix}`,
+      key: `portal-closeouts:${customerId}:${sessionHash}${ipSuffix}`,
     })
   ) {
     return rateLimitResponse();

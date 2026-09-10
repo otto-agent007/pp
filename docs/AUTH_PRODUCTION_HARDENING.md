@@ -40,7 +40,13 @@ This checklist documents production auth requirements for Pest Patrol OS. Codex 
 
 ## Demo account safety
 
-- `demo@email.com` / `password` is for local/protected-preview demo only.
+- `demo@email.com` is for local/protected-preview demo only.
+- The password is never committed. Seeding reads `DEMO_SEED_ADMIN_PASSWORD` from
+  the operator environment and refuses to create the account without it in any
+  built deployment; local development falls back to a throwaway default.
+- The one-click demo button only renders when `NEXT_PUBLIC_DEMO_LOGIN_PASSWORD`
+  is set on that deployment. That value is public by construction, so it belongs
+  only on a demo deployment backed by a demo-only Supabase project.
 - Never use demo credentials in production.
 - Production seeding must not create demo credentials unless an operator explicitly approves a dedicated demo environment.
 - Demo seed/reset commands must never point at production.

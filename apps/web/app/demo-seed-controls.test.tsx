@@ -63,7 +63,7 @@ describe("DemoSeedControls", () => {
     expect(screen.getByText("16 technicians")).toBeInTheDocument();
     expect(screen.getByText(/3 media items/)).toBeInTheDocument();
     expect(
-      screen.getByText("Demo login: demo@email.com / password"),
+      screen.getByText(/Demo login: demo@email\.com/),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Seed demo story" }),

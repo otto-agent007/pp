@@ -3,7 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AdminSignIn, shouldShowDemoLoginShortcut } from "./admin-sign-in";
+import {
+  AdminSignIn,
+  demoLoginPassword,
+  shouldShowDemoLoginShortcut,
+} from "./admin-sign-in";
 
 const signIn = vi.fn();
 const signInLocalDemo = vi.fn();
@@ -120,23 +124,36 @@ describe("AdminSignIn", () => {
 
   it("hides the demo shortcut in production unless explicitly enabled", () => {
     vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_PASSWORD", "rotated-demo-pass");
     expect(shouldShowDemoLoginShortcut()).toBe(false);
 
     vi.stubEnv("NEXT_PUBLIC_SHOW_DEMO_LOGIN", "true");
     expect(shouldShowDemoLoginShortcut()).toBe(true);
   });
 
-  it("uses seeded demo credentials directly when the production shortcut flag is enabled", async () => {
+  it("keeps the demo shortcut hidden in production when no demo password is configured", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SHOW_DEMO_LOGIN", "true");
+
+    // The flag alone used to be enough while the password was a compiled-in
+    // constant. The credential now has to be supplied per deployment, so an
+    // ordinary production build ships no demo password at all.
+    expect(demoLoginPassword()).toBeUndefined();
+    expect(shouldShowDemoLoginShortcut()).toBe(false);
+  });
+
+  it("uses the deployment's configured demo credential when the production shortcut flag is enabled", async () => {
     const user = userEvent.setup();
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_SHOW_DEMO_LOGIN", "true");
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_PASSWORD", "rotated-demo-pass");
 
     render(<AdminSignIn />);
 
     await user.click(screen.getByRole("button", { name: "Log in as demo" }));
 
     expect(prepareLocalDemoLogin).not.toHaveBeenCalled();
-    expect(signIn).toHaveBeenCalledWith("demo@email.com", "password");
+    expect(signIn).toHaveBeenCalledWith("demo@email.com", "rotated-demo-pass");
   });
 
   it("falls back to a local fixture demo session when seed env is unavailable", async () => {

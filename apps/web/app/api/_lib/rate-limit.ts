@@ -37,6 +37,36 @@ type CheckApiRateLimitInput = {
 
 const DEFAULT_RETRY_AFTER_SECONDS = "15";
 
+// Vercel's Hobby plan allows exactly one rate-limit rule per project, but the
+// app declares several policy ids, so at least all-but-one can never resolve to
+// a real firewall rule. Setting VERCEL_FIREWALL_RATE_LIMIT_ID points every
+// policy at that single configured rule while keeping the policy id in the
+// rate-limit key, so each policy still gets its own counter bucket under the
+// shared rule. Unset, ids pass through unchanged (a plan with enough rules).
+function configuredSharedRuleId(): string | undefined {
+  return process.env.VERCEL_FIREWALL_RATE_LIMIT_ID?.trim() || undefined;
+}
+
+function resolveRule(
+  id: string,
+  key: string | undefined,
+): { key: string | undefined; ruleId: string } {
+  const sharedRuleId = configuredSharedRuleId();
+
+  if (!sharedRuleId) {
+    return { key, ruleId: id };
+  }
+
+  const scopedKey = key ?? id;
+
+  return {
+    key: scopedKey.startsWith(`${id}:`) || scopedKey === id
+      ? scopedKey
+      : `${id}:${scopedKey}`,
+    ruleId: sharedRuleId,
+  };
+}
+
 function isVercelRuntime() {
   return Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 }
@@ -54,15 +84,18 @@ function sanitizeFirewallResult(
   }
 
   if (result?.error === "not-found") {
-    // An unrecognized rule id means the Vercel Firewall isn't actually
-    // enforcing this policy (misconfiguration) — fail closed rather than
-    // silently letting every request for this rule through unlimited.
-    safeLogError("rate_limit.fail_closed", {
+    // An unrecognized rule id means the Vercel Firewall has no rule for this
+    // policy. Failing closed here took eight production routes offline for four
+    // days (every caller got a 429) because the Hobby plan cannot hold the
+    // rules this app declares — a self-inflicted outage strictly worse than the
+    // unthrottled traffic it was guarding against. Fail open and log loudly;
+    // set VERCEL_FIREWALL_RATE_LIMIT_ID to make the rule resolve for real.
+    safeLogError("rate_limit.fail_open", {
       reason: "unknown_rule_id",
       rule_id: ruleId,
     });
 
-    return true;
+    return false;
   }
 
   return Boolean(result?.rateLimited);
@@ -132,12 +165,14 @@ export async function checkApiRateLimit({
     return true;
   }
 
-  const firewallResult = await rateLimitChecker(id, {
+  const { key: rateLimitKey, ruleId } = resolveRule(id, key);
+
+  const firewallResult = await rateLimitChecker(ruleId, {
     request,
-    rateLimitKey: key,
+    rateLimitKey,
   });
 
-  return sanitizeFirewallResult(firewallResult, id);
+  return sanitizeFirewallResult(firewallResult, ruleId);
 }
 
 export function getClientIpFromRequest(request: Request) {

@@ -89,7 +89,12 @@ describe("rate-limit helper", () => {
     expect(limited).toBe(true);
   });
 
-  it("fails closed when the firewall reports an unrecognized rule id", async () => {
+  it("fails open when the firewall reports an unrecognized rule id", async () => {
+    // Failing closed here returned 429 to every caller on eight routes for four
+    // days: the Hobby plan allows one firewall rule and the app declares
+    // several policy ids, so most could never resolve. A missing rule is a
+    // deployment misconfiguration, not an attack, and taking the product
+    // offline is the worse of the two failure modes.
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("VERCEL", "1");
     __setTestRateLimitChecker(() =>
@@ -104,7 +109,104 @@ describe("rate-limit helper", () => {
       request: request("http://localhost/api/payments/payment-link"),
     });
 
+    expect(limited).toBe(false);
+  });
+
+  it("still blocks when the firewall reports the caller is blocked", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    __setTestRateLimitChecker(() =>
+      Promise.resolve({
+        error: "blocked",
+        rateLimited: false,
+      }),
+    );
+
+    const limited = await checkApiRateLimit({
+      id: "payment-link-create",
+      request: request("http://localhost/api/payments/payment-link"),
+    });
+
     expect(limited).toBe(true);
+  });
+
+  it("routes every policy through one configured firewall rule, keeping per-policy keys", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("VERCEL_FIREWALL_RATE_LIMIT_ID", "shared-api-limit");
+    const checker = vi.fn().mockResolvedValue({ rateLimited: true });
+
+    __setTestRateLimitChecker(checker);
+
+    const limited = await checkApiRateLimit({
+      id: "portal-closeouts",
+      request: request("http://localhost/api/portal/x/closeouts"),
+      key: "portal-closeouts:cust-1:hash",
+    });
+
+    expect(limited).toBe(true);
+    expect(checker).toHaveBeenCalledWith(
+      "shared-api-limit",
+      expect.objectContaining({
+        rateLimitKey: "portal-closeouts:cust-1:hash",
+      }),
+    );
+  });
+
+  it("prefixes the policy id onto keys that do not already carry it", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("VERCEL_FIREWALL_RATE_LIMIT_ID", "shared-api-limit");
+    const checker = vi.fn().mockResolvedValue({ rateLimited: false });
+
+    __setTestRateLimitChecker(checker);
+
+    await checkApiRateLimit({
+      id: "payment-link-create",
+      request: request("http://localhost/api/payments/payment-link"),
+      key: "admin-1",
+    });
+
+    await checkApiRateLimit({
+      id: "portal-upgrade-intent",
+      request: request("http://localhost/api/portal/x/upgrade-intents"),
+    });
+
+    expect(checker).toHaveBeenNthCalledWith(
+      1,
+      "shared-api-limit",
+      expect.objectContaining({
+        rateLimitKey: "payment-link-create:admin-1",
+      }),
+    );
+    expect(checker).toHaveBeenNthCalledWith(
+      2,
+      "shared-api-limit",
+      expect.objectContaining({
+        rateLimitKey: "portal-upgrade-intent",
+      }),
+    );
+  });
+
+  it("passes the policy id straight through when no shared rule is configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    const checker = vi.fn().mockResolvedValue({ rateLimited: false });
+
+    __setTestRateLimitChecker(checker);
+
+    await checkApiRateLimit({
+      id: "compliance-advisory-create",
+      request: request("http://localhost/api/compliance/advisories"),
+      key: "compliance-advisory-create:admin-1",
+    });
+
+    expect(checker).toHaveBeenCalledWith(
+      "compliance-advisory-create",
+      expect.objectContaining({
+        rateLimitKey: "compliance-advisory-create:admin-1",
+      }),
+    );
   });
 
   it("extracts client ip from trusted vercel headers", () => {

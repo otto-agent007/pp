@@ -34,11 +34,12 @@ export type {
 export {
   DEMO_SEED_CONFIRMATION,
   DEMO_SEED_ADMIN_EMAIL,
-  DEMO_SEED_ADMIN_PASSWORD,
+  DEMO_SEED_ADMIN_PASSWORD_ENV,
   DEMO_SEED_MARKER,
   buildDemoSeedRuntimeStatus,
   buildDemoSeedPlan,
   getDemoSeedPlanSummary,
+  resolveDemoSeedAdminPassword,
   validateDemoSeedGuardrails,
 } from "./demoSeedData";
 export type {
