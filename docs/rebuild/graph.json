@@ -1089,8 +1089,8 @@
       "target": null,
       "defers": [
         {
-          "to": "CR09",
-          "summary": "Validating the persisted offline queue where apps/mobile reads it back, rather than casting, which CR07 leaves alone because it changes behaviour and CR07 is types only"
+          "to": "CR09B",
+          "summary": "Validating the persisted offline queue where apps/mobile reads it back, rather than casting, which CR07 leaves alone because it changes behaviour and CR07 is types only. Repointed from CR09 to CR09B on 2026-09-10: CR09 is superseded into CR09A, so this edge resolved to the half of the decomposition that removed the api-client singleton rather than the half that did this work."
         }
       ]
     },
