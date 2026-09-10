@@ -2224,10 +2224,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "995921587c2257b4ea75b5d05c23a7db0f6f55ce",
       "id": "CR18",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR10",
@@ -2247,21 +2247,59 @@
       "ownership": [
         "docs/rebuild/graph.json",
         "tasks/done.md",
-        "tasks/in-progress.md"
+        "tasks/in-progress.md",
+        "tooling/architecture-boundaries.test.ts",
+        "tooling/architecture-boundaries.ts",
+        "tooling/architecture-completion.test.ts"
       ],
       "deliverables": [
         "Cross-runtime compatibility, controlled rebuild completion, and final reconciliation",
         "Evidence that every boundary exception has been removed and that no package remains in the planned policy state",
         "Final graph reconciliation with every slice done and every source tag published"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run tooling/architecture-completion.test.ts",
+        "pnpm exec vitest run tooling/architecture-boundaries.test.ts",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts",
+        "pnpm architecture:check",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "CR20 added to the dependencies on 2026-09-09 when that node was created. CR18 claims every slice is done and every source tag published, so a new slice it does not depend on would let that claim pass while the slice was still open",
-        "CR09A and CR09B replaced CR09 in the dependencies on 2026-09-09 when CR09 was decomposed. CR18 claims every slice is done, and a dependency that resolves through a superseded node would let that claim pass while one half of the decomposition was still open."
+        "CR09A and CR09B replaced CR09 in the dependencies on 2026-09-09 when CR09 was decomposed. CR18 claims every slice is done, and a dependency that resolves through a superseded node would let that claim pass while one half of the decomposition was still open.",
+        "Controller directed the completion run on 2026-09-09, after CR09B merged as PR 213 and the control-plane fix merged as PR 214. CR18 runs on branch codex/rebuild-cr18-completion-v1 from base 995921587c2257b4ea75b5d05c23a7db0f6f55ce.",
+        "Ownership gained tooling/architecture-boundaries.ts, tooling/architecture-boundaries.test.ts and tooling/architecture-completion.test.ts at promotion, measured from the diff. The second deliverable asks for evidence that every boundary exception has been removed and that no package remains planned, and no gate failed on either: pnpm architecture:check prints the exception count rather than erroring on it. Evidence that nothing re-reads is the thing this chain has learned to refuse, so the deliverable is met by a guard that fails, which lives under tooling.",
+        "Fourteenth instance of the recurring defect class, and the last node in the chain met it about its own completion claim. The three shapes it took across the chain are recorded in tasks/in-progress.md: ownership that did not cover a deliverable's paths, a docs/architecture.md requirement naming no node, and a check that reports a fact without failing on it.",
+        "The completion guard is an assertion about this repository's policy rather than a new rule in the checker, decided at promotion. Boundary exceptions and the planned package state stay legitimate features: a future debt exception with a removal node, or a package declared before it is built, is a normal thing to want. What must not happen is either appearing without someone deciding to, and editing tooling/architecture-completion.test.ts is how that decision becomes reviewable.",
+        "The third deliverable needed recording rather than writing. CR18 depends on every other live node by name and pnpm rebuild:graph:check refuses to promote a node whose dependency is not done, so promoting this node is itself the proof that every slice is done; the reconciler checks each done node's source tag, merge ancestry and tag drift on every run.",
+        "CR18 also closes a gap CR06's promotion recorded and could not close, because tooling/architecture-boundaries.ts was not CR06's to edit: the checker errored when a required package was missing and said nothing when a planned package existed. It is in scope because the same ownership the second deliverable requires is what makes closing it possible, and because a stale planned entry is exactly what that deliverable claims is absent."
       ],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller directed CR18's implementation and promotion to running on 2026-09-09, with ownership measured from the diff.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T00:55:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft pull request 215 opened for CR18 from codex/rebuild-cr18-completion-v1. Its first commit reconciles CR09B as done, folded in rather than shipped separately, which PR 178 made safe.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T00:55:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/215"
+        }
+      ],
+      "branch": "codex/rebuild-cr18-completion-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/215",
       "mergeSha": "",
       "supersededBy": null,
       "target": null
