@@ -2,9 +2,14 @@
 
 ## CR18 controlled rebuild completion
 
-- Base `9959215`, branch `codex/rebuild-cr18-completion-v1`, PR to follow, plan
+- Base `995921587c2257b4ea75b5d05c23a7db0f6f55ce`, branch
+  `codex/rebuild-cr18-completion-v1`, PR
+  [#215](https://github.com/otto-agent007/pp/pull/215), merge
+  `65cea4df0e5800e23f266796a75ac82ec453d9e4`, source tag `rebuild/cr18-source`
+  at `7584603`, plan
   `docs/superpowers/plans/2026-09-09-controlled-rebuild-cr18-completion.md`.
-  The last node in the chain.
+  The last node in the chain, and the nineteenth and final source tag.
+- `pnpm rebuild:verify` PASS 14/14, evidence set `7998ca45`.
 - **The chain is complete.** Every live node is `done`: CR00 through CR07, the
   CR09A/CR09B decomposition, the platform chain CR10 through CR15, CR19, CR20
   and this node. CR08, CR09, CR16 and CR17 are `superseded`. Each has a
