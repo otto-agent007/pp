@@ -2,182 +2,50 @@
 
 ## Controlled rebuild
 
-- CR00 is `done` (PR [#146](https://github.com/otto-agent007/pp/pull/146),
-  merge `8f1e6cc4d1ea56a360e77c8ed36ec2fe8c315df2`). The recovery PRs
-  [#147](https://github.com/otto-agent007/pp/pull/147) and
-  [#149](https://github.com/otto-agent007/pp/pull/149) are merged. CR08, CR16,
-  and CR17 are superseded into CR09, CR15, and CR18.
-- PR [#168](https://github.com/otto-agent007/pp/pull/168) re-sequenced the
-  graph so the platform chain (CR10, CR11, CR12, CR13, CR14, CR15) runs
-  before the CR01-CR09 architecture refactor.
-- **The controlled rebuild's platform chain is closed.** CR10 (Node 24.20.0),
-  CR11 (pnpm 12.3.4), CR12 (Next.js 16.3.4), CR13 (Expo SDK 54.0.37), CR14 (Expo
-  SDK 55.0.31) and CR15 (Expo SDK 57.0.20) are all `done`; details are in
-  `tasks/done.md`.
-- CR01 (executable architecture foundation) is `done`; its summary and the
-  story of the stale #148 it replaced are in `tasks/done.md`.
-  `pnpm architecture:check` now guards package responsibilities and dependency
-  direction on every run.
-- CR02 (bounded-context shared types) is `done`; its summary is in
-  `tasks/done.md`. `packages/types` is now twenty context modules behind an
-  explicit re-export barrel, and `packages/types/publicSurface.test.ts` freezes
-  its 175-name public surface.
-- CR03 (domain purity seam) is `done`; its summary is in `tasks/done.md`.
-  `packages/domain/module-roles.json` declares the seam between pure policy and
-  adapter orchestration, and `moduleRoles.test.ts` guards the declaration.
-- CR04 (application layer) is `done`; its summary is in `tasks/done.md`.
-  `packages/application` holds the 88 declarations that reached an adapter, and
-  `mutationOutcome.ts` supplies the conflict and terminal-failure semantics
-  `docs/architecture.md` requires.
-- CR05 (ports and adapters) is `done`; its summary is in `tasks/done.md`.
-  Thirteen ports and 77 methods sit between `packages/application` and
-  `packages/api-client`, **`pnpm architecture:check` reports zero exceptions**,
-  and the package dependency direction matches `docs/architecture.md` exactly:
-  `types` depends on nothing, `domain` on `types`, `application` on
-  `domain` + `types`, `api-client` on `application` + `domain` + `types`.
-- CR05 absorbed `offlineSync`, which CR04 had deferred to CR06. That was forced,
-  not chosen: `api-client -> application` plus the surviving
-  `domain -> api-client` closes a cycle that turbo refuses, so CR05 could not
-  have completed otherwise.
-- CR06 (durable queue relocation) is `done`; its summary is in `tasks/done.md`.
-  The queue lives in `packages/sync`, which is now `required` rather than
-  `planned`, and `pnpm architecture:check` reports 11 packages and zero
-  exceptions.
-- **CR19 was that slice, and it is now `done`**; its summary is in
-  `tasks/done.md`. CR04's `mutationOutcome.ts` semantics had no consumer, CR05
-  and CR06 each put the wiring off for the same correct reason — a behavioural
-  change on top of a move makes a regression unattributable — and each recorded
-  it only as a sentence, so nothing owned it and every following slice
-  rediscovered it. That is the pattern the `defers` edge exists to stop.
-- **The graph now refuses a deferral that is only a sentence.** A node carries
-  an optional `defers: { to, summary }[]`, the validator checks the
-  destination is live and not already finished, and it reads the node's own
-  prose: a deliverable or approval that says work is deferred, left unwired,
-  or belongs to a later slice, with no `defers` entry, is an error naming the
-  sentence. Running it against the graph as it stood found exactly two, both
-  real — CR05's deferred singleton removal and CR06's unwired
-  `mutationOutcome` — and no false positives across nineteen nodes.
-- A structural alternative was measured and rejected: flagging exported names
-  with no consumer outside their package would have caught `mutationOutcome`,
-  but it flags **321** names workspace-wide (250 in `packages/domain` alone,
-  and 25 in the `packages/types` surface CR02 deliberately froze). A library
-  exporting more than today's callers use is normal, so that check is noise
-  rather than signal here.
-- **CR07 (queue type boundary) is `done`**; its summary is in `tasks/done.md`.
-  `OfflineQueuePayloadByAction` makes the action decide the payload, and the
-  `Exclude<…>` label map that covered five of seven actions is total.
-- **CR07 is the first slice in this chain whose recorded scope survived
-  re-measurement unchanged.** Six in a row had found a requirement recorded
-  where the enforcement never reads it; a compiled prototype found nothing to
-  correct here. A clean re-measurement is now a real outcome rather than a sign
-  the measurement was wrong — but it still has to be run.
-- **Fix the middle of a type cascade before reading its ends as scope.** Four
-  `apps/mobile` files appear to break and do not: `SyncStatusIndicator.tsx`,
-  `app/index.tsx`, `useQueueSync.ts` and `JobStatusControls.tsx` all fail with
-  `unknown[]` while `useOfflineQueue.ts` is still untyped, because zustand
-  infers `unknown` from a store whose own state type does not compile. Widening
-  ownership to cover them would have been the mistake measurement prevents.
-- **The correlated-union construction needs no cast, and that was probed rather
-  than assumed.** Constructing `OfflineQueueItem<TAction>` generically from a
-  matching payload typechecks, a union of actions distributes through a `.map`
-  call site, and a mismatched pairing is rejected. The pattern usually does need
-  a cast, so a probe file settled it before any real edit.
-- **A behaviour change that breaks no test is the defect, not the
-  reassurance.** CR19 changed the queue's default retry budget from three to
-  five and the suite stayed green, because all seven `packages/sync` tests pass
-  `maxAttempts` explicitly. The budget had been declared in two places that
-  disagreed and nothing observed it.
-- **Measure the shape of every type a slice changes, not only the one its call
-  sites pass.** CR19's re-scope cleared `apps/mobile` on the grounds that
-  `useQueueSync.ts` passes an empty options object. True, and beside the point:
-  the item shape changed too. Ninth instance of the recurring defect class, and
-  the first this chain introduced rather than inherited.
+**The controlled rebuild is complete.** Every live node is `done` - CR00 to
+CR07, the CR09A/CR09B decomposition, the platform chain CR10 to CR15, CR19, CR20
+and CR18 - and CR08, CR09, CR16 and CR17 are `superseded`. Each done node has a
+published `rebuild/crNN-source` tag. Per-node summaries are in `tasks/done.md`;
+the graph itself is `docs/rebuild/graph.json` and the runbook is
+`docs/rebuild/README.md`.
 
-## What is next
+CR18 is the final reconciliation and closed the chain. Nothing in the graph is
+open, so this section carries no work. What the chain leaves behind, and what a
+future node should read before adding to it, is below.
 
-- **CR20 (technician RPC error codes) is `done`**; its summary is in
-  `tasks/done.md`. Both technician RPCs raise an application code, and
-  `packages/api-client` reads it ahead of any message.
-- **CR09 has been decomposed into CR09A and CR09B**, the first `kind: "task"`
-  nodes this graph has ever carried, under its standing approval `decompose into
-  parallel write-tasks at promotion`. CR09 itself is `superseded`: it ships no
-  pull request of its own, and leaving it `planned` would block CR18 forever.
-- **CR09A is `done`**; its summary is in `tasks/done.md`. The `supabase`
-  singleton is gone, `apps/web/lib/supabase-browser.ts` is the browser
-  composition root, and two guard suites hold the removal in place.
-- **CR09A proved the write-task machinery end to end.** It is the first
-  `kind: "task"` node this chain has run, and every rule #207 and #209 added was
-  exercised by it rather than by a fixture: the ownership boundary refused a
-  path outside it, `pnpm rebuild:verify` produced 16-of-16 evidence in
-  running-slice mode, and the `Rebuild source tag` workflow published
-  `rebuild/cr09a-source` automatically at the pull-request head.
-- **CR09B is the only open node before CR18.** It owns `apps/mobile`,
-  `packages/domain` and now `packages/i18n`: the real composition-root
-  integration test `docs/architecture.md` requires, terminal-failure visibility
-  and user recovery, and CR07's persisted-queue validation. The zero-overlap
-  claim the decomposition rested on held in practice — CR09A's merged diff
-  touches none of those paths. Its promotion is still a controller decision.
-- **CR09B was re-measured on `329dbc3`, and the measurement narrowed it in three
-  places.** `packages/types` needs no change: `OfflineQueueItem` already carries
-  `status`, `last_error` and `outcome`, and the two vocabularies already include
-  `failed` and `terminal`. `packages/sync` needs no change for visibility:
-  `useQueueSync` already calls `replaceItems(result.items)`, so a recorded
-  outcome already reaches the store and survives a restart. And
-  `packages/domain` already supplies the third deliverable's mechanism —
-  `markQueueItemFailed` defaults `outcome` to `terminal` and sets `status`
-  `failed` with a `last_error`.
-- **It widened it in one: `packages/i18n` joined the ownership.** Every string
-  `SyncStatusIndicator` renders comes from `packages/i18n/index.ts` under
-  `jobs.fieldCopy.sync`, in both the `en` and `es` blocks, so terminal-failure
-  visibility and a recovery affordance cannot ship without adding copy there.
-  That is the twelfth instance of the recurring defect class and the third
-  caught before promotion rather than during it.
-- **`packages/i18n`'s en-to-es parity is guarded, but only by the compiler.**
-  Probed rather than assumed: a key added to `en` alone exits `pnpm typecheck`
-  with TS2719 naming the property missing from `es`, while `pnpm test` passes
-  79 of 79 in the same tree. The only thing relating the two halves is a pair of
-  assignments in `apps/mobile/src/store/useLanguage.test.ts` that hand
-  `translations.es` to a `typeof translations.en` slot; `translations` itself is
-  a bare object literal. **So CR09B must name `pnpm typecheck` in its `checks`**
-  — the same conclusion CR09A reached, by a different mechanism.
-- **No per-item recovery exists today.** `useOfflineQueue` exposes `clearAll`,
-  `clearSynced`, `markFailed`, `markRetrying`, `markSynced`, `replaceItems`,
-  `hydrate` and `enqueue`, and `clearSynced` removes only `synced` items, so an
-  item marked `failed` and `terminal` stays in the queue with no
-  technician-facing way out. That is the gap the user-recovery deliverable
-  closes, and it wants a discard helper in `packages/domain` beside
-  `clearSyncedQueueItems`.
-- **The split is by application because ownership does not overlap**, which is
-  what lets two write tasks run at once. The re-measurement on `f069e65` found
-  the singleton confined to `packages/api-client` and `apps/web`; all four
-  `apps/mobile` stores already pass `mobileSupabase`.
-- **The scope defect recorded against CR09 is resolved by the split**, not by
-  widening it: CR09's ownership read `apps` alone while a deliverable reached
-  `packages/api-client`.
-- **CR09A must name `pnpm typecheck` in its `checks` explicitly.**
-  `selectVerificationGates` maps `packages/**` and `apps/**` to `pnpm test`
-  only, and turbo's `test` task does not depend on `typecheck`, so a change of
-  87 signatures would otherwise be gated by no compiler at all.
+### What the chain ended with
 
-## Open items that no node owns
+- Eleven workspace packages, every one `required`, and **zero boundary
+  exceptions**. `tooling/architecture-completion.test.ts` freezes all three
+  facts, because `pnpm architecture:check` printing a zero is not the same as
+  failing on a one.
+- The dependency direction `docs/architecture.md` specifies, enforced rather
+  than described: `types` depends on nothing, `domain` on `types`, `application`
+  on `domain` + `types`, `api-client` on `application` + `domain` + `types`.
+- A pinned toolchain of Node 24.20.0, pnpm 12.3.4, Next.js 16.3.4, Expo SDK
+  57.0.20 and TypeScript 6, each moved by its own node with its own evidence.
+- Provider selection that is real at every composition root, a durable queue
+  that records what a failure meant, and a persisted queue that is checked when
+  it is read back rather than cast.
 
-Both of the items recorded here were closed on 2026-09-09.
+### The lesson the chain kept relearning
 
-- **The orphaned tooling tests are fixed.** The root `test` script named twelve
-  files explicitly, so `owasp-api-route-inventory.test.ts` and
-  `production-readiness-protection.test.ts` were run by nothing and any future
-  one would be too. It now runs `vitest run --dir tooling`, which scans the
-  directory: 14 files, 270 tests. `vitest run "tooling/*.test.ts"` does **not**
-  work — vitest treats positional arguments as substring filters rather than
-  globs, so it matches nothing and exits 1 — and an unscoped `vitest run` would
-  collect every workspace test `turbo test` already owns in the same script.
-- **The OWASP inventory failure was real drift, and was one route.**
-  `/api/csp-report` existed with no row. It is the repository's only
-  deliberately unauthenticated route and its only one with no route-level rate
-  limit, so the API2 and API4 control notes each gained a clause rather than
-  letting the table imply coverage the prose denies. The `/api/transcribe` and
-  `/api/whisper-health` rows are not stale: they are `next.config.ts` rewrites,
-  and the test only checks routes against the document.
+**A requirement recorded where the enforcement never reads it.** Fourteen
+instances between CR03 and CR18, and the last one was CR18's own completion
+claim. The three shapes it took:
+
+- ownership that did not cover the paths a deliverable must touch (CR03, CR04,
+  CR05, CR09, CR19, CR09A, CR09B);
+- a `docs/architecture.md` requirement naming no node, so `pnpm rebuild:verify`
+  - which runs only a node's declared checks - could never enforce it;
+- a check that reports a fact without failing on it (CR06's `planned` package,
+  CR18's exception count).
+
+**Before promoting any node, diff its deliverables against
+`docs/architecture.md` and against what its ownership actually permits, and ask
+of every guard whether it fails or merely prints.** Three of the last four
+instances were caught before promotion rather than during it, which is the only
+reason they cost measurement time instead of a re-scope.
 
 ## Carried forward
 
@@ -198,12 +66,13 @@ Both of the items recorded here were closed on 2026-09-09.
   with one error and CR09 with seventeen; both were invisible because the check
   only runs once the removal node reaches `ready`. Ownership was corrected on
   every affected node.
-- A gap the CR06 promotion surfaced and did not close, because
-  `tooling/architecture-boundaries.ts` is not CR06's to edit: the checker errors
-  when a `required` package is **missing**, but says nothing when a `planned`
-  package **exists**. Nothing would have caught leaving `packages/sync` marked
-  `planned` after this move. It is dormant now — CR06 promoted the last
-  `planned` package — and becomes live again the moment another is added.
+- **The gap CR06's promotion surfaced is closed by CR18.** The checker errored
+  when a `required` package was **missing** and said nothing when a `planned`
+  package **existed**, so nothing would have caught leaving `packages/sync`
+  marked `planned` after that move. CR06 could not close it -
+  `tooling/architecture-boundaries.ts` was not CR06's to edit - and it sat here
+  unowned until the completion node took it. The mirror rule now reports
+  `planned package X exists at Y and must be required`.
 - Known follow-up left by CR02: `packages/types` exposes no subpath entry
   points, so a consumer cannot address a context directly as
   `@pest-patrol/types/jobs`. No consumer wants to today, and supporting it
@@ -217,7 +86,8 @@ Both of the items recorded here were closed on 2026-09-09.
   day, omitted them.
   They are now deliverables on all four nodes.
 - The same audit scoped **CR07** and **CR18**, which had no ownership and so
-  could not have been promoted at all. CR07's boundary is concrete: seven
+  could not have been promoted at all. Both have since run. CR07's boundary was
+  concrete: seven
   `OfflineQueueAction` values and seven `*QueuePayload` types exist with nothing
   relating them, `OfflineQueueItem` defaults `TPayload` to
   `Record<string, unknown>`, and `packages/domain/offlineQueue.ts` hand-carves

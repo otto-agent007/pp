@@ -1300,7 +1300,7 @@
       "baseSha": "6a2305cfb058f1ab7ee8e47aa0f1a27ded3f10c2",
       "id": "CR09B",
       "kind": "task",
-      "status": "running",
+      "status": "done",
       "parent": "CR09",
       "dependencies": [
         "CR07",
@@ -1443,11 +1443,31 @@
           "summary": "Clean-tree rebuild verification PASS, 15 of 15 gates, evidence set 605eee3f, running-slice mode against base 6a2305c with identical pre and post trees. No gate reported UNMAPPED, including docs/architecture.md and the plan document, which is standing slice ownership matched on the node id.",
           "commitSha": "e2c3e4971c856e51cf3c41a0496fd3ce50b3b1fa",
           "recordedAt": "2026-09-09T23:45:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Pull request 213 merged as 47dcc2b on 2026-09-10 with every check green: verify passed, all three CodeQL analyses passed, Vercel deployed, and Supabase Preview skipped because the task changes no supabase path.",
+          "commitSha": "6e61b166088cf25d5739f421a733480be11ad3b5",
+          "recordedAt": "2026-09-10T00:20:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/213"
+        },
+        {
+          "kind": "github",
+          "summary": "Source tag rebuild/cr09b-source published automatically at 6e61b16, the pull request head. That is the eighteenth and last source tag the chain needs before CR18's own: every live node except CR18 now has one.",
+          "commitSha": "6e61b166088cf25d5739f421a733480be11ad3b5",
+          "recordedAt": "2026-09-10T00:20:00Z",
+          "url": "https://github.com/otto-agent007/pp/releases/tag/rebuild/cr09b-source"
+        },
+        {
+          "kind": "review",
+          "summary": "CR09 is fully discharged by its decomposition. Both write tasks are done, they touched disjoint paths as the split claimed, and between them they cover all three deliverables CR09 had accumulated: CR09A removed the api-client singleton and gave apps/web a browser composition root, and CR09B validated the persisted queue, built the composition-root integration test docs/architecture.md requires, and made a terminal failure something a technician can see and end.",
+          "commitSha": "6e61b166088cf25d5739f421a733480be11ad3b5",
+          "recordedAt": "2026-09-10T00:20:00Z"
         }
       ],
       "branch": "codex/rebuild-cr09b-queue-recovery-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/213",
-      "mergeSha": "",
+      "mergeSha": "47dcc2b871e442051c99981c96ce455edd54ea47",
       "supersededBy": null,
       "target": null
     },
@@ -2204,10 +2224,10 @@
       "target": null
     },
     {
-      "baseSha": "",
+      "baseSha": "995921587c2257b4ea75b5d05c23a7db0f6f55ce",
       "id": "CR18",
       "kind": "slice",
-      "status": "planned",
+      "status": "running",
       "parent": "CR00",
       "dependencies": [
         "CR10",
@@ -2227,21 +2247,107 @@
       "ownership": [
         "docs/rebuild/graph.json",
         "tasks/done.md",
-        "tasks/in-progress.md"
+        "tasks/in-progress.md",
+        "tooling/architecture-boundaries.test.ts",
+        "tooling/architecture-boundaries.ts",
+        "tooling/architecture-completion.test.ts"
       ],
       "deliverables": [
         "Cross-runtime compatibility, controlled rebuild completion, and final reconciliation",
         "Evidence that every boundary exception has been removed and that no package remains in the planned policy state",
         "Final graph reconciliation with every slice done and every source tag published"
       ],
-      "checks": [],
+      "checks": [
+        "pnpm exec vitest run tooling/architecture-completion.test.ts",
+        "pnpm exec vitest run tooling/architecture-boundaries.test.ts",
+        "pnpm exec vitest run tooling/rebuild-graph.test.ts",
+        "pnpm architecture:check",
+        "pnpm rebuild:graph:check",
+        "pnpm rebuild:graph:reconcile -- --offline",
+        "pnpm install --frozen-lockfile",
+        "pnpm test",
+        "pnpm typecheck",
+        "pnpm lint",
+        "pnpm build",
+        "pnpm security:baseline",
+        "pnpm security:audit",
+        "git diff --check"
+      ],
       "approvals": [
         "CR20 added to the dependencies on 2026-09-09 when that node was created. CR18 claims every slice is done and every source tag published, so a new slice it does not depend on would let that claim pass while the slice was still open",
-        "CR09A and CR09B replaced CR09 in the dependencies on 2026-09-09 when CR09 was decomposed. CR18 claims every slice is done, and a dependency that resolves through a superseded node would let that claim pass while one half of the decomposition was still open."
+        "CR09A and CR09B replaced CR09 in the dependencies on 2026-09-09 when CR09 was decomposed. CR18 claims every slice is done, and a dependency that resolves through a superseded node would let that claim pass while one half of the decomposition was still open.",
+        "Controller directed the completion run on 2026-09-09, after CR09B merged as PR 213 and the control-plane fix merged as PR 214. CR18 runs on branch codex/rebuild-cr18-completion-v1 from base 995921587c2257b4ea75b5d05c23a7db0f6f55ce.",
+        "Ownership gained tooling/architecture-boundaries.ts, tooling/architecture-boundaries.test.ts and tooling/architecture-completion.test.ts at promotion, measured from the diff. The second deliverable asks for evidence that every boundary exception has been removed and that no package remains planned, and no gate failed on either: pnpm architecture:check prints the exception count rather than erroring on it. Evidence that nothing re-reads is the thing this chain has learned to refuse, so the deliverable is met by a guard that fails, which lives under tooling.",
+        "Fourteenth instance of the recurring defect class, and the last node in the chain met it about its own completion claim. The three shapes it took across the chain are recorded in tasks/in-progress.md: ownership that did not cover a deliverable's paths, a docs/architecture.md requirement naming no node, and a check that reports a fact without failing on it.",
+        "The completion guard is an assertion about this repository's policy rather than a new rule in the checker, decided at promotion. Boundary exceptions and the planned package state stay legitimate features: a future debt exception with a removal node, or a package declared before it is built, is a normal thing to want. What must not happen is either appearing without someone deciding to, and editing tooling/architecture-completion.test.ts is how that decision becomes reviewable.",
+        "The third deliverable needed recording rather than writing. CR18 depends on every other live node by name and pnpm rebuild:graph:check refuses to promote a node whose dependency is not done, so promoting this node is itself the proof that every slice is done; the reconciler checks each done node's source tag, merge ancestry and tag drift on every run.",
+        "CR18 also closes a gap CR06's promotion recorded and could not close, because tooling/architecture-boundaries.ts was not CR06's to edit: the checker errored when a required package was missing and said nothing when a planned package existed. It is in scope because the same ownership the second deliverable requires is what makes closing it possible, and because a stale planned entry is exactly what that deliverable claims is absent."
       ],
-      "evidence": [],
-      "branch": "",
-      "pr": "",
+      "evidence": [
+        {
+          "kind": "approval",
+          "summary": "Controller directed CR18's implementation and promotion to running on 2026-09-09, with ownership measured from the diff.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T00:55:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Draft pull request 215 opened for CR18 from codex/rebuild-cr18-completion-v1. Its first commit reconciles CR09B as done, folded in rather than shipped separately, which PR 178 made safe.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T00:55:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/215"
+        },
+        {
+          "kind": "review",
+          "summary": "Both new guards were proved to fire rather than merely to pass. Flipping @pest-patrol/i18n back to state planned fails tooling/architecture-completion.test.ts on 'leaves no package in the planned policy state' and fails pnpm architecture:check with 'planned package @pest-patrol/i18n exists at packages/i18n and must be required', which is the CR06 gap closing. Re-adding one exception fails the completion test on 'carries no boundary exceptions'. tooling/architecture-boundaries.json was restored byte-identical after each probe.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "One existing test encoded the gap being fixed, which is the failure mode this defect class carries: 'validates a present planned package against its declared permissions' asserted with toEqual that a present planned package produced only a forbidden-edge error. Its intent was correct and is kept; the staleness error joined its expected list. Grepping the tests for assertions that encode the bug is what #209 had to learn.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm architecture:check",
+          "exitCode": 0,
+          "summary": "The boundary checker reports 11 workspace packages and 0 matched exceptions, which is the second deliverable's claim. It is now also an assertion: tooling/architecture-completion.test.ts fails if the exception list is not empty, if any package is planned, or if the package count moves off 11.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm test",
+          "exitCode": 0,
+          "summary": "The full suite passes 10 of 10 tasks plus the root tooling suite, which goes from 286 tests in 14 files to 291 in 15: three in the new completion guard and two in the boundary checker for the planned-package rule. No workspace package's count changes, because this node touches no package source.",
+          "commitSha": "2db09dcab4ce6595f88a5adc99f76eab94f241f9",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The ownership boundary was proved to fire for this running node rather than assumed from a passing reconcile. Committing an unrelated line in README.md and reconciling offline exits 1 with 'changed path README.md is outside running-node ownership'; the probe commit was reset and the reconcile passes again.",
+          "commitSha": "09284a255bafe9b076e10e0ff2e82108cd55b7b7",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "command",
+          "command": "pnpm rebuild:verify",
+          "exitCode": 0,
+          "summary": "Clean-tree rebuild verification PASS, 14 of 14 gates, evidence set 7998ca45, running-slice mode against base 9959215 with identical pre and post trees. No gate reported UNMAPPED: tooling paths map to pnpm test, tasks and docs to git diff --check, and the plan document is standing slice ownership matched on the node id.",
+          "commitSha": "09284a255bafe9b076e10e0ff2e82108cd55b7b7",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "review",
+          "summary": "The controlled rebuild's third deliverable, checked at this point rather than asserted: every live node other than CR18 is done, each carries a branch, pull request and merge SHA, and each has a published rebuild source tag - eighteen of them, CR00 through CR07, CR09A, CR09B, CR10 through CR15, CR19 and CR20. CR08, CR09, CR16 and CR17 are superseded and need none. CR18 could not have been promoted had any dependency been open, because pnpm rebuild:graph:check refuses that.",
+          "commitSha": "09284a255bafe9b076e10e0ff2e82108cd55b7b7",
+          "recordedAt": "2026-09-10T01:05:00Z"
+        }
+      ],
+      "branch": "codex/rebuild-cr18-completion-v1",
+      "pr": "https://github.com/otto-agent007/pp/pull/215",
       "mergeSha": "",
       "supersededBy": null,
       "target": null
