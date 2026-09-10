@@ -2,10 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import {
-  DEMO_SEED_ADMIN_EMAIL,
-  DEMO_SEED_ADMIN_PASSWORD,
-} from "@pest-patrol/domain";
+import { DEMO_SEED_ADMIN_EMAIL } from "@pest-patrol/domain";
 import {
   Button,
   formControlClassName,
@@ -15,7 +12,27 @@ import { usePrepareLocalDemoLogin } from "../hooks/useDemoSeed";
 import { useAdminAuth } from "./admin-auth-context";
 import { BrandWordmark, useActiveBrandSkin } from "./brand";
 
+// A one-click demo button on a public site necessarily publishes the password
+// it types, so the credential is an explicit per-deployment opt-in rather than a
+// constant compiled into every build. Unset (the default) means no password
+// reaches the client bundle at all and the shortcut is hidden; operators who
+// want the button set NEXT_PUBLIC_DEMO_LOGIN_PASSWORD on that deployment only,
+// and rotate it there without a code change.
+export function demoLoginPassword(): string | undefined {
+  const configured = process.env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD?.trim();
+
+  if (configured) {
+    return configured;
+  }
+
+  return process.env.NODE_ENV !== "production" ? "password" : undefined;
+}
+
 export function shouldShowDemoLoginShortcut() {
+  if (!demoLoginPassword()) {
+    return false;
+  }
+
   return (
     process.env.NODE_ENV !== "production" ||
     process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === "true"
@@ -55,12 +72,19 @@ export function AdminSignIn() {
   }
 
   async function signInDemo() {
+    const demoPassword = demoLoginPassword();
+
+    if (!demoPassword) {
+      setFormError("Demo login is not configured for this deployment.");
+      return;
+    }
+
     setEmail(DEMO_SEED_ADMIN_EMAIL);
-    setPassword(DEMO_SEED_ADMIN_PASSWORD);
+    setPassword(demoPassword);
     setFormError(null);
 
     if (!shouldPrepareLocalDemoLogin()) {
-      await signIn(DEMO_SEED_ADMIN_EMAIL, DEMO_SEED_ADMIN_PASSWORD);
+      await signIn(DEMO_SEED_ADMIN_EMAIL, demoPassword);
       return;
     }
 
@@ -72,7 +96,7 @@ export function AdminSignIn() {
         return;
       }
 
-      await signIn(DEMO_SEED_ADMIN_EMAIL, DEMO_SEED_ADMIN_PASSWORD);
+      await signIn(DEMO_SEED_ADMIN_EMAIL, demoPassword);
     } catch (error) {
       try {
         await signInLocalDemo();
@@ -144,7 +168,7 @@ export function AdminSignIn() {
                   Local demo login
                 </p>
                 <p className="mt-1 text-sm text-theme-text-secondary">
-                  {DEMO_SEED_ADMIN_EMAIL} / {DEMO_SEED_ADMIN_PASSWORD}
+                  {DEMO_SEED_ADMIN_EMAIL}
                 </p>
                 <Button
                   className="mt-3"

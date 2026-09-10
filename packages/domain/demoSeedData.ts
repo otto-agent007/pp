@@ -20,7 +20,35 @@ import type {
 
 export const DEMO_SEED_CONFIRMATION = "seed-demo-data";
 export const DEMO_SEED_ADMIN_EMAIL = "demo@email.com";
-export const DEMO_SEED_ADMIN_PASSWORD = "password";
+// The demo admin password is deliberately NOT a shipped constant: it used to be
+// a literal here, which meant every browser that loaded the sign-in page
+// received it in the client bundle and the value was also printed in the public
+// README. It now comes from DEMO_SEED_ADMIN_PASSWORD, which is read server-side
+// at seed time only. The local-development fallback keeps `pnpm demo:seed`
+// one-command on a throwaway local database.
+export const DEMO_SEED_ADMIN_PASSWORD_ENV = "DEMO_SEED_ADMIN_PASSWORD";
+
+const LOCAL_DEV_DEMO_ADMIN_PASSWORD = "password";
+
+export function resolveDemoSeedAdminPassword(
+  env: Record<string, string | undefined> = process.env,
+): string {
+  const configured = env[DEMO_SEED_ADMIN_PASSWORD_ENV]?.trim();
+
+  if (configured) {
+    return configured;
+  }
+
+  // NODE_ENV is "production" for every built deployment, previews included, and
+  // previews share the live Supabase project — so refuse rather than fall back.
+  if (env.NODE_ENV === "production") {
+    throw new Error(
+      `${DEMO_SEED_ADMIN_PASSWORD_ENV} must be set before seeding demo data outside local development.`,
+    );
+  }
+
+  return LOCAL_DEV_DEMO_ADMIN_PASSWORD;
+}
 export const DEMO_SEED_MARKER = "[pest-patrol-demo-seed-v1]";
 
 export type DemoSeedTarget = "local" | "preview";
@@ -210,6 +238,7 @@ export interface DemoSeedRuntimeStatusInput {
 }
 
 interface DemoSeedPlanInput {
+  adminPassword?: string;
   now?: Date;
   technicianPassword?: string;
 }
@@ -970,6 +999,10 @@ export function getDemoSeedPlanSummary(
 export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
   const now = input.now ?? new Date();
   const technicianPassword = input.technicianPassword;
+  // Left empty for status/summary callers (including client components, which
+  // must never receive a password); seeding callers pass the resolved value and
+  // replaceDemoSeedRecords refuses to create an account without one.
+  const adminPassword = input.adminPassword ?? "";
   const customers: DemoSeedCustomer[] = [
     {
       email: "demo+harbor-hoa@example.test",
@@ -2226,7 +2259,7 @@ export function buildDemoSeedPlan(input: DemoSeedPlanInput = {}): DemoSeedPlan {
         display_name: "Demo - Admin",
         email: DEMO_SEED_ADMIN_EMAIL,
         key: "demo-admin",
-        password: DEMO_SEED_ADMIN_PASSWORD,
+        password: adminPassword,
         role: "admin",
       },
     ],

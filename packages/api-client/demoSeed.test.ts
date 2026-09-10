@@ -154,6 +154,7 @@ describe("demo seed api client", () => {
   it("seeds records in dependency order through the provided service-role client", async () => {
     const { calls, client } = createMockClient();
     const plan = buildDemoSeedPlan({
+      adminPassword: "demo-admin-pass-123",
       now: new Date("2026-05-14T16:38:00.000Z"),
       technicianPassword: "demo-pass-123",
     });
@@ -199,9 +200,24 @@ describe("demo seed api client", () => {
     );
   });
 
+  it("refuses to create the demo admin when no password was supplied", async () => {
+    // buildDemoSeedPlan() with no adminPassword is the shape client/status
+    // callers use; seeding with it must fail loudly rather than create an
+    // account with an empty credential.
+    const { client } = createMockClient();
+    const plan = buildDemoSeedPlan({
+      now: new Date("2026-05-14T16:38:00.000Z"),
+    });
+
+    await expect(
+      seedDemoRecords(client as unknown as DemoSeedSupabaseClient, plan),
+    ).rejects.toThrow(/DEMO_SEED_ADMIN_PASSWORD/);
+  });
+
   it("replaces demo records by resetting before seeding", async () => {
     const { calls, client } = createMockClient();
     const plan = buildDemoSeedPlan({
+      adminPassword: "demo-admin-pass-123",
       now: new Date("2026-05-14T16:38:00.000Z"),
       technicianPassword: "demo-pass-123",
     });
@@ -224,6 +240,7 @@ describe("demo seed api client", () => {
   it("refreshes demo login data without deleting the signed-in demo admin", async () => {
     const { calls, client } = createMockClient();
     const plan = buildDemoSeedPlan({
+      adminPassword: "demo-admin-pass-123",
       now: new Date("2026-05-14T16:38:00.000Z"),
       technicianPassword: "demo-pass-123",
     });

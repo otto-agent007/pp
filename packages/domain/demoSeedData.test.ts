@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   DEMO_SEED_CONFIRMATION,
   DEMO_SEED_ADMIN_EMAIL,
-  DEMO_SEED_ADMIN_PASSWORD,
+  DEMO_SEED_ADMIN_PASSWORD_ENV,
   DEMO_SEED_MARKER,
+  resolveDemoSeedAdminPassword,
   buildDemoSeedRuntimeStatus,
   buildDemoSeedPlan,
   getDemoSeedPlanSummary,
@@ -14,6 +15,7 @@ import {
 describe("demo seed data", () => {
   it("builds a stable synthetic full-ops seed plan with Pacific wall-clock jobs", () => {
     const plan = buildDemoSeedPlan({
+      adminPassword: "demo-admin-pass-123",
       now: new Date("2026-05-14T16:38:00.000Z"),
       technicianPassword: "demo-pass-123",
     });
@@ -24,7 +26,7 @@ describe("demo seed data", () => {
         display_name: "Demo - Admin",
         email: DEMO_SEED_ADMIN_EMAIL,
         key: "demo-admin",
-        password: DEMO_SEED_ADMIN_PASSWORD,
+        password: "demo-admin-pass-123",
         role: "admin",
       },
     ]);
@@ -440,5 +442,43 @@ describe("demo seed data", () => {
       available: false,
       reason: "SUPABASE_SERVICE_ROLE_KEY is required.",
     });
+  });
+});
+
+describe("demo seed admin credential", () => {
+  it("uses the operator-supplied password when one is configured", () => {
+    expect(
+      resolveDemoSeedAdminPassword({
+        [DEMO_SEED_ADMIN_PASSWORD_ENV]: "  rotated-demo-pass  ",
+        NODE_ENV: "production",
+      }),
+    ).toBe("rotated-demo-pass");
+  });
+
+  it("refuses to fall back in a built deployment", () => {
+    // NODE_ENV is "production" for previews too, and previews share the live
+    // Supabase project, so there is no safe default to fall back to.
+    expect(() =>
+      resolveDemoSeedAdminPassword({ NODE_ENV: "production" }),
+    ).toThrow(/DEMO_SEED_ADMIN_PASSWORD/);
+
+    expect(() =>
+      resolveDemoSeedAdminPassword({
+        [DEMO_SEED_ADMIN_PASSWORD_ENV]: "   ",
+        NODE_ENV: "production",
+      }),
+    ).toThrow(/DEMO_SEED_ADMIN_PASSWORD/);
+  });
+
+  it("keeps a throwaway default for local development only", () => {
+    expect(resolveDemoSeedAdminPassword({ NODE_ENV: "development" })).toBe(
+      "password",
+    );
+  });
+
+  it("builds a plan with no credential unless one is passed in", () => {
+    // Status and summary callers include client components; a plan built for
+    // them must never carry a password.
+    expect(buildDemoSeedPlan().adminUsers[0]?.password).toBe("");
   });
 });

@@ -7,6 +7,7 @@ import {
   buildDemoSeedPlan,
   buildDemoSeedRuntimeStatus,
   getDemoSeedPlanSummary,
+  resolveDemoSeedAdminPassword,
   validateDemoSeedGuardrails,
 } from "@pest-patrol/domain";
 import type { DemoSeedActionInput, DemoSeedTarget } from "@pest-patrol/types";
@@ -95,7 +96,12 @@ export async function POST(request: Request) {
 
   try {
     const input = validateActionInput(await request.json());
-    const plan = buildDemoSeedPlan();
+    // Only the seed path creates auth users, so it is the only one that needs a
+    // credential; dry_run and reset must not require DEMO_SEED_ADMIN_PASSWORD.
+    const plan = buildDemoSeedPlan({
+      adminPassword:
+        input.action === "seed" ? resolveDemoSeedAdminPassword() : undefined,
+    });
     const summary = getDemoSeedPlanSummary(plan);
     const status = runtimeStatus(input.target);
 

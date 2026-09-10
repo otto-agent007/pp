@@ -2,7 +2,7 @@
 
 import {
   DEMO_SEED_ADMIN_EMAIL,
-  DEMO_SEED_ADMIN_PASSWORD,
+  DEMO_SEED_ADMIN_PASSWORD_ENV,
   DEMO_SEED_CONFIRMATION,
 } from "@pest-patrol/domain";
 
@@ -60,7 +60,8 @@ export function DemoSeedControls() {
       {summary ? (
         <>
           <p className="mt-3 text-sm font-semibold text-theme-text-primary">
-            Demo login: {DEMO_SEED_ADMIN_EMAIL} / {DEMO_SEED_ADMIN_PASSWORD}
+            Demo login: {DEMO_SEED_ADMIN_EMAIL} (password from{" "}
+            {DEMO_SEED_ADMIN_PASSWORD_ENV})
           </p>
           <p className="mt-2 text-sm text-theme-text-secondary">
             Also includes {plural(summary.locations, "location")},{" "}

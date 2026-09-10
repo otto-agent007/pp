@@ -1,6 +1,7 @@
 export type ApiRateLimitPolicyId =
   | "portal-access-token-create"
   | "portal-access-token-send"
+  | "portal-closeouts"
   | "portal-session-exchange"
   | "portal-upgrade-intent"
   | "payment-link-create"

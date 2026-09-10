@@ -7,6 +7,7 @@ import {
   buildDemoSeedPlan,
   buildDemoSeedRuntimeStatus,
   getDemoSeedPlanSummary,
+  resolveDemoSeedAdminPassword,
   validateDemoSeedGuardrails,
 } from "@pest-patrol/domain";
 import { NextResponse } from "next/server";
@@ -24,8 +25,9 @@ function isLocalDevelopment() {
 }
 
 export async function POST(request: Request) {
-  const plan = buildDemoSeedPlan();
-  const summary = getDemoSeedPlanSummary(plan);
+  // Passwordless plan for the summary the route echoes back on every path;
+  // the seeding plan below is the only one that carries a credential.
+  const summary = getDemoSeedPlanSummary(buildDemoSeedPlan());
 
   try {
     const hostname = new URL(request.url).hostname;
@@ -75,7 +77,10 @@ export async function POST(request: Request) {
 
     const client =
       createServiceRoleSupabaseClient() as unknown as DemoSeedSupabaseClient;
-    const result = await replaceDemoSeedRecords(client, plan);
+    const result = await replaceDemoSeedRecords(
+      client,
+      buildDemoSeedPlan({ adminPassword: resolveDemoSeedAdminPassword() }),
+    );
 
     return NextResponse.json({
       action: "seed",

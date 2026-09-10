@@ -301,6 +301,12 @@ export async function seedDemoRecords(
       continue;
     }
 
+    if (!adminUser.password) {
+      throw new Error(
+        `Create demo admin ${adminUser.email}: no password was supplied. Set DEMO_SEED_ADMIN_PASSWORD and pass adminPassword to buildDemoSeedPlan.`,
+      );
+    }
+
     const { data, error } = await client.auth.admin.createUser({
       email: adminUser.email,
       email_confirm: true,
