@@ -181,12 +181,10 @@ with the other two subtracted by hand through `Exclude<…>` and re-attached at
 the call site, is now total: a newly added action fails to compile where the
 labels live instead of rendering `undefined`.
 
-CR07 changed no behaviour by design. `apps/mobile` still reads its persisted
-queue straight into `OfflineQueueItem[]` without validating it — a cast that was
-unsound before this slice and is no more sound after it. What changed is that
-there is now a mapping to validate against, and CR09B owns doing so. An item
-that fails that validation is kept and marked terminal rather than dropped, so
-field work a technician believed was saved is shown rather than lost.
+CR07 changed no behaviour by design. It left `apps/mobile` reading its persisted
+queue straight into `OfflineQueueItem[]` — a cast that was unsound before that
+slice and no more sound after it — because what the slice produced was a mapping
+to validate against. CR09B does the validating.
 
 ### The queue acts on what a failure meant
 
@@ -255,6 +253,34 @@ a client-valued binding, or if an adapter factory defaults its client again;
 `apps/web/lib/supabase-browser.test.ts` fails if a browser adapter is built with
 anything but the composition root's client, if a second browser client appears,
 or if server code reaches for the browser's.
+
+### A queue read back from a device is checked, and nothing is dropped
+
+CR09B replaced that cast with
+[`reviewPersistedOfflineQueue`](../packages/domain/offlineQueue.ts), which reads
+each stored entry through its own action's payload normalizer — the same
+normalizer `packages/sync` applies before sending — so a payload the domain
+would refuse at the provider is refused when the device is read instead.
+
+Nothing is dropped, which is the part that constrains the design. An entry that
+survives validation is a queue item. An entry that does not is returned as a
+`RejectedOfflineQueueEntry` carrying the record exactly as it was stored, with
+the `status` and `outcome` a terminal sync failure carries, and the mobile store
+persists it back untouched on every write. It is not typed as a queue item: an
+unvalidated payload in that slot would be the cast this validation exists to
+remove. A damaged envelope is the third case — the values are readable enough to
+show and not trustworthy enough to send, so the item is kept and marked terminal
+rather than repaired quietly. A field that is simply absent takes its default,
+because the record grows over time and an item queued before CR19 added
+`outcome` must survive the upgrade that finds it.
+
+Both meet the technician in one place. `SyncStatusIndicator` lists queue items
+the queue has stopped working on beside entries the validation refused, each
+with what happened to it and a `Discard` control, and `discardQueueItem` refuses
+to remove anything the queue is still working on. This is also the first thing
+to read CR19's `outcome`: a conflict tells the technician the office or another
+device got there first, a terminal failure tells them to redo the work, and
+before this the screen showed one "failed" count for both.
 
 Use the [controlled rebuild runbook](rebuild/README.md) for scheduler,
 lifecycle, verification, and publication rules.

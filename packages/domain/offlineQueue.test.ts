@@ -2,15 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import type { OfflineQueueAction, OfflineQueueInput } from "@pest-patrol/types";
 
-import { queuePayload } from "./fixtures/offlineQueue";
+import { queueItem, queuePayload } from "./fixtures/offlineQueue";
 import {
   clearSyncedQueueItems,
   createOfflineQueueItem,
+  discardQueueItem,
+  discardRejectedQueueEntry,
   getOfflineQueueItemLabel,
   getOfflineQueueJobTriage,
+  getOfflineQueueRecoveryItems,
   getOfflineQueueSummary,
+  markQueueItemFailed,
   markQueueItemRetrying,
   markQueueItemSynced,
+  reviewPersistedOfflineQueue,
 } from "./offlineQueue";
 
 const now = "2026-05-05T12:00:00.000Z";
@@ -20,10 +25,11 @@ const now = "2026-05-05T12:00:00.000Z";
  * runtime guard still rejects it.
  *
  * CR07 made the payload follow from the action, so a malformed input can no
- * longer be written directly. The guard is still worth having: a persisted
- * queue is read back from storage unvalidated, and CR09 owns checking it there.
- * The deliberate violation goes through this builder so it stays greppable
- * instead of hiding in an inline cast.
+ * longer be written directly. The guard is still worth having: a value that
+ * reaches the queue from outside the type system is checked at runtime, which
+ * is what `reviewPersistedOfflineQueue` does for a queue read back from a
+ * device. The deliberate violation goes through this builder so it stays
+ * greppable instead of hiding in an inline cast.
  */
 function untrustedQueueInput(
   action: OfflineQueueAction,
@@ -336,5 +342,238 @@ describe("offline queue domain", () => {
       synced: 0,
       total: 0,
     });
+  });
+});
+
+describe("persisted offline queue validation", () => {
+  it("reads a well-formed persisted queue back with its envelope intact", () => {
+    const stored = [
+      queueItem("job_status_update", { id: "queue-1" }),
+      queueItem("chemical_log_create", {
+        attempts: 2,
+        id: "queue-2",
+        last_error: "Sync failed",
+        next_retry_at: "2026-05-05T12:01:00.000Z",
+        outcome: "retryable",
+        status: "retrying",
+      }),
+    ];
+
+    const review = reviewPersistedOfflineQueue(
+      JSON.parse(JSON.stringify(stored)),
+      { now },
+    );
+
+    expect(review.rejected).toEqual([]);
+    expect(review.items).toEqual([
+      stored[0],
+      // The payload comes back canonical rather than byte-identical: the
+      // action's own normalizer produced it, which is what makes checking it
+      // possible at all. `notes` is the optional field that shows the
+      // difference.
+      { ...stored[1], payload: { ...stored[1]?.payload, notes: null } },
+    ]);
+  });
+
+  it("keeps the file size a proof payload was queued with", () => {
+    const stored = queueItem("photo_upload", { id: "queue-1" });
+
+    const review = reviewPersistedOfflineQueue(
+      [{ ...stored, payload: { ...stored.payload, file_size_bytes: 2048 } }],
+      { now },
+    );
+
+    expect(review.rejected).toEqual([]);
+    expect(review.items[0]?.payload).toEqual(
+      expect.objectContaining({ file_size_bytes: 2048 }),
+    );
+  });
+
+  it("keeps an item whose payload the domain refuses, rather than dropping it", () => {
+    const review = reviewPersistedOfflineQueue(
+      [
+        {
+          ...queueItem("job_status_update", { id: "queue-1" }),
+          payload: { job_id: "job-1", status: "teleporting" },
+        },
+      ],
+      { now },
+    );
+
+    expect(review.items).toEqual([]);
+    expect(review.rejected).toEqual([
+      {
+        action: "job_status_update",
+        entry: expect.objectContaining({ id: "queue-1" }),
+        id: "queue-1",
+        last_error: "Job status is invalid",
+        outcome: "terminal",
+        status: "failed",
+      },
+    ]);
+  });
+
+  it("keeps an entry naming an action this app does not know", () => {
+    const review = reviewPersistedOfflineQueue(
+      [{ action: "teleport_technician", id: "queue-9", payload: { job_id: "job-1" } }],
+      { now },
+    );
+
+    expect(review.items).toEqual([]);
+    expect(review.rejected).toEqual([
+      {
+        action: null,
+        entry: expect.objectContaining({ action: "teleport_technician" }),
+        id: "queue-9",
+        last_error: "Saved change names an action this app does not know",
+        outcome: "terminal",
+        status: "failed",
+      },
+    ]);
+  });
+
+  it("keeps a value that is not a queue record at all, under a usable id", () => {
+    const review = reviewPersistedOfflineQueue(["not-a-record"], { now });
+
+    expect(review.rejected).toEqual([
+      {
+        action: null,
+        entry: "not-a-record",
+        id: "unreadable-1",
+        last_error: "Saved change is not a queue record",
+        outcome: "terminal",
+        status: "failed",
+      },
+    ]);
+  });
+
+  it("reviews a stored value that is not an array as a single entry", () => {
+    const review = reviewPersistedOfflineQueue({ queue: "gone" }, { now });
+
+    expect(review.items).toEqual([]);
+    expect(review.rejected).toHaveLength(1);
+    expect(review.rejected[0]?.entry).toEqual({ queue: "gone" });
+  });
+
+  it("marks an item terminal when its envelope is present but unreadable", () => {
+    const review = reviewPersistedOfflineQueue(
+      [
+        {
+          ...queueItem("job_status_update", { id: "queue-1" }),
+          attempts: "many",
+          status: "sideways",
+        },
+      ],
+      { now },
+    );
+
+    expect(review.rejected).toEqual([]);
+    expect(review.items).toEqual([
+      expect.objectContaining({
+        attempts: 0,
+        id: "queue-1",
+        last_error: "Saved change was stored with unreadable attempts, status",
+        outcome: "terminal",
+        status: "failed",
+        updated_at: now,
+      }),
+    ]);
+  });
+
+  it("defaults a field the record predates instead of calling it damage", () => {
+    const { outcome, ...withoutOutcome } = queueItem("photo_upload", {
+      id: "queue-1",
+    });
+
+    void outcome;
+
+    const review = reviewPersistedOfflineQueue([withoutOutcome], { now });
+
+    expect(review.rejected).toEqual([]);
+    expect(review.items).toEqual([
+      expect.objectContaining({ id: "queue-1", outcome: null, status: "queued" }),
+    ]);
+  });
+});
+
+describe("offline queue recovery", () => {
+  it("lists failed items and rejected entries as one recovery list", () => {
+    const failed = markQueueItemFailed(
+      queueItem("chemical_log_create", { id: "queue-1" }),
+      "Chemical is not available",
+      { now, outcome: "conflict" },
+    );
+    const { rejected } = reviewPersistedOfflineQueue(
+      [
+        {
+          ...queueItem("photo_upload", { id: "queue-2", jobId: "job-7" }),
+          payload: { job_id: "job-7" },
+        },
+      ],
+      { now },
+    );
+
+    expect(
+      getOfflineQueueRecoveryItems(
+        [queueItem("job_status_update", { id: "queue-0" }), failed],
+        rejected,
+      ),
+    ).toEqual([
+      {
+        action: "chemical_log_create",
+        id: "queue-1",
+        label: "Chemical log for job job-1",
+        lastError: "Chemical is not available",
+        outcome: "conflict",
+      },
+      {
+        action: "photo_upload",
+        id: "queue-2",
+        label: "Photo capture for job job-7",
+        lastError: "Photo is required",
+        outcome: "terminal",
+      },
+    ]);
+  });
+
+  it("labels a rejected entry whose action is unknown without reading its payload", () => {
+    const { rejected } = reviewPersistedOfflineQueue([42], { now });
+
+    expect(getOfflineQueueRecoveryItems([], rejected)).toEqual([
+      {
+        action: null,
+        id: "unreadable-1",
+        label: "Unreadable saved change",
+        lastError: "Saved change is not a queue record",
+        outcome: "terminal",
+      },
+    ]);
+  });
+
+  it("discards a failed item and leaves work the queue is still doing", () => {
+    const queued = queueItem("job_status_update", { id: "queue-1" });
+    const failed = markQueueItemFailed(
+      queueItem("photo_upload", { id: "queue-2" }),
+      "Upload failed",
+      { now },
+    );
+    const retrying = markQueueItemRetrying(
+      queueItem("chemical_log_create", { id: "queue-3" }),
+      "Network failed",
+      { now },
+    );
+    const items = [queued, failed, retrying];
+
+    expect(discardQueueItem(items, "queue-2")).toEqual([queued, retrying]);
+    expect(discardQueueItem(items, "queue-1")).toEqual(items);
+    expect(discardQueueItem(items, "queue-3")).toEqual(items);
+  });
+
+  it("discards a rejected entry by the id the recovery list shows", () => {
+    const { rejected } = reviewPersistedOfflineQueue([1, 2], { now });
+
+    expect(
+      discardRejectedQueueEntry(rejected, "unreadable-1").map((entry) => entry.id),
+    ).toEqual(["unreadable-2"]);
   });
 });

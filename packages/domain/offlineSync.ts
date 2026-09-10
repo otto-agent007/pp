@@ -70,6 +70,20 @@ function normalizeJobStatus(value: unknown) {
   return value as JobStatus;
 }
 
+/**
+ * A proof payload's recorded file size, when it carries one.
+ *
+ * Both proof normalizers used to build their object literal without this key,
+ * so the size a technician's device measured was dropped on the way to the
+ * provider - `packages/api-client` validates and stores it, and never received
+ * one from the queue. It matters more now that `reviewPersistedOfflineQueue`
+ * runs these normalizers over a queue read back from a device: without it,
+ * reading the queue back would quietly delete a field the queue was holding.
+ */
+function readOptionalFileSize(value: unknown) {
+  return typeof value === "number" ? value : null;
+}
+
 function normalizeArrivalNotificationDecision(value: unknown) {
   if (
     typeof value !== "string" ||
@@ -162,6 +176,7 @@ export function normalizeJobPhotoUploadQueuePayload(
       typeof payload.description === "string" ? payload.description : null,
     captured_at:
       typeof payload.captured_at === "string" ? payload.captured_at : null,
+    file_size_bytes: readOptionalFileSize(payload.file_size_bytes),
   });
 }
 
@@ -183,6 +198,7 @@ export function normalizeJobSignatureCaptureQueuePayload(
       typeof payload.signer_name === "string" ? payload.signer_name : null,
     captured_at:
       typeof payload.captured_at === "string" ? payload.captured_at : null,
+    file_size_bytes: readOptionalFileSize(payload.file_size_bytes),
   });
 }
 
