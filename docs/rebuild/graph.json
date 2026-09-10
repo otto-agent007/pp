@@ -2227,7 +2227,7 @@
       "baseSha": "995921587c2257b4ea75b5d05c23a7db0f6f55ce",
       "id": "CR18",
       "kind": "slice",
-      "status": "running",
+      "status": "done",
       "parent": "CR00",
       "dependencies": [
         "CR10",
@@ -2344,11 +2344,31 @@
           "summary": "The controlled rebuild's third deliverable, checked at this point rather than asserted: every live node other than CR18 is done, each carries a branch, pull request and merge SHA, and each has a published rebuild source tag - eighteen of them, CR00 through CR07, CR09A, CR09B, CR10 through CR15, CR19 and CR20. CR08, CR09, CR16 and CR17 are superseded and need none. CR18 could not have been promoted had any dependency been open, because pnpm rebuild:graph:check refuses that.",
           "commitSha": "09284a255bafe9b076e10e0ff2e82108cd55b7b7",
           "recordedAt": "2026-09-10T01:05:00Z"
+        },
+        {
+          "kind": "github",
+          "summary": "Pull request 215 merged as 65cea4d on 2026-09-10 with every check green: verify passed, all three CodeQL analyses passed, Vercel deployed, and Supabase Preview skipped because the node changes no supabase path.",
+          "commitSha": "7584603793625497954b297b5a9aa1c97c5c27f8",
+          "recordedAt": "2026-09-10T01:25:00Z",
+          "url": "https://github.com/otto-agent007/pp/pull/215"
+        },
+        {
+          "kind": "github",
+          "summary": "Source tag rebuild/cr18-source published automatically at 7584603, the pull request head. It is the nineteenth and final source tag: every live node in the graph now has one.",
+          "commitSha": "7584603793625497954b297b5a9aa1c97c5c27f8",
+          "recordedAt": "2026-09-10T01:25:00Z",
+          "url": "https://github.com/otto-agent007/pp/releases/tag/rebuild/cr18-source"
+        },
+        {
+          "kind": "review",
+          "summary": "The controlled rebuild is complete. Every live node is done - CR00 through CR07, CR09A, CR09B, CR10 through CR15, CR18, CR19 and CR20 - and CR08, CR09, CR16 and CR17 are superseded. Nothing in the graph is planned, ready or running. This node's own reconciliation is the last act of the chain, and from here the graph is a record rather than a plan.",
+          "commitSha": "7584603793625497954b297b5a9aa1c97c5c27f8",
+          "recordedAt": "2026-09-10T01:25:00Z"
         }
       ],
       "branch": "codex/rebuild-cr18-completion-v1",
       "pr": "https://github.com/otto-agent007/pp/pull/215",
-      "mergeSha": "",
+      "mergeSha": "65cea4df0e5800e23f266796a75ac82ec453d9e4",
       "supersededBy": null,
       "target": null
     },
