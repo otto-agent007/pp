@@ -6,7 +6,10 @@ import {
   validateDemoSeedExecution,
   type DemoSeedSupabaseClient,
 } from "../packages/api-client/demoSeed";
-import { buildDemoSeedPlan } from "../packages/domain/demoSeedData";
+import {
+  buildDemoSeedPlan,
+  resolveDemoSeedAdminPassword,
+} from "../packages/domain/demoSeedData";
 
 interface CliOptions {
   confirm?: string;
@@ -92,7 +95,12 @@ async function main() {
   const technicianPassword = options.techPasswordEnv
     ? getEnv(options.techPasswordEnv)
     : undefined;
-  const plan = buildDemoSeedPlan({ technicianPassword });
+  const plan = buildDemoSeedPlan({
+    adminPassword: resolveDemoSeedAdminPassword(process.env, {
+      requireConfigured: validation.target === "preview",
+    }),
+    technicianPassword,
+  });
 
   if (options.mode === "seed") {
     const result = await replaceDemoSeedRecords(client, plan);
