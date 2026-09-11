@@ -369,8 +369,10 @@ export type {
 } from "./jobs";
 export {
   buildTechnicianRouteLoadSummaries,
+  canTechnicianSetJobStatus,
   getTechnicianLabel,
   normalizeTechnicianInviteInput,
+  technicianJobStatuses,
   validateTechnicianInviteInput,
 } from "./technicians";
 export type {

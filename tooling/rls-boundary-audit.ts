@@ -8,7 +8,8 @@ export interface RlsBoundaryAuditFinding {
     | "anon_sensitive_grant"
     | "missing_rls_enablement"
     | "public_rpc_grant"
-    | "sensitive_using_true";
+    | "sensitive_using_true"
+    | "technician_policy_missing_status_check";
   message: string;
   severity: RlsBoundaryAuditSeverity;
   source: string;
@@ -19,6 +20,24 @@ export interface RlsBoundaryAuditSource {
   name: string;
   sql: string;
 }
+
+export interface EffectivePolicy {
+  name: string;
+  source: string;
+  statement: string;
+  table: string;
+}
+
+/**
+ * The predicate that makes a technician branch respect profiles.status.
+ *
+ * private.has_admin_access() has enforced status since 2026-09-06, but the
+ * technician branches keyed on jobs.assigned_tech_id alone until
+ * 20260910200000_technician_status_boundary_v1, so a deactivated technician
+ * kept every assigned job. Any future policy that reaches rows through
+ * assigned_tech_id has to carry this predicate too.
+ */
+const activeProfilePredicate = "has_active_profile";
 
 const sensitiveTables = [
   "profiles",
@@ -99,6 +118,74 @@ function publicRpcGrants(sql: string) {
   ) ?? [];
 }
 
+/** Strip comments and dollar-quoted function bodies, keeping statement order. */
+function statementsOf(sql: string) {
+  return sql
+    .replace(/--.*$/gm, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\$\$[\s\S]*?\$\$/g, " ")
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+}
+
+const dropPolicyPattern =
+  /^drop\s+policy\s+(?:if\s+exists\s+)?(?:"([^"]+)"|([a-z0-9_]+))\s+on\s+(?:([a-z0-9_]+)\.)?([a-z0-9_]+)/i;
+const createPolicyPattern =
+  /^create\s+policy\s+(?:"([^"]+)"|([a-z0-9_]+))\s+on\s+(?:([a-z0-9_]+)\.)?([a-z0-9_]+)/i;
+
+/** `public` is implicit everywhere else in the audit, so drop it from the key. */
+function qualifiedTable(schema: string | undefined, table: string) {
+  const normalized = table.toLowerCase();
+
+  return !schema || schema.toLowerCase() === "public"
+    ? normalized
+    : `${schema.toLowerCase()}.${normalized}`;
+}
+
+/**
+ * The policy set a fresh database ends up with after replaying every migration.
+ *
+ * Auditing the concatenated SQL cannot answer this on its own: a policy that
+ * was weak in 2026-05 and rewritten in 2026-09 still has its old, weak text
+ * sitting in the older file. Replaying drop/create in filename order -- the
+ * order Supabase applies them in -- leaves only the definition that is actually
+ * live, which is the only one worth auditing.
+ */
+export function effectivePolicies(sources: RlsBoundaryAuditSource[]) {
+  const policies = new Map<string, EffectivePolicy>();
+
+  for (const source of sources) {
+    for (const statement of statementsOf(source.sql)) {
+      const dropped = dropPolicyPattern.exec(statement);
+
+      if (dropped) {
+        const name = (dropped[1] ?? dropped[2]) as string;
+        const table = qualifiedTable(dropped[3], dropped[4] as string);
+        policies.delete(`${table}|${name.toLowerCase()}`);
+        continue;
+      }
+
+      const created = createPolicyPattern.exec(statement);
+
+      if (!created) {
+        continue;
+      }
+
+      const name = (created[1] ?? created[2]) as string;
+      const table = qualifiedTable(created[3], created[4] as string);
+      policies.set(`${table}|${name.toLowerCase()}`, {
+        name,
+        source: source.name,
+        statement,
+        table,
+      });
+    }
+  }
+
+  return policies;
+}
+
 export function auditRlsBoundarySources(
   sources: RlsBoundaryAuditSource[],
 ): RlsBoundaryAuditFinding[] {
@@ -133,6 +220,21 @@ export function auditRlsBoundarySources(
         severity: "error",
         source: "combined migrations",
         table,
+      });
+    }
+  }
+
+  for (const policy of effectivePolicies(sources).values()) {
+    if (
+      /assigned_tech_id/i.test(policy.statement) &&
+      !policy.statement.toLowerCase().includes(activeProfilePredicate)
+    ) {
+      findings.push({
+        code: "technician_policy_missing_status_check",
+        message: `${policy.table} policy "${policy.name}" reaches rows through assigned_tech_id without private.${activeProfilePredicate}(), so a deactivated technician keeps access`,
+        severity: "error",
+        source: policy.source,
+        table: policy.table,
       });
     }
   }

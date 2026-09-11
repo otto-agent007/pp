@@ -185,3 +185,44 @@ export function buildTechnicianRouteLoadSummaries(
     };
   });
 }
+
+/**
+ * The four job statuses a technician can set from the field app.
+ *
+ * public.update_assigned_job_status rejects anything else outright, so this is
+ * the whole vocabulary available offline as well as online.
+ */
+export const technicianJobStatuses: JobStatus[] = [
+  "scheduled",
+  "en_route",
+  "in_progress",
+  "completed",
+];
+
+/**
+ * Whether a technician may move an assigned job from one status to another.
+ *
+ * The rule that matters is that `completed` is a one-way door: a completed job
+ * is the input to invoicing, and moving it back detaches an invoice from the
+ * work it bills. The database is the enforcement point -- 20260910200000
+ * raises PP409 on this transition, and the field app cannot be trusted to be
+ * current -- but the queue classifies PP409 as a conflict, which is terminal
+ * and has to be cleared by the technician by hand. This function exists so the
+ * app never offers a control whose only possible outcome is that chore.
+ *
+ * Moves among the other three stay unrestricted: correcting a mis-tap between
+ * scheduled, en_route and in_progress is ordinary field use.
+ */
+export function canTechnicianSetJobStatus(
+  currentStatus: JobStatus,
+  nextStatus: JobStatus,
+) {
+  if (
+    !technicianJobStatuses.includes(currentStatus) ||
+    !technicianJobStatuses.includes(nextStatus)
+  ) {
+    return false;
+  }
+
+  return currentStatus !== "completed" || nextStatus === "completed";
+}

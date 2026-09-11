@@ -80,11 +80,13 @@ vi.mock("@pest-patrol/ui-native", async () => {
   return {
     CaptureButton: ({
       children,
+      disabled,
       onPress,
       style,
       variant,
     }: {
       children?: ReactNode;
+      disabled?: boolean;
       onPress?: () => void;
       style?: unknown;
       variant?: string;
@@ -92,6 +94,7 @@ vi.mock("@pest-patrol/ui-native", async () => {
       ReactModule.createElement(
         "Pressable",
         {
+          disabled,
           onPress,
           style: [
             {
@@ -271,6 +274,33 @@ describe("JobStatusControls", () => {
     const completeAnyway = collectPressables(element).at(-1);
     completeAnyway?.props.onPress!();
 
+    expect(queueStatusUpdate).toHaveBeenCalledWith("job-1", "completed");
+  });
+
+  it("offers a completed job no way back out", () => {
+    queueStatusUpdate.mockReset();
+    queueItems.value = [];
+
+    const element = <JobStatusControls job={{ ...job, status: "completed" }} />;
+    // collectPressables walks each component's children and its rendered output,
+    // so every button appears twice; the first four are the status row.
+    const buttons = collectPressables(element).slice(0, 4);
+
+    // scheduled, en_route and in_progress are inert; completed is the current
+    // status and stays pressable. The database raises PP409 on the three
+    // backward moves, which the queue treats as a terminal conflict.
+    expect(buttons.map((button) => button.props.disabled)).toEqual([
+      true,
+      true,
+      true,
+      false,
+    ]);
+
+    for (const button of buttons) {
+      button.props.onPress!();
+    }
+
+    expect(queueStatusUpdate).toHaveBeenCalledTimes(1);
     expect(queueStatusUpdate).toHaveBeenCalledWith("job-1", "completed");
   });
 
