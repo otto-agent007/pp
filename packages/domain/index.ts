@@ -40,6 +40,7 @@ export {
   buildDemoSeedPlan,
   getDemoSeedPlanSummary,
   resolveDemoSeedAdminPassword,
+  isAllowedDemoSeedUrl,
   validateDemoSeedGuardrails,
 } from "./demoSeedData";
 export type {

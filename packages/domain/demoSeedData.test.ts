@@ -7,6 +7,7 @@ import {
   DEMO_SEED_MARKER,
   resolveDemoSeedAdminPassword,
   buildDemoSeedRuntimeStatus,
+  isAllowedDemoSeedUrl,
   buildDemoSeedPlan,
   getDemoSeedPlanSummary,
   validateDemoSeedGuardrails,
@@ -203,6 +204,8 @@ describe("demo seed data", () => {
         supabaseUrl: "https://example.supabase.co",
         serviceRoleKey: "service-role-key",
         previewSecretConfigured: true,
+        previewSecretMatches: true,
+        allowedSupabaseUrl: "https://example.supabase.co",
       }),
     ).toEqual({ ok: true, target: "preview" });
 
@@ -394,6 +397,7 @@ describe("demo seed data", () => {
         target: "preview",
         vercelEnv: "preview",
         previewSecretConfigured: true,
+        allowedSupabaseUrl: "https://project.supabase.co",
       }),
     ).toMatchObject({
       available: true,
@@ -480,5 +484,103 @@ describe("demo seed admin credential", () => {
     // Status and summary callers include client components; a plan built for
     // them must never carry a password.
     expect(buildDemoSeedPlan().adminUsers[0]?.password).toBe("");
+  });
+});
+
+describe("demo seed preview secret and project allowlist", () => {
+  const previewBase = {
+    confirm: DEMO_SEED_CONFIRMATION,
+    serviceRoleKey: "service-role-key",
+    supabaseUrl: "https://demo-project.supabase.co",
+    target: "preview",
+  } as const;
+
+  it("refuses a preview seed when the secret is configured but never presented", () => {
+    expect(
+      validateDemoSeedGuardrails({
+        ...previewBase,
+        allowedSupabaseUrl: "https://demo-project.supabase.co",
+        previewSecretConfigured: true,
+      }),
+    ).toEqual({
+      ok: false,
+      message: "Preview demo seed requires a matching x-demo-seed-secret header.",
+    });
+  });
+
+  it("refuses a preview seed when the presented secret does not match", () => {
+    expect(
+      validateDemoSeedGuardrails({
+        ...previewBase,
+        allowedSupabaseUrl: "https://demo-project.supabase.co",
+        previewSecretConfigured: true,
+        previewSecretMatches: false,
+      }),
+    ).toEqual({
+      ok: false,
+      message: "Preview demo seed requires a matching x-demo-seed-secret header.",
+    });
+  });
+
+  it("refuses a preview seed when no project is named, even with a matching secret", () => {
+    expect(
+      validateDemoSeedGuardrails({
+        ...previewBase,
+        previewSecretConfigured: true,
+        previewSecretMatches: true,
+      }),
+    ).toEqual({
+      ok: false,
+      message:
+        "Preview demo seed requires DEMO_SEED_ALLOWED_SUPABASE_URL to name the Supabase project it may write to.",
+    });
+  });
+
+  it("refuses a preview seed aimed at a project other than the named one", () => {
+    expect(
+      validateDemoSeedGuardrails({
+        ...previewBase,
+        supabaseUrl: "https://production-project.supabase.co",
+        allowedSupabaseUrl: "https://demo-project.supabase.co",
+        previewSecretConfigured: true,
+        previewSecretMatches: true,
+      }),
+    ).toEqual({
+      ok: false,
+      message:
+        "Preview demo seed requires DEMO_SEED_ALLOWED_SUPABASE_URL to name the Supabase project it may write to.",
+    });
+  });
+
+  it("reports the unnamed project as unavailable rather than letting the POST find out", () => {
+    expect(
+      buildDemoSeedRuntimeStatus({
+        previewSecretConfigured: true,
+        serviceRoleConfigured: true,
+        supabaseUrl: "https://production-project.supabase.co",
+        target: "preview",
+        vercelEnv: "preview",
+      }),
+    ).toEqual({
+      available: false,
+      environment_label: "Protected preview demo",
+      reason:
+        "Preview demo seed requires DEMO_SEED_ALLOWED_SUPABASE_URL to name the Supabase project it may write to.",
+      target: "preview",
+    });
+  });
+
+  it("ignores a trailing slash and case when matching the named project", () => {
+    expect(
+      isAllowedDemoSeedUrl(
+        "https://Demo-Project.supabase.co/",
+        "https://demo-project.supabase.co",
+      ),
+    ).toBe(true);
+  });
+
+  it("treats an unset allowlist as allowing nothing", () => {
+    expect(isAllowedDemoSeedUrl("https://demo-project.supabase.co")).toBe(false);
+    expect(isAllowedDemoSeedUrl("", "")).toBe(false);
   });
 });

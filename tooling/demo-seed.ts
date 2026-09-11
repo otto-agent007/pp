@@ -77,7 +77,15 @@ async function main() {
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
   const validation = validateDemoSeedExecution({} as DemoSeedSupabaseClient, {
     confirm: options.confirm,
+    allowedSupabaseUrl: getEnv("DEMO_SEED_ALLOWED_SUPABASE_URL"),
     previewSecretConfigured: Boolean(getEnv("DEMO_SEED_PREVIEW_SECRET")),
+    // For the CLI, holding the variable is presenting it: this runs in an
+    // operator shell that already has SUPABASE_SERVICE_ROLE_KEY, so a header
+    // comparison would guard nothing. The header exists to stop one admin
+    // reaching the HTTP route from a browser. DEMO_SEED_ALLOWED_SUPABASE_URL
+    // above is the guard that matters here -- it is what stops
+    // `--target preview` writing to the production project.
+    previewSecretMatches: Boolean(getEnv("DEMO_SEED_PREVIEW_SECRET")),
     serviceRoleKey,
     supabaseUrl,
     target: options.target,
