@@ -2,13 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useOfflineQueue } from "./useOfflineQueue";
 
-const secureStore = vi.hoisted(() => ({
-  deleteItemAsync: vi.fn(),
-  getItemAsync: vi.fn(),
-  setItemAsync: vi.fn(),
+const asyncStorage = vi.hoisted(() => ({
+  removeItem: vi.fn(),
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 }));
 
-vi.mock("expo-secure-store", () => secureStore);
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: asyncStorage,
+}));
 
 const now = "2026-05-07T17:15:00.000Z";
 
@@ -17,9 +19,9 @@ describe("useOfflineQueue", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(now));
     useOfflineQueue.setState({ items: [] });
-    secureStore.deleteItemAsync.mockReset();
-    secureStore.getItemAsync.mockReset();
-    secureStore.setItemAsync.mockReset();
+    asyncStorage.removeItem.mockReset();
+    asyncStorage.getItem.mockReset();
+    asyncStorage.setItem.mockReset();
   });
 
   afterEach(() => {
@@ -70,13 +72,13 @@ describe("useOfflineQueue", () => {
       payload: { job_id: "job-1", status: "en_route" },
     });
 
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       "pest-patrol:offline-queue:v1",
       JSON.stringify([queued]),
     );
 
     useOfflineQueue.setState({ items: [] });
-    secureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify([queued]));
+    asyncStorage.getItem.mockResolvedValueOnce(JSON.stringify([queued]));
 
     await useOfflineQueue.getState().hydrate();
 
@@ -99,7 +101,7 @@ describe("useOfflineQueue", () => {
     useOfflineQueue.getState().markSynced(synced.id);
     useOfflineQueue.getState().clearSynced();
 
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       "pest-patrol:offline-queue:v1",
       JSON.stringify([]),
     );
@@ -123,7 +125,7 @@ describe("useOfflineQueue", () => {
     useOfflineQueue.getState().markSynced(synced.id);
 
     const [persistedKey, persistedValue] =
-      secureStore.setItemAsync.mock.calls.at(-1) ?? [];
+      asyncStorage.setItem.mock.calls.at(-1) ?? [];
     expect(persistedKey).toBe("pest-patrol:offline-queue:v1");
     expect(JSON.parse(persistedValue as string)).toEqual([
       expect.objectContaining({

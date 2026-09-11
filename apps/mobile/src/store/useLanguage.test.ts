@@ -3,19 +3,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useLanguage } from "./useLanguage";
 
-const secureStore = vi.hoisted(() => ({
-  getItemAsync: vi.fn(),
-  setItemAsync: vi.fn(),
+const asyncStorage = vi.hoisted(() => ({
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 }));
 
-vi.mock("expo-secure-store", () => secureStore);
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: asyncStorage,
+}));
 
 const LANGUAGE_STORAGE_KEY = "pest-patrol:language-preference:v1";
 
 describe("useLanguage persistence", () => {
   beforeEach(() => {
-    secureStore.getItemAsync.mockReset();
-    secureStore.setItemAsync.mockReset();
+    asyncStorage.getItem.mockReset();
+    asyncStorage.setItem.mockReset();
     useLanguage.setState({
       hasHydratedLanguagePreference: false,
       lang: "en",
@@ -24,7 +26,7 @@ describe("useLanguage persistence", () => {
   });
 
   it("defaults to English when no preference is stored", async () => {
-    secureStore.getItemAsync.mockResolvedValueOnce(null);
+    asyncStorage.getItem.mockResolvedValueOnce(null);
 
     await useLanguage.getState().hydrateLanguagePreference();
 
@@ -42,7 +44,7 @@ describe("useLanguage persistence", () => {
       lang: "es",
       t: translations.es,
     });
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       LANGUAGE_STORAGE_KEY,
       JSON.stringify("es"),
     );
@@ -55,7 +57,7 @@ describe("useLanguage persistence", () => {
       lang: "es",
       t: translations.es,
     });
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       LANGUAGE_STORAGE_KEY,
       JSON.stringify("es"),
     );
@@ -63,7 +65,7 @@ describe("useLanguage persistence", () => {
 
   it("toggleLanguage switches Spanish to English and persists it", () => {
     useLanguage.getState().setLanguage("es");
-    secureStore.setItemAsync.mockClear();
+    asyncStorage.setItem.mockClear();
 
     useLanguage.getState().toggleLanguage();
 
@@ -71,14 +73,14 @@ describe("useLanguage persistence", () => {
       lang: "en",
       t: translations.en,
     });
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       LANGUAGE_STORAGE_KEY,
       JSON.stringify("en"),
     );
   });
 
   it("falls back to English when the stored preference is invalid", async () => {
-    secureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify("fr"));
+    asyncStorage.getItem.mockResolvedValueOnce(JSON.stringify("fr"));
     useLanguage.setState({ lang: "es", t: translations.es });
 
     await useLanguage.getState().hydrateLanguagePreference();
@@ -91,7 +93,7 @@ describe("useLanguage persistence", () => {
   });
 
   it("falls back to English when storage read fails", async () => {
-    secureStore.getItemAsync.mockRejectedValueOnce(new Error("storage offline"));
+    asyncStorage.getItem.mockRejectedValueOnce(new Error("storage offline"));
     useLanguage.setState({ lang: "es", t: translations.es });
 
     await expect(
@@ -106,7 +108,7 @@ describe("useLanguage persistence", () => {
   });
 
   it("keeps the current session language when storage write fails", async () => {
-    secureStore.setItemAsync.mockRejectedValueOnce(new Error("write failed"));
+    asyncStorage.setItem.mockRejectedValueOnce(new Error("write failed"));
 
     expect(() => useLanguage.getState().setLanguage("es")).not.toThrow();
     await Promise.resolve();
@@ -118,7 +120,7 @@ describe("useLanguage persistence", () => {
   });
 
   it("restores Spanish after simulated store rehydration", async () => {
-    secureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify("es"));
+    asyncStorage.getItem.mockResolvedValueOnce(JSON.stringify("es"));
     useLanguage.setState({ lang: "en", t: translations.en });
 
     await useLanguage.getState().hydrateLanguagePreference();

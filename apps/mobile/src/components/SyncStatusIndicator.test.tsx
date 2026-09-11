@@ -35,6 +35,9 @@ const offlineQueueState = vi.hoisted(() => ({
 const queueSyncState = vi.hoisted(() => ({
   syncNow: vi.fn(),
 }));
+const persistenceHealthState = vi.hoisted(() => ({
+  failures: {} as Record<string, string>,
+}));
 const syncStatusState = vi.hoisted(() => ({
   activity: "idle",
   lastError: null as string | null,
@@ -50,6 +53,14 @@ const syncBadgeCalls = vi.hoisted(() => [] as Array<{
 vi.mock("../store/useOfflineQueue", () => ({
   useOfflineQueue: (selector: (state: typeof offlineQueueState) => unknown) =>
     selector(offlineQueueState),
+}));
+
+vi.mock("../store/mobilePersistenceHealth", () => ({
+  hasMobilePersistenceFailure: (failures: Record<string, string>) =>
+    Object.keys(failures).length > 0,
+  useMobilePersistenceHealth: (
+    selector: (state: typeof persistenceHealthState) => unknown,
+  ) => selector(persistenceHealthState),
 }));
 
 vi.mock("../store/useQueueSync", () => ({
@@ -259,6 +270,36 @@ describe("SyncStatusIndicator", () => {
     );
 
     syncStatusState.lastError = null;
+  });
+
+  it("tells the technician when the device has stopped saving their work", () => {
+    persistenceHealthState.failures = {
+      "pest-patrol:offline-queue:v1": "quota exceeded",
+    };
+
+    const element = <SyncStatusIndicator />;
+    const text = collectText(element);
+    const styles = collectElementsByType(element, "View").flatMap((item) =>
+      flattenStyles(item.props.style),
+    );
+
+    expect(text).toContain("This device is not saving your work");
+    expect(text.join(" ")).toContain("only in memory right now");
+    // The queue itself is empty and nothing has errored, so without folding
+    // storage into hasFailures the card would have read as calm.
+    expect(styles).toContainEqual(
+      expect.objectContaining(mobileRouteShellTone.sync.failed),
+    );
+
+    persistenceHealthState.failures = {};
+  });
+
+  it("stays calm when the device is storing writes", () => {
+    const element = <SyncStatusIndicator />;
+
+    expect(collectText(element)).not.toContain(
+      "This device is not saving your work",
+    );
   });
 
   it("uses the shared warning sync badge for offline pending work", () => {

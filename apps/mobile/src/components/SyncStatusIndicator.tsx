@@ -15,6 +15,10 @@ import {
   mobileRouteShellStyles,
 } from "../styles/routeShellStyles";
 import { useLanguage } from "../store/useLanguage";
+import {
+  hasMobilePersistenceFailure,
+  useMobilePersistenceHealth,
+} from "../store/mobilePersistenceHealth";
 import { useOfflineQueue } from "../store/useOfflineQueue";
 import { useQueueSync } from "../store/useQueueSync";
 import { useSyncStatus } from "../store/useSyncStatus";
@@ -85,6 +89,9 @@ export function SyncStatusIndicator() {
   const discard = useOfflineQueue((state) => state.discard);
   const items = useOfflineQueue((state) => state.items);
   const rejected = useOfflineQueue((state) => state.rejected);
+  const persistenceFailures = useMobilePersistenceHealth(
+    (state) => state.failures,
+  );
   const syncNow = useQueueSync((state) => state.syncNow);
   const { activity, lastError, lastSyncAt, networkStatus } = useSyncStatus();
   const summary = useMemo(() => getOfflineQueueSummary(items), [items]);
@@ -108,7 +115,13 @@ export function SyncStatusIndicator() {
   // Entries the persisted-queue validation refused are failures too, and they
   // are not in the item summary, so counting only summary.failed would leave
   // the card looking calm while unreadable field work sat under it.
-  const hasFailures = recoveryItems.length > 0 || Boolean(lastError);
+  // A device that has stopped storing writes is a failure of the same kind:
+  // the queue looks healthy in memory while nothing behind it would survive a
+  // restart. Folding it into hasFailures is what turns the card red and offers
+  // the sync button, which is the one action that gets the work off the device.
+  const hasStorageFailure = hasMobilePersistenceFailure(persistenceFailures);
+  const hasFailures =
+    recoveryItems.length > 0 || Boolean(lastError) || hasStorageFailure;
   const hasSyncedItems = summary.synced > 0;
   const hasPendingItems = summary.pending > 0;
   const hasSyncHistory = hasSyncedItems || Boolean(lastSyncAt);
@@ -233,6 +246,28 @@ export function SyncStatusIndicator() {
           </Text>
         ) : null}
       </View>
+      {hasStorageFailure ? (
+        <View style={{ gap: 3 }}>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.signalDanger,
+              fontSize: 13,
+              fontWeight: "800",
+            }}
+          >
+            {copy.sync.storageFailedTitle}
+          </Text>
+          <Text
+            style={{
+              color: mobileRouteShellPalette.secondaryText,
+              fontSize: 12,
+              lineHeight: 17,
+            }}
+          >
+            {copy.sync.storageFailedDetail}
+          </Text>
+        </View>
+      ) : null}
       {lastError ? (
         <Text
           style={{

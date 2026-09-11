@@ -3,13 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useJobSignatures } from "./useJobSignatures";
 import { useOfflineQueue } from "./useOfflineQueue";
 
-const secureStore = vi.hoisted(() => ({
-  deleteItemAsync: vi.fn(),
-  getItemAsync: vi.fn(),
-  setItemAsync: vi.fn(),
+const asyncStorage = vi.hoisted(() => ({
+  removeItem: vi.fn(),
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 }));
 
-vi.mock("expo-secure-store", () => secureStore);
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: asyncStorage,
+}));
 
 const now = "2026-05-05T21:30:00.000Z";
 
@@ -19,9 +21,9 @@ describe("useJobSignatures", () => {
     vi.setSystemTime(new Date(now));
     useJobSignatures.setState({ drafts: {} });
     useOfflineQueue.setState({ items: [] });
-    secureStore.deleteItemAsync.mockReset();
-    secureStore.getItemAsync.mockReset();
-    secureStore.setItemAsync.mockReset();
+    asyncStorage.removeItem.mockReset();
+    asyncStorage.getItem.mockReset();
+    asyncStorage.setItem.mockReset();
   });
 
   afterEach(() => {
@@ -103,13 +105,13 @@ describe("useJobSignatures", () => {
     useJobSignatures.getState().setSignerName("job-1", "Jamie Customer");
     const storedDrafts = useJobSignatures.getState().drafts;
 
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       "pest-patrol:job-signature-drafts:v1",
       JSON.stringify(storedDrafts),
     );
 
     useJobSignatures.setState({ drafts: {} });
-    secureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify(storedDrafts));
+    asyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(storedDrafts));
 
     await useJobSignatures.getState().hydrate();
 

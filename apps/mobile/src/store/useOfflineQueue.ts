@@ -13,8 +13,9 @@ import type { OfflineQueueInput, OfflineQueueItem } from "@pest-patrol/types";
 import { create } from "zustand";
 
 import { readMobileJson, writeMobileJson } from "./mobilePersistence";
+import { mobileStorageKeys } from "./storageKeys";
 
-const OFFLINE_QUEUE_STORAGE_KEY = "pest-patrol:offline-queue:v1";
+const OFFLINE_QUEUE_STORAGE_KEY = mobileStorageKeys.offlineQueue;
 
 interface OfflineQueueState {
   clearAll: () => void;
