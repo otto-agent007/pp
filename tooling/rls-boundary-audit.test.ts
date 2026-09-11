@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   auditRlsBoundaryDirectory,
   auditRlsBoundarySources,
+  effectivePolicies,
 } from "./rls-boundary-audit";
 
 describe("RLS boundary audit", () => {
@@ -89,6 +90,101 @@ describe("RLS boundary audit", () => {
         }),
       ]),
     );
+  });
+
+  it("flags a technician policy that does not check profiles.status", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create policy "technicians read assigned jobs" on public.jobs
+            for select to authenticated
+            using (assigned_tech_id = (select auth.uid()));
+        `,
+      },
+    ]);
+
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "technician_policy_missing_status_check",
+          severity: "error",
+          table: "jobs",
+        }),
+      ]),
+    );
+  });
+
+  it("accepts a technician policy once the active-profile predicate is present", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create policy "technicians read assigned jobs" on public.jobs
+            for select to authenticated
+            using (
+              assigned_tech_id = (select auth.uid())
+              and (select private.has_active_profile())
+            );
+        `,
+      },
+    ]);
+
+    expect(
+      findings.filter(
+        (finding) => finding.code === "technician_policy_missing_status_check",
+      ),
+    ).toEqual([]);
+  });
+
+  it("judges a policy by its last definition, not an earlier weak one", () => {
+    const sources = [
+      {
+        name: "0001_initial.sql",
+        sql: `
+          create policy "technicians read assigned jobs" on public.jobs
+            for select using (assigned_tech_id = (select auth.uid()));
+        `,
+      },
+      {
+        name: "0002_hardening.sql",
+        sql: `
+          drop policy if exists "technicians read assigned jobs" on public.jobs;
+          create policy "technicians read assigned jobs" on public.jobs
+            for select using (
+              assigned_tech_id = (select auth.uid())
+              and (select private.has_active_profile())
+            );
+        `,
+      },
+    ];
+
+    expect(
+      auditRlsBoundarySources(sources).filter(
+        (finding) => finding.code === "technician_policy_missing_status_check",
+      ),
+    ).toEqual([]);
+
+    const effective = effectivePolicies(sources);
+    expect(effective.size).toBe(1);
+    expect(effective.get("jobs|technicians read assigned jobs")?.source).toBe(
+      "0002_hardening.sql",
+    );
+  });
+
+  it("forgets a policy that a later migration drops without replacing", () => {
+    const effective = effectivePolicies([
+      {
+        name: "0001_initial.sql",
+        sql: `create policy "legacy" on public.jobs for select using (true);`,
+      },
+      {
+        name: "0002_drop.sql",
+        sql: `drop policy if exists "legacy" on public.jobs;`,
+      },
+    ]);
+
+    expect(effective.size).toBe(0);
   });
 
   it("keeps current migrations free of static error findings", () => {

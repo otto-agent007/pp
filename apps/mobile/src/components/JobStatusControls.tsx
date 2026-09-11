@@ -1,9 +1,11 @@
 import { Text } from "react-native";
 import {
   buildMobileJobWorkPlan,
+  canTechnicianSetJobStatus,
   getMobileCompletionReadinessGuard,
+  technicianJobStatuses,
 } from "@pest-patrol/domain";
-import type { Job, JobStatus } from "@pest-patrol/types";
+import type { Job } from "@pest-patrol/types";
 import {
   CaptureButton,
   CaptureCard,
@@ -22,13 +24,6 @@ import {
 interface JobStatusControlsProps {
   job: Job;
 }
-
-const mobileStatuses: JobStatus[] = [
-  "scheduled",
-  "en_route",
-  "in_progress",
-  "completed",
-];
 
 export function JobStatusControls({ job }: JobStatusControlsProps) {
   const queueStatusUpdate = useAssignedJobs((state) => state.queueStatusUpdate);
@@ -53,16 +48,21 @@ export function JobStatusControls({ job }: JobStatusControlsProps) {
         flexWrap: "wrap",
       }}
     >
-      {mobileStatuses.map((status) => {
+      {technicianJobStatuses.map((status) => {
         const isActive = job.status === status;
         const isGuardedCompletion =
           status === "completed" && shouldWarnBeforeCompletion;
+        // A completed job is the input to invoicing and the database refuses to
+        // move it back out (PP409, a terminal conflict the technician would
+        // have to clear by hand), so the control is offered but inert.
+        const isUnavailable = !isActive && !canTechnicianSetJobStatus(job.status, status);
 
         return (
           <CaptureButton
             key={status}
+            disabled={isUnavailable}
             onPress={() => {
-              if (!isGuardedCompletion) {
+              if (!isGuardedCompletion && !isUnavailable) {
                 queueStatusUpdate(job.id, status);
               }
             }}
