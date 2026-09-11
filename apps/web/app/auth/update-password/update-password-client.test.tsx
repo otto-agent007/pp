@@ -105,6 +105,37 @@ describe("UpdatePasswordClient", () => {
     expect(window.location.hash).toBe("");
   });
 
+  it("names the account whose password is about to change", async () => {
+    window.location.hash =
+      "#type=recovery&access_token=token&refresh_token=refresh";
+    establishPasswordRecoverySession.mockResolvedValue("owner@example.com");
+
+    render(<UpdatePasswordClient />);
+
+    expect(await screen.findByText("owner@example.com")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Setting the password for/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "request your own reset link" }),
+    ).toBeInTheDocument();
+  });
+
+  it("surfaces the refusal when the link resolves to the wrong audience", async () => {
+    window.location.hash =
+      "#type=recovery&access_token=attacker&refresh_token=attacker-refresh";
+    establishPasswordRecoverySession.mockRejectedValue(
+      new Error("Admin or dispatcher access is required"),
+    );
+
+    render(<UpdatePasswordClient />);
+
+    expect(
+      await screen.findByText("Admin or dispatcher access is required"),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("New password")).not.toBeInTheDocument();
+  });
+
   it("validates password confirmation before update", async () => {
     const user = userEvent.setup();
     window.location.hash =

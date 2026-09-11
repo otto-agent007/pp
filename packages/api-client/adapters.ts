@@ -162,7 +162,7 @@ export function createAuthAdapter(
       setPasswordRecoverySessionRecord(client, accessToken, refreshToken),
     signInWithPasswordRecord: (email, password) =>
       signInWithPasswordRecord(client, email, password),
-    signOutRecord: () => signOutRecord(client),
+    signOutRecord: (scope) => signOutRecord(client, scope),
     updatePasswordRecord: (password) => updatePasswordRecord(client, password),
   };
 }

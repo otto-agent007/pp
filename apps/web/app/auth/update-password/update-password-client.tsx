@@ -75,6 +75,7 @@ export function UpdatePasswordClient() {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [linkChecked, setLinkChecked] = useState(false);
   const [passwordSessionReady, setPasswordSessionReady] = useState(false);
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -94,7 +95,7 @@ export function UpdatePasswordClient() {
       }
 
       try {
-        await establishPasswordRecoverySession(
+        const email = await establishPasswordRecoverySession(
           parsed.accessToken,
           parsed.refreshToken,
         );
@@ -103,6 +104,7 @@ export function UpdatePasswordClient() {
           return;
         }
 
+        setAccountEmail(email);
         setPasswordSessionReady(true);
         setLinkError(null);
       } catch (sessionError) {
@@ -194,6 +196,30 @@ export function UpdatePasswordClient() {
             onSubmit={handleSubmit}
           >
             <div className="space-y-5">
+              {/*
+                Name the account the link resolved to. The link carries a whole
+                session, so a link built from someone else's tokens would
+                otherwise have the victim setting a password on an account they
+                cannot see the identity of. The role check in
+                establishPasswordRecoverySession already refuses an outsider's
+                link; this is what makes a staff-to-staff one visible.
+              */}
+              {accountEmail ? (
+                <p className="text-sm text-theme-text-secondary">
+                  Setting the password for{" "}
+                  <span className="font-semibold text-neutralDark">
+                    {accountEmail}
+                  </span>
+                  . If that is not your account,{" "}
+                  <Link
+                    className="font-semibold text-primary transition hover:text-primary/80"
+                    href="/forgot-password"
+                  >
+                    request your own reset link
+                  </Link>
+                  .
+                </p>
+              ) : null}
               <div>
                 <label
                   className="text-sm font-semibold text-neutralDark"

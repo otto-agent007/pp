@@ -101,15 +101,85 @@ describe("auth use cases", () => {
   });
 
   it("establishes a password recovery session through its port", async () => {
-    await establishPasswordRecoverySession(port, {
-      accessToken: " token ",
-      refreshToken: " refresh ",
+    port.getCurrentAuthRecord.mockResolvedValue({
+      session,
+      profile: { id: "user-1", role: "admin", created_at: now, updated_at: now },
     });
+
+    const record = await establishPasswordRecoverySession(
+      port,
+      { accessToken: " token ", refreshToken: " refresh " },
+      validateAdminAccess,
+    );
 
     expect(port.setPasswordRecoverySessionRecord).toHaveBeenCalledWith(
       "token",
       "refresh",
     );
+    expect(record.profile.role).toBe("admin");
+  });
+
+  it("signs the browser out before establishing the link's session", async () => {
+    port.getCurrentAuthRecord.mockResolvedValue({
+      session,
+      profile: { id: "user-1", role: "admin", created_at: now, updated_at: now },
+    });
+
+    const order: string[] = [];
+    port.signOutRecord.mockImplementation(async () => {
+      order.push("signOut");
+    });
+    port.setPasswordRecoverySessionRecord.mockImplementation(async () => {
+      order.push("setSession");
+      return session;
+    });
+
+    await establishPasswordRecoverySession(
+      port,
+      { accessToken: "token", refreshToken: "refresh" },
+      validateAdminAccess,
+    );
+
+    expect(order).toEqual(["signOut", "setSession"]);
+    expect(port.signOutRecord).toHaveBeenCalledWith("local");
+  });
+
+  it("refuses a recovery link whose session has the wrong role, and signs it out", async () => {
+    port.getCurrentAuthRecord.mockResolvedValue({
+      session,
+      profile: {
+        id: "user-1",
+        role: "technician",
+        created_at: now,
+        updated_at: now,
+      },
+    });
+
+    await expect(
+      establishPasswordRecoverySession(
+        port,
+        { accessToken: "token", refreshToken: "refresh" },
+        validateAdminAccess,
+      ),
+    ).rejects.toThrow("Admin or dispatcher access is required");
+
+    // Once before establishing, once to discard the refused session.
+    expect(port.signOutRecord).toHaveBeenCalledTimes(2);
+    expect(port.signOutRecord).toHaveBeenLastCalledWith("local");
+  });
+
+  it("refuses a recovery link whose session resolves to no profile", async () => {
+    port.getCurrentAuthRecord.mockResolvedValue(null);
+
+    await expect(
+      establishPasswordRecoverySession(
+        port,
+        { accessToken: "token", refreshToken: "refresh" },
+        validateAdminAccess,
+      ),
+    ).rejects.toThrow("This link is no longer valid. Request a new one.");
+
+    expect(port.signOutRecord).toHaveBeenCalledTimes(2);
   });
 
   it("updates the current user password through its port", async () => {
@@ -129,6 +199,9 @@ describe("auth use cases", () => {
     ).rejects.toThrow("Admin or dispatcher access is required");
 
     expect(port.signOutRecord).toHaveBeenCalledTimes(1);
+    // Local, so a technician who mistypes into the admin form keeps the
+    // session their phone is running the route on.
+    expect(port.signOutRecord).toHaveBeenCalledWith("local");
   });
 
   it("signs out a wrong-role technician session before surfacing the access error", async () => {
@@ -142,6 +215,7 @@ describe("auth use cases", () => {
     ).rejects.toThrow("Technician access is required");
 
     expect(port.signOutRecord).toHaveBeenCalledTimes(1);
+    expect(port.signOutRecord).toHaveBeenCalledWith("local");
   });
 
   it("does not sign out when role validation succeeds", async () => {

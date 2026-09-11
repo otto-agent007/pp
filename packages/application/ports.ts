@@ -124,6 +124,18 @@ export interface NotificationBulkDeliveryRecordResult {
   sent_count: number;
 }
 
+/**
+ * Which sessions a sign-out revokes.
+ *
+ * `global` ends every session the user has anywhere; `local` ends only the one
+ * in this browser. The default stays `global` so an explicit "sign out" keeps
+ * meaning what it did, but any sign-out the app performs on the user's behalf
+ * -- rolling back a sign-in that turned out to be the wrong audience, clearing
+ * a recovery link before establishing it -- has to be `local`, or one mistyped
+ * password on the admin form logs a technician out of their phone mid-route.
+ */
+export type AuthSignOutScope = "global" | "local";
+
 export interface AuthPort<TSession = unknown> {
   getCurrentAuthRecord(): Promise<AuthRecord<TSession> | null>;
   resetPasswordForEmailRecord(email: string, redirectTo: string): Promise<void>;
@@ -135,7 +147,7 @@ export interface AuthPort<TSession = unknown> {
     email: string,
     password: string,
   ): Promise<AuthRecord<TSession>>;
-  signOutRecord(): Promise<void>;
+  signOutRecord(scope?: AuthSignOutScope): Promise<void>;
   updatePasswordRecord(password: string): Promise<unknown>;
 }
 
