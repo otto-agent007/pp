@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import type { JobStatus } from "@pest-patrol/types";
+
 import {
   buildTechnicianRouteLoadSummaries,
+  canTechnicianSetJobStatus,
   getTechnicianLabel,
   normalizeTechnicianInviteInput,
+  technicianJobStatuses,
   validateTechnicianInviteInput,
 } from "./technicians";
 
@@ -195,6 +199,51 @@ describe("technician domain", () => {
         route_status_label: "Scheduled",
         current_job_id: "job-wall-clock",
       },
+    ]);
+  });
+});
+
+describe("canTechnicianSetJobStatus", () => {
+  it("allows every move among the three pre-completion statuses", () => {
+    const open: JobStatus[] = ["scheduled", "en_route", "in_progress"];
+
+    for (const currentStatus of open) {
+      for (const nextStatus of open) {
+        expect(
+          canTechnicianSetJobStatus(currentStatus, nextStatus),
+          `${currentStatus} -> ${nextStatus}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("allows completing from any open status", () => {
+    for (const currentStatus of ["scheduled", "en_route", "in_progress"] as const) {
+      expect(canTechnicianSetJobStatus(currentStatus, "completed")).toBe(true);
+    }
+  });
+
+  it("refuses to move a completed job back out", () => {
+    for (const nextStatus of ["scheduled", "en_route", "in_progress"] as const) {
+      expect(canTechnicianSetJobStatus("completed", nextStatus)).toBe(false);
+    }
+  });
+
+  it("treats re-asserting completed as allowed, so a queue replay is not a conflict", () => {
+    expect(canTechnicianSetJobStatus("completed", "completed")).toBe(true);
+  });
+
+  it("refuses statuses outside the technician vocabulary", () => {
+    expect(canTechnicianSetJobStatus("canceled", "scheduled")).toBe(false);
+    expect(canTechnicianSetJobStatus("in_progress", "canceled")).toBe(false);
+  });
+
+  it("lists exactly the statuses the technician RPC accepts", () => {
+    expect(technicianJobStatuses).toEqual([
+      "scheduled",
+      "en_route",
+      "in_progress",
+      "completed",
     ]);
   });
 });
