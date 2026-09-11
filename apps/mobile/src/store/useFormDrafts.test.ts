@@ -4,13 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFormDrafts } from "./useFormDrafts";
 import { useOfflineQueue } from "./useOfflineQueue";
 
-const secureStore = vi.hoisted(() => ({
-  deleteItemAsync: vi.fn(),
-  getItemAsync: vi.fn(),
-  setItemAsync: vi.fn(),
+const asyncStorage = vi.hoisted(() => ({
+  removeItem: vi.fn(),
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 }));
 
-vi.mock("expo-secure-store", () => secureStore);
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: asyncStorage,
+}));
 
 const now = "2026-05-07T17:15:00.000Z";
 
@@ -20,9 +22,9 @@ describe("useFormDrafts persistence", () => {
     vi.setSystemTime(new Date(now));
     useFormDrafts.setState({ drafts: {} });
     useOfflineQueue.setState({ items: [] });
-    secureStore.deleteItemAsync.mockReset();
-    secureStore.getItemAsync.mockReset();
-    secureStore.setItemAsync.mockReset();
+    asyncStorage.removeItem.mockReset();
+    asyncStorage.getItem.mockReset();
+    asyncStorage.setItem.mockReset();
   });
 
   afterEach(() => {
@@ -36,13 +38,13 @@ describe("useFormDrafts persistence", () => {
     const key = `job-1:${defaultTreatmentFormTemplate.id}`;
     const storedDrafts = useFormDrafts.getState().drafts;
 
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       "pest-patrol:form-drafts:v1",
       JSON.stringify(storedDrafts),
     );
 
     useFormDrafts.setState({ drafts: {} });
-    secureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify(storedDrafts));
+    asyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(storedDrafts));
 
     await useFormDrafts.getState().hydrate();
 
@@ -62,7 +64,7 @@ describe("useFormDrafts persistence", () => {
     expect(useFormDrafts.getState().getDraft("job-1")).toMatchObject({
       queued_at: now,
     });
-    expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+    expect(asyncStorage.setItem).toHaveBeenLastCalledWith(
       "pest-patrol:form-drafts:v1",
       JSON.stringify(useFormDrafts.getState().drafts),
     );

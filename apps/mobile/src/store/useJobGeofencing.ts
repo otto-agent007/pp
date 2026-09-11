@@ -8,9 +8,10 @@ import type {
 import { create } from "zustand";
 
 import { readMobileJson, writeMobileJson } from "./mobilePersistence";
+import { mobileStorageKeys } from "./storageKeys";
 import { useOfflineQueue } from "./useOfflineQueue";
 
-const JOB_GEOFENCE_DRAFTS_STORAGE_KEY = "pest-patrol:job-geofence-drafts:v1";
+const JOB_GEOFENCE_DRAFTS_STORAGE_KEY = mobileStorageKeys.jobGeofenceDrafts;
 
 interface QueueGeofenceEventInput {
   accuracyM?: number | null;

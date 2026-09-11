@@ -2,8 +2,9 @@ import { create } from "zustand";
 import { translations, Language } from "../../../../packages/i18n";
 
 import { readMobileJson, writeMobileJson } from "./mobilePersistence";
+import { mobileStorageKeys } from "./storageKeys";
 
-const LANGUAGE_STORAGE_KEY = "pest-patrol:language-preference:v1";
+const LANGUAGE_STORAGE_KEY = mobileStorageKeys.languagePreference;
 
 interface LanguageState {
   hasHydratedLanguagePreference: boolean;

@@ -13,9 +13,10 @@ import type {
 import { create } from "zustand";
 
 import { readMobileJson, writeMobileJson } from "./mobilePersistence";
+import { mobileStorageKeys } from "./storageKeys";
 import { useOfflineQueue } from "./useOfflineQueue";
 
-const FORM_DRAFTS_STORAGE_KEY = "pest-patrol:form-drafts:v1";
+const FORM_DRAFTS_STORAGE_KEY = mobileStorageKeys.formDrafts;
 
 interface FormDraftState {
   clearDraft: (jobId: string, templateId?: string) => void;

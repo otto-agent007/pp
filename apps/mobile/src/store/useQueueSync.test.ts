@@ -19,16 +19,16 @@ import { useSyncStatus } from "./useSyncStatus";
  * all, and `SyncStatusIndicator.test.tsx` mocks every store it reads.
  */
 
-const secureStore = vi.hoisted(() => {
+const asyncStorage = vi.hoisted(() => {
   const values = new Map<string, string>();
 
   return {
     values,
-    deleteItemAsync: vi.fn(async (key: string) => {
+    removeItem: vi.fn(async (key: string) => {
       values.delete(key);
     }),
-    getItemAsync: vi.fn(async (key: string) => values.get(key) ?? null),
-    setItemAsync: vi.fn(async (key: string, value: string) => {
+    getItem: vi.fn(async (key: string) => values.get(key) ?? null),
+    setItem: vi.fn(async (key: string, value: string) => {
       values.set(key, value);
     }),
   };
@@ -39,7 +39,9 @@ const provider = vi.hoisted(() => ({
   result: { data: null as unknown, error: null as unknown },
 }));
 
-vi.mock("expo-secure-store", () => secureStore);
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: asyncStorage,
+}));
 
 vi.mock("../lib/supabase", () => ({
   mobileSupabase: {
@@ -64,7 +66,7 @@ const statusPayload: JobStatusUpdateQueuePayload = {
 };
 
 function storedQueue(): unknown[] {
-  return JSON.parse(secureStore.values.get(QUEUE_KEY) ?? "[]") as unknown[];
+  return JSON.parse(asyncStorage.values.get(QUEUE_KEY) ?? "[]") as unknown[];
 }
 
 /** Drop every trace of the running app, keeping only what the device holds. */
@@ -75,10 +77,10 @@ async function restartApp() {
 
 describe("mobile queue composition root", () => {
   beforeEach(() => {
-    secureStore.values.clear();
-    secureStore.deleteItemAsync.mockClear();
-    secureStore.getItemAsync.mockClear();
-    secureStore.setItemAsync.mockClear();
+    asyncStorage.values.clear();
+    asyncStorage.removeItem.mockClear();
+    asyncStorage.getItem.mockClear();
+    asyncStorage.setItem.mockClear();
     provider.calls.length = 0;
     provider.result = { data: null, error: null };
     useOfflineQueue.setState({ items: [], rejected: [] });
@@ -241,7 +243,7 @@ describe("mobile queue composition root", () => {
       updated_at: "2026-05-07T10:00:00.000Z",
     };
 
-    secureStore.values.set(
+    asyncStorage.values.set(
       QUEUE_KEY,
       JSON.stringify([...storedQueue(), unreadable]),
     );

@@ -6,10 +6,10 @@ import type { Job } from "@pest-patrol/types";
 import type { TestElement } from "../test-utils/reactElement";
 import { JobGeofenceControls } from "./JobGeofenceControls";
 
-const secureStore = vi.hoisted(() => ({
-  deleteItemAsync: vi.fn(),
-  getItemAsync: vi.fn(),
-  setItemAsync: vi.fn(),
+const asyncStorage = vi.hoisted(() => ({
+  removeItem: vi.fn(),
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 }));
 
 const language = vi.hoisted(() => ({
@@ -50,7 +50,9 @@ vi.mock("react", async () => {
   };
 });
 
-vi.mock("expo-secure-store", () => secureStore);
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: asyncStorage,
+}));
 
 vi.mock("expo-location", () => ({
   Accuracy: { Balanced: 1 },
@@ -257,9 +259,9 @@ describe("JobGeofenceControls", () => {
     language.value = "en";
     geofenceState.drafts = {};
     geofenceState.queueItems = [];
-    secureStore.deleteItemAsync.mockReset();
-    secureStore.getItemAsync.mockReset();
-    secureStore.setItemAsync.mockReset();
+    asyncStorage.removeItem.mockReset();
+    asyncStorage.getItem.mockReset();
+    asyncStorage.setItem.mockReset();
     location.getCurrentPositionAsync.mockReset();
     location.requestForegroundPermissionsAsync.mockReset();
     location.requestForegroundPermissionsAsync.mockResolvedValue({

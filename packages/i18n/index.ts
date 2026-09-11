@@ -319,6 +319,9 @@ export const translations = {
             synced: "{count} synced",
           },
           discard: "Discard",
+          storageFailedTitle: "This device is not saving your work",
+          storageFailedDetail:
+            "Captures and queued changes are only in memory right now, so closing the app would lose them. Sync now if you can, and tell the office if this keeps happening.",
           recoveryTitle: "Needs your attention",
           recoveryDetail:
             "These changes stopped syncing on their own. Check the job, then discard each one once it is handled.",
@@ -654,6 +657,9 @@ export const translations = {
             synced: "{count} sincronizados",
           },
           discard: "Descartar",
+          storageFailedTitle: "Este dispositivo no está guardando tu trabajo",
+          storageFailedDetail:
+            "Las capturas y los cambios en cola solo están en memoria ahora mismo, así que cerrar la aplicación los perdería. Sincroniza si puedes y avisa a la oficina si esto sigue pasando.",
           recoveryTitle: "Requiere tu atención",
           recoveryDetail:
             "Estos cambios dejaron de sincronizarse por su cuenta. Revisa el trabajo y descarta cada uno cuando ya esté resuelto.",
