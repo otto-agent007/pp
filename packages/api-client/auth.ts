@@ -1,4 +1,5 @@
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import type { AuthSignOutScope } from "@pest-patrol/application";
 import type { UserProfile } from "@pest-patrol/types";
 
 export type AuthSupabaseClient = SupabaseClient;
@@ -68,8 +69,11 @@ export async function signInWithPasswordRecord(
   } satisfies AuthRecord;
 }
 
-export async function signOutRecord(client: AuthSupabaseClient) {
-  const { error } = await client.auth.signOut();
+export async function signOutRecord(
+  client: AuthSupabaseClient,
+  scope: AuthSignOutScope = "global",
+) {
+  const { error } = await client.auth.signOut({ scope });
 
   if (error) {
     throw error;

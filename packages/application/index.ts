@@ -10,6 +10,7 @@ export {
   updateCurrentUserPassword,
   validateTechnicianAccess,
 } from "./auth";
+export type { AuthRecordValidator } from "./auth";
 export {
   archiveNotificationTemplate,
   createAutomationRule,
@@ -117,6 +118,7 @@ export {
 export type {
   AuthPort,
   AuthRecord,
+  AuthSignOutScope,
   AutomationPort,
   AutomationSchedulerManualRun,
   CloseoutsPort,
