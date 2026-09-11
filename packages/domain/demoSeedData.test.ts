@@ -474,6 +474,25 @@ describe("demo seed admin credential", () => {
     ).toThrow(/DEMO_SEED_ADMIN_PASSWORD/);
   });
 
+  it("refuses the local default when a caller declares the target is real", () => {
+    // The seed CLI runs from an operator shell with NODE_ENV unset, so
+    // `--target preview` has to opt in explicitly or it would silently seed a
+    // real project with the local development password.
+    expect(() =>
+      resolveDemoSeedAdminPassword(
+        { NODE_ENV: undefined },
+        { requireConfigured: true },
+      ),
+    ).toThrow(/DEMO_SEED_ADMIN_PASSWORD/);
+
+    expect(
+      resolveDemoSeedAdminPassword(
+        { [DEMO_SEED_ADMIN_PASSWORD_ENV]: "rotated-demo-pass" },
+        { requireConfigured: true },
+      ),
+    ).toBe("rotated-demo-pass");
+  });
+
   it("keeps a throwaway default for local development only", () => {
     expect(resolveDemoSeedAdminPassword({ NODE_ENV: "development" })).toBe(
       "password",

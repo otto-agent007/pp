@@ -32,6 +32,7 @@ const LOCAL_DEV_DEMO_ADMIN_PASSWORD = "password";
 
 export function resolveDemoSeedAdminPassword(
   env: Record<string, string | undefined> = process.env,
+  options: { requireConfigured?: boolean } = {},
 ): string {
   const configured = env[DEMO_SEED_ADMIN_PASSWORD_ENV]?.trim();
 
@@ -41,7 +42,13 @@ export function resolveDemoSeedAdminPassword(
 
   // NODE_ENV is "production" for every built deployment, previews included, and
   // previews share the live Supabase project — so refuse rather than fall back.
-  if (env.NODE_ENV === "production") {
+  // Callers that know better say so: the seed CLI runs from an operator shell
+  // where NODE_ENV is unset, but --target preview still writes to a real
+  // project and must not silently use the local default.
+  const mustBeConfigured =
+    options.requireConfigured ?? env.NODE_ENV === "production";
+
+  if (mustBeConfigured) {
     throw new Error(
       `${DEMO_SEED_ADMIN_PASSWORD_ENV} must be set before seeding demo data outside local development.`,
     );
