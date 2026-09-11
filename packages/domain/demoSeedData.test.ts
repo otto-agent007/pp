@@ -579,6 +579,18 @@ describe("demo seed preview secret and project allowlist", () => {
     ).toBe(true);
   });
 
+  it("strips any run of trailing slashes without re-scanning it", () => {
+    const base = "https://demo-project.supabase.co";
+
+    expect(isAllowedDemoSeedUrl(`${base}////`, base)).toBe(true);
+
+    // A long run of slashes that does not end the string is the worst case for
+    // the /\/+$/ this replaced: that pattern can start matching at any slash in
+    // the run, so it re-scans the run once per slash. If it ever comes back,
+    // this case does not fail slowly -- it exceeds the test timeout.
+    expect(isAllowedDemoSeedUrl(`${"/".repeat(100_000)}x`, base)).toBe(false);
+  });
+
   it("treats an unset allowlist as allowing nothing", () => {
     expect(isAllowedDemoSeedUrl("https://demo-project.supabase.co")).toBe(false);
     expect(isAllowedDemoSeedUrl("", "")).toBe(false);

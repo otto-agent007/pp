@@ -938,7 +938,18 @@ export function validateDemoSeedGuardrails(
 }
 
 function normalizeSupabaseUrl(value?: string) {
-  return value?.trim().replace(/\/+$/, "").toLowerCase() ?? "";
+  const normalized = value?.trim().toLowerCase() ?? "";
+  let end = normalized.length;
+
+  // Trailing slashes come off in a loop rather than with /\/+$/. That pattern
+  // can begin matching at any slash in a run, so a value that is mostly
+  // slashes costs time quadratic in its length -- CodeQL js/polynomial-redos,
+  // the same shape as the \s+$ example in its docs. This reads the string once.
+  while (end > 0 && normalized.charAt(end - 1) === "/") {
+    end -= 1;
+  }
+
+  return normalized.slice(0, end);
 }
 
 /**
