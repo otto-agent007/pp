@@ -23,6 +23,7 @@ import {
   signOutAdmin,
   updateCurrentUserPassword,
 } from "@pest-patrol/application";
+import { validateAdminAccess } from "@pest-patrol/domain";
 import {
   activateLocalDemoFixtureSession,
   deactivateLocalDemoFixtureSession,
@@ -50,7 +51,7 @@ interface AdminAuthSnapshot extends AdminAuthState {
   establishPasswordRecoverySession: (
     accessToken: string,
     refreshToken: string,
-  ) => Promise<void>;
+  ) => Promise<string | null>;
   initialize: () => Promise<void>;
   requestPasswordReset: (email: string, redirectTo: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -322,10 +323,16 @@ async function startPasswordRecoverySession(
   accessToken: string,
   refreshToken: string,
 ) {
-  await establishPasswordRecoverySession(authPort, {
-    accessToken,
-    refreshToken,
-  });
+  // validateAdminAccess is what refuses a link built from someone else's
+  // tokens: an account with no profile, or one whose role is not admin or
+  // dispatcher, never reaches the password form on this page.
+  const record = await establishPasswordRecoverySession(
+    authPort,
+    { accessToken, refreshToken },
+    validateAdminAccess,
+  );
+
+  return record.session.user.email ?? null;
 }
 
 async function updatePassword(password: string, confirmPassword: string) {

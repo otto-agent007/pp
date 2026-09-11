@@ -40,6 +40,7 @@ export {
   buildDemoSeedPlan,
   getDemoSeedPlanSummary,
   resolveDemoSeedAdminPassword,
+  isAllowedDemoSeedUrl,
   validateDemoSeedGuardrails,
 } from "./demoSeedData";
 export type {
@@ -369,8 +370,10 @@ export type {
 } from "./jobs";
 export {
   buildTechnicianRouteLoadSummaries,
+  canTechnicianSetJobStatus,
   getTechnicianLabel,
   normalizeTechnicianInviteInput,
+  technicianJobStatuses,
   validateTechnicianInviteInput,
 } from "./technicians";
 export type {

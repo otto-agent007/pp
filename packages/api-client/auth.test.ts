@@ -113,12 +113,20 @@ describe("auth api client", () => {
     });
   });
 
-  it("signs out", async () => {
+  it("signs out globally by default", async () => {
     signOut.mockResolvedValue({ error: null });
 
     await signOutRecord(client);
 
-    expect(signOut).toHaveBeenCalled();
+    expect(signOut).toHaveBeenCalledWith({ scope: "global" });
+  });
+
+  it("signs out only this browser when the caller asks for local scope", async () => {
+    signOut.mockResolvedValue({ error: null });
+
+    await signOutRecord(client, "local");
+
+    expect(signOut).toHaveBeenCalledWith({ scope: "local" });
   });
 
   it("sends password reset email with the supplied recovery redirect", async () => {

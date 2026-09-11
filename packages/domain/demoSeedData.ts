@@ -32,6 +32,7 @@ const LOCAL_DEV_DEMO_ADMIN_PASSWORD = "password";
 
 export function resolveDemoSeedAdminPassword(
   env: Record<string, string | undefined> = process.env,
+  options: { requireConfigured?: boolean } = {},
 ): string {
   const configured = env[DEMO_SEED_ADMIN_PASSWORD_ENV]?.trim();
 
@@ -41,7 +42,13 @@ export function resolveDemoSeedAdminPassword(
 
   // NODE_ENV is "production" for every built deployment, previews included, and
   // previews share the live Supabase project — so refuse rather than fall back.
-  if (env.NODE_ENV === "production") {
+  // Callers that know better say so: the seed CLI runs from an operator shell
+  // where NODE_ENV is unset, but --target preview still writes to a real
+  // project and must not silently use the local default.
+  const mustBeConfigured =
+    options.requireConfigured ?? env.NODE_ENV === "production";
+
+  if (mustBeConfigured) {
     throw new Error(
       `${DEMO_SEED_ADMIN_PASSWORD_ENV} must be set before seeding demo data outside local development.`,
     );
@@ -67,8 +74,18 @@ export type DemoSeedTable =
   | "payments";
 
 export interface DemoSeedGuardrailInput {
+  allowedSupabaseUrl?: string;
   confirm?: string;
   previewSecretConfigured?: boolean;
+  /**
+   * Whether the caller presented the preview secret and it matched.
+   *
+   * Separate from `previewSecretConfigured` because the comparison is the
+   * caller's job: it has to be constant-time, which is `node:crypto`, and this
+   * package stays free of platform APIs. Undefined is treated as "not
+   * presented", so a caller that forgets to compute it fails closed.
+   */
+  previewSecretMatches?: boolean;
   serviceRoleKey?: string;
   supabaseUrl?: string;
   target?: string;
@@ -230,6 +247,7 @@ export interface DemoSeedPlan {
 }
 
 export interface DemoSeedRuntimeStatusInput {
+  allowedSupabaseUrl?: string;
   previewSecretConfigured?: boolean;
   serviceRoleConfigured: boolean;
   supabaseUrl?: string;
@@ -896,7 +914,65 @@ export function validateDemoSeedGuardrails(
     };
   }
 
+  // Configured is not presented. Until 2026-09-10 the secret was only ever
+  // tested for existence, so on any preview where the variable was set, every
+  // admin and dispatcher could seed or reset -- which creates the demo admin
+  // and deletes the demo technician users -- against whatever project that
+  // deployment points at.
+  if (input.target === "preview" && !input.previewSecretMatches) {
+    return {
+      ok: false,
+      message: "Preview demo seed requires a matching x-demo-seed-secret header.",
+    };
+  }
+
+  // Previews share whatever Supabase project the deployment is configured
+  // with, which today is the production one. Naming the project the seed may
+  // write to is an explicit operator act: with nothing named, there is no
+  // project a preview seed is allowed to touch.
+  if (
+    input.target === "preview" &&
+    !isAllowedDemoSeedUrl(input.supabaseUrl, input.allowedSupabaseUrl)
+  ) {
+    return {
+      ok: false,
+      message:
+        "Preview demo seed requires DEMO_SEED_ALLOWED_SUPABASE_URL to name the Supabase project it may write to.",
+    };
+  }
+
   return { ok: true, target: input.target };
+}
+
+function normalizeSupabaseUrl(value?: string) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+  let end = normalized.length;
+
+  // Trailing slashes come off in a loop rather than with /\/+$/. That pattern
+  // can begin matching at any slash in a run, so a value that is mostly
+  // slashes costs time quadratic in its length -- CodeQL js/polynomial-redos,
+  // the same shape as the \s+$ example in its docs. This reads the string once.
+  while (end > 0 && normalized.charAt(end - 1) === "/") {
+    end -= 1;
+  }
+
+  return normalized.slice(0, end);
+}
+
+/**
+ * Whether the project this deployment points at is the one demos may write to.
+ *
+ * An allowlist rather than a denylist on purpose: a denylist that nobody sets
+ * permits everything, and the project a preview would otherwise reach is the
+ * production one.
+ */
+export function isAllowedDemoSeedUrl(
+  supabaseUrl?: string,
+  allowedSupabaseUrl?: string,
+) {
+  const allowed = normalizeSupabaseUrl(allowedSupabaseUrl);
+
+  return allowed !== "" && normalizeSupabaseUrl(supabaseUrl) === allowed;
 }
 
 function isLocalSupabaseUrl(supabaseUrl?: string) {
@@ -962,6 +1038,19 @@ export function buildDemoSeedRuntimeStatus(
       environment_label: "Protected preview demo",
       reason:
         "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
+      target: input.target,
+    };
+  }
+
+  if (
+    input.target === "preview" &&
+    !isAllowedDemoSeedUrl(input.supabaseUrl, input.allowedSupabaseUrl)
+  ) {
+    return {
+      available: false,
+      environment_label: "Protected preview demo",
+      reason:
+        "Preview demo seed requires DEMO_SEED_ALLOWED_SUPABASE_URL to name the Supabase project it may write to.",
       target: input.target,
     };
   }

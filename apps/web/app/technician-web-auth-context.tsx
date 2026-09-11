@@ -3,7 +3,9 @@
 import {
   establishPasswordRecoverySession,
   signInTechnician,
+  signOutTechnician,
   updateCurrentUserPassword,
+  validateTechnicianAccess,
 } from "@pest-patrol/application";
 import { useState } from "react";
 import { createAuthAdapter } from "@pest-patrol/api-client";
@@ -28,10 +30,16 @@ export function useTechnicianWebAuth() {
     refreshToken: string,
   ) {
     setError(null);
-    await establishPasswordRecoverySession(authPort, {
-      accessToken,
-      refreshToken,
-    });
+    // validateTechnicianAccess is what refuses an invite link built from
+    // someone else's tokens: the session has to resolve to a profile whose
+    // role is technician before the password form on this page is reachable.
+    const record = await establishPasswordRecoverySession(
+      authPort,
+      { accessToken, refreshToken },
+      validateTechnicianAccess,
+    );
+
+    return record.session.user.email ?? null;
   }
 
   async function signIn(email: string, password: string) {
@@ -59,10 +67,30 @@ export function useTechnicianWebAuth() {
     }
   }
 
+  /**
+   * A technician who signs in here on a shared office machine had no way to
+   * end the session: supabase-js keeps it in localStorage and the page offered
+   * nothing but a confirmation message, so the next person at that browser
+   * inherited it. Global scope is right for an explicit sign-out -- the point
+   * of pressing it on a borrowed machine is to be signed out.
+   */
+  async function signOut() {
+    setError(null);
+
+    try {
+      await signOutTechnician(authPort);
+      setStatus("signed_out");
+    } catch (signOutError) {
+      setError(errorMessage(signOutError));
+      throw signOutError;
+    }
+  }
+
   return {
     error,
     establishPasswordRecoverySession: startPasswordRecoverySession,
     signIn,
+    signOut,
     status,
     updatePassword,
   };

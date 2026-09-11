@@ -25,10 +25,15 @@ vi.mock("../_lib/server-auth", () => ({
     ),
 }));
 
-function request(body?: unknown) {
+function request(body?: unknown, seedSecret?: string) {
   return new Request("http://localhost/api/demo-seed", {
     body: body ? JSON.stringify(body) : undefined,
-    headers: { authorization: "Bearer admin-token" },
+    headers: {
+      authorization: "Bearer admin-token",
+      ...(seedSecret === undefined
+        ? {}
+        : { "x-demo-seed-secret": seedSecret }),
+    },
     method: body ? "POST" : "GET",
   });
 }
@@ -100,13 +105,20 @@ describe("demo seed route", () => {
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
     vi.stubEnv("DEMO_SEED_PREVIEW_SECRET", "preview-secret");
+    vi.stubEnv(
+      "DEMO_SEED_ALLOWED_SUPABASE_URL",
+      "https://project.supabase.co",
+    );
 
     const response = await POST(
-      request({
-        action: "seed",
-        confirm: "seed-demo-data",
-        target: "preview",
-      }),
+      request(
+        {
+          action: "seed",
+          confirm: "seed-demo-data",
+          target: "preview",
+        },
+        "preview-secret",
+      ),
     );
     const body = (await response.json()) as {
       action?: string;
@@ -138,6 +150,113 @@ describe("demo seed route", () => {
     expect(response.status).toBe(400);
     expect(body.error).toBe(
       "Preview demo seed requires DEMO_SEED_PREVIEW_SECRET to be configured on this deployment.",
+    );
+    expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
+  });
+
+  it("refuses a preview seed when the admin presents no secret header", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+    vi.stubEnv("DEMO_SEED_PREVIEW_SECRET", "preview-secret");
+    vi.stubEnv(
+      "DEMO_SEED_ALLOWED_SUPABASE_URL",
+      "https://project.supabase.co",
+    );
+
+    const response = await POST(
+      request({
+        action: "seed",
+        confirm: "seed-demo-data",
+        target: "preview",
+      }),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe(
+      "Preview demo seed requires a matching x-demo-seed-secret header.",
+    );
+    expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
+  });
+
+  it("refuses a preview seed when the presented secret is wrong", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+    vi.stubEnv("DEMO_SEED_PREVIEW_SECRET", "preview-secret");
+    vi.stubEnv(
+      "DEMO_SEED_ALLOWED_SUPABASE_URL",
+      "https://project.supabase.co",
+    );
+
+    const response = await POST(
+      request(
+        {
+          action: "seed",
+          confirm: "seed-demo-data",
+          target: "preview",
+        },
+        "preview-secrex",
+      ),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe(
+      "Preview demo seed requires a matching x-demo-seed-secret header.",
+    );
+    expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
+  });
+
+  it("refuses a secret of a different length without throwing", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+    vi.stubEnv("DEMO_SEED_PREVIEW_SECRET", "preview-secret");
+    vi.stubEnv(
+      "DEMO_SEED_ALLOWED_SUPABASE_URL",
+      "https://project.supabase.co",
+    );
+
+    // timingSafeEqual throws on a length mismatch; the route must compare
+    // lengths first rather than turn that into a 500.
+    const response = await POST(
+      request(
+        {
+          action: "seed",
+          confirm: "seed-demo-data",
+          target: "preview",
+        },
+        "short",
+      ),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe(
+      "Preview demo seed requires a matching x-demo-seed-secret header.",
+    );
+  });
+
+  it("refuses a preview seed aimed at a project the operator has not named", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://production.supabase.co");
+    vi.stubEnv("DEMO_SEED_PREVIEW_SECRET", "preview-secret");
+    vi.stubEnv("DEMO_SEED_ALLOWED_SUPABASE_URL", "https://demo.supabase.co");
+
+    const response = await POST(
+      request(
+        {
+          action: "seed",
+          confirm: "seed-demo-data",
+          target: "preview",
+        },
+        "preview-secret",
+      ),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe(
+      "Preview demo seed requires DEMO_SEED_ALLOWED_SUPABASE_URL to name the Supabase project it may write to.",
     );
     expect(replaceDemoSeedRecords).not.toHaveBeenCalled();
   });

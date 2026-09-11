@@ -65,6 +65,7 @@ export function TechnicianLoginClient() {
     error: authError,
     establishPasswordRecoverySession,
     signIn,
+    signOut,
     status,
     updatePassword,
   } = useTechnicianWebAuth();
@@ -76,6 +77,7 @@ export function TechnicianLoginClient() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteChecked, setInviteChecked] = useState(false);
   const [inviteSessionReady, setInviteSessionReady] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState<string | null>(null);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export function TechnicianLoginClient() {
       }
 
       try {
-        await establishPasswordRecoverySession(
+        const invitedEmail = await establishPasswordRecoverySession(
           parsed.accessToken,
           parsed.refreshToken,
         );
@@ -110,6 +112,7 @@ export function TechnicianLoginClient() {
           return;
         }
 
+        setInviteEmail(invitedEmail);
         setInviteSessionReady(true);
       } catch (error) {
         if (!active) {
@@ -218,6 +221,22 @@ export function TechnicianLoginClient() {
                 Set technician password
               </h2>
 
+              {/*
+                Name the account this invite resolved to, for the same reason
+                the admin reset page does: the link carries a whole session, so
+                without this the technician cannot tell whose password they are
+                setting.
+              */}
+              {inviteEmail ? (
+                <p className="text-sm text-theme-text-secondary">
+                  Setting the password for{" "}
+                  <span className="font-semibold text-neutralDark">
+                    {inviteEmail}
+                  </span>
+                  . If that is not you, ask your dispatcher for a new invite.
+                </p>
+              ) : null}
+
               <div>
                 <label
                   className="text-sm font-semibold text-neutralDark"
@@ -320,9 +339,23 @@ export function TechnicianLoginClient() {
               ) : null}
 
               {status === "signed_in" ? (
-                <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
-                  Signed in. Assigned field work is available in the mobile app.
-                </p>
+                <div className="space-y-3">
+                  <p className="rounded-md border border-status-alert-success-border bg-status-alert-success-bg px-3 py-2 text-sm font-semibold text-status-alert-success-fg">
+                    Signed in. Assigned field work is available in the mobile
+                    app.
+                  </p>
+                  {/*
+                    Without this the session stays in this browser's
+                    localStorage for the next person to use the machine.
+                  */}
+                  <button
+                    className="w-full rounded-md border border-theme-border-default px-4 py-2 text-sm font-bold text-neutralDark transition hover:bg-neutralLight"
+                    onClick={() => void signOut()}
+                    type="button"
+                  >
+                    Sign out
+                  </button>
+                </div>
               ) : null}
 
               <button

@@ -49,7 +49,14 @@ export async function POST(request: Request) {
   const target = configuredTarget();
   const plan = buildDemoSeedPlan();
   const summary = getDemoSeedPlanSummary(plan);
+  // This route resets and re-seeds demo records, so it carries the same
+  // "which project may demos write to" guard as /api/demo-seed. It does not
+  // carry that route's x-demo-seed-secret requirement: it is reachable only by
+  // the demo account itself and is driven from the browser, which cannot hold
+  // a secret without putting it back in the client bundle -- the mistake the
+  // 2026-09-10 credential move removed. Its authorisation is the account.
   const status = buildDemoSeedRuntimeStatus({
+    allowedSupabaseUrl: process.env.DEMO_SEED_ALLOWED_SUPABASE_URL,
     previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
     serviceRoleConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -69,8 +76,10 @@ export async function POST(request: Request) {
   }
 
   const guardrail = validateDemoSeedGuardrails({
+    allowedSupabaseUrl: process.env.DEMO_SEED_ALLOWED_SUPABASE_URL,
     confirm: DEMO_SEED_CONFIRMATION,
     previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
+    previewSecretMatches: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     target,

@@ -11,6 +11,7 @@ import {
   validateDemoSeedGuardrails,
 } from "@pest-patrol/domain";
 import type { DemoSeedActionInput, DemoSeedTarget } from "@pest-patrol/types";
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import {
@@ -24,8 +25,40 @@ function configuredTarget(): DemoSeedTarget {
   return process.env.VERCEL_ENV === "preview" ? "preview" : "local";
 }
 
+const demoSeedSecretHeader = "x-demo-seed-secret";
+
+/**
+ * Whether the caller presented the preview secret.
+ *
+ * Until 2026-09-10 nothing compared this header to anything: the guardrail
+ * only asked whether DEMO_SEED_PREVIEW_SECRET existed, so on any preview where
+ * it was set, every admin and dispatcher could seed or reset demo data.
+ *
+ * Compared in constant time, and only after the lengths are known to match --
+ * timingSafeEqual throws on a length mismatch, and the length of a secret is
+ * not something to leak through an exception.
+ */
+function presentedPreviewSecret(request: Request) {
+  const configured = process.env.DEMO_SEED_PREVIEW_SECRET ?? "";
+  const presented = request.headers.get(demoSeedSecretHeader) ?? "";
+
+  if (!configured || !presented) {
+    return false;
+  }
+
+  const configuredBytes = Buffer.from(configured, "utf8");
+  const presentedBytes = Buffer.from(presented, "utf8");
+
+  if (configuredBytes.length !== presentedBytes.length) {
+    return false;
+  }
+
+  return timingSafeEqual(configuredBytes, presentedBytes);
+}
+
 function runtimeStatus(target: DemoSeedTarget) {
   return buildDemoSeedRuntimeStatus({
+    allowedSupabaseUrl: process.env.DEMO_SEED_ALLOWED_SUPABASE_URL,
     previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
     serviceRoleConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -122,8 +155,10 @@ export async function POST(request: Request) {
     }
 
     const guardrail = validateDemoSeedGuardrails({
+      allowedSupabaseUrl: process.env.DEMO_SEED_ALLOWED_SUPABASE_URL,
       confirm: input.confirm,
       previewSecretConfigured: Boolean(process.env.DEMO_SEED_PREVIEW_SECRET),
+      previewSecretMatches: presentedPreviewSecret(request),
       serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
       target: input.target,
