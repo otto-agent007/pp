@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PortalSessionExchangeResponse {
   error?: string;
@@ -15,9 +15,25 @@ export function PortalSessionExchange({
   grant: string;
 }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // The grant is one-time: the route claims it with a conditional UPDATE, so
+  // the second POST of the same grant is always rejected. React runs this
+  // effect twice on the same instance under StrictMode -- mount, clean up,
+  // mount again -- and the original per-run `cancelled` flag only suppressed
+  // the state update, because the first request had already left. The first
+  // claim burned the grant and the second failed, so every portal link was
+  // dead in `next dev`.
+  //
+  // Two refs, because one is not enough. claimedGrantRef survives the
+  // simulated remount and stops the second request. activeRef has to be reset
+  // at the top of every run: the cleanup between the two runs would otherwise
+  // leave the single in-flight request looking cancelled, and the result of
+  // the only claim we make would be thrown away. On a real unmount the cleanup
+  // runs last and it stays false.
+  const claimedGrantRef = useRef<string | null>(null);
+  const activeRef = useRef(true);
 
   useEffect(() => {
-    let cancelled = false;
+    activeRef.current = true;
 
     async function exchangeGrant() {
       let body: PortalSessionExchangeResponse | null = null;
@@ -36,7 +52,7 @@ export function PortalSessionExchange({
           | PortalSessionExchangeResponse
           | null;
 
-        if (cancelled) {
+        if (!activeRef.current) {
           return;
         }
 
@@ -45,7 +61,7 @@ export function PortalSessionExchange({
           return;
         }
       } catch {
-        if (cancelled) {
+        if (!activeRef.current) {
           return;
         }
       }
@@ -55,10 +71,13 @@ export function PortalSessionExchange({
       );
     }
 
-    void exchangeGrant();
+    if (claimedGrantRef.current !== grant) {
+      claimedGrantRef.current = grant;
+      void exchangeGrant();
+    }
 
     return () => {
-      cancelled = true;
+      activeRef.current = false;
     };
   }, [customerId, grant]);
 
