@@ -169,6 +169,29 @@ describe("inventory api client", () => {
     ]);
   });
 
+  // chemical_logs.logged_by defaults to auth.uid() in Postgres, and the insert
+  // policy requires it to equal the caller. Sending the key at all -- even as
+  // null -- overrides the default and every technician log is rejected.
+  it("omits logged_by so the column default stamps the caller", async () => {
+    const createQuery = new MockQuery({ data: log, error: null });
+    from.mockReturnValueOnce(createQuery as never);
+
+    await createChemicalLogRecord(
+      {
+        job_id: "job-1",
+        chemical_id: "chemical-1",
+        amount_used: 2,
+        notes: null,
+      },
+      testClient,
+    );
+
+    const [[, insertArgs]] = createQuery.calls;
+    const row = (insertArgs as Record<string, unknown>[])[0] ?? {};
+
+    expect(Object.keys(row)).not.toContain("logged_by");
+  });
+
   it("lists chemical logs for a job", async () => {
     const listQuery = new MockQuery({ data: [log], error: null });
     from.mockReturnValue(listQuery as never);
