@@ -139,6 +139,97 @@ describe("RLS boundary audit", () => {
     ).toEqual([]);
   });
 
+  // job_id names the job, not the person. chemical_logs went without an author
+  // column while its insert trigger moved inventory, so a technician could zero
+  // a stock item and leave nothing that said who.
+  it("flags an assignment-derived insert that does not stamp its author", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.chemical_logs (id uuid primary key);
+          alter table public.chemical_logs enable row level security;
+          create policy "unstamped insert" on public.chemical_logs
+            for insert with check (
+              (select private.has_active_profile())
+              and exists (
+                select 1 from public.jobs
+                where jobs.id = chemical_logs.job_id
+                  and jobs.assigned_tech_id = (select auth.uid())
+              )
+            );
+        `,
+      },
+    ]);
+
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "insert_policy_missing_author_stamp",
+          severity: "error",
+          table: "chemical_logs",
+        }),
+      ]),
+    );
+  });
+
+  it("accepts an assignment-derived insert that stamps its author", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.chemical_logs (id uuid primary key);
+          alter table public.chemical_logs enable row level security;
+          create policy "stamped insert" on public.chemical_logs
+            for insert with check (
+              (select private.has_active_profile())
+              and logged_by = (select auth.uid())
+              and exists (
+                select 1 from public.jobs
+                where jobs.id = chemical_logs.job_id
+                  and jobs.assigned_tech_id = (select auth.uid())
+              )
+            );
+        `,
+      },
+    ]);
+
+    expect(
+      findings.filter(
+        (finding) => finding.code === "insert_policy_missing_author_stamp",
+      ),
+    ).toEqual([]);
+  });
+
+  // The read is deliberately wider than the author: an admin may write a log on
+  // a technician's behalf and the technician still has to see it.
+  it("does not demand an author stamp on a read policy", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.chemical_logs (id uuid primary key);
+          alter table public.chemical_logs enable row level security;
+          create policy "assigned read" on public.chemical_logs
+            for select using (
+              (select private.has_active_profile())
+              and exists (
+                select 1 from public.jobs
+                where jobs.id = chemical_logs.job_id
+                  and jobs.assigned_tech_id = (select auth.uid())
+              )
+            );
+        `,
+      },
+    ]);
+
+    expect(
+      findings.filter(
+        (finding) => finding.code === "insert_policy_missing_author_stamp",
+      ),
+    ).toEqual([]);
+  });
+
   // Postgres truncates identifiers at 63 bytes without warning, so two names
   // that differ only past that point are one policy in the database. Six names
   // in this repo are already over the limit.

@@ -12,6 +12,7 @@ export type RlsBoundaryAuditSeverity = "error" | "warning";
  */
 export const rlsBoundaryAuditCodes = [
   "anon_sensitive_grant",
+  "insert_policy_missing_author_stamp",
   "missing_rls_enablement",
   "personal_policy_missing_author_check",
   "policy_name_truncation_collision",
@@ -66,6 +67,26 @@ const activeProfilePredicate = "has_active_profile";
 const personalRecordTables: Record<string, string> = {
   job_location_events: "recorded_by",
 };
+
+/**
+ * Tables a technician writes, and the column that has to name the writer.
+ *
+ * job_id says which job a row belongs to, not who produced it, so without an
+ * author column an abusive or mistaken write cannot be traced to a person.
+ * chemical_logs went without one while its insert trigger moved inventory.
+ * Only insert policies are checked: the matching read is usually meant to be
+ * wider than the author, since an admin may write a row on a technician's
+ * behalf.
+ */
+const authorStampedTables: Record<string, string> = {
+  chemical_logs: "logged_by",
+  job_location_events: "recorded_by",
+  job_unit_audit_items: "audited_by",
+};
+
+function isInsertPolicy(statement: string) {
+  return /\bfor\s+insert\b/i.test(statement);
+}
 
 /**
  * Postgres truncates identifiers at 63 bytes, silently and without warning.
@@ -296,6 +317,23 @@ export function auditRlsBoundarySources(
       findings.push({
         code: "personal_policy_missing_author_check",
         message: `${policy.table} policy "${policy.name}" reaches rows through assigned_tech_id without constraining ${authorColumn}, so reassigning a job exposes the previous assignee's rows`,
+        severity: "error",
+        source: policy.source,
+        table: policy.table,
+      });
+    }
+
+    const authorStamp = authorStampedTables[policy.table];
+
+    if (
+      authorStamp &&
+      isInsertPolicy(policy.statement) &&
+      /assigned_tech_id/i.test(policy.statement) &&
+      !new RegExp(`\\b${authorStamp}\\b`, "i").test(policy.statement)
+    ) {
+      findings.push({
+        code: "insert_policy_missing_author_stamp",
+        message: `${policy.table} insert policy "${policy.name}" lets an assigned technician write a row without stamping ${authorStamp}, so the write cannot be traced to a person`,
         severity: "error",
         source: policy.source,
         table: policy.table,
