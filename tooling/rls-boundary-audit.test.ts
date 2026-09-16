@@ -1,13 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 
+import { readFileSync } from "node:fs";
+
 import {
   auditRlsBoundaryDirectory,
   auditRlsBoundarySources,
   effectivePolicies,
+  rlsBoundaryAuditCodes,
 } from "./rls-boundary-audit";
 
 describe("RLS boundary audit", () => {
+  // The doc listed four rules while the audit raised five: the rule added by
+  // 20260910200000 never reached it. An operator reading the document would
+  // have concluded the technician-status gap was unchecked.
+  it("documents every finding code it can raise", () => {
+    const doc = readFileSync(
+      join(process.cwd(), "docs", "RLS_BOUNDARY_AUDIT.md"),
+      "utf8",
+    );
+
+    expect(rlsBoundaryAuditCodes.length).toBeGreaterThan(0);
+
+    for (const code of rlsBoundaryAuditCodes) {
+      expect(
+        doc.includes(code),
+        `${code} is raised by the audit but not described in docs/RLS_BOUNDARY_AUDIT.md`,
+      ).toBe(true);
+    }
+  });
+
   it("flags anon grants on sensitive operational tables", () => {
     const findings = auditRlsBoundarySources([
       {
@@ -53,6 +75,120 @@ describe("RLS boundary audit", () => {
         }),
       ]),
     );
+  });
+
+  // A technician's arrival/departure coordinates are one named person's
+  // location history. Reaching them through the job's *current* assignee means
+  // reassigning a job hands the incoming technician the outgoing one's trail.
+  it("flags a personal-record policy that reaches rows by assignment alone", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.job_location_events (id uuid primary key);
+          alter table public.job_location_events enable row level security;
+          create policy "reassignment leak" on public.job_location_events
+            for select using (
+              (select private.has_active_profile())
+              and exists (
+                select 1 from public.jobs
+                where jobs.id = job_location_events.job_id
+                  and jobs.assigned_tech_id = (select auth.uid())
+              )
+            );
+        `,
+      },
+    ]);
+
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "personal_policy_missing_author_check",
+          severity: "error",
+          table: "job_location_events",
+        }),
+      ]),
+    );
+  });
+
+  it("accepts a personal-record policy that also constrains the author", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.job_location_events (id uuid primary key);
+          alter table public.job_location_events enable row level security;
+          create policy "author scoped" on public.job_location_events
+            for select using (
+              (select private.has_active_profile())
+              and job_location_events.recorded_by = (select auth.uid())
+              and exists (
+                select 1 from public.jobs
+                where jobs.id = job_location_events.job_id
+                  and jobs.assigned_tech_id = (select auth.uid())
+              )
+            );
+        `,
+      },
+    ]);
+
+    expect(
+      findings.filter(
+        (finding) => finding.code === "personal_policy_missing_author_check",
+      ),
+    ).toEqual([]);
+  });
+
+  // Postgres truncates identifiers at 63 bytes without warning, so two names
+  // that differ only past that point are one policy in the database. Six names
+  // in this repo are already over the limit.
+  it("flags two policy names that truncate to the same identifier", () => {
+    const sharedPrefix = "job location events are readable by admins or assigned tec";
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.job_media (id uuid primary key);
+          alter table public.job_media enable row level security;
+          create policy "${sharedPrefix}hnicians" on public.job_media
+            for select using ((select private.has_admin_access()));
+          create policy "${sharedPrefix}hnicians and auditors" on public.job_media
+            for select using ((select private.has_admin_access()));
+        `,
+      },
+    ]);
+
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "policy_name_truncation_collision",
+          severity: "error",
+          table: "job_media",
+        }),
+      ]),
+    );
+  });
+
+  it("does not flag distinct policy names that fit inside the limit", () => {
+    const findings = auditRlsBoundarySources([
+      {
+        name: "fixture.sql",
+        sql: `
+          create table public.job_media (id uuid primary key);
+          alter table public.job_media enable row level security;
+          create policy "admins read job media" on public.job_media
+            for select using ((select private.has_admin_access()));
+          create policy "admins write job media" on public.job_media
+            for insert with check ((select private.has_admin_access()));
+        `,
+      },
+    ]);
+
+    expect(
+      findings.filter(
+        (finding) => finding.code === "policy_name_truncation_collision",
+      ),
+    ).toEqual([]);
   });
 
   it("flags sensitive table references without RLS enablement evidence", () => {
