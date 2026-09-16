@@ -30,7 +30,7 @@ against an approved target.
 | `customer_portal_access_tokens`, `customer_portal_sessions` | Service-role server validation only; anon and browser clients must never read raw grants, hashes, cookies, or session internals. |
 | `technician_licenses` | Staff and technician-owned credential readiness only; no anon or unrelated technician access. |
 | `compliance_sources`, `compliance_documents`, `compliance_chunks`, `compliance_advisory_audits` | Staff-side advisory surfaces only. Source material, embeddings, advisory warnings, and setup errors are not customer portal output. |
-| `job_location_events` | Assigned-job/staff operational evidence only. Exact GPS coordinates are not customer portal output. |
+| `job_location_events` | Staff read the whole arrival/departure trail. A technician reads only the events they recorded themselves, and only while still assigned: the rows are one named person's location history, so scoping them to the job's current assignee handed the trail over on every reassignment. Exact GPS coordinates are not customer portal output. |
 | WDO/Escrow readiness surfaces | Staff-side readiness/advisory workflow. Customer-facing proof must be intentionally selected and must not include internal warnings or raw compliance analysis. |
 
 ## Static Audit Tool
@@ -38,10 +38,34 @@ against an approved target.
 `tooling/rls-boundary-audit.ts` reads `supabase/migrations/*.sql` and reports
 conservative findings for:
 
-- sensitive tables referenced without static RLS enablement evidence
-- grants to `anon` on sensitive operational tables
-- unconditional `using (true)` policies on sensitive tables
-- `public` or `anon` RPC execute grants that need explicit review
+The first three rules read the concatenated SQL. The rest read the *effective*
+policy set, which the tool computes by replaying every `drop policy` and
+`create policy` in migration order -- a policy that was weak in 2026-05 and
+rewritten in 2026-09 still has its old text sitting in the older file, so the
+concatenated SQL cannot answer what a fresh database actually ends up with.
+
+- `missing_rls_enablement` -- sensitive tables referenced without static RLS
+  enablement evidence
+- `anon_sensitive_grant` -- grants to `anon` on sensitive operational tables
+- `sensitive_using_true` -- unconditional `using (true)` policies on sensitive
+  tables
+- `public_rpc_grant` -- `public` or `anon` RPC execute grants that need explicit
+  review
+- `technician_policy_missing_status_check` -- an effective policy reaching rows
+  through `jobs.assigned_tech_id` without `private.has_active_profile()`, so a
+  deactivated technician keeps every job still assigned to them
+- `personal_policy_missing_author_check` -- an effective policy on a table whose
+  rows are one person's personal record (`job_location_events.recorded_by`)
+  reaching them through assignment alone, so reassigning a job exposes the
+  previous assignee's rows
+- `policy_name_truncation_collision` -- two policy names on one table that
+  truncate to the same 63-byte identifier. Postgres truncates silently, and six
+  policy names in this repo are already over the limit, so the name in the
+  migration file is not always the name in the database. A collision means a
+  `drop policy` aimed at one policy removes another.
+
+Every code above is asserted to appear in this document by
+`tooling/rls-boundary-audit.test.ts`, so a new rule cannot ship undocumented.
 
 Run the focused test with:
 

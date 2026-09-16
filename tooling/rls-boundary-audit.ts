@@ -3,13 +3,27 @@ import { join } from "node:path";
 
 export type RlsBoundaryAuditSeverity = "error" | "warning";
 
+/**
+ * Every finding this audit can raise, as a value rather than a type, so a test
+ * can check each one is described in docs/RLS_BOUNDARY_AUDIT.md. That document
+ * listed four rules while the audit raised five -- the rule added by
+ * 20260910200000 never reached it -- which is the same drift the audit exists
+ * to catch, one level up.
+ */
+export const rlsBoundaryAuditCodes = [
+  "anon_sensitive_grant",
+  "missing_rls_enablement",
+  "personal_policy_missing_author_check",
+  "policy_name_truncation_collision",
+  "public_rpc_grant",
+  "sensitive_using_true",
+  "technician_policy_missing_status_check",
+] as const;
+
+export type RlsBoundaryAuditCode = (typeof rlsBoundaryAuditCodes)[number];
+
 export interface RlsBoundaryAuditFinding {
-  code:
-    | "anon_sensitive_grant"
-    | "missing_rls_enablement"
-    | "public_rpc_grant"
-    | "sensitive_using_true"
-    | "technician_policy_missing_status_check";
+  code: RlsBoundaryAuditCode;
   message: string;
   severity: RlsBoundaryAuditSeverity;
   source: string;
@@ -38,6 +52,37 @@ export interface EffectivePolicy {
  * assigned_tech_id has to carry this predicate too.
  */
 const activeProfilePredicate = "has_active_profile";
+
+/**
+ * Tables whose rows are one person's personal record, and the column naming
+ * that person.
+ *
+ * Reaching these through jobs.assigned_tech_id alone scopes them to whoever
+ * holds the job *now*, so reassigning a job hands its new assignee the previous
+ * one's rows. For job_location_events that is a named technician's GPS history.
+ * A policy that reaches such a table through assignment has to constrain the
+ * author column too.
+ */
+const personalRecordTables: Record<string, string> = {
+  job_location_events: "recorded_by",
+};
+
+/**
+ * Postgres truncates identifiers at 63 bytes, silently and without warning.
+ * Six policy names in this repo are already longer than that, so the name in
+ * the migration file is not the name in the database. That is survivable while
+ * the truncations stay distinct; two that collide would mean a `drop policy`
+ * aimed at one policy removes another, or a `create policy` fails as a
+ * duplicate. RLS policies are permissive and OR together, so the failure mode
+ * is a weak policy left in force.
+ */
+const maxIdentifierBytes = 63;
+
+function truncatedIdentifier(name: string) {
+  return Buffer.from(name, "utf8")
+    .subarray(0, maxIdentifierBytes)
+    .toString("utf8");
+}
 
 const sensitiveTables = [
   "profiles",
@@ -224,7 +269,10 @@ export function auditRlsBoundarySources(
     }
   }
 
-  for (const policy of effectivePolicies(sources).values()) {
+  const effective = effectivePolicies(sources);
+  const byTruncatedName = new Map<string, EffectivePolicy[]>();
+
+  for (const policy of effective.values()) {
     if (
       /assigned_tech_id/i.test(policy.statement) &&
       !policy.statement.toLowerCase().includes(activeProfilePredicate)
@@ -237,6 +285,41 @@ export function auditRlsBoundarySources(
         table: policy.table,
       });
     }
+
+    const authorColumn = personalRecordTables[policy.table];
+
+    if (
+      authorColumn &&
+      /assigned_tech_id/i.test(policy.statement) &&
+      !new RegExp(`\\b${authorColumn}\\b`, "i").test(policy.statement)
+    ) {
+      findings.push({
+        code: "personal_policy_missing_author_check",
+        message: `${policy.table} policy "${policy.name}" reaches rows through assigned_tech_id without constraining ${authorColumn}, so reassigning a job exposes the previous assignee's rows`,
+        severity: "error",
+        source: policy.source,
+        table: policy.table,
+      });
+    }
+
+    const key = `${policy.table}|${truncatedIdentifier(policy.name.toLowerCase())}`;
+    byTruncatedName.set(key, [...(byTruncatedName.get(key) ?? []), policy]);
+  }
+
+  for (const [key, collided] of byTruncatedName) {
+    if (collided.length < 2) {
+      continue;
+    }
+
+    findings.push({
+      code: "policy_name_truncation_collision",
+      message: `${collided[0]?.table} policies ${collided
+        .map((policy) => `"${policy.name}"`)
+        .join(" and ")} both truncate to the same ${maxIdentifierBytes}-byte identifier, so the database cannot tell them apart`,
+      severity: "error",
+      source: collided.map((policy) => policy.source).join(", "),
+      table: key.split("|")[0],
+    });
   }
 
   for (const source of sources) {
