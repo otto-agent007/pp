@@ -6,8 +6,20 @@ let serviceClient: {
   from: ReturnType<typeof vi.fn>;
 };
 
+let rateLimited = false;
+
 vi.mock("../../../_lib/server-auth", () => ({
   createServiceRoleSupabaseClient: () => serviceClient,
+}));
+
+vi.mock("../../../_lib/rate-limit", () => ({
+  checkApiRateLimit: () => Promise.resolve(rateLimited),
+  getClientIpFromRequest: () => undefined,
+  rateLimitResponse: () =>
+    Response.json(
+      { error: "Too many requests. Please retry later." },
+      { status: 429 },
+    ),
 }));
 
 class MockQuery<T> {
@@ -139,6 +151,33 @@ describe("customer portal billing route", () => {
     serviceClient = {
       from: vi.fn(),
     };
+    rateLimited = false;
+  });
+
+  it("enforces the portal-billing rate limit before any database work", async () => {
+    rateLimited = true;
+
+    const response = await GET(requestWithSession("any-session"), {
+      params: Promise.resolve({ customerId: "customer-1" }),
+    });
+
+    expect(response.status).toBe(429);
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  // decodeURIComponent throws on a malformed escape, and the cookie is
+  // caller-controlled, so this used to be an unhandled 500 on every portal
+  // route rather than an auth failure.
+  it("denies a malformed session cookie instead of throwing", async () => {
+    serviceClient.from.mockReturnValue(
+      new MockQuery({ data: null, error: null }),
+    );
+
+    const response = await GET(requestWithSession("%"), {
+      params: Promise.resolve({ customerId: "customer-1" }),
+    });
+
+    expect(response.status).toBe(403);
   });
 
   it("rejects query-token access without a portal session cookie", async () => {

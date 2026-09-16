@@ -2,8 +2,17 @@ import { listCustomerPortalInvoiceRecords } from "@pest-patrol/api-client";
 import { buildCustomerPortalInvoices } from "@pest-patrol/domain";
 import { NextResponse } from "next/server";
 
+import {
+  checkApiRateLimit,
+  getClientIpFromRequest,
+  rateLimitResponse,
+} from "../../../_lib/rate-limit";
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
-import { validatePortalSession } from "../../_lib/portal-session";
+import {
+  hashPortalSecret,
+  readPortalSessionCookie,
+  validatePortalSession,
+} from "../../_lib/portal-session";
 
 export const runtime = "nodejs";
 
@@ -12,6 +21,27 @@ export async function GET(
   { params }: { params: Promise<{ customerId: string }> },
 ) {
   const { customerId } = await params;
+  const sessionToken = readPortalSessionCookie(request);
+  const clientIp = getClientIpFromRequest(request);
+  const sessionHash = sessionToken
+    ? hashPortalSecret(sessionToken)
+    : "no-session";
+  const ipSuffix = clientIp ? `:${clientIp}` : "";
+
+  // Billing is the most sensitive customer-visible portal read and it was the
+  // only one of the three portal reads with no limit, so an expired or
+  // cancelled link could be replayed against it as fast as the network allows.
+  // Keyed exactly like portal-closeouts so an unauthenticated caller cannot
+  // spread attempts across a dimension it controls.
+  if (
+    await checkApiRateLimit({
+      id: "portal-billing",
+      request,
+      key: `portal-billing:${customerId}:${sessionHash}${ipSuffix}`,
+    })
+  ) {
+    return rateLimitResponse();
+  }
 
   try {
     const client = createServiceRoleSupabaseClient();
