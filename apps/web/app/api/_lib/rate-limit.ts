@@ -101,15 +101,20 @@ function sanitizeFirewallResult(
   return Boolean(result?.rateLimited);
 }
 
+function firstAddress(value: string | null | undefined): string | undefined {
+  return value?.split(",")[0]?.trim() || undefined;
+}
+
+// Only headers the Vercel edge sets on every inbound request are trustworthy
+// here. `request.ip` is populated by the platform, and `x-vercel-forwarded-for`
+// is overwritten by the edge, so neither can be chosen by the caller.
 function toRequestIp(request: Request): string | undefined {
   const requestAsNextRequest = request as Request & { ip?: string };
-  const forwardedFor = requestAsNextRequest.ip ?? request.headers.get("x-vercel-forwarded-for");
 
-  if (forwardedFor?.trim()) {
-    return forwardedFor.split(",")[0]?.trim();
-  }
-
-  return undefined;
+  return (
+    firstAddress(requestAsNextRequest.ip) ??
+    firstAddress(request.headers.get("x-vercel-forwarded-for"))
+  );
 }
 
 function loadFirewallClient(): Promise<FirewallClient> {
@@ -175,19 +180,15 @@ export async function checkApiRateLimit({
   return sanitizeFirewallResult(firewallResult, ruleId);
 }
 
+// This value becomes part of the rate-limit bucket key, so a caller who can
+// choose it can mint a fresh bucket per request and bypass the limit outright.
+// `x-real-ip` and `x-forwarded-for` are ordinary request headers that anyone
+// can send, so they are deliberately not consulted: an absent IP degrades a
+// bucket to per-customer, which is coarser but still enforces something, while
+// an attacker-chosen IP enforces nothing at all.
 export function getClientIpFromRequest(request: Request) {
   if (!isVercelRuntime()) {
     return undefined;
-  }
-
-  const xRealIp = request.headers.get("x-real-ip");
-  if (xRealIp?.trim()) {
-    return xRealIp.split(",")[0]?.trim();
-  }
-
-  const xVercelIp = request.headers.get("x-vercel-ip");
-  if (xVercelIp?.trim()) {
-    return xVercelIp.trim();
   }
 
   return toRequestIp(request);

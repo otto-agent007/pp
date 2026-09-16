@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { safeLogError, safeLogInfo, safeLogWarn } from "@pest-patrol/domain";
 
+import { requireSameOriginForUnsafeMethod } from "../../../_lib/origin-guard";
 import { createServiceRoleSupabaseClient } from "../../../_lib/server-auth";
 import {
   checkApiRateLimit,
@@ -40,6 +41,25 @@ export async function POST(
   { params }: { params: Promise<{ customerId: string }> },
 ) {
   const { customerId } = await params;
+
+  // This route mints the portal session cookie, so it is the one place a
+  // cross-origin page could log a visitor's browser into a portal of the
+  // attacker's choosing. The exchange is driven by first-party client JS on
+  // /portal/[customerId], so a same-origin request is the only legitimate
+  // shape. upgrade-intents has had this guard since it shipped; the route
+  // that hands out the credential did not.
+  const originError = requireSameOriginForUnsafeMethod(request);
+
+  if (originError) {
+    safeLogWarn("portal.session.cross_origin_rejected", {
+      customer_id: customerId,
+      route: "portal/sessions",
+      status: "denied",
+    });
+
+    return originError;
+  }
+
   const grant = await readGrant(request);
   const clientIp = getClientIpFromRequest(request);
   const ipSuffix = clientIp ? `:${clientIp}` : "";

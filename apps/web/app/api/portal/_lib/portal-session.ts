@@ -36,6 +36,19 @@ export function portalSessionExpiry(grantExpiresAt: string | null) {
     : defaultExpiry;
 }
 
+// decodeURIComponent throws URIError on malformed percent-encoding, and a
+// cookie is caller-controlled: `pp_customer_portal_session=%` turned every
+// portal route into a 500 instead of an auth failure. A value that does not
+// decode cannot match a stored session hash either way, so fall back to the
+// raw text and let the normal lookup deny it.
+function decodePortalCookieValue(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function readPortalSessionCookie(request: Request) {
   const cookieHeader = request.headers.get("cookie") ?? "";
   const cookies = cookieHeader
@@ -47,7 +60,7 @@ export function readPortalSessionCookie(request: Request) {
   );
 
   return match
-    ? decodeURIComponent(match.slice(portalSessionCookieName.length + 1))
+    ? decodePortalCookieValue(match.slice(portalSessionCookieName.length + 1))
     : "";
 }
 
