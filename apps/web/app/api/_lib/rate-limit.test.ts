@@ -209,36 +209,61 @@ describe("rate-limit helper", () => {
     );
   });
 
-  it("extracts client ip from trusted vercel headers", () => {
+  it("extracts client ip from platform-controlled sources", () => {
     vi.stubEnv("VERCEL", "1");
 
-    const withRealIp = getClientIpFromRequest(
+    const fromEdgeHeader = getClientIpFromRequest(
       request("http://localhost", {
-        "x-real-ip": "203.0.113.8",
+        "x-vercel-forwarded-for": "203.0.113.8",
       }),
     );
 
-    const withVercelIp = getClientIpFromRequest(
+    const withProxyChain = getClientIpFromRequest(
       request("http://localhost", {
-        "x-vercel-ip": "203.0.113.9",
+        "x-vercel-forwarded-for": "203.0.113.9, 198.51.100.4",
       }),
     );
 
-    expect(withRealIp).toBe("203.0.113.8");
-    expect(withVercelIp).toBe("203.0.113.9");
+    const platformRequest = request("http://localhost");
+    Object.defineProperty(platformRequest, "ip", { value: "203.0.113.10" });
+
+    expect(fromEdgeHeader).toBe("203.0.113.8");
+    expect(withProxyChain).toBe("203.0.113.9");
+    expect(getClientIpFromRequest(platformRequest)).toBe("203.0.113.10");
   });
 
-  it("does not trust generic forwarded headers", () => {
+  // The client ip is part of the rate-limit bucket key, so a header the caller
+  // can set is a rate-limit bypass: every spoofed value is a fresh bucket.
+  // Vercel's edge sets x-vercel-forwarded-for on every inbound request; the
+  // headers below are ordinary request headers that anyone can send.
+  it.each([
+    "x-real-ip",
+    "x-forwarded-for",
+    "x-vercel-ip",
+    "x-client-ip",
+    "forwarded",
+  ])("does not trust the caller-suppliable %s header", (header) => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("VERCEL", "1");
 
-    const localOnly = getClientIpFromRequest(
-      request("http://localhost", {
-        "x-forwarded-for": "198.51.100.11",
-      }),
-    );
+    expect(
+      getClientIpFromRequest(
+        request("http://localhost", { [header]: "198.51.100.11" }),
+      ),
+    ).toBeUndefined();
+  });
 
-    expect(localOnly).toBeUndefined();
+  it("ignores a spoofed header even when the edge header is present", () => {
+    vi.stubEnv("VERCEL", "1");
+
+    expect(
+      getClientIpFromRequest(
+        request("http://localhost", {
+          "x-real-ip": "198.51.100.11",
+          "x-vercel-forwarded-for": "203.0.113.8",
+        }),
+      ),
+    ).toBe("203.0.113.8");
   });
 
   it("returns sanitized rate-limit response payload and headers", () => {

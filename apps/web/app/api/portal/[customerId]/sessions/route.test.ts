@@ -61,11 +61,15 @@ class MockQuery<T> {
   }
 }
 
-function exchange(grant?: string) {
+function exchange(grant?: string, headers: Record<string, string> = {}) {
   return POST(
     new Request("http://localhost/api/portal/customer-1/sessions", {
       body: JSON.stringify({ grant }),
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost",
+        ...headers,
+      },
       method: "POST",
     }),
     { params: Promise.resolve({ customerId: "customer-1" }) },
@@ -84,6 +88,63 @@ describe("customer portal session exchange route", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  // This route is what turns a grant into the portal session cookie, so a
+  // cross-origin page that can reach it can drive a visitor's browser into a
+  // portal session of the attacker's choosing.
+  it("rejects a cross-origin grant exchange before touching the grant", async () => {
+    const response = await exchange("portal-token", {
+      origin: "https://attacker.example",
+    });
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Request origin is not allowed");
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects an exchange that declares no origin at all", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/portal/customer-1/sessions", {
+        body: JSON.stringify({ grant: "portal-token" }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+      { params: Promise.resolve({ customerId: "customer-1" }) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(serviceClient.from).not.toHaveBeenCalled();
+  });
+
+  it("accepts a same-origin exchange declared only by Referer", async () => {
+    const claimQuery = new MockQuery({
+      data: {
+        customer_id: "customer-1",
+        expires_at: "2026-06-03T18:12:00.000Z",
+        id: "token-1",
+      },
+      error: null,
+    });
+    serviceClient.from
+      .mockReturnValueOnce(claimQuery)
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }))
+      .mockReturnValueOnce(new MockQuery({ data: null, error: null }));
+
+    const response = await POST(
+      new Request("http://localhost/api/portal/customer-1/sessions", {
+        body: JSON.stringify({ grant: "portal-token" }),
+        headers: {
+          "content-type": "application/json",
+          referer: "http://localhost/portal/customer-1?grant=portal-token",
+        },
+        method: "POST",
+      }),
+      { params: Promise.resolve({ customerId: "customer-1" }) },
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it("requires a one-time grant", async () => {
