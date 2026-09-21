@@ -9,7 +9,7 @@
     "@pest-patrol/application": "workspace:*",
     "@pest-patrol/domain": "workspace:*",
     "@pest-patrol/types": "workspace:*",
-    "@supabase/supabase-js": "^2.115.0"
+    "@supabase/supabase-js": "^2.116.0"
   },
   "scripts": {
     "build": "tsc --noEmit",
@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
+    "@types/node": "^24.13.5",
     "typescript": "^6.0.3"
   }
 }
