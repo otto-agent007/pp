@@ -39,3 +39,8 @@ peerDependencyRules:
 auditConfig:
   ignoreGhsas:
     - GHSA-vcc3-ghjq-m6fr
+# Temporary runtime backports; package versions and audit findings remain visible.
+# Remove only with an upstream fix that passes the dedicated regression tests.
+patchedDependencies:
+  node-forge@1.4.0: patches/node-forge@1.4.0.patch
+  zod@3.25.76: patches/zod@3.25.76.patch
