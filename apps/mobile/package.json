@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@babel/runtime": "^7.29.7",
+    "@babel/runtime": "^7.29.10",
     "@pest-patrol/api-client": "workspace:*",
     "@pest-patrol/application": "workspace:*",
     "@pest-patrol/domain": "workspace:*",
@@ -21,7 +21,7 @@
     "@pest-patrol/ui-native": "workspace:*",
     "@pest-patrol/ui-tokens": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@supabase/supabase-js": "^2.116.0",
+    "@supabase/supabase-js": "^2.118.0",
     "expo": "57.0.20",
     "expo-constants": "~57.0.17",
     "expo-image-picker": "~57.0.16",
@@ -36,7 +36,7 @@
     "react-native-screens": "~4.26.0",
     "react-native-signature-canvas": "^4.7.2",
     "react-native-webview": "13.16.1",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",
